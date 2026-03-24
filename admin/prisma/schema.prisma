@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  B2B_BUYER
+  B2B_APPROVER
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum RFQStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWING
+  APPROVED
+  REJECTED
+  CONVERTED_TO_ORDER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role     @default(CUSTOMER)
+  phone     String?
+  companyId String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company        Company?       @relation(fields: [companyId], references: [id])
+  orders         Order[]
+  rfqs           RFQ[]
+  tickets        Ticket[]
+  ticketMessages TicketMessage[]
+
+  blogPosts   BlogPost[]
+}
+
+model Company {
+  id              String   @id @default(uuid())
+  name            String
+  gstin           String?
+  billingAddress  String?
+  shippingAddress String?
+  parentId        String?  // For Parent-Subsidiary hierarchy
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  parent          Company?  @relation("CompanyHierarchy", fields: [parentId], references: [id])
+  subsidiaries    Company[] @relation("CompanyHierarchy")
+  users           User[]
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  parentId    String?
+  
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  sku              String   @unique
+  name             String
+  slug             String   @unique
+  description      String
+  
+  // Pricing
+  mrp              Float
+  d2cPrice         Float
+  b2bPrice         Float    // Base B2B price, can be tiered later
+  
+  // Specs (structured)
+  isLed            Boolean  @default(false)
+  luminousEfficacy Float?   // lm/W
+  cri              Int?     // Color Rendering Index
+  hsnCode          String?
+  gstRate          Float    @default(18.0) // 5% for LED, 18% for traditional
+  bisCertification String?  // IS 10322 etc.
+  specs            Json?    // Dynamic key-value technical specs for filtering
+  
+  // Media
+  images           String[]
+  glbModelUrl      String?
+  
+  // Inventory
+  stockQuantity    Int      @default(0)
+  weight           Float?   // in kg
+  
+  categoryId       String
+  category         Category @relation(fields: [categoryId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  variants         ProductVariant[]
+  orderItems       OrderItem[]
+  rfqItems         RFQItem[]
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid())
+  productId     String
+  name          String   // e.g. "Gold – 48 inch"
+  sku           String   @unique
+  d2cPrice      Float?   // Overrides parent if set
+  mrp           Float?
+  b2bPrice      Float?
+  stockQuantity Int      @default(0)
+  images        String[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  orderNumber    String      @unique
+  userId         String
+  status         OrderStatus @default(PENDING)
+  
+  totalAmount    Float
+  taxAmount      Float
+  shippingAmount Float
+  
+  shippingAddress String
+  billingAddress  String
+  
+  trackingNumber String?
+  awbNumber      String?     // For logistics (Shiprocket/Delhivery)
+  irn            String?     // E-Invoicing Reference Number
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user           User          @relation(fields: [userId], references: [id])
+  items          OrderItem[]
+  returnRequests ReturnRequest[]
+  tickets        Ticket[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  variantId String?  // optional – links to a specific variant
+  quantity  Int
+  unitPrice Float
+  total     Float
+  
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model ReturnRequest {
+  id        String       @id @default(uuid())
+  orderId   String
+  reason    String
+  status    ReturnStatus @default(PENDING)
+  adminNote String?
+  
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  order     Order        @relation(fields: [orderId], references: [id])
+}
+
+model RFQ {
+  id          String    @id @default(uuid())
+  rfqNumber   String    @unique
+  userId      String
+  status      RFQStatus @default(DRAFT)
+  
+  notes       String?
+  validUntil  DateTime?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+  items       RFQItem[]
+}
+
+model RFQItem {
+  id          String   @id @default(uuid())
+  rfqId       String
+  productId   String
+  quantity    Int
+  targetPrice Float?   // Optional target price requested by buyer
+  
+  rfq         RFQ      @relation(fields: [rfqId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model Ticket {
+  id           String       @id @default(uuid())
+  ticketNumber String       @unique
+  userId       String
+  orderId      String?
+  subject      String
+  description  String
+  status       TicketStatus @default(OPEN)
+  
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  order        Order?       @relation(fields: [orderId], references: [id])
+  ticketMessages TicketMessage[]
+
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  String
+  message   String
+  isAdmin   Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Page {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  title           String
+  content         String   @db.Text
+  metaTitle       String?
+  metaDescription String?
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+model BlogPost {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  excerpt     String?
+  content     String   @db.Text
+  authorId    String // Changed from Int to String
+  author      User     @relation(fields: [authorId], references: [id])
+  featuredImg String?  // URL to image stored in Supabase storage
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  metaTitle   String?
+  metaDesc    String?
+  isDraft     Boolean  @default(true)
+}
