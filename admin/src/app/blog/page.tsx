@@ -16,7 +16,7 @@ export default async function BlogAdminPage() {
           <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Blog Posts</h1>
           <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted mt-2">{posts.length} articles published</p>
         </div>
-        <button className="btn-primary" disabled>+ New Post (Coming Soon)</button>
+        <Link href="/blog/new" className="btn-primary">+ New Post</Link>
       </div>
 
       <div className="bg-surface border border-border overflow-hidden">
@@ -45,7 +45,8 @@ export default async function BlogAdminPage() {
                 </td>
                 <td className="px-6 py-5 font-mono text-[12px] text-muted">{new Date(post.createdAt).toLocaleDateString()}</td>
                 <td className="px-6 py-5 text-right flex gap-4 justify-end">
-                   <span className="font-mono text-[10px] text-muted">Read-only view</span>
+                   <Link href={`/blog/${post.id}/edit`} className="font-mono text-[10px] text-accent hover:underline lowercase">Edit</Link>
+                   <button className="font-mono text-[10px] text-red-500/70 hover:text-red-500 lowercase">Delete</button>
                 </td>
               </tr>
             ))}
