@@ -39,7 +39,7 @@ export default async function NewTicketPage() {
         subject,
         description,
         orderId: orderId || null,
-        messages: {
+        ticketMessages: {
           create: {
             authorId: user.id,
             message: description

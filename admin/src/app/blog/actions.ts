@@ -36,7 +36,7 @@ export async function createBlogPost(formData: FormData) {
   redirect('/blog');
 }
 
-export async function updateBlogPost(id: string, formData: FormData) {
+export async function updateBlogPost(id: number, formData: FormData) {
   const title = formData.get('title') as string;
   const slug = formData.get('slug') as string;
   const content = formData.get('content') as string;
@@ -59,7 +59,7 @@ export async function updateBlogPost(id: string, formData: FormData) {
   redirect('/blog');
 }
 
-export async function deleteBlogPost(id: string) {
+export async function deleteBlogPost(id: number) {
   await prisma.blogPost.delete({
     where: { id }
   });

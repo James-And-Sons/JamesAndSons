@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import ApplyB2BForm from './ApplyB2BForm'
 import { prisma } from '@/lib/prisma'
+export const dynamic = 'force-dynamic'
 
 export default async function B2BPage() {
   const supabase = await createClient()

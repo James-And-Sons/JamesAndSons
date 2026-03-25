@@ -1,14 +1,12 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+export const dynamic = 'force-dynamic';
 import { formatPrice } from '@/lib/utils';
 import Navigation from '@/components/Navigation';
 import PDPClient from './PDPClient';
 import Link from 'next/link';
 
-export async function generateStaticParams() {
-  const products = await prisma.product.findMany({ select: { slug: true } });
-  return products;
-}
+
 
 export default async function ProductPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;

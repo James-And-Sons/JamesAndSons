@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+export const dynamic = 'force-dynamic';
 import Navigation from '@/components/Navigation';
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {

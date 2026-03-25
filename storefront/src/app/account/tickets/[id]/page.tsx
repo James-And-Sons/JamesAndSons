@@ -20,7 +20,7 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
     where: { id: params.id },
     include: {
       order: true,
-      messages: { orderBy: { createdAt: 'asc' } }
+      ticketMessages: { orderBy: { createdAt: 'asc' } }
     }
   })
 
@@ -96,7 +96,7 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
             {/* Messages Area */}
             <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px', maxHeight: '500px', overflowY: 'auto' }}>
-              {ticket.messages.map(msg => {
+              {ticket.ticketMessages.map(msg => {
                 const isMine = msg.authorId === user.id
                 return (
                   <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>

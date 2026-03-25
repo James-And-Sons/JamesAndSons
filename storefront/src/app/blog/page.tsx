@@ -35,11 +35,11 @@ export default async function BlogListPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '40px' }}>
               {posts.map(post => (
-                <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none', group: 'blog-card' }}>
+                <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                   <article style={{ cursor: 'pointer' }}>
                     <div style={{ aspectRatio: '16/9', background: 'var(--surface2)', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '20px' }}>
                        {/* Placeholder for featured image */}
-                       <div style={{ width: '100%', height: '100%', background: 'linear-gradient(45deg, var(--void), var(--surface))', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
+                       <div style={{ width: '100%', height: '100%', background: 'linear-gradient(45deg, var(--void), var(--surface))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ fontFamily: 'var(--font-serif)', fontSize: '40px', color: 'var(--border)', opacity: 0.5 }}>JS</span>
                        </div>
                     </div>

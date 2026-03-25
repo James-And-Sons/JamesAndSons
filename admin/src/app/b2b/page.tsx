@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import B2BActionButtons from './B2BActionButtons';
+export const dynamic = 'force-dynamic';
 
 export default async function B2BWorkspacePage() {
   // Fetch pending applications: Users who have a company but are still just CUSTOMERs

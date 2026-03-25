@@ -17,7 +17,7 @@ export default async function TicketsPage() {
   const tickets = await prisma.ticket.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
-    include: { order: true, _count: { select: { messages: true } } }
+    include: { order: true, _count: { select: { ticketMessages: true } } }
   })
 
   // Also fetch orders for the dropdown if they want to link a ticket to an order
@@ -93,7 +93,7 @@ export default async function TicketsPage() {
                           {ticket.subject}
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-dim)' }}>
-                          {ticket._count.messages} messages
+                        {ticket._count.ticketMessages} messages
                         </div>
                       </td>
                       <td style={{ padding: '20px 24px' }}>

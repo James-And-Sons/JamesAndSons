@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { updateBlogPost } from '../../actions';
 
+export const dynamic = 'force-dynamic';
+
 interface EditBlogPostPageProps {
   params: {
     id: string;
@@ -12,8 +14,10 @@ interface EditBlogPostPageProps {
 export default async function EditBlogPostPage({ params }: EditBlogPostPageProps) {
   const { id } = await params;
 
+  const blogPostId = parseInt(id);
+
   const post = await prisma.blogPost.findUnique({
-    where: { id },
+    where: { id: blogPostId },
     include: { author: true }
   });
 
@@ -22,7 +26,7 @@ export default async function EditBlogPostPage({ params }: EditBlogPostPageProps
   }
 
   // Bind the updateBlogPost action with the ID
-  const updatePostWithId = updateBlogPost.bind(null, id);
+  const updatePostWithId = updateBlogPost.bind(null, blogPostId);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 py-8">

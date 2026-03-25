@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import ProductFormClient from '../../ProductFormClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function EditProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const [product, categories] = await Promise.all([

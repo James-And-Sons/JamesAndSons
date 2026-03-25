@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 
+export const dynamic = 'force-dynamic';
+
 const STATUS_LABELS: Record<string, string> = {
   OPEN: 'Open',
   IN_PROGRESS: 'In Progress',
@@ -24,7 +26,7 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
     include: {
       user: true,
       order: true,
-      messages: { orderBy: { createdAt: 'asc' } }
+      ticketMessages: { orderBy: { createdAt: 'asc' } }
     }
   });
 
@@ -83,7 +85,7 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
       <div className="bg-surface border border-border flex flex-col">
         {/* Messages */}
         <div className="p-8 flex flex-col gap-6 max-h-[600px] overflow-y-auto">
-          {ticket.messages.map(msg => {
+          {ticket.ticketMessages.map(msg => {
             const isAdmin = msg.authorId === 'ADMIN';
             return (
               <div key={msg.id} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>

@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function savePage(formData: FormData) {
   'use server';
   
