@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { TicketMessage } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
@@ -85,7 +86,7 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
       <div className="bg-surface border border-border flex flex-col">
         {/* Messages */}
         <div className="p-8 flex flex-col gap-6 max-h-[600px] overflow-y-auto">
-          {ticket.ticketMessages.map(msg => {
+          {ticket.ticketMessages.map((msg: any) => {
             const isAdmin = msg.authorId === 'ADMIN';
             return (
               <div key={msg.id} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>

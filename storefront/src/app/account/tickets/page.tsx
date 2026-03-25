@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { Ticket } from '@prisma/client'
 import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 
@@ -81,7 +82,7 @@ export default async function TicketsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tickets.map(ticket => (
+                   {tickets.map((ticket: any) => (
                     <tr key={ticket.id} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '20px 24px' }}>
                         <Link href={`/account/tickets/${ticket.id}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--gold)', textDecoration: 'none' }}>

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { TicketMessage } from '@prisma/client'
 import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
@@ -96,7 +97,7 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
             {/* Messages Area */}
             <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px', maxHeight: '500px', overflowY: 'auto' }}>
-              {ticket.ticketMessages.map(msg => {
+              {ticket.ticketMessages.map((msg: any) => {
                 const isMine = msg.authorId === user.id
                 return (
                   <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
