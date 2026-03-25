@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { TicketMessage } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';

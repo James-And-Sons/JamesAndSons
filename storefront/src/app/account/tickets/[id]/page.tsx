@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { TicketMessage } from '@prisma/client'
 import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'

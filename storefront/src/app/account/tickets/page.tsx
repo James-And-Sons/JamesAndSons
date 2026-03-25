@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { Ticket } from '@prisma/client'
 import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 
