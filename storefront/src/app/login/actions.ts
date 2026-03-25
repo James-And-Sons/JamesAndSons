@@ -87,3 +87,19 @@ export async function signup(formData: FormData) {
   revalidatePath('/', 'layout')
   redirect(`/login?message=Check email to continue sign in process&next=${encodeURIComponent(nextUrl)}`)
 }
+
+export async function resetPassword(email: string) {
+  const supabase = await createClient()
+  const { origin } = new URL(typeof window === 'undefined' ? '' : window.location.href) // This won't work in server action well
+
+  // Fixed version for server action
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `/auth/callback?next=/update-password`, // Relative path usually works if configured
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
+}

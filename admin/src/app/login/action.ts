@@ -55,3 +55,17 @@ export async function loginAction(formData: FormData) {
   // Success!
   redirect('/')
 }
+
+export async function resetPasswordAction(email: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `/auth/callback?next=/update-password`,
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
+}
