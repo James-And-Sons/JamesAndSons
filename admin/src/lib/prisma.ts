@@ -5,9 +5,13 @@ import { Pool } from 'pg';
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const getConnectionUrl = () => {
-  const url = process.env.DATABASE_URL;
+  let url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error('DATABASE_URL is not defined in environment variables');
+  }
+  // Ensure sslmode=require is present for Supabase
+  if (!url.includes('sslmode=')) {
+    url += (url.includes('?') ? '&' : '?') + 'sslmode=require';
   }
   return url;
 };
