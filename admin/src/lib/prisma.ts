@@ -21,15 +21,24 @@ const getConnectionUrl = () => {
 };
 
 const createPrismaClient = () => {
+  const url = getConnectionUrl();
+  console.log(`Initializing Pool with URL length: ${url.length}`);
+  
   const pool = new Pool({ 
-    connectionString: getConnectionUrl(),
+    connectionString: url,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 5000,
     ssl: {
       rejectUnauthorized: false
     }
   });
+
+  // Test pool error handling
+  pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+  });
+
   const adapter = new PrismaPg(pool as any);
   return new PrismaClient({ adapter });
 };
