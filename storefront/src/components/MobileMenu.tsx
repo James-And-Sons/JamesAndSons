@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function MobileMenu() {
+export default function MobileMenu({ user }: { user: { id: string; email?: string } | null }) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Prevent background scrolling when menu is open
@@ -55,6 +55,13 @@ export default function MobileMenu() {
             <li><Link href="/blog" onClick={() => setIsOpen(false)}>Blog</Link></li>
             <li><a href="/#spaces" onClick={() => setIsOpen(false)}>Spaces</a></li>
             <li><Link href="/b2b" onClick={() => setIsOpen(false)}>B2B Portal</Link></li>
+            <li className="mobile-menu-divider" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(196,160,90,0.3)' }}>
+              {user ? (
+                <Link href="/account" onClick={() => setIsOpen(false)}>My Account</Link>
+              ) : (
+                <Link href="/login" onClick={() => setIsOpen(false)}>Sign In</Link>
+              )}
+            </li>
           </ul>
         </div>
       )}

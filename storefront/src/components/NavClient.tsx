@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useCartStore } from '@/store/cart';
 import CartDrawer from './CartDrawer';
 import SearchModal from './SearchModal';
-import MobileMenu from './MobileMenu';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/lib/utils';
 
@@ -23,13 +22,13 @@ export default function NavClient({ user, products }: { user: { id: string; emai
         </button>
 
         {user ? (
-          <Link href="/account" className="nav-icon" title="Account">
+          <Link href="/account" className="nav-icon hide-on-mobile" title="Account">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
           </Link>
         ) : (
-          <Link href="/login" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
+          <Link href="/login" className="hide-on-mobile" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
@@ -49,8 +48,6 @@ export default function NavClient({ user, products }: { user: { id: string; emai
             </span>
           )}
         </button>
-        
-        <MobileMenu />
       </div>
 
       <CartDrawer />

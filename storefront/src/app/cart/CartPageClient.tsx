@@ -37,20 +37,22 @@ export default function CartPageClient() {
   }
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '64px 40px', display: 'grid', gridTemplateColumns: '1fr 380px', gap: '48px', alignItems: 'start' }}>
+    <div className="cart-layout">
       
       {/* Items List */}
       <div>
-        <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '32px', display: 'grid', gridTemplateColumns: '3fr 1fr 1fr 1fr', gap: '20px' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Product</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Price</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Quantity</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'right' }}>Total</span>
+        <div className="cart-headers" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '32px' }}>
+          <div className="cart-item-grid">
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Product</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Price</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Quantity</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'right' }}>Total</span>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           {items.map(item => (
-            <div key={item.product.id} style={{ display: 'grid', gridTemplateColumns: '3fr 1fr 1fr 1fr', gap: '20px', alignItems: 'center', paddingBottom: '32px', borderBottom: '1px solid var(--border)' }}>
+            <div key={item.product.id} className="cart-item-grid" style={{ alignItems: 'center', paddingBottom: '32px', borderBottom: '1px solid var(--border)' }}>
               {/* Product Info */}
               <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
                 <Link href={`/products/${item.product.slug}`} style={{ width: '100px', height: '125px', background: 'var(--surface2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, textDecoration: 'none' }}>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import NavClient from './NavClient';
 import { getProducts } from '@/lib/products';
+import MobileMenu from './MobileMenu';
 
 export default async function Navigation() {
   const supabase = await createClient();
@@ -18,7 +19,8 @@ export default async function Navigation() {
 
   return (
     <nav>
-      <Link href="/" className="nav-logo" style={{ textDecoration: 'none' }}>
+      <MobileMenu user={user} />
+      <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}>
         James <span>&amp;</span> Sons
       </Link>
       <ul className="nav-links">
