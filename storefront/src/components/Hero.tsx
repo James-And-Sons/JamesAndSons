@@ -58,6 +58,10 @@ export default function Hero() {
       
       <div className="hero-eyebrow">The 2026 Collection</div>
       
+      <div className="font-serif italic text-[#D4AF37] text-[13px] tracking-widest mb-6 opacity-80">
+        &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
+      </div>
+      
       <h1 className="hero-title">
         Illuminate<br />
         <em>with Purpose</em>
