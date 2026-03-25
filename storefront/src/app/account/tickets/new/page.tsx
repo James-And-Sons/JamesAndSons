@@ -92,7 +92,7 @@ export default async function NewTicketPage() {
                   style={{ width: '100%', padding: '16px', background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '15px', outline: 'none' }}
                 >
                   <option value="">-- No specific order --</option>
-                  {orders.map(o => (
+                  {orders.map((o: any) => (
                     <option key={o.id} value={o.id}>Order #{o.orderNumber} - {new Date(o.createdAt).toLocaleDateString()}</option>
                   ))}
                 </select>

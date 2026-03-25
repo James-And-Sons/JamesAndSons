@@ -38,7 +38,7 @@ export default async function CustomersPage() {
                 </td>
               </tr>
             ) : (
-              users.map(user => (
+              users.map((user: any) => (
                 <tr key={user.id} className="hover:bg-surface-muted transition-colors">
                   <td className="py-4 px-6">
                     <div className="font-serif text-[17px] text-primary">{user.firstName} {user.lastName}</div>

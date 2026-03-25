@@ -49,7 +49,7 @@ export default async function RFQsPage() {
                 </td>
               </tr>
             ) : (
-              rfqs.map(rfq => (
+              rfqs.map((rfq: any) => (
                 <tr key={rfq.id} className="border-b border-border hover:bg-[#1a1a1f] transition-colors">
                   <td className="py-4 px-6">
                     <div className="font-mono text-[12px] text-primary mb-1">{rfq.rfqNumber}</div>
@@ -60,7 +60,7 @@ export default async function RFQsPage() {
                     <div className="font-body text-[12px] text-muted mt-1">{rfq.user.email}</div>
                   </td>
                   <td className="py-4 px-6 font-mono text-[12px] text-primary">
-                    {rfq.items.reduce((acc, curr) => acc + curr.quantity, 0)} units
+                    {rfq.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0)} units
                   </td>
                   <td className="py-4 px-6">
                     <span className={`font-mono text-[9px] uppercase tracking-[0.15em] px-2 py-1 rounded-sm border ${

@@ -34,7 +34,7 @@ export default async function BlogListPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '40px' }}>
-              {posts.map(post => (
+              {posts.map((post: any) => (
                 <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
                   <article style={{ cursor: 'pointer' }}>
                     <div style={{ aspectRatio: '16/9', background: 'var(--surface2)', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '20px' }}>

@@ -44,7 +44,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
               <Link href="/collections" className="link-all">View All</Link>
             </div>
             <div className="product-grid">
-              {related.map(p => (
+              {related.map((p: any) => (
                 <Link key={p.id} href={`/products/${p.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                   <div className="product-img">
                     <div className="product-img-bg" />

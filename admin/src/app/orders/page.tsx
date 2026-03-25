@@ -40,7 +40,7 @@ export default async function OrdersPage() {
       type: 'B2B RFQ' as const,
       status: r.status,
     }))
-  ].sort((a, b) => b.date.getTime() - a.date.getTime());
+  ].sort((a: any, b: any) => b.date.getTime() - a.date.getTime());
 
   return (
     <div className="space-y-6">
