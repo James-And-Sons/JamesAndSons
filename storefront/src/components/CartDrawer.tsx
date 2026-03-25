@@ -24,7 +24,7 @@ export default function CartDrawer() {
         />
       )}
 
-      <div style={{
+      <div className="cart-drawer-mobile" style={{
         position: 'fixed', top: 0, right: 0, bottom: 0,
         width: '380px', maxWidth: '100vw', height: '100vh',
         background: 'var(--obsidian)',

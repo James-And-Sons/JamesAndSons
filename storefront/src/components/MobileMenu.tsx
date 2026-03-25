@@ -35,21 +35,8 @@ export default function MobileMenu({ user }: { user: { id: string; email?: strin
       </button>
 
       {isOpen && (
-        <div className="mobile-menu-overlay">
-          <div className="mobile-menu-header">
-            <span className="mobile-menu-title font-serif">James <span>&amp;</span> Sons</span>
-            <button 
-              className="nav-icon mobile-menu-close" 
-              onClick={() => setIsOpen(false)}
-              aria-label="Close Mobile Menu"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-          <ul className="mobile-nav-links font-mono">
+        <div className="mobile-menu-overlay" onClick={() => setIsOpen(false)}>
+          <ul className="mobile-nav-links font-mono" onClick={e => e.stopPropagation()}>
             <li><Link href="/" onClick={() => setIsOpen(false)}>Home</Link></li>
             <li><Link href="/collections" onClick={() => setIsOpen(false)}>Collections</Link></li>
             <li><Link href="/blog" onClick={() => setIsOpen(false)}>Blog</Link></li>

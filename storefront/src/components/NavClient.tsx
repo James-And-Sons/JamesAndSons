@@ -4,13 +4,25 @@ import { useState } from 'react';
 import { useCartStore } from '@/store/cart';
 import CartDrawer from './CartDrawer';
 import SearchModal from './SearchModal';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Product } from '@/lib/utils';
 
 export default function NavClient({ user, products }: { user: { id: string; email?: string } | null, products: Product[] }) {
   const { itemCount, openCart } = useCartStore();
   const [searchOpen, setSearchOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
   const count = itemCount();
+
+  const isPDP = pathname.startsWith('/products/');
+
+  const handleCartClick = () => {
+    if (isPDP) {
+      router.push('/cart');
+    } else {
+      openCart();
+    }
+  };
 
   return (
     <>
@@ -36,7 +48,7 @@ export default function NavClient({ user, products }: { user: { id: string; emai
           </Link>
         )}
 
-        <button className="nav-icon" title={`Cart (${count})`} onClick={openCart} style={{ position: 'relative' }}>
+        <button className="nav-icon" title={`Cart (${count})`} onClick={handleCartClick} style={{ position: 'relative' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
             <line x1="3" y1="6" x2="21" y2="6"/>
