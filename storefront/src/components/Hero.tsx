@@ -56,11 +56,11 @@ export default function Hero() {
         </defs>
       </svg>
       
-      <div className="hero-eyebrow">The 2026 Collection</div>
-      
-      <div className="font-serif italic text-[#D4AF37] text-[13px] tracking-widest mb-6 opacity-80">
+      <div className="font-serif italic text-[#D4AF37] text-[18px] tracking-[0.1em] mb-4 opacity-90 animate-fadeIn">
         &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
       </div>
+
+      <div className="hero-eyebrow">The 2026 Collection</div>
       
       <h1 className="hero-title">
         Illuminate<br />

@@ -10,7 +10,7 @@ export default function Footer() {
             <h3 style={{ color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>
               James <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>&amp;</span> Sons
             </h3>
-            <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '10px', color: 'var(--gold)', opacity: 0.7, marginBottom: '16px', letterSpacing: '0.05em' }}>
+            <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '13px', color: 'var(--gold)', opacity: 0.8, marginBottom: '20px', letterSpacing: '0.05em' }}>
               &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
             </p>
             <p style={{ lineHeight: 1.8 }}>Curators of luxury illumination.<br/>Elevating spaces with heritage craftsmanship.</p>
