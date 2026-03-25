@@ -12,11 +12,6 @@ const getConnectionUrl = () => {
   }
   
   console.log(`DATABASE_URL detected: length=${url.length}, prefix=${url.substring(0, 15)}...`);
-
-  // Ensure sslmode=require is present for Supabase
-  if (!url.includes('sslmode=')) {
-    url += (url.includes('?') ? '&' : '?') + 'sslmode=require';
-  }
   return url;
 };
 
