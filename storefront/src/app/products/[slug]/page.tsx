@@ -30,7 +30,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
   if (!product) return notFound();
 
-  let related = [];
+  let related: any[] = [];
   try {
     related = await prisma.product.findMany({
       where: { categoryId: product.categoryId, id: { not: product.id } },

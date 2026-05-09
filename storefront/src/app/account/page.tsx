@@ -17,7 +17,7 @@ export default async function AccountPage() {
   }
 
   // Fetch from Prisma for B2B status (Source of Truth)
-  let dbUser = null;
+  let dbUser: any = null;
   try {
     dbUser = await prisma.user.findUnique({
       where: { id: user.id },

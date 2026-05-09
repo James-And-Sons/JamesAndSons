@@ -13,7 +13,7 @@ interface BlogPostPageProps {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  let post = null;
+  let post: any = null;
   try {
     post = await prisma.blogPost.findUnique({
       where: { slug },

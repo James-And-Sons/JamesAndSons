@@ -5,7 +5,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function BlogListPage() {
-  let posts = [];
+  let posts: any[] = [];
   try {
     posts = await prisma.blogPost.findMany({
       where: { isDraft: false },
