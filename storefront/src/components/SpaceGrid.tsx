@@ -8,13 +8,21 @@ type Space = {
   _count: { products: number };
 };
 
-export default function SpaceGrid({ spaces }: { spaces: Space[] }) {
-  // If no spaces are passed (fallback), show nothing or a message
-  if (!spaces || spaces.length === 0) return null;
-
+export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
+  // If no spaces are passed (fallback), we will show a placeholder or mock data
+  // instead of returning null, so the section is visible on the home screen.
+  
   // We take up to 5 spaces for the homepage grid
-  const mainSpace = spaces[0];
-  const otherSpaces = spaces.slice(1, 5);
+  const displaySpaces = spaces.length > 0 ? spaces : [
+    { id: '1', name: 'Living Room', slug: 'living-room', image: null, _count: { products: 0 } },
+    { id: '2', name: 'Dining Room', slug: 'dining-room', image: null, _count: { products: 0 } },
+    { id: '3', name: 'Bedroom', slug: 'bedroom', image: null, _count: { products: 0 } },
+    { id: '4', name: 'Office', slug: 'office', image: null, _count: { products: 0 } },
+    { id: '5', name: 'Foyer', slug: 'foyer', image: null, _count: { products: 0 } },
+  ];
+
+  const mainSpace = displaySpaces[0];
+  const otherSpaces = displaySpaces.slice(1, 5);
 
   return (
     <section className="section" id="spaces">
@@ -23,7 +31,7 @@ export default function SpaceGrid({ spaces }: { spaces: Space[] }) {
           <div className="section-label">Curated Environs</div>
           <h2 className="section-title">Shop by <em>Space</em></h2>
         </div>
-        <Link href="/collections" className="link-all">View All Spaces</Link>
+        <Link href="/spaces" className="link-all">View All Spaces</Link>
       </div>
       
       <div className="space-grid">

@@ -1,8 +1,17 @@
 import Navigation from '@/components/Navigation';
 import CheckoutPageClient from './CheckoutPageClient';
 import Script from 'next/script';
+import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login?redirect=/checkout');
+  }
+
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

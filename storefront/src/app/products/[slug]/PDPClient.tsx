@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
+import { useWishlistStore } from '@/store/wishlist';
 
 type Variant = {
   id: string;
@@ -27,8 +28,11 @@ export default function PDPClient({ product, variants }: { product: any; variant
   const activeImages = selectedVariant?.images?.length
     ? selectedVariant.images
     : product.images?.length
-    ? product.images
-    : [];
+      ? product.images
+      : [];
+
+  const { toggleItem, isInWishlist } = useWishlistStore();
+  const isWishlisted = isInWishlist(product.id);
 
   const displayPrice = selectedVariant?.d2cPrice ?? product.d2cPrice;
   const displayMrp = selectedVariant?.mrp ?? product.mrp;
@@ -43,29 +47,30 @@ export default function PDPClient({ product, variants }: { product: any; variant
 
   return (
     <div className="pdp-layout">
-      
+
       {/* LEFT COLUMN: Gallery & Description */}
       <div className="pdp-gallery" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        
+
         {/* Gallery */}
-        <div className="pdp-gallery-container">
+        <div className="pdp-gallery-container" style={{ position: 'sticky', top: '100px' }}>
           {activeImages.length > 0 ? (
-            <div className="pdp-main-image">
+            <div className="pdp-main-image bg-[var(--surface2)] rounded border border-[var(--border)] overflow-hidden flex items-center justify-center max-h-[500px]">
               <img
                 src={activeImages[activeImg]}
                 alt={product.name}
+                className="max-h-full max-w-full object-contain"
               />
             </div>
           ) : (
-            <div className="pdp-main-image pdp-placeholder">
+            <div className="pdp-main-image pdp-placeholder bg-[var(--surface2)] rounded border border-[var(--border)] flex items-center justify-center min-h-[400px]">
               <svg width="120" height="160" viewBox="0 0 100 120" stroke="#C4A05A" fill="none">
-                <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3"/>
-                <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7"/>
-                <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none"/>
+                <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
+                <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
+                <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none" />
               </svg>
             </div>
           )}
-          
+
           {activeImages.length > 1 && (
             <div className="pdp-thumbnails">
               {activeImages.map((img: string, i: number) => (
@@ -81,21 +86,11 @@ export default function PDPClient({ product, variants }: { product: any; variant
           )}
         </div>
 
-        {/* Description */}
-        {product.description && (
-          <div style={{ marginTop: '16px' }}>
-            <div className="section-label" style={{ marginBottom: '14px' }}>About this piece</div>
-            {product.description.split('\n\n').map((para: string, i: number) => (
-              <p key={i} style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.85, marginBottom: '16px' }}>{para}</p>
-            ))}
-          </div>
-        )}
-
       </div>
 
       {/* RIGHT COLUMN: Info & Actions */}
       <div className="pdp-info" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+
         <div>
           <div className="pdp-breadcrumb" style={{ marginBottom: '16px' }}>
             <Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
@@ -107,7 +102,7 @@ export default function PDPClient({ product, variants }: { product: any; variant
 
           <div className="pdp-collection" style={{ marginBottom: '8px' }}>{product.category?.name || 'Collection'}</div>
           <h1 className="pdp-name" style={{ marginBottom: '16px' }}>{product.name}</h1>
-          
+
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {product.isLed && <span className="spec-pill led">✓ LED Engine</span>}
             {product.bisCertification && <span className="spec-pill gst">BIS {product.bisCertification}</span>}
@@ -133,6 +128,18 @@ export default function PDPClient({ product, variants }: { product: any; variant
             GST {product.gstRate}% inclusive · B2B price from {formatPrice(product.b2bPrice)}
           </div>
         </div>
+
+        {/* Description */}
+        {product.description && product.description.trim() !== '' && (
+          <div className="bg-[var(--surface)] border border-[var(--border)] p-6 rounded my-4">
+            <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--gold)] mb-4">Provenance & Craftsmanship</div>
+            <div className="space-y-4">
+              {product.description.split('\n\n').map((para: string, i: number) => (
+                <p key={i} className="font-body text-[14px] text-[var(--text-muted)] leading-relaxed">{para}</p>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Variant Selector */}
         {variants.length > 0 && (
@@ -170,7 +177,7 @@ export default function PDPClient({ product, variants }: { product: any; variant
 
         {/* Action buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px' }}>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Qty</div>
             <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)' }}>
@@ -189,9 +196,10 @@ export default function PDPClient({ product, variants }: { product: any; variant
             )}
           </div>
 
-          <div className="pdp-actions">
+          <div className="pdp-actions" style={{ display: 'flex', gap: '12px' }}>
             <button
               className="btn-primary"
+              style={{ flex: 1 }}
               onClick={handleAddToCart}
               disabled={availableStock === 0}
             >
@@ -199,11 +207,21 @@ export default function PDPClient({ product, variants }: { product: any; variant
             </button>
             <button
               className="btn-outline"
-              onClick={() => router.push(`/rfq?product=${product.slug}`)}
+              style={{ width: '56px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => toggleItem(product)}
+              title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
             >
-              Request Quote
+              <span style={{ fontSize: '20px', color: isWishlisted ? 'var(--gold)' : 'var(--text-dim)' }}>
+                {isWishlisted ? '♥' : '♡'}
+              </span>
             </button>
           </div>
+          <button
+            className="btn-outline w-full"
+            onClick={() => router.push(`/rfq?product=${product.slug}`)}
+          >
+            Request Quote
+          </button>
         </div>
 
         {/* Trust badges */}
@@ -228,19 +246,19 @@ export default function PDPClient({ product, variants }: { product: any; variant
           if (Object.keys(combinedSpecs).length === 0) return null;
 
           return (
-            <div className="pdp-specs">
-              <div className="section-label">Technical Specifications</div>
-              <div className="pdp-specs-table-wrapper">
-                <table>
-                  <tbody>
-                    {Object.entries(combinedSpecs).map(([key, value]) => (
-                      <tr key={key}>
-                        <td className="pdp-spec-key">{key}</td>
-                        <td className="pdp-spec-val">{value as React.ReactNode}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="pdp-specs mt-8">
+              <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-[var(--gold)] mb-6">Technical Specifications</div>
+              <div className="grid grid-cols-1 border-t border-[var(--border)]">
+                {Object.entries(combinedSpecs).map(([key, value]) => (
+                  <div key={key} className="grid grid-cols-3 py-4 border-b border-dashed border-[var(--border)]">
+                    <div className="col-span-1 font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)] flex items-center pr-4">
+                      {key}
+                    </div>
+                    <div className="col-span-2 font-serif text-[15px] text-[var(--cream)] leading-relaxed">
+                      {value as React.ReactNode}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           );

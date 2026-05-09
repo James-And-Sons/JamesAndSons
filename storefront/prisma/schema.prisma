@@ -140,6 +140,11 @@ model Product {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Actual Product Dimensions (for display/filtering)
+  actualHeight     Float?   // in inches
+  actualWidth      Float?   // in inches
+  actualDepth      Float?   // in inches
+
   spaces           Space[]
   variants         ProductVariant[]
   orderItems       OrderItem[]
@@ -161,6 +166,10 @@ model ProductVariant {
   breadth       Float?   // in cm
   height        Float?   // in cm
   
+  actualHeight  Float?   // in inches
+  actualWidth   Float?   // in inches
+  actualDepth   Float?   // in inches
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

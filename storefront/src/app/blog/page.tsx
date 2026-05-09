@@ -5,11 +5,16 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function BlogListPage() {
-  const posts = await prisma.blogPost.findMany({
-    where: { isDraft: false },
-    orderBy: { createdAt: 'desc' },
-    include: { author: true }
-  });
+  let posts = [];
+  try {
+    posts = await prisma.blogPost.findMany({
+      where: { isDraft: false },
+      orderBy: { createdAt: 'desc' },
+      include: { author: true }
+    });
+  } catch (error) {
+    console.error('Error fetching blog posts:', error);
+  }
 
   return (
     <>

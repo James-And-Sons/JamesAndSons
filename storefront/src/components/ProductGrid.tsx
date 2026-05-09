@@ -5,9 +5,27 @@ import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts }: { initialFilter?: string, initialProducts: Product[] }) {
-  const [activeFilters, setActiveFilters] = useState<string[]>(initialFilter && initialFilter !== 'All' ? [initialFilter] : []);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const { addItem } = useCartStore();
+
+  const uniqueCollections = Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort();
+  const uniqueStyles = Array.from(new Set(initialProducts.flatMap(p => p.style || []))).filter(Boolean).sort();
+  const uniqueMaterials = Array.from(new Set(initialProducts.flatMap(p => p.materialAndFinish || []))).filter(Boolean).sort();
+  const uniqueSpaces = Array.from(new Set(initialProducts.flatMap(p => p.spaces || []))).filter(Boolean).sort();
+
+  useEffect(() => {
+    if (initialFilter && initialFilter !== 'All') {
+      const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+      const allPossibleFilters = [...uniqueCollections, ...uniqueSpaces, ...uniqueStyles, ...uniqueMaterials, 'LED Certified'];
+      const matchedFilter = allPossibleFilters.find(f => slugify(f) === initialFilter || f.toLowerCase() === initialFilter.toLowerCase());
+      if (matchedFilter) {
+        setActiveFilters([matchedFilter]);
+      } else if (initialFilter) {
+        setActiveFilters([initialFilter]);
+      }
+    }
+  }, [initialFilter, initialProducts]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -23,26 +41,25 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
   }, []);
 
   const toggleFilter = (filter: string) => {
-    setActiveFilters(prev => 
+    setActiveFilters(prev =>
       prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
     );
   };
 
-  const uniqueCollections = Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort();
-  const uniqueStyles = Array.from(new Set(initialProducts.flatMap(p => p.style || []))).filter(Boolean).sort();
-  const uniqueMaterials = Array.from(new Set(initialProducts.flatMap(p => p.materialAndFinish || []))).filter(Boolean).sort();
-  const uniqueSpaces = Array.from(new Set(initialProducts.flatMap(p => p.spaces || []))).filter(Boolean).sort();
-  
   const filters = ['All', ...uniqueCollections, ...uniqueSpaces, ...uniqueStyles, ...uniqueMaterials, 'LED Certified'];
-  
+
   const products = activeFilters.length === 0 ? initialProducts : initialProducts.filter(p =>
-    activeFilters.some(filter => 
-      (p.collection === filter) ||
-      (p.spaces && p.spaces.includes(filter)) ||
-      (p.style && p.style.includes(filter)) ||
-      (p.materialAndFinish && p.materialAndFinish.includes(filter)) ||
-      (filter === 'LED Certified' && p.isLed)
-    )
+    activeFilters.some(filter => {
+      const lowerFilter = filter.toLowerCase();
+      const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+      const filterSlug = slugify(filter);
+
+      return (p.collection && (p.collection.toLowerCase() === lowerFilter || slugify(p.collection) === filterSlug)) ||
+             (p.spaces && p.spaces.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+             (p.style && p.style.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+             (p.materialAndFinish && p.materialAndFinish.some(m => m.toLowerCase() === lowerFilter || slugify(m) === filterSlug)) ||
+             (lowerFilter === 'led certified' && p.isLed);
+    })
   );
 
   return (
@@ -51,9 +68,9 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
         <div>
           <div className="section-label">{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
           <h2 className="section-title">
-            {activeFilters.length === 0 ? 'All Collections' : 
-             activeFilters.length === 1 ? `The ${activeFilters[0]} Collection` :
-             'Filtered Collections'}
+            {activeFilters.length === 0 ? 'All Collections' :
+              activeFilters.length === 1 ? `The ${activeFilters[0]} Collection` :
+                'Filtered Collections'}
           </h2>
         </div>
         <Link href="/collections" className="link-all">View All {products.length} Products</Link>
@@ -116,7 +133,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
           }}>
             {uniqueCollections.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {uniqueCollections.map(c => (
                     <button key={c} onClick={() => toggleFilter(c)} className={`filter-dropdown-btn ${activeFilters.includes(c) ? 'active' : ''}`}>{c}</button>
@@ -127,7 +144,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             
             {uniqueSpaces.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {uniqueSpaces.map(s => (
                     <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
@@ -138,7 +155,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
             {uniqueStyles.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {uniqueStyles.map(s => (
                     <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
@@ -148,7 +165,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             )}
 
             <div>
-              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Materials & Features</h4>
+              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Materials & Features</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {uniqueMaterials.map(m => (
                   <button key={m} onClick={() => toggleFilter(m)} className={`filter-dropdown-btn ${activeFilters.includes(m) ? 'active' : ''}`}>{m}</button>
@@ -176,19 +193,19 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
             <div className="product-img" style={{ position: 'relative' }}>
               <div className="product-img-bg" />
-              
+
               {/* Placeholder SVG (always in background if there's an image, or as main if not) */}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 0 }}>
                 <svg className="prod-chandelier-svg" width="120" height="150" viewBox="0 0 100 120" stroke="#C4A05A" fill="none" style={{ opacity: 0.3 }}>
-                  <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3"/>
-                  <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7"/>
-                  <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none"/>
+                  <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
+                  <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
+                  <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none" />
                 </svg>
               </div>
 
               {product.images && product.images.length > 0 && (
-                <img 
-                  src={product.images[0]} 
+                <img
+                  src={product.images[0]}
                   alt={product.name}
                   className="prod-actual-img"
                   style={{
@@ -205,8 +222,8 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                     const target = e.target as HTMLImageElement;
                     if (target) target.style.opacity = '1';
                   }}
-                  // Start at opacity 0 to show the placeholder
-                  // Note: In some browsers/states this might flicker, but it's the standard way
+                // Start at opacity 0 to show the placeholder
+                // Note: In some browsers/states this might flicker, but it's the standard way
                 />
               )}
             </div>

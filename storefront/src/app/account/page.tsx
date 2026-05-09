@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import ThemeToggle from '@/components/ThemeToggle'
 import { prisma } from '@/lib/prisma'
+import AccountWishlistClient from './AccountWishlistClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,10 +17,15 @@ export default async function AccountPage() {
   }
 
   // Fetch from Prisma for B2B status (Source of Truth)
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: { company: true }
-  })
+  let dbUser = null;
+  try {
+    dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { company: true }
+    })
+  } catch (error) {
+    console.error('Error fetching dbUser in AccountPage:', error);
+  }
 
   const meta = user.user_metadata || {}
   
@@ -175,15 +181,7 @@ export default async function AccountPage() {
             )}
 
             <ContentPanel label="Saved Items">
-              <EmptyState
-                svgPath="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-                title="Wishlist is empty"
-                body="Save pieces you love to revisit or share with your interior designer."
-              >
-                <Link href="/collections" className="btn-outline" style={{ display: 'inline-block', padding: '12px 32px', textDecoration: 'none' }}>
-                  Explore Designs
-                </Link>
-              </EmptyState>
+              <AccountWishlistClient />
             </ContentPanel>
 
           </div>

@@ -20,7 +20,7 @@ export default function Footer() {
             <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Shop</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               <li><Link href="/collections" className="footer-link">Collections</Link></li>
-              <li><Link href="/#spaces" className="footer-link">Spaces</Link></li>
+              <li><Link href="/spaces" className="footer-link">Spaces</Link></li>
               <li><Link href="/b2b" className="footer-link">B2B Portal</Link></li>
             </ul>
           </div>
@@ -37,8 +37,8 @@ export default function Footer() {
           <div>
             <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Legal</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li><Link href="/terms-and-conditions" className="footer-link">Terms &amp; Conditions</Link></li>
-              <li><Link href="/privacy-policy" className="footer-link">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="footer-link">Terms &amp; Conditions</Link></li>
+              <li><Link href="/privacy" className="footer-link">Privacy Policy</Link></li>
               <li><Link href="/shipping-policy" className="footer-link">Shipping Policy</Link></li>
               <li><Link href="/returns" className="footer-link">Returns</Link></li>
             </ul>

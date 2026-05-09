@@ -30,10 +30,15 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
   if (!product) return notFound();
 
-  const related = await prisma.product.findMany({
-    where: { categoryId: product.categoryId, id: { not: product.id } },
-    take: 4,
-  });
+  let related = [];
+  try {
+    related = await prisma.product.findMany({
+      where: { categoryId: product.categoryId, id: { not: product.id } },
+      take: 4,
+    });
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+  }
 
   return (
     <>

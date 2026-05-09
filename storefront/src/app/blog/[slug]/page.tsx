@@ -13,11 +13,15 @@ interface BlogPostPageProps {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-
-  const post = await prisma.blogPost.findUnique({
-    where: { slug },
-    include: { author: true }
-  });
+  let post = null;
+  try {
+    post = await prisma.blogPost.findUnique({
+      where: { slug },
+      include: { author: true }
+    });
+  } catch (error) {
+    console.error(`Error fetching blog post ${slug}:`, error);
+  }
 
   if (!post || post.isDraft) {
     notFound();

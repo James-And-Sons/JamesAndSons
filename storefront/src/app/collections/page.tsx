@@ -8,7 +8,7 @@ export default async function CollectionsPage(props: {
   const searchParams = await props.searchParams;
   const initialProducts = await getProducts();
   return (
-    <main className="pt-24 min-h-screen">
+    <main className="pt-12 min-h-screen">
       <Navigation />
       <ProductGrid initialFilter={searchParams.space} initialProducts={initialProducts} />
     </main>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import NavClient from './NavClient';
 import { getProducts } from '@/lib/products';
-import MobileMenu from './MobileMenu';
+import MobileBottomNav from './MobileBottomNav';
 
 export default async function Navigation() {
   const supabase = await createClient();
@@ -18,19 +18,21 @@ export default async function Navigation() {
   }
 
   return (
-    <nav className="main-nav">
-      <MobileMenu user={user} />
-      <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}>
-        James <span>&amp;</span> Sons
-      </Link>
-      <ul className="nav-links">
-        <li><Link href="/">Home</Link></li>
-        <li><Link href="/collections">Collections</Link></li>
-        <li><Link href="/blog">Blog</Link></li>
-        <li><a href="/#spaces">Spaces</a></li>
-        <li><Link href="/b2b">B2B Portal</Link></li>
-      </ul>
-      <NavClient user={user} products={products} />
-    </nav>
+    <>
+      <nav className="main-nav">
+        <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          James <span>&amp;</span> Sons
+        </Link>
+        <ul className="nav-links">
+          <li><Link href="/">Home</Link></li>
+          <li><Link href="/collections">Collections</Link></li>
+          <li><Link href="/blog">Blog</Link></li>
+          <li><Link href="/spaces">Spaces</Link></li>
+          <li><Link href="/b2b">B2B Portal</Link></li>
+        </ul>
+        <NavClient user={user} products={products} />
+      </nav>
+      <MobileBottomNav user={user} />
+    </>
   );
 }
