@@ -8,7 +8,7 @@ export const revalidate = 3600; // Cache for 1 hour
 export default async function SpacesPage() {
   const dbSpaces = await getSpaces();
   
-  // Fallback data for alignment testing/visibility when DB is down
+  // Fallback data for visibility when DB is down
   const spaces = dbSpaces.length > 0 ? dbSpaces : [
     { id: '1', name: 'Living Room', slug: 'living-room', image: null, _count: { products: 12 }, description: 'Grand lighting for gathering spaces and intimate evenings.' },
     { id: '2', name: 'Dining Room', slug: 'dining-room', image: null, _count: { products: 8 }, description: 'Elegant chandeliers designed to illuminate shared meals.' },
@@ -21,7 +21,7 @@ export default async function SpacesPage() {
   return (
     <main className="min-h-screen bg-[var(--obsidian)] text-[var(--text)] pt-12">
       <Navigation />
-      <div className="w-full max-w-[1200px] mx-auto px-6 md:px-12 py-16">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-16">
         <div className="flex flex-col items-center text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="pb-4 font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] mb-4">
             Curated Environments
@@ -34,12 +34,12 @@ export default async function SpacesPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 justify-items-center">
           {spaces.map((space, index) => (
             <Link
               key={space.id}
               href={`/collections?space=${space.slug}`}
-              className="group relative block w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)] max-w-[400px] aspect-[4/5] overflow-hidden bg-[var(--surface)] animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
+              className="group relative block w-full max-w-[400px] aspect-[4/5] overflow-hidden bg-[var(--surface)] animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-both"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {space.image ? (
