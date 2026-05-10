@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { findOrderForReturnAction, createReturnRequestAction } from './actions';
 import { formatPrice } from '@/lib/utils';
-import Navigation from '@/components/Navigation';
 
 export default function ReturnsPortalClient() {
   const [step, setStep] = useState(1);
@@ -45,7 +44,6 @@ export default function ReturnsPortalClient() {
 
   return (
     <>
-      <Navigation />
       <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '80px 20px' }}>
           

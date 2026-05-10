@@ -1,4 +1,5 @@
 import ReturnsPortalClient from './ReturnsPortalClient';
+import Navigation from '@/components/Navigation';
 
 export const metadata = {
   title: 'Returns Portal | James & Sons',
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function ReturnsPage() {
-  return <ReturnsPortalClient />;
+  return (
+    <>
+      <Navigation />
+      <ReturnsPortalClient />
+    </>
+  );
 }
