@@ -29,7 +29,8 @@ export type Product = {
   category?: { name: string; slug: string };
 };
 
-export function formatPrice(n: number): string {
+export function formatPrice(n: number | null | undefined): string {
+  if (n === null || n === undefined) return '₹0';
   if (n >= 100000) return `₹${(n / 100000).toFixed(n % 100000 === 0 ? 0 : 1)}L`;
   return `₹${n.toLocaleString('en-IN')}`;
 }
