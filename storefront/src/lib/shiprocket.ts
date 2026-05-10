@@ -334,3 +334,34 @@ export async function requestPickup(shipmentIds: number[]) {
   }
 }
 
+/**
+ * Creates a Shiprocket Reverse (Return) Order
+ */
+export async function createShiprocketReturnOrder(params: any) {
+  const token = await getShiprocketToken();
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch('https://apiv2.shiprocket.in/v1/external/orders/create/return', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` 
+      },
+      body: JSON.stringify(params),
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (data.status_code === 1 || data.order_id) {
+      return { success: true, order_id: data.order_id, shipment_id: data.shipment_id };
+    } else {
+      console.error('Shiprocket Return Order Failed:', data);
+      return { success: false, message: data.message || 'Creation failed' };
+    }
+  } catch (err) {
+    console.error('createShiprocketReturnOrder Error:', err);
+    return { success: false, message: 'API Call Failed' };
+  }
+}
+
