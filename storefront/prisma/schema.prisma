@@ -180,6 +180,7 @@ model ProductVariant {
 model Order {
   id             String      @id @default(uuid())
   orderNumber    String      @unique
+  invoiceNumber  String?     @unique
   userId         String
   status         OrderStatus @default(PENDING)
   
@@ -337,4 +338,11 @@ model Space {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model InvoiceCounter {
+  id        Int      @id @default(1)
+  year      String   // e.g. "2026-27"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

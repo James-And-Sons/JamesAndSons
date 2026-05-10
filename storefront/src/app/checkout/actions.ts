@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { sendInvoiceEmail } from '@/lib/email';
+import { generateSequentialInvoiceNumber } from '@/lib/invoice';
 
 type CartItem = {
   product: {
@@ -139,12 +140,16 @@ export async function verifyPayment(
       throw new Error('Invalid payment signature');
     }
 
+    // Generate Sequential Invoice Number
+    const invoiceNumber = await generateSequentialInvoiceNumber();
+
     await prisma.order.update({
       where: { id: internalOrderId },
       data: {
         status: 'PAID',
         razorpayPaymentId,
         razorpaySignature,
+        invoiceNumber, // Save the sequential invoice number
       },
     });
 

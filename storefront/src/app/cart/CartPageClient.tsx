@@ -5,16 +5,44 @@ import { formatPrice } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { useWishlistStore } from '@/store/wishlist';
 import { useRouter } from 'next/navigation';
+import { checkPincode, getSavedPincode } from '@/app/products/actions';
 
 export default function CartPageClient() {
   const router = useRouter();
   const { items, removeItem, updateQty, total } = useCartStore();
   const { toggleItem, isInWishlist } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
+  const [pincode, setPincode] = useState('');
+  const [shippingRes, setShippingRes] = useState<any>(null);
+  const [checkingPincode, setCheckingPincode] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const loadPincode = async () => {
+      const saved = await getSavedPincode();
+      if (saved) {
+        setPincode(saved);
+        // We'll trigger the check once weight is calculated
+      }
+    };
+    loadPincode();
   }, []);
+
+  const totalWeight = items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0);
+
+  const handleCheckPincode = async (code: string) => {
+    if (code.length !== 6) return;
+    setCheckingPincode(true);
+    const res = await checkPincode(code, totalWeight, subtotal);
+    setShippingRes(res);
+    setCheckingPincode(false);
+  };
+
+  useEffect(() => {
+    if (mounted && pincode.length === 6) {
+      handleCheckPincode(pincode);
+    }
+  }, [mounted, pincode.length]); // Re-check if pincode is prefilled
 
   const handleCheckout = () => {
     router.push('/checkout');
@@ -24,7 +52,7 @@ export default function CartPageClient() {
 
   const subtotal = total();
   const gst = subtotal * 0.05;
-  const shipping = subtotal > 50000 ? 0 : 2500;
+  const shipping = shippingRes?.success ? shippingRes.rate : (subtotal > 50000 ? 0 : 2500);
   const grandTotal = subtotal + gst + shipping;
 
   if (items.length === 0) {
@@ -178,6 +206,56 @@ export default function CartPageClient() {
           <button onClick={handleCheckout} className="btn-primary w-full py-4 text-[12px] tracking-[0.2em] hover:bg-[var(--gold-light)] transition-colors group relative overflow-hidden">
             <span className="relative z-10">Secure Checkout</span>
           </button>
+
+          {/* Pincode Estimator */}
+          <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>
+              Check Delivery Estimate
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                placeholder="Enter Pincode" 
+                maxLength={6} 
+                value={pincode}
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setPincode(val);
+                  if (val.length === 6) handleCheckPincode(val);
+                  else setShippingRes(null);
+                }}
+                style={{ flex: 1, background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none' }}
+              />
+              <button 
+                onClick={() => handleCheckPincode(pincode)}
+                disabled={pincode.length !== 6 || checkingPincode}
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid var(--border)', 
+                  color: 'var(--text)', 
+                  padding: '0 15px', 
+                  fontSize: '10px', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.1em',
+                  cursor: pincode.length === 6 ? 'pointer' : 'not-allowed',
+                  opacity: pincode.length === 6 ? 1 : 0.5
+                }}
+              >
+                {checkingPincode ? '...' : 'Check'}
+              </button>
+            </div>
+            
+            {shippingRes && (
+              <div style={{ marginTop: '14px', animation: 'fadeIn 0.3s ease' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+                  <span>✓</span>
+                  <span>Deliver to {shippingRes.city}</span>
+                </div>
+                <div style={{ marginTop: '4px', fontFamily: 'var(--font-serif)', fontSize: '13px', color: 'var(--cream)' }}>
+                  Arriving by <span style={{ color: 'var(--gold-light)' }}>{shippingRes.etd}</span>
+                </div>
+              </div>
+            )}
+          </div>
           
           {/* Trust Badge */}
           <div className="mt-8 text-center border border-[var(--border)] p-4 bg-[var(--obsidian)]">
