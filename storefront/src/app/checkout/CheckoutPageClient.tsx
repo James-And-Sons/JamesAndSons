@@ -5,7 +5,11 @@ import { formatPrice } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction } from './actions';
 
-export default function CheckoutPageInner() {
+export default function CheckoutPageInner({ 
+  initialData 
+}: { 
+  initialData?: { name: string; email: string; phone: string } 
+}) {
   const { items, total, clearCart } = useCartStore();
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -13,7 +17,9 @@ export default function CheckoutPageInner() {
   const [orderNumber, setOrderNumber] = useState('');
   const [orderError, setOrderError] = useState('');
   const [form, setForm] = useState({
-    name: '', email: '', phone: '',
+    name: initialData?.name || '', 
+    email: initialData?.email || '', 
+    phone: initialData?.phone || '',
     address: '', city: '', state: '', pincode: '',
     paymentMethod: 'upi',
   });

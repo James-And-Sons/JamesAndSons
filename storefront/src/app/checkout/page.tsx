@@ -3,6 +3,7 @@ import CheckoutPageClient from './CheckoutPageClient';
 import Script from 'next/script';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 
 export default async function CheckoutPage() {
   const supabase = await createClient();
@@ -11,6 +12,17 @@ export default async function CheckoutPage() {
   if (!user) {
     redirect('/login?redirect=/checkout');
   }
+
+  // Fetch user details from Prisma for prefilling
+  const dbUser = await prisma.user.findUnique({
+    where: { email: user.email! }
+  });
+
+  const initialData = {
+    name: dbUser ? `${dbUser.firstName} ${dbUser.lastName}`.trim() : '',
+    email: dbUser?.email || user.email || '',
+    phone: dbUser?.phone || '',
+  };
 
   return (
     <>
@@ -23,7 +35,7 @@ export default async function CheckoutPage() {
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '36px', fontWeight: 300, color: 'var(--cream)', marginTop: '6px' }}>Complete Your Order</h1>
           </div>
         </div>
-        <CheckoutPageClient />
+        <CheckoutPageClient initialData={initialData} />
       </main>
     </>
   );
