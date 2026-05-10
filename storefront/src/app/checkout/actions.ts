@@ -135,6 +135,12 @@ export async function createOrder(
       });
     }
 
+    // 4. Mark Cart as Recovered
+    await prisma.abandonedCart.update({
+      where: { email: form.email },
+      data: { recovered: true }
+    }).catch(() => null); // Ignore if no record exists
+
     return { 
       success: true, 
       orderNumber: order.orderNumber, 
