@@ -194,7 +194,7 @@ export default function CartPageClient() {
             <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
               <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Shipping</span>
               <span className={`font-serif text-[18px] ${shipping === 0 ? 'text-[var(--gold)]' : 'text-[var(--cream)]'}`}>
-                {shipping === 0 ? (isShippingCalculated || subtotal > 50000 ? 'Complimentary' : 'Calculated at next step') : formatPrice(shipping!)}
+                {shipping === 0 ? (isShippingCalculated || subtotal > 50000 ? 'Complimentary' : 'Calculated at next step') : (shipping === null ? 'Calculated at next step' : formatPrice(shipping))}
               </span>
             </div>
           </div>
