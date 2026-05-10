@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/recovery/cron",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/marketing/thank-you",
+      "schedule": "0 10 * * *"
+    }
+  ]
+}
