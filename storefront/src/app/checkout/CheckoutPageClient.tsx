@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cart';
 import { formatPrice } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction, generatePaymentLinkAction, syncAbandonedCartAction } from './actions';
+import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction, generatePaymentLinkAction, syncAbandonedCartAction, getUserAddressesAction } from './actions';
 
 export default function CheckoutPageInner({ 
   initialData 
@@ -34,6 +34,25 @@ export default function CheckoutPageInner({
   const [failedOrderId, setFailedOrderId] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadAddresses = async () => {
+      const addresses = await getUserAddressesAction();
+      setSavedAddresses(addresses);
+    };
+    loadAddresses();
+  }, []);
+
+  const selectSavedAddress = (addr: any) => {
+    setForm(prev => ({
+      ...prev,
+      address: addr.street,
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode
+    }));
+  };
   const [shipping, setShipping] = useState<number | null>(null);
   const [shippingCalculated, setShippingCalculated] = useState(false);
   const [etd, setEtd] = useState('');
@@ -253,6 +272,34 @@ export default function CheckoutPageInner({
         {step === 1 && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '28px' }}>
             <div className="section-label" style={{ marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--border)' }}>Delivery Details</div>
+            
+            {savedAddresses.length > 0 && (
+              <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border)' }}>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '12px' }}>Choose from Saved Addresses</label>
+                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+                  {savedAddresses.map(addr => (
+                    <button 
+                      key={addr.id}
+                      onClick={() => selectSavedAddress(addr)}
+                      style={{ 
+                        flex: '0 0 200px', 
+                        textAlign: 'left', 
+                        padding: '14px', 
+                        background: form.address === addr.street ? 'rgba(196,160,90,0.1)' : 'var(--obsidian)', 
+                        border: `1px solid ${form.address === addr.street ? 'var(--gold)' : 'var(--border)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--gold)', marginBottom: '4px' }}>{addr.name}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--cream)', lineHeight: 1.4 }}>{addr.street}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '10px', color: 'var(--text-muted)' }}>{addr.city}, {addr.state} - {addr.pincode}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="form-grid">
               {[
                 { key: 'name', label: 'Full Name' },

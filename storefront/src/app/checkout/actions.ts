@@ -76,6 +76,7 @@ export async function createOrder(
         taxAmount: gst,
         shippingAmount: shipping,
         shippingAddress: `${cleanAddress}, ${form.city.trim()}, ${form.state.trim()} - ${form.pincode.trim()}`,
+        shippingPhone: form.phone.trim(),
         shippingCity: form.city.trim(),
         shippingState: form.state.trim(),
         shippingPincode: form.pincode.trim(),
@@ -101,6 +102,29 @@ export async function createOrder(
       where: { id: order.id },
       data: { razorpayOrderId: rpOrder.id },
     });
+
+    // Save Address to User Profile if it's a new one
+    const existingAddress = await prisma.userAddress.findFirst({
+      where: {
+        userId: user.id,
+        street: form.address,
+        pincode: form.pincode
+      }
+    });
+
+    if (!existingAddress) {
+      await prisma.userAddress.create({
+        data: {
+          userId: user.id,
+          name: 'Home', // Default name
+          street: form.address,
+          city: form.city,
+          state: form.state,
+          pincode: form.pincode,
+          isDefault: true
+        }
+      });
+    }
 
     return { 
       success: true, 
@@ -179,7 +203,7 @@ export async function verifyPayment(
           billing_state: fullOrder.shippingState || '',
           billing_country: "India",
           billing_email: fullOrder.user.email.trim().toLowerCase(),
-          billing_phone: fullOrder.user.phone?.replace(/\D/g, '').slice(-10) || '',
+          billing_phone: fullOrder.shippingPhone?.replace(/\D/g, '').slice(-10) || '9999999999',
           shipping_is_billing: true,
           order_items: fullOrder.items.map(item => ({
             name: item.product.name,
@@ -331,4 +355,27 @@ export async function generateDiscountCode(percentage: number = 5) {
   });
 
   return discount.code;
+}
+
+export async function getUserAddressesAction() {
+  const session = await getSession();
+  if (!session?.user?.id) return [];
+
+  return await prisma.userAddress.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function saveUserAddressAction(address: Omit<UserAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {
+  const session = await getSession();
+  if (!session?.user?.id) return { success: false };
+
+  await prisma.userAddress.create({
+    data: {
+      ...address,
+      userId: session.user.id
+    }
+  });
+  return { success: true };
 }
