@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma';
 import { sendInvoiceEmail } from '@/lib/email';
 import { generateSequentialInvoiceNumber } from '@/lib/invoice';
+import { createClient } from '@/utils/supabase/server';
+import { UserAddress } from '@prisma/client';
 
 type CartItem = {
   product: {
@@ -364,23 +366,25 @@ export async function generateDiscountCode(percentage: number = 5) {
 }
 
 export async function getUserAddressesAction() {
-  const session = await getSession();
-  if (!session?.user?.id) return [];
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) return [];
 
   return await prisma.userAddress.findMany({
-    where: { userId: session.user.id },
+    where: { userId: user.id },
     orderBy: { createdAt: 'desc' }
   });
 }
 
 export async function saveUserAddressAction(address: Omit<UserAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {
-  const session = await getSession();
-  if (!session?.user?.id) return { success: false };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) return { success: false };
 
   await prisma.userAddress.create({
     data: {
       ...address,
-      userId: session.user.id
+      userId: user.id
     }
   });
   return { success: true };
