@@ -195,6 +195,7 @@ model Order {
   billingAddress  String
   gstin           String?
   companyName     String?
+  discountCode    DiscountCode?
   
   trackingNumber String?
   awbNumber      String?     // For logistics (Shiprocket/Delhivery)
@@ -345,4 +346,26 @@ model InvoiceCounter {
   year      String   // e.g. "2026-27"
   count     Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+model AbandonedCart {
+  id          String   @id @default(uuid())
+  email       String
+  phone       String?
+  cartData    Json     // Items and amounts
+  step        Int      @default(1)
+  lastSeen    DateTime @default(now())
+  recovered   Boolean  @default(false)
+  nudgeSent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model DiscountCode {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  percentage  Float
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  orderId     String?  @unique
+  order       Order?   @relation(fields: [orderId], references: [id])
 }

@@ -1,7 +1,9 @@
 import { Resend } from 'resend';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { calculateTaxBreakdown } from './invoice';
+import { prisma } from './prisma';
+import { generateDiscountCode } from '@/app/checkout/actions';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -82,7 +84,7 @@ export async function sendInvoiceEmail(order: any) {
     `INR ${item.total.toLocaleString('en-IN')}`
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: currentY,
     head: [['Description & HSN', 'Qty', 'Unit Price', 'Total']],
     body: tableData,
@@ -170,5 +172,45 @@ export async function sendInvoiceEmail(order: any) {
     }
   } catch (err) {
     console.error('Unexpected error sending invoice email:', err);
+  }
+}
+
+export async function sendAbandonedCartNudge(email: string, cartData: any) {
+  if (!process.env.RESEND_API_KEY) return;
+
+  const discountCode = await generateDiscountCode(5); // Generate a 5% discount code
+
+  try {
+    await resend.emails.send({
+      from: 'James & Sons < concierge@jamesandsons.in >',
+      to: [email],
+      subject: 'A Masterpiece Awaits You (and a 5% gift)',
+      html: `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+          <h1 style="font-weight: 300; color: #C4A05A; text-transform: uppercase; letter-spacing: 0.1em;">Your Selection is Reserved</h1>
+          <p>We noticed you left something exquisite in your bag. At James & Sons, we believe every piece find its perfect home.</p>
+          <p>To assist you in finalizing your choice, please enjoy a **5% complimentary reduction** on your entire order.</p>
+          
+          <div style="background: #fdfaf4; padding: 30px; border: 1px solid #f3e6cd; text-align: center; margin: 30px 0;">
+            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #8c7341; margin-bottom: 10px;">Use Code at Checkout</div>
+            <div style="font-size: 24px; font-weight: 600; color: #111; letter-spacing: 0.1em;">${discountCode}</div>
+            <div style="font-size: 11px; color: #999; margin-top: 10px;">Valid for 7 days only</div>
+          </div>
+
+          <a href="https://jamesandsons.in/checkout" style="display: block; background: #1a1a1a; color: #fff; text-align: center; padding: 18px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.2em; font-size: 12px;">Complete Your Order</a>
+          
+          <p style="margin-top: 40px; font-size: 12px; color: #999; text-align: center;">Our concierge team is available at vishal@jamesandsons.in for any assistance.</p>
+        </div>
+      `
+    });
+
+    await prisma.abandonedCart.update({
+      where: { id: email },
+      data: { nudgeSent: true }
+    });
+
+    console.log(`Abandoned cart nudge sent to ${email}`);
+  } catch (error) {
+    console.error('Failed to send abandoned cart nudge:', error);
   }
 }

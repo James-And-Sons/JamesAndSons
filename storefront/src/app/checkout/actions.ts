@@ -31,7 +31,7 @@ type CheckoutForm = {
   companyName?: string;
 };
 
-import { createRazorpayOrder } from '@/lib/razorpay';
+import { createRazorpayOrder, createPaymentLink } from '@/lib/razorpay';
 
 export async function createOrder(
   form: CheckoutForm,
@@ -261,4 +261,74 @@ export async function calculateShippingRateAction(pincode: string, weightKg: num
     console.error('Shipping rate action error:', error);
     return null;
   }
+}
+
+export async function generatePaymentLinkAction(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true }
+    });
+
+    if (!order) throw new Error('Order not found');
+
+    const link = await createPaymentLink(
+      order.totalAmount * 100,
+      order.orderNumber,
+      {
+        name: `${order.user.firstName} ${order.user.lastName}`,
+        email: order.user.email,
+        phone: order.user.phone || ''
+      }
+    );
+
+    return { success: true, url: link.short_url };
+  } catch (error: any) {
+    console.error('Payment link generation failed:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function syncAbandonedCartAction(email: string, phone: string, cartItems: any, step: number) {
+  try {
+    if (!email || email.length < 5) return;
+
+    await prisma.abandonedCart.upsert({
+      where: { id: email }, // Using email as ID for simple upserting per user
+      update: {
+        phone,
+        cartData: cartItems,
+        step,
+        lastSeen: new Date(),
+        recovered: false
+      },
+      create: {
+        id: email,
+        email,
+        phone,
+        cartData: cartItems,
+        step
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Abandoned cart sync failed:', error);
+    return { success: false };
+  }
+}
+
+export async function generateDiscountCode(percentage: number = 5) {
+  const code = `JNS${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+
+  const discount = await prisma.discountCode.create({
+    data: {
+      code,
+      percentage,
+      expiresAt
+    }
+  });
+
+  return discount.code;
 }

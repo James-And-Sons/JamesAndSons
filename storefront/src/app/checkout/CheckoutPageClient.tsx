@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cart';
 import { formatPrice } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction } from './actions';
+import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction, generatePaymentLinkAction, syncAbandonedCartAction } from './actions';
 
 export default function CheckoutPageInner({ 
   initialData 
@@ -30,9 +30,24 @@ export default function CheckoutPageInner({
   const gst = subtotal * 0.05;
   const totalWeight = items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0);
 
+  const [paymentFailed, setPaymentFailed] = useState(false);
+  const [failedOrderId, setFailedOrderId] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [shipping, setShipping] = useState<number | null>(null);
   const [shippingCalculated, setShippingCalculated] = useState(false);
   const [etd, setEtd] = useState('');
+
+  // Abandoned Cart Sync (Debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (form.email && form.email.includes('@')) {
+        syncAbandonedCartAction(form.email, form.phone, items, step);
+      }
+    }, 2000); // Sync after 2 seconds of inactivity
+    return () => clearTimeout(timer);
+  }, [form.email, form.phone, step]);
+
   const grandTotal = subtotal + gst + (shipping || 0);
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
@@ -119,6 +134,8 @@ export default function CheckoutPageInner({
         modal: {
           ondismiss: function() {
             setOrderError('Payment cancelled.');
+            setFailedOrderId(result.orderId || null);
+            setPaymentFailed(true);
             setLoading(false);
           }
         }
@@ -127,6 +144,8 @@ export default function CheckoutPageInner({
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
         setOrderError(response.error.description || 'Payment Failed');
+        setFailedOrderId(result.orderId || null);
+        setPaymentFailed(true);
         setLoading(false);
       });
       rzp.open();
@@ -139,10 +158,10 @@ export default function CheckoutPageInner({
 
   if (step === 3) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: '520px', margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', padding: '80px 20px', maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: '64px', color: 'var(--gold)', marginBottom: '16px', lineHeight: 1 }}>✓</div>
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '36px', fontWeight: 300, color: 'var(--cream)', marginBottom: '12px' }}>Order Confirmed</h2>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '8px' }}>
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 300, color: 'var(--cream)', marginBottom: '12px' }}>Order Confirmed</h2>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '8px' }}>
           Your order <strong style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-mono)' }}>{orderNumber}</strong> has been placed successfully.
         </p>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '32px' }}>
@@ -151,6 +170,54 @@ export default function CheckoutPageInner({
         <div style={{ display: 'flex', gap: '12px', rowGap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '24px' }}>
           <a href="/account" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 28px', whiteSpace: 'nowrap', minWidth: '180px' }}>View My Orders</a>
           <a href="/collections" className="btn-outline" style={{ textDecoration: 'none', padding: '12px 28px', whiteSpace: 'nowrap', minWidth: '180px' }}>Continue Shopping</a>
+        </div>
+      </div>
+    );
+  }
+
+  if (paymentFailed) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '100px auto', textAlign: 'center', padding: '0 20px' }}>
+        <div style={{ width: '80px', height: '80px', background: 'var(--red)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 30px' }}>
+          <span style={{ color: '#fff', fontSize: '40px' }}>!</span>
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 300, color: 'var(--cream)', marginBottom: '16px' }}>Payment Unsuccessful</h1>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', marginBottom: '40px' }}>Your selection is still reserved for you. Please choose a recovery option below to finalize your order.</p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '350px', margin: '0 auto' }}>
+          <button 
+            onClick={() => { setPaymentFailed(false); setStep(2); }} 
+            className="btn-primary" 
+            style={{ width: '100%' }}
+          >
+            Try Another Method
+          </button>
+          
+          <button 
+            onClick={async () => {
+              if (!failedOrderId) return;
+              setGeneratingLink(true);
+              const res = await generatePaymentLinkAction(failedOrderId);
+              if (res.success && res.url) setPaymentLink(res.url);
+              setGeneratingLink(false);
+            }} 
+            disabled={generatingLink || !!paymentLink}
+            className="btn-outline" 
+            style={{ width: '100%' }}
+          >
+            {generatingLink ? 'Generating Link...' : paymentLink ? 'Link Sent' : 'Get Payment Link via SMS'}
+          </button>
+
+          {paymentLink && (
+            <div style={{ marginTop: '20px', padding: '20px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Your Personal Payment Link</div>
+              <a href={paymentLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '13px', wordBreak: 'break-all' }}>{paymentLink}</a>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-dim)', marginTop: '8px' }}>You can also pay later using this link on your mobile phone.</p>
+            </div>
+          )}
+        </div>
+        <div style={{ marginTop: '40px' }}>
+          <button onClick={() => setPaymentFailed(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}>← Back to Checkout</button>
         </div>
       </div>
     );
