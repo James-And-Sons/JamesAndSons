@@ -113,6 +113,12 @@ export async function createOrder(
     });
 
     if (!existingAddress) {
+      // Unset any existing default
+      await prisma.userAddress.updateMany({
+        where: { userId: user.id, isDefault: true },
+        data: { isDefault: false }
+      });
+
       await prisma.userAddress.create({
         data: {
           userId: user.id,

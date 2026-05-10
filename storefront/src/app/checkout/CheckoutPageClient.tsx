@@ -8,7 +8,7 @@ import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingR
 export default function CheckoutPageInner({ 
   initialData 
 }: { 
-  initialData?: { name: string; email: string; phone: string; pincode?: string } 
+  initialData?: { name: string; email: string; phone: string; pincode?: string; address?: string; city?: string; state?: string } 
 }) {
   const { items, total, clearCart } = useCartStore();
   const router = useRouter();
@@ -20,7 +20,10 @@ export default function CheckoutPageInner({
     name: initialData?.name || '', 
     email: initialData?.email || '', 
     phone: initialData?.phone || '',
-    address: '', city: '', state: '', pincode: initialData?.pincode || '',
+    address: initialData?.address || '', 
+    city: initialData?.city || '', 
+    state: initialData?.state || '', 
+    pincode: initialData?.pincode || '',
     gstin: '', companyName: '',
     paymentMethod: 'upi',
   });

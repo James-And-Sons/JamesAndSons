@@ -13,16 +13,27 @@ export default async function CheckoutPage() {
     redirect('/login?redirect=/checkout');
   }
 
-  // Fetch user details from Prisma for prefilling
+  // Fetch user details and default address for prefilling
   const dbUser = await prisma.user.findUnique({
-    where: { email: user.email! }
+    where: { email: user.email! },
+    include: {
+      addresses: {
+        where: { isDefault: true },
+        take: 1
+      }
+    }
   });
+
+  const defaultAddr = dbUser?.addresses?.[0];
 
   const initialData = {
     name: dbUser ? `${dbUser.firstName} ${dbUser.lastName}`.trim() : '',
     email: dbUser?.email || user.email || '',
     phone: dbUser?.phone || '',
-    pincode: dbUser?.lastPincode || '',
+    pincode: defaultAddr?.pincode || dbUser?.lastPincode || '',
+    address: defaultAddr?.street || '',
+    city: defaultAddr?.city || '',
+    state: defaultAddr?.state || '',
   };
 
   return (
