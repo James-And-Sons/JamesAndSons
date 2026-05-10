@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
 import { useWishlistStore } from '@/store/wishlist';
+import { checkPincode, getSavedPincode } from '../actions';
+import { useEffect } from 'react';
 
 type Variant = {
   id: string;
@@ -24,6 +26,29 @@ export default function PDPClient({ product, variants }: { product: any; variant
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(variants.length > 0 ? variants[0] : null);
+  const [pincode, setPincode] = useState('');
+  const [shippingRes, setShippingRes] = useState<any>(null);
+  const [checkingPincode, setCheckingPincode] = useState(false);
+
+  useEffect(() => {
+    const loadPincode = async () => {
+      const saved = await getSavedPincode();
+      if (saved) {
+        setPincode(saved);
+        handleCheckPincode(saved);
+      }
+    };
+    loadPincode();
+  }, []);
+
+  const handleCheckPincode = async (code: string) => {
+    if (code.length !== 6) return;
+    setCheckingPincode(true);
+    const weight = product.weight || 0.5;
+    const res = await checkPincode(code, weight, displayPrice);
+    setShippingRes(res);
+    setCheckingPincode(false);
+  };
 
   const activeImages = selectedVariant?.images?.length
     ? selectedVariant.images
@@ -222,6 +247,53 @@ export default function PDPClient({ product, variants }: { product: any; variant
           >
             Request Quote
           </button>
+        </div>
+
+        {/* Pincode Checker */}
+        <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', padding: '20px', borderRadius: '4px', marginTop: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>
+            Check Delivery Estimate
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input 
+              placeholder="Enter Pincode" 
+              maxLength={6} 
+              value={pincode}
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, '');
+                setPincode(val);
+                if (val.length === 6) handleCheckPincode(val);
+                else setShippingRes(null);
+              }}
+              style={{ flex: 1, background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none' }}
+            />
+            <button 
+              onClick={() => handleCheckPincode(pincode)}
+              disabled={pincode.length !== 6 || checkingPincode}
+              className="btn-outline" 
+              style={{ padding: '0 20px', fontSize: '11px', height: '42px', opacity: pincode.length === 6 ? 1 : 0.5 }}
+            >
+              {checkingPincode ? '...' : 'Check'}
+            </button>
+          </div>
+          
+          {shippingRes && (
+            <div style={{ marginTop: '14px', animation: 'fadeIn 0.3s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+                <span>✓</span>
+                <span>Delivery to {shippingRes.city}, {shippingRes.state}</span>
+              </div>
+              <div style={{ marginTop: '4px', fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)' }}>
+                Estimated by <span style={{ color: 'var(--gold-light)' }}>{shippingRes.etd}</span>
+              </div>
+            </div>
+          )}
+
+          {pincode.length === 6 && !checkingPincode && !shippingRes && (
+            <div style={{ marginTop: '12px', color: '#ef4444', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
+              ⚠ Service unavailable for this pincode.
+            </div>
+          )}
         </div>
 
         {/* Trust badges */}

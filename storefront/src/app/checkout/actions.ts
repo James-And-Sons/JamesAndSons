@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { sendInvoiceEmail } from '@/lib/email';
 
 type CartItem = {
   product: {
@@ -25,6 +26,8 @@ type CheckoutForm = {
   city: string;
   state: string;
   pincode: string;
+  gstin?: string;
+  companyName?: string;
 };
 
 import { createRazorpayOrder } from '@/lib/razorpay';
@@ -76,6 +79,8 @@ export async function createOrder(
         shippingState: form.state.trim(),
         shippingPincode: form.pincode.trim(),
         billingAddress: `${cleanAddress}, ${form.city.trim()}, ${form.state.trim()} - ${form.pincode.trim()}`,
+        gstin: form.gstin?.trim() || null,
+        companyName: form.companyName?.trim() || null,
         items: {
           create: cartItems.map(item => ({
             productId: item.product.id,
@@ -154,6 +159,9 @@ export async function verifyPayment(
       });
 
       if (fullOrder) {
+        // Trigger Invoice Email
+        await sendInvoiceEmail(fullOrder);
+
         const shiprocketParams = {
           order_id: fullOrder.orderNumber,
           order_date: fullOrder.createdAt.toISOString().split('T')[0],

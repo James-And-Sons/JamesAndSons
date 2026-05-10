@@ -22,6 +22,7 @@ export default async function CheckoutPage() {
     name: dbUser ? `${dbUser.firstName} ${dbUser.lastName}`.trim() : '',
     email: dbUser?.email || user.email || '',
     phone: dbUser?.phone || '',
+    pincode: dbUser?.lastPincode || '',
   };
 
   return (

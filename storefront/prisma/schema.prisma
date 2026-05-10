@@ -54,6 +54,7 @@ model User {
   role      Role     @default(CUSTOMER)
   phone     String?
   companyId String?
+  lastPincode String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -191,6 +192,8 @@ model Order {
   shippingState   String?
   shippingPincode String?
   billingAddress  String
+  gstin           String?
+  companyName     String?
   
   trackingNumber String?
   awbNumber      String?     // For logistics (Shiprocket/Delhivery)

@@ -8,7 +8,7 @@ import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingR
 export default function CheckoutPageInner({ 
   initialData 
 }: { 
-  initialData?: { name: string; email: string; phone: string } 
+  initialData?: { name: string; email: string; phone: string; pincode?: string } 
 }) {
   const { items, total, clearCart } = useCartStore();
   const router = useRouter();
@@ -20,9 +20,11 @@ export default function CheckoutPageInner({
     name: initialData?.name || '', 
     email: initialData?.email || '', 
     phone: initialData?.phone || '',
-    address: '', city: '', state: '', pincode: '',
+    address: '', city: '', state: '', pincode: initialData?.pincode || '',
+    gstin: '', companyName: '',
     paymentMethod: 'upi',
   });
+  const [showGst, setShowGst] = useState(false);
 
   const subtotal = total();
   const gst = subtotal * 0.05;
@@ -222,6 +224,26 @@ export default function CheckoutPageInner({
                 <input required placeholder="6 Digits" maxLength={6} value={form.pincode} onChange={e => update('pincode', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
               </div>
             </div>
+
+            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={showGst} onChange={e => setShowGst(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: 'var(--gold)' }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--cream)' }}>Add GST Details (Optional)</span>
+              </label>
+
+              {showGst && (
+                <div className="form-grid" style={{ marginTop: '20px', animation: 'fadeIn 0.3s ease' }}>
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>GSTIN</label>
+                    <input placeholder="15-digit GST Number" value={form.gstin} onChange={e => update('gstin', e.target.value.toUpperCase())} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Registered Company Name</label>
+                    <input placeholder="As per GST records" value={form.companyName} onChange={e => update('companyName', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                  </div>
+                </div>
+              )}
+            </div>
             <button 
               onClick={async () => {
                 if (!form.name || !form.email || !form.phone || !form.address || !form.city || !form.state || !form.pincode) {
@@ -299,6 +321,16 @@ export default function CheckoutPageInner({
                     {form.address}, {form.city}, {form.state} - {form.pincode}
                   </div>
                 </div>
+
+                {showGst && form.gstin && (
+                  <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>GST Details</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text)' }}>
+                      <strong>{form.companyName || 'Company Name Not Provided'}</strong><br />
+                      GSTIN: <span style={{ fontFamily: 'var(--font-mono)' }}>{form.gstin}</span>
+                    </div>
+                  </div>
+                )}
                 
                 <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Delivery Estimate</div>
