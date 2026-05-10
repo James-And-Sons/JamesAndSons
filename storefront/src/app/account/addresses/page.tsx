@@ -55,7 +55,7 @@ export default async function AddressesPage() {
                   </div>
                 </div>
               ))}
-              <div style={{ background: 'transparent', border: '1px dashed var(--border)', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+              <div className="add-address-card" style={{ background: 'transparent', border: '1px dashed var(--border)', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '24px', color: 'var(--gold)', marginBottom: '8px' }}>+</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)' }}>Add New Address</div>
