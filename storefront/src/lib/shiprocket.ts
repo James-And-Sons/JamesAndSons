@@ -365,3 +365,27 @@ export async function createShiprocketReturnOrder(params: any) {
   }
 }
 
+/**
+ * Track a shipment using its AWB
+ */
+export async function trackShipment(awb: string) {
+  const token = await getShiprocketToken();
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch(`https://apiv2.shiprocket.in/v1/external/courier/track/awb/${awb}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (data.tracking_data && data.tracking_data.track_status === 1) {
+      return { success: true, data: data.tracking_data };
+    }
+    return { success: false, message: 'Tracking data not found' };
+  } catch (err) {
+    console.error('trackShipment Error:', err);
+    return { success: false, message: 'API Call Failed' };
+  }
+}
+

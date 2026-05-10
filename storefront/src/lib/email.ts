@@ -153,7 +153,11 @@ export async function sendInvoiceEmail(order: any) {
           <h2>Thank you for your purchase!</h2>
           <p>Dear ${user.firstName},</p>
           <p>Your order <strong>${orderNumber}</strong> has been successfully processed. Please find your official Tax Invoice attached (Invoice: ${invoiceNumber || 'N/A'}).</p>
-          <p>Our concierge team is already preparing your shipment. We will notify you as soon as it's on its way.</p>
+          <p>Our concierge team is already preparing your shipment. You can track your masterpieces in real-time as they journey to your space:</p>
+          <div style="margin: 30px 0;">
+            <a href="https://jamesandsons.in/track/${orderNumber}" style="background: #C4A05A; color: #fff; padding: 14px 28px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; font-weight: 500;">Track My Order</a>
+          </div>
+          <p>We will notify you again as soon as the courier is assigned.</p>
           <br />
           <p>Warm regards,<br />The James & Sons Team</p>
         </div>
