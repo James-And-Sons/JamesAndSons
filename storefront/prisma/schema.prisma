@@ -352,7 +352,7 @@ model InvoiceCounter {
 
 model AbandonedCart {
   id          String   @id @default(uuid())
-  email       String
+  email       String   @unique
   phone       String?
   cartData    Json     // Items and amounts
   step        Int      @default(1)
