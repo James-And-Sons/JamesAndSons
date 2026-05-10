@@ -55,6 +55,8 @@ export default function CheckoutPageInner({
       state: addr.state,
       pincode: addr.pincode
     }));
+    // The useEffect for form.pincode will handle the calculation
+    setLastPincode(''); // Reset lastPincode to force the useEffect to trigger
   };
   const [shipping, setShipping] = useState<number | null>(null);
   const [shippingCalculated, setShippingCalculated] = useState(false);
@@ -81,8 +83,13 @@ export default function CheckoutPageInner({
       const autofill = async () => {
         setOrderError('');
         const res = await calculateShippingRateAction(form.pincode, totalWeight, subtotal);
-        if (res && res.city && res.state) {
-          setForm(prev => ({ ...prev, city: res.city, state: res.state }));
+        if (res) {
+          if (res.city && res.state) {
+            setForm(prev => ({ ...prev, city: res.city, state: res.state }));
+          }
+          setShipping(res.rate);
+          setShippingCalculated(true);
+          if (res.etd) setEtd(res.etd);
           setLastPincode(form.pincode);
         }
       };

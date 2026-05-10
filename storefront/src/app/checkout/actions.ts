@@ -5,6 +5,7 @@ import { sendInvoiceEmail } from '@/lib/email';
 import { generateSequentialInvoiceNumber } from '@/lib/invoice';
 import { createClient } from '@/utils/supabase/server';
 import { UserAddress } from '@prisma/client';
+import { calculateShipping } from '@/lib/shiprocket';
 
 type CartItem = {
   product: {
@@ -381,6 +382,11 @@ export async function getUserAddressesAction() {
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' }
   });
+}
+
+export async function getShippingRateAction(pincode: string, weight: number) {
+  if (!pincode || pincode.length < 6) return { success: false, rate: 0 };
+  return await calculateShipping(pincode, weight);
 }
 
 export async function saveUserAddressAction(address: Omit<UserAddress, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {

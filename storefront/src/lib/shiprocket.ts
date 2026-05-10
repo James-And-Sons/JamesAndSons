@@ -389,3 +389,30 @@ export async function trackShipment(awb: string) {
   }
 }
 
+/**
+ * Calculate shipping rates for a pincode
+ */
+export async function calculateShipping(deliveryPincode: string, weight: number) {
+  const token = await getShiprocketToken();
+  if (!token) return { success: false, rate: 0 };
+
+  try {
+    const res = await fetch(`https://apiv2.shiprocket.in/v1/external/courier/serviceability?pickup_postcode=${process.env.STORE_PICKUP_PINCODE}&delivery_postcode=${deliveryPincode}&weight=${weight}&cod=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (data.status === 200 && data.data.available_courier_companies.length > 0) {
+      // Find the cheapest courier
+      const rates = data.data.available_courier_companies;
+      const cheapest = rates.reduce((prev: any, curr: any) => (prev.rate < curr.rate ? prev : curr));
+      return { success: true, rate: cheapest.rate };
+    }
+    return { success: false, rate: 0 };
+  } catch (err) {
+    console.error('calculateShipping Error:', err);
+    return { success: false, rate: 0 };
+  }
+}
+
