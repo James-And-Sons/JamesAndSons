@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { submitNDRReattemptAction } from './actions';
+import { submitNDRReattemptAction } from '../actions';
 import Navigation from '@/components/Navigation';
 
 export default function NDRSlotPickerClient({ shipmentId, orderNumber }: { shipmentId: string, orderNumber: string }) {
