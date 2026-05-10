@@ -75,3 +75,38 @@ export async function updateUserAddressAction(addressId: string, data: any) {
     return { success: false, error: 'Failed to update address' };
   }
 }
+
+export async function addUserAddressAction(data: any) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  try {
+    // If setting as default, unset others
+    if (data.isDefault) {
+      await prisma.userAddress.updateMany({
+        where: { userId: user.id, isDefault: true },
+        data: { isDefault: false }
+      });
+    }
+
+    const address = await prisma.userAddress.create({
+      data: {
+        userId: user.id,
+        name: data.name,
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        pincode: data.pincode,
+        phone: data.phone,
+        isDefault: data.isDefault || false
+      }
+    });
+
+    revalidatePath('/account/addresses');
+    return { success: true, address };
+  } catch (error) {
+    console.error('Add Address Error:', error);
+    return { success: false, error: 'Failed to add address' };
+  }
+}
