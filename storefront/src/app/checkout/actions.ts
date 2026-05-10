@@ -129,6 +129,7 @@ export async function createOrder(
           city: form.city,
           state: form.state,
           pincode: form.pincode,
+          phone: form.phone,
           isDefault: true
         }
       });

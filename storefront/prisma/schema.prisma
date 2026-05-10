@@ -380,6 +380,7 @@ model UserAddress {
   city            String
   state           String
   pincode         String
+  phone           String?
   isDefault       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
