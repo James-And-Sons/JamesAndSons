@@ -143,7 +143,7 @@ export async function sendInvoiceEmail(order: any) {
 
   // --- 2. Send Email ---
   try {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'James & Sons <onboarding@resend.dev>';
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'James & Sons <orders@jamesandsons.in>';
     const { data, error } = await resend.emails.send({
       from: fromAddress,
       to: [user.email],
