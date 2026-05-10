@@ -143,8 +143,9 @@ export async function sendInvoiceEmail(order: any) {
 
   // --- 2. Send Email ---
   try {
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'James & Sons <onboarding@resend.dev>';
     const { data, error } = await resend.emails.send({
-      from: 'James & Sons <orders@jamesandsons.in>',
+      from: fromAddress,
       to: [user.email],
       subject: `Tax Invoice for Order ${orderNumber} - James & Sons`,
       html: `
@@ -166,7 +167,7 @@ export async function sendInvoiceEmail(order: any) {
     });
 
     if (error) {
-      console.error('Failed to send invoice email:', error);
+      console.error('RESEND ERROR:', JSON.stringify(error, null, 2));
     } else {
       console.log('Invoice email with PDF sent successfully:', data?.id);
     }

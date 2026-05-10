@@ -209,7 +209,7 @@ export async function verifyPayment(
           billing_state: fullOrder.shippingState || '',
           billing_country: "India",
           billing_email: fullOrder.user.email.trim().toLowerCase(),
-          billing_phone: fullOrder.shippingPhone?.replace(/\D/g, '').slice(-10) || '9999999999',
+          billing_phone: (fullOrder.shippingPhone || fullOrder.user.phone || '9999999999').replace(/\D/g, '').slice(-10) || '9999999999',
           shipping_is_billing: true,
           order_items: fullOrder.items.map(item => ({
             name: item.product.name,
