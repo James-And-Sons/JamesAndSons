@@ -22,8 +22,13 @@ export default function NavClient({ user, products }: { user: { id: string; emai
     
     // Listen for custom event from MobileBottomNav
     const handleOpenSearch = () => setSearchOpen(true);
+    const handleOpenCart = () => openCart();
     window.addEventListener('open-search', handleOpenSearch);
-    return () => window.removeEventListener('open-search', handleOpenSearch);
+    window.addEventListener('open-cart', handleOpenCart);
+    return () => {
+      window.removeEventListener('open-search', handleOpenSearch);
+      window.removeEventListener('open-cart', handleOpenCart);
+    };
   }, []);
 
   const isPDP = pathname.startsWith('/products/');
