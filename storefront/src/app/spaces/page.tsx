@@ -9,9 +9,42 @@ export default async function SpacesPage() {
   const spaces = await getSpaces();
 
   return (
-    <main className="min-h-screen bg-[var(--obsidian)] text-[var(--text)] pt-12">
+    <>
       <Navigation />
-      <div className=" max-w-screen mx-auto px-6 md:px-12 py-16">
+      <main className="min-h-screen bg-[var(--obsidian)] text-[var(--text)] md:pt-16">
+        {/* Mobile Layout */}
+        <div className="md:hidden" style={{ paddingTop: '20px', paddingBottom: '40px' }}>
+          <div className="mobile-section-intro" style={{ paddingBottom: '16px' }}>
+            <div>
+              <div className="section-label" style={{ marginBottom: '2px' }}>Curated Environments</div>
+              <div className="section-title" style={{ fontSize: '22px' }}>
+                Shop by <em>Space</em>
+              </div>
+            </div>
+            <div className="mobile-count-badge">{spaces.length} spaces</div>
+          </div>
+
+        <div className="mobile-products-grid">
+          {spaces.map((space, index) => {
+            const bgClass = `mobile-sc-${(index % 4) + 1}`;
+            const iconClass = index === 0 ? "ti-home" : index === 1 ? "ti-glass" : index === 2 ? "ti-bed" : index === 3 ? "ti-briefcase" : "ti-door";
+            
+            return (
+              <Link key={space.id} href={`/collections?space=${space.slug}`} className={`mobile-space-card ${bgClass}`} style={{ width: '100%' }}>
+                <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>
+                <div>
+                  <div className="mobile-space-name">{space.name}</div>
+                  <div className="mobile-space-count">{space._count.products} Fixtures</div>
+                </div>
+                <div className="mobile-space-arrow"><i className="ti ti-arrow-up-right"></i></div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block max-w-screen mx-auto px-6 md:px-12 py-16">
         <div className="flex flex-col items-center text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="pb-4 font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] mb-4">
             Curated Environments
@@ -71,5 +104,6 @@ export default async function SpacesPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

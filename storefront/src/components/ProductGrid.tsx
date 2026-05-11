@@ -63,8 +63,158 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
   );
 
   return (
-    <section className="section" id="collections">
-      <div className="section-header">
+    <section className="section" id="collections" style={{ padding: 0 }}>
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        <div className="mobile-section-intro">
+          <div>
+            <div className="section-label" style={{ marginBottom: '2px' }}>{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
+            <div className="section-title" style={{ fontSize: '22px' }}>
+              {activeFilters.length === 0 ? <>All <em>Collections</em></> : 
+               activeFilters.length === 1 ? <>The <em>{activeFilters[0]}</em></> :
+               <>Filtered <em>Collections</em></>}
+            </div>
+          </div>
+          <div className="mobile-count-badge">{products.length} products</div>
+        </div>
+
+        <div className="mobile-filter-bar" style={{ position: 'relative', margin: '16px 24px 0', zIndex: 50 }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button 
+              data-dropdown-area="true"
+              onClick={() => setShowFilters(!showFilters)}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', 
+                border: '1px solid var(--border)', background: showFilters ? 'var(--surface2)' : 'var(--surface)', 
+                color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-mono)', 
+                fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', transition: 'all 0.3s ease',
+                borderRadius: '16px'
+              }}
+            >
+              <i className="ti ti-adjustments-horizontal" style={{ fontSize: '14px' }}></i>
+              Filters {activeFilters.length > 0 && `(${activeFilters.length})`}
+            </button>
+            
+            {activeFilters.map(filter => (
+              <div key={filter} style={{ 
+                display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', 
+                background: 'rgba(201,168,76,0.1)', border: '0.5px solid rgba(201,168,76,0.3)', 
+                borderRadius: '16px', fontSize: '10px', fontFamily: 'var(--font-mono)', 
+                color: 'var(--gold-light)'
+              }}>
+                {filter}
+                <button 
+                  onClick={() => toggleFilter(filter)} 
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', fontSize: '12px' }}
+                >
+                  <i className="ti ti-x"></i>
+                </button>
+              </div>
+            ))}
+
+            {activeFilters.length > 0 && (
+               <button 
+                 onClick={() => { setActiveFilters([]); setShowFilters(false); }} 
+                 style={{ 
+                   background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', 
+                   fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', 
+                   letterSpacing: '0.1em', padding: '4px', marginLeft: '4px'
+                 }}
+               >
+                 Clear
+               </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div data-dropdown-area="true" style={{ 
+              position: 'absolute', top: '100%', left: 0, marginTop: '12px',
+              background: 'var(--surface)', border: '1px solid var(--border)', padding: '20px', width: '100%',
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+              borderRadius: '16px', maxHeight: '60vh', overflowY: 'auto'
+            }}>
+              {uniqueCollections.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uniqueCollections.map(c => (
+                      <button key={c} onClick={() => toggleFilter(c)} className={`filter-dropdown-btn ${activeFilters.includes(c) ? 'active' : ''}`}>{c}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {uniqueSpaces.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uniqueSpaces.map(s => (
+                      <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uniqueStyles.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uniqueStyles.map(s => (
+                      <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Features</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {uniqueMaterials.map(m => (
+                    <button key={m} onClick={() => toggleFilter(m)} className={`filter-dropdown-btn ${activeFilters.includes(m) ? 'active' : ''}`}>{m}</button>
+                  ))}
+                  <button onClick={() => toggleFilter('LED Certified')} className={`filter-dropdown-btn ${activeFilters.includes('LED Certified') ? 'active' : ''}`}>LED Certified</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mobile-products-grid" style={{ marginTop: '16px' }}>
+          {products.map(product => (
+            <Link key={product.id} href={`/product/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
+              <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0' }}>
+                {product.images && product.images[0] ? (
+                  <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28 }}></i>
+                )}
+              </div>
+              <div className="mobile-product-info" style={{ padding: '10px 12px 12px' }}>
+                <div className="mobile-product-cat">{product.collection} · {product.sku || 'N/A'}</div>
+                <div className="mobile-product-name" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</div>
+                <div className="mobile-product-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div className="mobile-price-block">
+                    <div className="mobile-product-price" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--gold-light)' }}>{formatPrice(product.d2cPrice)}</div>
+                    {product.mrp > product.d2cPrice && (
+                      <div className="mobile-price-old">{formatPrice(product.mrp)}</div>
+                    )}
+                  </div>
+                  <button className="mobile-add-btn" style={{ width: '30px', height: '30px', background: 'var(--gold)', borderRadius: '9px', color: '#0A0905' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>
+                    <i className="ti ti-plus" style={{ fontSize: '14px' }}></i>
+                  </button>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+        {products.length > 0 && (
+          <div className="mobile-list-divider" style={{ height: '0.5px', background: 'var(--border)', margin: '20px 24px 0' }}></div>
+        )}
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block" style={{ padding: '0 40px' }}>
+        <div className="section-header">
         <div>
           <div className="section-label">{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
           <h2 className="section-title">
@@ -247,6 +397,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             </div>
           </Link>
         ))}
+      </div>
       </div>
     </section>
   );

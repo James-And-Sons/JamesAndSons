@@ -43,21 +43,40 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
   return (
     <>
       <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+      <main className="md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
 
         <PDPClient product={product as any} variants={product.variants as any} />
 
         {/* Related Products */}
         {related.length > 0 && (
-          <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
-            <div className="section-header">
+          <section className="section" style={{ borderTop: '1px solid var(--border)', padding: '40px 0' }}>
+            <div className="section-header" style={{ padding: '0 24px', marginBottom: '24px' }}>
               <div>
                 <div className="section-label">From the Same Collection</div>
-                <h2 className="section-title">You May Also <em>Love</em></h2>
+                <h2 className="section-title" style={{ fontSize: 'clamp(24px, 4vw, 32px)' }}>You May Also <em>Love</em></h2>
               </div>
-              <Link href="/collections" className="link-all">View All</Link>
+              <Link href="/collections" className="link-all">View All ↗</Link>
             </div>
-            <div className="product-grid">
+
+            {/* Mobile Scroll */}
+            <div className="md:hidden" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '0 24px 20px', scrollbarWidth: 'none' }}>
+              {related.map((p: any) => (
+                <Link key={p.id} href={`/products/${p.slug}`} style={{ flexShrink: 0, width: '160px', textDecoration: 'none' }}>
+                  <div style={{ height: '180px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                    {p.images?.[0] ? (
+                      <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.3 }}></i>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '4px' }}>{p.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--gold-light)' }}>{formatPrice(p.d2cPrice)}</div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden md:grid product-grid" style={{ padding: '0 40px' }}>
               {related.map((p: any) => (
                 <Link key={p.id} href={`/products/${p.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
                   <div className="product-img">

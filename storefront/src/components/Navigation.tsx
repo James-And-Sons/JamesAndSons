@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import NavClient from './NavClient';
 import { getProducts } from '@/lib/products';
 import MobileBottomNav from './MobileBottomNav';
+import MobileHeader from './MobileHeader';
 
 export default async function Navigation() {
   const supabase = await createClient();
@@ -19,7 +20,7 @@ export default async function Navigation() {
 
   return (
     <>
-      <nav className="main-nav">
+      <nav className="main-nav hidden md:flex">
         <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}>
           James <span>&amp;</span> Sons
         </Link>
@@ -32,6 +33,10 @@ export default async function Navigation() {
         </ul>
         <NavClient user={user} products={products} />
       </nav>
+      
+      {/* Mobile Top Header */}
+      <MobileHeader />
+
       <MobileBottomNav user={user} />
     </>
   );

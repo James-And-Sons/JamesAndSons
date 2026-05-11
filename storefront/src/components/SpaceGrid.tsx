@@ -34,7 +34,7 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
         <Link href="/spaces" className="link-all">View All Spaces</Link>
       </div>
       
-      <div className="space-grid">
+      <div className="space-grid hidden md:grid">
         {/* Main large space */}
         <Link href={`/collections?space=${encodeURIComponent(mainSpace.name)}`} className="space-card block">
           {mainSpace.image ? (
@@ -95,6 +95,25 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Mobile Spaces Scroll */}
+      <div className="mobile-spaces-scroll md:hidden">
+        {displaySpaces.map((space, index) => {
+          const bgClass = `mobile-sc-${(index % 4) + 1}`;
+          const iconClass = index === 0 ? "ti-home" : index === 1 ? "ti-glass" : index === 2 ? "ti-bed" : index === 3 ? "ti-briefcase" : "ti-door";
+          
+          return (
+            <Link key={space.id} href={`/collections?space=${encodeURIComponent(space.name)}`} className={`mobile-space-card ${bgClass}`}>
+              <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>
+              <div>
+                <div className="mobile-space-name">{space.name}</div>
+                <div className="mobile-space-count">{space._count.products} Designs</div>
+              </div>
+              <div className="mobile-space-arrow"><i className="ti ti-arrow-up-right"></i></div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );
