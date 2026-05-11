@@ -29,9 +29,27 @@ const libreBaskerville = Libre_Baskerville({
 export const metadata: Metadata = {
   title: "James & Sons | Luxury Illumination Ecosystem",
   description: "India's premier destination for designer chandeliers and heritage lighting craftsmanship. Curating brilliance for grand spaces.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "James & Sons",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: "/favicon.svg",
+    apple: "/icons/icon-192x192.png",
   },
+};
+
+export const viewport = {
+  themeColor: "#C4A05A",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -56,6 +74,17 @@ export default function RootLayout({
           </div>
         </Providers>
         <Analytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
