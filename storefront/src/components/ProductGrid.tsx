@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { formatPrice, Product } from '@/lib/utils';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
@@ -8,11 +8,12 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const { addItem } = useCartStore();
-
-  const uniqueCollections = Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort();
-  const uniqueStyles = Array.from(new Set(initialProducts.flatMap(p => p.style || []))).filter(Boolean).sort();
-  const uniqueMaterials = Array.from(new Set(initialProducts.flatMap(p => p.materialAndFinish || []))).filter(Boolean).sort();
-  const uniqueSpaces = Array.from(new Set(initialProducts.flatMap(p => p.spaces || []))).filter(Boolean).sort();
+  const { uniqueCollections, uniqueStyles, uniqueMaterials, uniqueSpaces } = useMemo(() => ({
+    uniqueCollections: Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort(),
+    uniqueStyles: Array.from(new Set(initialProducts.flatMap(p => p.style || []))).filter(Boolean).sort(),
+    uniqueMaterials: Array.from(new Set(initialProducts.flatMap(p => p.materialAndFinish || []))).filter(Boolean).sort(),
+    uniqueSpaces: Array.from(new Set(initialProducts.flatMap(p => p.spaces || []))).filter(Boolean).sort(),
+  }), [initialProducts]);
 
   useEffect(() => {
     if (initialFilter && initialFilter !== 'All') {
@@ -48,19 +49,22 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
   const filters = ['All', ...uniqueCollections, ...uniqueSpaces, ...uniqueStyles, ...uniqueMaterials, 'LED Certified'];
 
-  const products = activeFilters.length === 0 ? initialProducts : initialProducts.filter(p =>
-    activeFilters.some(filter => {
-      const lowerFilter = filter.toLowerCase();
-      const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
-      const filterSlug = slugify(filter);
+  const filteredProducts = useMemo(() => {
+    if (activeFilters.length === 0) return initialProducts;
+    return initialProducts.filter(p =>
+      activeFilters.some(filter => {
+        const lowerFilter = filter.toLowerCase();
+        const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+        const filterSlug = slugify(filter);
 
-      return (p.collection && (p.collection.toLowerCase() === lowerFilter || slugify(p.collection) === filterSlug)) ||
-             (p.spaces && p.spaces.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
-             (p.style && p.style.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
-             (p.materialAndFinish && p.materialAndFinish.some(m => m.toLowerCase() === lowerFilter || slugify(m) === filterSlug)) ||
-             (lowerFilter === 'led certified' && p.isLed);
-    })
-  );
+        return (p.collection && (p.collection.toLowerCase() === lowerFilter || slugify(p.collection) === filterSlug)) ||
+               (p.spaces && p.spaces.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+               (p.style && p.style.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+               (p.materialAndFinish && p.materialAndFinish.some(m => m.toLowerCase() === lowerFilter || slugify(m) === filterSlug)) ||
+               (lowerFilter === 'led certified' && p.isLed);
+      })
+    );
+  }, [activeFilters, initialProducts]);
 
   return (
     <section className="section" id="collections" style={{ padding: 0 }}>
@@ -75,7 +79,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                <>Filtered <em>Collections</em></>}
             </div>
           </div>
-          <div className="mobile-count-badge">{products.length} products</div>
+          <div className="mobile-count-badge">{filteredProducts.length} products</div>
         </div>
 
         <div className="mobile-filter-bar" style={{ position: 'relative', margin: '16px 24px 0', zIndex: 50 }}>
@@ -180,8 +184,8 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
         </div>
 
         <div className="mobile-products-grid" style={{ marginTop: '16px' }}>
-          {products.map(product => (
-            <Link key={product.id} href={`/product/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
+          {filteredProducts.map(product => (
+            <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
               <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0' }}>
                 {product.images && product.images[0] ? (
                   <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -223,7 +227,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                 'Filtered Collections'}
           </h2>
         </div>
-        <Link href="/collections" className="link-all">View All {products.length} Products</Link>
+        <Link href="/collections" className="link-all">View All {filteredProducts.length} Products</Link>
       </div>
 
       <div className="filter-bar-container" style={{ position: 'relative', marginBottom: '32px' }}>
@@ -328,7 +332,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
       </div>
 
       <div className="product-grid">
-        {products.map(product => (
+        {filteredProducts.map(product => (
           <Link key={product.id} href={`/products/${product.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
             {product.badge && (
               <div className={`product-badge ${product.badge === 'new' ? 'badge-new' : product.badge === 'bis' ? 'badge-bis' : product.badge === 'b2b' ? 'badge-sale' : 'badge-sale'}`}>

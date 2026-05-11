@@ -56,8 +56,9 @@ export default function PDPClient({ product, variants }: { product: any; variant
       ? product.images
       : [];
 
-  const { toggleItem, isInWishlist } = useWishlistStore();
-  const isWishlisted = isInWishlist(product.id);
+  const items = useWishlistStore(state => state.items);
+  const isWishlisted = items.some(i => i.id === product.id);
+  const { toggleItem } = useWishlistStore();
 
   const displayPrice = selectedVariant?.d2cPrice ?? product.d2cPrice;
   const displayMrp = selectedVariant?.mrp ?? product.mrp;
@@ -143,7 +144,7 @@ export default function PDPClient({ product, variants }: { product: any; variant
           </div>
         </div>
 
-        {/* Pricing Row */}
+        {/* Mobile Pricing Row */}
         <div style={{ padding: '20px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
@@ -224,16 +225,10 @@ export default function PDPClient({ product, variants }: { product: any; variant
         </div>
 
         {/* Secondary Action */}
-        <div style={{ padding: '12px 24px 0' }}>
-          <button 
-            onClick={() => router.push(`/rfq?product=${product.slug}`)}
-            className="btn-outline" 
-            style={{ width: '100%', height: '48px', borderRadius: '16px', border: '0.5px solid var(--border)', fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-          >
-            <i className="ti ti-file-text" style={{ fontSize: '16px' }}></i>
-            Request Custom Quote
-          </button>
-        </div>
+        <Link href={`/products/${product.slug}`} className="btn-outline" style={{ display: 'flex', width: '100%', height: '48px', borderRadius: '16px', border: '0.5px solid var(--border)', fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.06em', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '12px 24px 0', width: 'auto' }}>
+          <i className="ti ti-file-text" style={{ fontSize: '16px' }}></i>
+          Request Custom Quote
+        </Link>
 
         {/* Trust Grid */}
         <div style={{ padding: '20px 24px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -300,8 +295,8 @@ export default function PDPClient({ product, variants }: { product: any; variant
 
       </div>
 
-      {/* ── DESKTOP LAYOUT (hidden md:flex) ── */}
-      <div className="hidden md:flex pdp-layout" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
+      {/* ── DESKTOP LAYOUT (hidden md:grid) ── */}
+      <div className="hidden md:grid" style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', gridTemplateColumns: '1fr 1fr', gap: '0', minHeight: '100vh' }}>
         
         {/* LEFT COLUMN: Gallery */}
         <div className="pdp-gallery" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '32px' }}>

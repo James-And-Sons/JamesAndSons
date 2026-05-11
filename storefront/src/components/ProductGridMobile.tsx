@@ -18,7 +18,7 @@ export default function ProductGridMobile({ products = [] }: { products: any[] }
 
       <div className="mobile-products-grid">
         {displayProducts.map((product, index) => (
-          <Link key={product.id || index} href={`/product/${product.slug}`} className="mobile-product-card">
+          <Link key={product.id || index} href={`/products/${product.slug}`} className="mobile-product-card">
             <div className="mobile-product-img">
               {product.images && product.images[0] ? (
                 <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />

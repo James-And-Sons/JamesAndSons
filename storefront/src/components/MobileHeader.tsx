@@ -13,7 +13,8 @@ export default function MobileHeader() {
     setMounted(true);
   }, []);
 
-  const count = mounted ? itemCount() : 0;
+  const items = useCartStore(state => state.items);
+  const count = mounted ? items.reduce((sum, i) => sum + i.quantity, 0) : 0;
   const isHome = pathname === '/';
   const isPDP = pathname.startsWith('/products/');
 

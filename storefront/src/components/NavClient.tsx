@@ -14,7 +14,8 @@ export default function NavClient({ user, products }: { user: { id: string; emai
   const router = useRouter();
   const pathname = usePathname();
   
-  const count = itemCount();
+  const items = useCartStore(state => state.items);
+  const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
   useEffect(() => {
     setMounted(true);

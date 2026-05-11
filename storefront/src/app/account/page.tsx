@@ -100,12 +100,12 @@ export default async function AccountPage() {
               </div>
               <div style={{ width: '0.5px', background: 'var(--border)', alignSelf: 'stretch' }} />
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>0</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>—</div>
                 <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Saved</div>
               </div>
               <div style={{ width: '0.5px', background: 'var(--border)', alignSelf: 'stretch' }} />
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>0</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>—</div>
                 <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>In Cart</div>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default async function AccountPage() {
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '28px' }}>
                 <div className="section-label" style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid var(--border)' }}>Quick Links</div>
                 {quickLinks.map(link => (
-                  <a
+                  <Link
                     key={link.href}
                     href={link.href}
                     className="account-link"
@@ -265,7 +265,7 @@ export default async function AccountPage() {
                   >
                     <span>{link.icon}&nbsp;&nbsp;{link.label}</span>
                     <span>→</span>
-                  </a>
+                  </Link>
                 ))}
               </div>
 

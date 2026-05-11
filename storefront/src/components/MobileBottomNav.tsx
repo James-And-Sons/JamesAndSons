@@ -13,7 +13,8 @@ export default function MobileBottomNav({ user }: { user: any }) {
     setMounted(true);
   }, []);
 
-  const count = mounted ? itemCount() : 0;
+  const items = useCartStore(state => state.items);
+  const count = mounted ? items.reduce((sum, i) => sum + i.quantity, 0) : 0;
 
   const navItems = [
     { label: 'Home', href: '/', icon: 'ti-home' },
