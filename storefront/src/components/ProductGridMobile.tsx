@@ -1,6 +1,9 @@
+'use client';
 import Link from 'next/link';
+import { useCartStore } from '@/store/cart';
 
 export default function ProductGridMobile({ products = [] }: { products: any[] }) {
+  const { addItem } = useCartStore();
   // Taking max 4 products for mobile new arrivals grid
   const displayProducts = products.slice(0, 4);
 
@@ -29,8 +32,8 @@ export default function ProductGridMobile({ products = [] }: { products: any[] }
                 <div className="mobile-product-sku">SKU: {product.sku || 'N/A'}</div>
               </div>
               <div className="mobile-product-footer">
-                <div className="mobile-product-price">₹{product.price?.toLocaleString()} <span>+ GST</span></div>
-                <button className="mobile-add-btn" onClick={(e) => { e.preventDefault(); /* add to cart logic */ }}>
+                <div className="mobile-product-price">₹{product.d2cPrice?.toLocaleString()} <span>+ GST</span></div>
+                <button className="mobile-add-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>
                   <i className="ti ti-plus"></i>
                 </button>
               </div>
