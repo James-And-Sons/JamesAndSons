@@ -225,7 +225,7 @@ export default function PDPClient({ product, variants }: { product: any; variant
         </div>
 
         {/* Secondary Action */}
-        <Link href={`/products/${product.slug}`} className="btn-outline" style={{ display: 'flex', width: '100%', height: '48px', borderRadius: '16px', border: '0.5px solid var(--border)', fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.06em', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '12px 24px 0', width: 'auto' }}>
+        <Link href={`/products/${product.slug}`} className="btn-outline" style={{ display: 'flex', height: '48px', borderRadius: '16px', border: '0.5px solid var(--border)', fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.06em', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '12px 24px 0', width: 'auto' }}>
           <i className="ti ti-file-text" style={{ fontSize: '16px' }}></i>
           Request Custom Quote
         </Link>

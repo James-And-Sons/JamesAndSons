@@ -211,7 +211,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             </Link>
           ))}
         </div>
-        {products.length > 0 && (
+        {filteredProducts.length > 0 && (
           <div className="mobile-list-divider" style={{ height: '0.5px', background: 'var(--border)', margin: '20px 24px 0' }}></div>
         )}
       </div>
