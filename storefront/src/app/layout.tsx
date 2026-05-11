@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Mono, Libre_Baskerville } from "next/font/google
 import { Analytics } from "@vercel/analytics/react"
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
+import ScrollToTop from "@/components/ScrollToTop";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -39,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
       </head>
@@ -48,6 +49,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <ScrollToTop />
           <div className="flex flex-col min-h-screen">
             {children}
             <Footer />
