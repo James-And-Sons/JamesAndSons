@@ -8,8 +8,8 @@ export default function ProductGridMobile({ products = [] }: { products: any[] }
   const displayProducts = products.slice(0, 4);
 
   return (
-    <section className="section md:hidden mt-4" style={{ paddingTop: '20px' }}>
-      <div className="section-header" style={{ padding: '0 24px', marginBottom: '20px', borderBottom: 'none' }}>
+    <section className="section md:hidden mt-4" style={{ paddingTop: '10px' }}>
+      <div className="section-header" style={{ padding: '0 16px', marginBottom: '16px', borderBottom: 'none' }}>
         <div>
           <div className="section-label">Latest</div>
           <h2 className="section-title" style={{ fontSize: '28px' }}>New <em>Arrivals</em></h2>

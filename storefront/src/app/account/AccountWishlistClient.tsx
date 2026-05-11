@@ -47,17 +47,17 @@ export default function AccountWishlistClient() {
                 </div>
               )}
             </div>
-            <div className="font-mono text-[9px] uppercase tracking-widest text-[var(--gold)] truncate">{item.name}</div>
-            <div className="font-body text-[11px] text-[var(--text-muted)]">{formatPrice(item.d2cPrice)}</div>
+            <div className="font-mono text-[12px] uppercase tracking-widest text-[var(--gold)] truncate">{item.name}</div>
+            <div className="font-body text-[14px] text-[var(--text-muted)]">{formatPrice(item.d2cPrice)}</div>
           </Link>
         ))}
       </div>
       {items.length > 3 && (
-        <p className="font-mono text-[9px] text-[var(--text-dim)] uppercase tracking-widest">
+        <p className="font-mono text-[12px] text-[var(--text-dim)] uppercase tracking-widest">
           + {items.length - 3} more items in your wishlist
         </p>
       )}
-      <Link href="/account/wishlist" className="btn-outline w-full text-center py-3 text-[10px] block mt-4">
+      <Link href="/account/wishlist" className="btn-outline w-full text-center py-3 text-[13px] block mt-4">
         View Full Wishlist
       </Link>
     </div>

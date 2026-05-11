@@ -81,14 +81,14 @@ export default async function AccountPage() {
                 {displayName.charAt(0)}
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--cream)', lineHeight: 1.2 }}>{displayName}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.02em' }}>{user.email}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: 'var(--cream)', lineHeight: 1.2 }}>{displayName}</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.02em' }}>{user.email}</div>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '6px', height: '6px', background: 'var(--green)', borderRadius: '50%' }} />
-              <div style={{ fontSize: '10px', color: 'var(--green)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '12px', color: 'var(--green)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 {isB2B ? 'B2B Client' : 'Personal Account'} · Member since {new Date(user.created_at).getFullYear()}
               </div>
             </div>
@@ -96,24 +96,24 @@ export default async function AccountPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border)' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>{orders.length}</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orders</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orders</div>
               </div>
               <div style={{ width: '0.5px', background: 'var(--border)', alignSelf: 'stretch' }} />
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>—</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Saved</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Saved</div>
               </div>
               <div style={{ width: '0.5px', background: 'var(--border)', alignSelf: 'stretch' }} />
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>—</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>In Cart</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>In Cart</div>
               </div>
             </div>
           </div>
 
           {/* Account Menu Section */}
-          <div style={{ padding: '24px 20px 0' }}>
-            <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>My Account</div>
+          <div style={{ padding: '24px 16px 0' }}>
+            <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>My Account</div>
             <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
               {quickLinks.map((link, i) => (
                 <Link key={link.href} href={link.href} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '15px 16px', textDecoration: 'none', borderTop: i === 0 ? 'none' : '0.5px solid var(--border)' }}>
@@ -121,8 +121,8 @@ export default async function AccountPage() {
                     {link.icon === '📦' ? <i className="ti ti-package"></i> : link.icon === '📋' ? <i className="ti ti-file-text"></i> : link.icon === '♡' ? <i className="ti ti-heart"></i> : link.icon === '📍' ? <i className="ti ti-map-pin"></i> : <i className="ti ti-ticket"></i>}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>{link.label}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>Manage your {link.label.toLowerCase()}</div>
+                    <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>{link.label}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Manage your {link.label.toLowerCase()}</div>
                   </div>
                   <i className="ti ti-chevron-right" style={{ fontSize: '16px', color: 'var(--border)' }}></i>
                 </Link>
@@ -131,19 +131,19 @@ export default async function AccountPage() {
           </div>
 
           {/* Recent Orders Section */}
-          <div style={{ padding: '24px 20px 0' }}>
-            <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Recent Orders</div>
+          <div style={{ padding: '24px 16px 0' }}>
+            <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Recent Orders</div>
             {orders.length > 0 ? (
               <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '16px' }}>
                 {orders.map((order, i) => (
                   <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i === orders.length - 1 ? 'none' : '0.5px dashed var(--border)' }}>
                     <div>
-                      <div style={{ fontSize: '11px', color: 'var(--cream)', fontWeight: 500 }}>{order.orderNumber}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: 500 }}>{order.orderNumber}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--gold-light)' }}>₹{order.totalAmount.toLocaleString()}</div>
-                      <div style={{ fontSize: '9px', color: 'var(--green)', textTransform: 'uppercase', marginTop: '2px' }}>{order.status}</div>
+                      <div style={{ fontSize: '14px', color: 'var(--gold-light)' }}>₹{order.totalAmount.toLocaleString()}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--green)', textTransform: 'uppercase', marginTop: '2px' }}>{order.status}</div>
                     </div>
                   </div>
                 ))}
@@ -159,16 +159,16 @@ export default async function AccountPage() {
           </div>
 
           {/* Support Section */}
-          <div style={{ padding: '24px 20px 0' }}>
-            <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Support & Utilities</div>
+          <div style={{ padding: '24px 16px 0' }}>
+            <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Support & Utilities</div>
             <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
               <a href="mailto:hello@jamesandsons.com" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '15px 16px', textDecoration: 'none' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '17px' }}>
                   <i className="ti ti-headset"></i>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>Contact Concierge</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>hello@jamesandsons.com</div>
+                  <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>Contact Concierge</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>hello@jamesandsons.com</div>
                 </div>
                 <i className="ti ti-chevron-right" style={{ fontSize: '16px', color: 'var(--border)' }}></i>
               </a>
@@ -177,8 +177,8 @@ export default async function AccountPage() {
                   <i className="ti ti-moon"></i>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>Appearance</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>Customize your theme</div>
+                  <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>Appearance</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Customize your theme</div>
                 </div>
                 <ThemeToggle />
               </div>
