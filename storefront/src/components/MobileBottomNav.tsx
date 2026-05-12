@@ -20,16 +20,30 @@ export default function MobileBottomNav({ user }: { user: any }) {
     { label: 'Home', href: '/', icon: 'ti-home' },
     { label: 'Collections', href: '/collections', icon: 'ti-layout-grid' },
     { label: 'Blog', href: '/blog', icon: 'ti-article' },
-    { label: 'Account', href: user ? '/account' : '/login', icon: 'ti-user' }
+    { label: 'Cart', type: 'cart', icon: 'ti-shopping-bag' }
   ];
 
   return (
     <div className="mobile-bottom-nav-container md:hidden">
       {navItems.map((item, index) => {
+        if (item.type === 'cart') {
+          return (
+            <div key={index} className="mobile-nav-item" onClick={() => window.dispatchEvent(new Event('open-cart'))}>
+              <div style={{ position: 'relative' }}>
+                <i className={`ti ${item.icon}`}></i>
+                {count > 0 && (
+                  <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '8px', height: '8px', background: 'var(--gold)', borderRadius: '50%' }}></div>
+                )}
+              </div>
+              <span className="mobile-nav-label">{item.label}</span>
+            </div>
+          );
+        }
+
         const isActive = item.href && pathname === item.href;
         
         return (
-          <Link key={index} href={item.href} className={`mobile-nav-item ${isActive ? 'active' : ''}`}>
+          <Link key={index} href={item.href || '#'} className={`mobile-nav-item ${isActive ? 'active' : ''}`}>
             <i className={`ti ${item.icon}`}></i>
             <span className="mobile-nav-label">{item.label}</span>
           </Link>

@@ -89,21 +89,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       {/* ── MOBILE LAYOUT (md:hidden) ── */}
       <div className="md:hidden" style={{ paddingBottom: '40px' }}>
         
-        {/* Mobile Sub-Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
-          <button onClick={() => router.back()} className="icon-btn" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <i className="ti ti-arrow-left" style={{ fontSize: '18px' }}></i>
-          </button>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => toggleItem(product)} className="icon-btn" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', color: isWishlisted ? 'var(--gold)' : 'var(--text-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '18px' }}></i>
-            </button>
-            <button onClick={() => router.push('/cart')} className="icon-btn" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <i className="ti ti-shopping-bag" style={{ fontSize: '18px' }}></i>
-              {/* Add cart dot if needed */}
-            </button>
-          </div>
-        </div>
+        {/* Mobile Sub-Header — Removed buttons as per request */}
+        <div style={{ height: '16px' }}></div>
 
         {/* Product Image Gallery */}
         <div

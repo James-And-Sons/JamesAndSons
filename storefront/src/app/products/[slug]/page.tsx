@@ -89,29 +89,31 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
             </div>
 
             {/* Desktop Grid */}
-            <div className="hidden md:grid product-grid" style={{ padding: '0 40px' }}>
-              {related.map((p: any) => (
-                <Link key={p.id} href={`/products/${p.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
-                  <div className="product-img">
-                    <div className="product-img-bg" />
-                    {p.images?.[0] ? (
-                      <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <svg className="prod-chandelier-svg" width="120" height="160" viewBox="0 0 100 120" stroke="#C4A05A" fill="none">
-                        <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3"/>
-                        <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7"/>
-                        <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none"/>
-                      </svg>
-                    )}
-                  </div>
-                  <div className="product-info">
-                    <div className="product-name">{p.name}</div>
-                    <div className="product-meta">
-                      <div className="product-price">{formatPrice(p.d2cPrice)}</div>
+            <div className="hidden md:block">
+              <div className="product-grid" style={{ padding: '0 40px' }}>
+                {related.map((p: any) => (
+                  <Link key={p.id} href={`/products/${p.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+                    <div className="product-img">
+                      <div className="product-img-bg" />
+                      {p.images?.[0] ? (
+                        <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <svg className="prod-chandelier-svg" width="120" height="160" viewBox="0 0 100 120" stroke="#C4A05A" fill="none">
+                          <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3"/>
+                          <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7"/>
+                          <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none"/>
+                        </svg>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="product-info">
+                      <div className="product-name">{p.name}</div>
+                      <div className="product-meta">
+                        <div className="product-price">{formatPrice(p.d2cPrice)}</div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
         )}

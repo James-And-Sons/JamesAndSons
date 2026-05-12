@@ -2,8 +2,9 @@
 import { usePathname } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
-export default function MobileHeader() {
+export default function MobileHeader({ user }: { user: any }) {
   const pathname = usePathname();
   const { itemCount } = useCartStore();
   const [mounted, setMounted] = useState(false);
@@ -23,10 +24,9 @@ export default function MobileHeader() {
         <div className="mobile-icon-btn" onClick={() => window.dispatchEvent(new Event('open-search'))}>
           <i className="ti ti-search" aria-hidden="true"></i>
         </div>
-        <div className="mobile-icon-btn" onClick={() => window.dispatchEvent(new Event('open-cart'))}>
-          <i className="ti ti-shopping-bag" aria-hidden="true"></i>
-          {count > 0 && <div className="mobile-cart-dot"></div>}
-        </div>
+        <Link href={user ? '/account' : '/login'} className="mobile-icon-btn" style={{ textDecoration: 'none' }}>
+          <i className="ti ti-user" aria-hidden="true"></i>
+        </Link>
       </div>
     </div>
   );

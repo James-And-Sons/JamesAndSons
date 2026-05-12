@@ -35,7 +35,7 @@ export default async function Navigation() {
       </nav>
       
       {/* Mobile Top Header */}
-      <MobileHeader />
+      <MobileHeader user={user} />
 
       <MobileBottomNav user={user} />
     </>
