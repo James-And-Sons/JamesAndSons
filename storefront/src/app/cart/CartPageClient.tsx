@@ -15,6 +15,7 @@ export default function CartPageClient() {
   const [pincode, setPincode] = useState('');
   const [shippingRes, setShippingRes] = useState<any>(null);
   const [checkingPincode, setCheckingPincode] = useState(false);
+  const [showPincode, setShowPincode] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -138,10 +139,10 @@ export default function CartPageClient() {
           ))}
         </div>
 
-        <div className="cart-items-mobile">
+        <div className="cart-items-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {items.map(item => (
-            <div key={item.product.id} className="cart-mobile-card">
-              <Link href={`/products/${item.product.slug}`} className="cart-card-image">
+            <div key={item.product.id} className="cart-mobile-card" style={{ padding: '20px', gap: '18px' }}>
+              <Link href={`/products/${item.product.slug}`} className="cart-card-image" style={{ width: '100px', height: '120px' }}>
                 {item.product.images?.[0] ? (
                   <img src={item.product.images[0]} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
@@ -151,29 +152,48 @@ export default function CartPageClient() {
                   </svg>
                 )}
               </Link>
-              <div className="cart-card-info">
-                <div className="cart-card-header">
-                  <span className="cart-card-coll">{item.product.collection}</span>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <button 
-                      onClick={() => { toggleItem(item.product); removeItem(item.product.id); }} 
-                      className="cart-card-remove" 
-                      style={{ position: 'static', fontSize: '14px', color: 'var(--gold)' }}
-                      title="Move to Wishlist"
-                    >
-                      ♥
-                    </button>
-                    <button onClick={() => removeItem(item.product.id)} className="cart-card-remove" style={{ position: 'static' }}>✕</button>
-                  </div>
+              <div className="cart-card-info" style={{ gap: '4px' }}>
+                <div className="cart-card-header" style={{ marginBottom: '4px' }}>
+                  <span className="cart-card-coll" style={{ fontSize: '11px' }}>{item.product.collection}</span>
+                  <button onClick={() => removeItem(item.product.id)} className="cart-card-remove" style={{ position: 'static' }}>✕</button>
                 </div>
-                <Link href={`/products/${item.product.slug}`} className="cart-card-name">{item.product.name}</Link>
+                <Link href={`/products/${item.product.slug}`} className="cart-card-name" style={{ fontSize: '18px', marginBottom: '8px' }}>{item.product.name}</Link>
+                
+                <div style={{ marginBottom: '16px' }}>
+                  <button 
+                    onClick={() => { 
+                      if (window.confirm("Move this item to your wishlist? It will be removed from your bag.")) {
+                        toggleItem(item.product); 
+                        removeItem(item.product.id); 
+                      }
+                    }} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      background: 'rgba(201,168,76,0.1)', 
+                      border: '0.5px solid rgba(201,168,76,0.3)', 
+                      padding: '6px 12px', 
+                      borderRadius: '8px', 
+                      color: 'var(--gold)', 
+                      fontSize: '12px',
+                      fontFamily: 'var(--font-mono)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}
+                  >
+                    <i className="ti ti-heart" style={{ fontSize: '14px' }}></i>
+                    {isInWishlist(item.product.id) ? 'Already in Wishlist' : 'Move to Wishlist'}
+                  </button>
+                </div>
+
                 <div className="cart-card-footer">
-                  <div className="qty-stepper">
+                  <div className="qty-stepper" style={{ transform: 'scale(1.1)', transformOrigin: 'left' }}>
                     <button onClick={() => updateQty(item.product.id, item.quantity - 1)}>−</button>
                     <span>{item.quantity}</span>
                     <button onClick={() => updateQty(item.product.id, item.quantity + 1)}>+</button>
                   </div>
-                  <div className="cart-card-price">{formatPrice(item.product.d2cPrice * item.quantity)}</div>
+                  <div className="cart-card-price" style={{ fontSize: '20px' }}>{formatPrice(item.product.d2cPrice * item.quantity)}</div>
                 </div>
               </div>
             </div>
@@ -208,56 +228,68 @@ export default function CartPageClient() {
             <span className="font-serif text-[32px] text-[var(--gold-light)]">{formatPrice(subtotal + gst + (shipping ?? 0))}</span>
           </div>
 
-          <button onClick={handleCheckout} className="btn-primary w-full py-4 text-[12px] tracking-[0.2em] hover:bg-[var(--gold-light)] transition-colors group relative overflow-hidden">
+          <button onClick={handleCheckout} className="btn-primary w-full py-3 text-[11px] tracking-[0.2em] hover:bg-[var(--gold-light)] transition-all group relative overflow-hidden flex items-center justify-center gap-2">
+            <i className="ti ti-lock" style={{ fontSize: '14px' }}></i>
             <span className="relative z-10">Secure Checkout</span>
           </button>
 
           {/* Pincode Estimator */}
-          <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px' }}>
-              Check Delivery Estimate
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input 
-                placeholder="Enter Pincode" 
-                maxLength={6} 
-                value={pincode}
-                onChange={e => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  setPincode(val);
-                  if (val.length === 6) handleCheckPincode(val);
-                  else setShippingRes(null);
-                }}
-                style={{ flex: 1, background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none' }}
-              />
-              <button 
-                onClick={() => handleCheckPincode(pincode)}
-                disabled={pincode.length !== 6 || checkingPincode}
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid var(--border)', 
-                  color: 'var(--text)', 
-                  padding: '0 15px', 
-                  fontSize: '10px', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.1em',
-                  cursor: pincode.length === 6 ? 'pointer' : 'not-allowed',
-                  opacity: pincode.length === 6 ? 1 : 0.5
-                }}
-              >
-                {checkingPincode ? '...' : 'Check'}
-              </button>
-            </div>
+          <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+            <button 
+              onClick={() => setShowPincode(!showPincode)}
+              style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}
+            >
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                Estimate Shipping & Delivery
+              </div>
+              <i className={`ti ${showPincode ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ color: 'var(--gold-light)', fontSize: '14px' }}></i>
+            </button>
             
-            {shippingRes && (
-              <div style={{ marginTop: '14px', animation: 'fadeIn 0.3s ease' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
-                  <span>✓</span>
-                  <span>Deliver to {shippingRes.city}</span>
+            {showPincode && (
+              <div style={{ marginTop: '16px', animation: 'fadeIn 0.3s ease' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    placeholder="Enter Pincode" 
+                    maxLength={6} 
+                    value={pincode}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setPincode(val);
+                      if (val.length === 6) handleCheckPincode(val);
+                      else setShippingRes(null);
+                    }}
+                    style={{ flex: 1, background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none' }}
+                  />
+                  <button 
+                    onClick={() => handleCheckPincode(pincode)}
+                    disabled={pincode.length !== 6 || checkingPincode}
+                    style={{ 
+                      background: 'transparent', 
+                      border: '1px solid var(--border)', 
+                      color: 'var(--text)', 
+                      padding: '0 15px', 
+                      fontSize: '11px', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '0.1em',
+                      cursor: pincode.length === 6 ? 'pointer' : 'not-allowed',
+                      opacity: pincode.length === 6 ? 1 : 0.5
+                    }}
+                  >
+                    {checkingPincode ? '...' : 'Check'}
+                  </button>
                 </div>
-                <div style={{ marginTop: '4px', fontFamily: 'var(--font-serif)', fontSize: '13px', color: 'var(--cream)' }}>
-                  Arriving by <span style={{ color: 'var(--gold-light)' }}>{shippingRes.etd}</span>
-                </div>
+                
+                {shippingRes && (
+                  <div style={{ marginTop: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                      <span>✓</span>
+                      <span>Deliver to {shippingRes.city}</span>
+                    </div>
+                    <div style={{ marginTop: '4px', fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)' }}>
+                      Arriving by <span style={{ color: 'var(--gold-light)' }}>{shippingRes.etd}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

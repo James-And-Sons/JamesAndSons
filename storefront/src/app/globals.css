@@ -30,7 +30,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body);
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.7;
   overflow-x: hidden;
   cursor: default;
@@ -145,7 +145,7 @@ body {
   }
   .mobile-brand-name {
     font-family: var(--font-serif);
-    font-size: 24px; /* Increased from 22px */
+    font-size: 22px;
     font-weight: 500;
     letter-spacing: 0.08em;
     color: var(--text);
@@ -217,7 +217,7 @@ body {
   @keyframes mobile-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   .mobile-hero-title {
     font-family: var(--font-serif);
-    font-size: 40px; /* Increased from 36px */
+    font-size: 36px;
     line-height: 1.15;
     font-weight: 400;
     color: var(--text);
@@ -226,7 +226,7 @@ body {
   }
   .mobile-hero-title em { color: var(--gold-light); font-style: italic; }
   .mobile-hero-sub {
-    font-size: 14px; /* Increased from 12px */
+    font-size: 12px;
     color: var(--text-muted);
     line-height: 1.6;
     max-width: 240px; /* Increased to fit larger font */
@@ -286,7 +286,7 @@ body {
   }
   .mobile-stat-icon { font-size: 18px; color: var(--gold); }
   .mobile-stat-num { font-size: 17px; font-weight: 500; color: var(--text); line-height: 1; } /* Increased from 15px */
-  .mobile-stat-label { font-size: 12px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; } /* Increased from 10px */
+  .mobile-stat-label { font-size: 12px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
 
   /* Mobile Spaces Scroll */
   .mobile-spaces-scroll {
@@ -397,10 +397,10 @@ body {
   /* Removed ::after overlay that was blurring product images */
   .mobile-product-img-icon { font-size: 40px; color: var(--gold); opacity: 0.4; }
   .mobile-product-info { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;}
-  .mobile-product-name { font-size: 16px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 4px; } /* Increased from 14px */
-  .mobile-product-price { font-size: 18px; font-weight: 500; color: var(--gold); } /* Increased from 16px */
-  .mobile-product-price span { font-size: 12px; color: var(--text-muted); font-weight: 400; } /* Increased from 10px */
-  .mobile-product-sku { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.05em; } /* Increased from 10px */
+  .mobile-product-name { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 4px; }
+  .mobile-product-price { font-size: 16px; font-weight: 500; color: var(--gold); }
+  .mobile-product-price span { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+  .mobile-product-sku { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.05em; }
   .mobile-product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
   .mobile-add-btn {
     width: 28px; height: 28px;
@@ -448,7 +448,7 @@ body {
   .mobile-nav-item.active { background: rgba(201,168,76,0.18); }
   .mobile-nav-item i { font-size: 22px; color: var(--text-muted); }
   .mobile-nav-item.active i { color: var(--gold); }
-  .mobile-nav-label { font-size: 12px; color: var(--text-muted); letter-spacing: 0.04em; } /* Increased from 11px */
+  .mobile-nav-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.04em; }
   .mobile-nav-item.active .mobile-nav-label { color: var(--gold); }
 
   /* Mobile Page Header */
@@ -476,7 +476,7 @@ body {
     align-items: flex-end;
   }
   .mobile-count-badge {
-    font-size: 12px; /* Increased from 10px */
+    font-size: 12px;
     color: var(--text-muted);
     letter-spacing: 0.06em;
     background: var(--surface);
@@ -525,7 +525,7 @@ body {
 
   /* Extra mobile product card elements */
   .mobile-product-cat {
-    font-size: 11px; /* Increased from 9px */
+    font-size: 12px;
     color: var(--gold);
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -594,14 +594,14 @@ body {
   .cart-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
   .cart-card-coll {
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--gold);
   }
   .cart-card-name {
     font-family: var(--font-serif);
-    font-size: 18px; /* Increased from 16px */
+    font-size: 16px;
     font-weight: 300;
     color: var(--cream);
     text-decoration: none;
@@ -615,7 +615,7 @@ body {
   .cart-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
   .cart-card-price {
     font-family: var(--font-serif);
-    font-size: 20px; /* Increased from 18px */
+    font-size: 18px;
     color: var(--gold-light);
     font-weight: 300;
   }

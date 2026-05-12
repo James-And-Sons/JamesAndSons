@@ -137,7 +137,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ width: '4px', height: '4px', background: 'var(--gold)', borderRadius: '50%' }} />
             {product.category?.name}
           </div>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '34px', color: 'var(--cream)', lineHeight: 1.2, fontWeight: 300 }}>{product.name}</h1>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', color: 'var(--cream)', lineHeight: 1.2, fontWeight: 300 }}>{product.name}</h1>
           <div style={{ fontSize: '12px', color: 'var(--text-dim)', letterSpacing: '0.06em', marginTop: '6px' }}>SKU: {selectedVariant?.sku || product.sku}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
             <div style={{ width: '6px', height: '6px', background: availableStock > 0 ? 'var(--green)' : 'var(--gold)', borderRadius: '50%' }} />
@@ -153,7 +153,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
               {displayPrice ? 'Price inclusive of taxes' : 'Price on request'}
             </div>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '38px', color: 'var(--gold-light)', fontStyle: 'italic' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '34px', color: 'var(--gold-light)', fontStyle: 'italic' }}>
               {displayPrice ? formatPrice(displayPrice) : '₹ —'}
             </div>
             {isB2B && (
@@ -267,7 +267,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         {product.description && (
           <div style={{ margin: '16px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '20px' }}>
             <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance & Craftsmanship</div>
-            <div style={{ fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
               {product.description}
             </div>
           </div>
@@ -285,7 +285,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             ].map(spec => (
               <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', flex: '0 0 90px' }}>{spec.key}</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
               </div>
             ))}
           </div>

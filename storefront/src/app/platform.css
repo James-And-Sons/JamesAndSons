@@ -135,7 +135,7 @@
   }
   .nav-links a {
     font-family: var(--font-mono);
-    font-size: 13px; /* Increased from 11px */
+    font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -188,7 +188,7 @@
 
   .mobile-drawer-brand {
     font-family: var(--font-serif);
-    font-size: 32px; /* Increased from 28px */
+    font-size: 28px;
     color: var(--gold-light);
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -208,7 +208,7 @@
   }
   .mobile-drawer-link {
     font-family: var(--font-mono);
-    font-size: 16px; /* Increased from 14px */
+    font-size: 14px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--cream);
