@@ -14,9 +14,6 @@ export default function MobileHeader() {
 
   const items = useCartStore(state => state.items);
   const count = mounted ? items.reduce((sum, i) => sum + i.quantity, 0) : 0;
-  const isPDP = pathname.startsWith('/products/');
-
-  if (isPDP) return null;
 
   return (
     <div className="mobile-page-header md:hidden" style={{ position: 'relative' }}>

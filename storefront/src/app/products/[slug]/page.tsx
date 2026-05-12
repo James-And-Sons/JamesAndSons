@@ -5,12 +5,28 @@ import { formatPrice } from '@/lib/utils';
 import Navigation from '@/components/Navigation';
 import PDPClient from './PDPClient';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/server';
 
 
 
 export default async function ProductPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
   
+  // Determine B2B status
+  let isB2B = false;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (user) {
+      const meta = user.user_metadata || {};
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } }).catch(() => null);
+      isB2B = dbUser?.role === 'B2B_BUYER' || dbUser?.role === 'B2B_APPROVER' || meta.accountType === 'business';
+    }
+  } catch (error) {
+    console.error('Error checking B2B status on PDP:', error);
+  }
+
   let product;
   try {
     product = await prisma.product.findUnique({
@@ -22,9 +38,6 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     });
   } catch (error) {
     console.error(`Error fetching product with slug ${params.slug}:`, error);
-    // If an error occurs during the Prisma call, treat it as if the product was not found.
-    // The original code returns notFound() if product is null, so setting product to null
-    // here will lead to the same outcome.
     product = null; 
   }
 
@@ -43,9 +56,9 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
   return (
     <>
       <Navigation />
-      <main className="md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
+      <main className="pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
 
-        <PDPClient product={product as any} variants={product.variants as any} />
+        <PDPClient product={product as any} variants={product.variants as any} isB2B={isB2B} />
 
         {/* Related Products */}
         {related.length > 0 && (
@@ -55,7 +68,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                 <div className="section-label">From the Same Collection</div>
                 <h2 className="section-title" style={{ fontSize: 'clamp(24px, 4vw, 32px)' }}>You May Also <em>Love</em></h2>
               </div>
-              <Link href="/collections" className="link-all">View All ↗</Link>
+              <Link href="/collections" className="link-all">View All →</Link>
             </div>
 
             {/* Mobile Scroll */}
@@ -69,8 +82,8 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                       <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.3 }}></i>
                     )}
                   </div>
-                  <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '4px' }}>{p.name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--gold-light)' }}>{formatPrice(p.d2cPrice)}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '4px' }}>{p.name}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--gold-light)' }}>{formatPrice(p.d2cPrice)}</div>
                 </Link>
               ))}
             </div>
