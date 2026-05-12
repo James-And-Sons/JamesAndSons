@@ -85,6 +85,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   };
 
   return (
+    <>
     <div className="pdp-wrapper" style={{ background: 'var(--obsidian)', minHeight: '100vh' }}>
       
       {/* ── MOBILE LAYOUT (md:hidden) ── */}
@@ -473,7 +474,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     { key: 'Design Style', val: product.style?.join(', ') || 'Modern Heritage' },
                     { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
                   ].map(spec => (
-                    <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: '1px dashed var(--border)', lastChild: { borderBottom: 'none' } }}>
+                    <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: spec.key === 'Compliance' ? 'none' : '1px dashed var(--border)' }}>
                       <div style={{ flex: '0 0 140px', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{spec.key}</div>
                       <div style={{ flex: 1, fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>{spec.val}</div>
                     </div>
@@ -537,5 +538,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
+    </>
   );
 }
