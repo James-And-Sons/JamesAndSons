@@ -1,6 +1,7 @@
 'use client';
 import { useCartStore } from '@/store/cart';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function ProductGridMobile({ products = [] }: { products: any[] }) {
   const { addItem } = useCartStore();
