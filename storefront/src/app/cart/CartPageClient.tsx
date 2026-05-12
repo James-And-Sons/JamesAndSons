@@ -142,10 +142,14 @@ export default function CartPageClient() {
           {items.map(item => (
             <div key={item.product.id} className="cart-mobile-card">
               <Link href={`/products/${item.product.slug}`} className="cart-card-image">
-                <svg width="40" height="50" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
-                  <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
-                  <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
-                </svg>
+                {item.product.images?.[0] ? (
+                  <img src={item.product.images[0]} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <svg width="40" height="50" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
+                    <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
+                    <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
+                  </svg>
+                )}
               </Link>
               <div className="cart-card-info">
                 <div className="cart-card-header">
@@ -201,7 +205,7 @@ export default function CartPageClient() {
 
           <div className="flex justify-between items-center mb-8 bg-[var(--obsidian)] p-4 border border-[var(--border)]">
             <span className="font-mono text-[12px] uppercase tracking-widest text-[var(--gold)]">Total</span>
-            <span className="font-serif text-[28px] text-[var(--gold-light)]">{formatPrice(subtotal + gst + shipping)}</span>
+            <span className="font-serif text-[28px] text-[var(--gold-light)]">{formatPrice(subtotal + gst + (shipping ?? 0))}</span>
           </div>
 
           <button onClick={handleCheckout} className="btn-primary w-full py-4 text-[12px] tracking-[0.2em] hover:bg-[var(--gold-light)] transition-colors group relative overflow-hidden">

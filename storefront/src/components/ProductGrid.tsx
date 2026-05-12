@@ -186,7 +186,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
         <div className="mobile-products-grid" style={{ marginTop: '16px' }}>
           {filteredProducts.map(product => (
             <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
-              <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0' }}>
+              <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
                 {product.images && product.images[0] ? (
                   <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
@@ -194,7 +194,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                 )}
               </div>
               <div className="mobile-product-info" style={{ padding: '10px 12px 12px' }}>
-                <div className="mobile-product-cat">{product.collection} · {product.sku || 'N/A'}</div>
+                <div className="mobile-product-cat">{product.collection}</div>
                 <div className="mobile-product-name" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</div>
                 <div className="mobile-product-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <div className="mobile-price-block">

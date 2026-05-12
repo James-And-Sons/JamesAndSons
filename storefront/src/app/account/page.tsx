@@ -73,7 +73,7 @@ export default async function AccountPage() {
         <div className="md:hidden" style={{ paddingBottom: '40px' }}>
           
           {/* Profile Hero Card */}
-          <div style={{ margin: '16px 20px 0', padding: '24px', background: 'linear-gradient(150deg, #1a160a 0%, #0d0b06 100%)', border: '0.5px solid var(--border)', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div className="account-profile-card" style={{ margin: '16px 14px 0', padding: '24px', background: 'linear-gradient(150deg, #1a160a 0%, #0d0b06 100%)', border: '0.5px solid var(--border)', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>

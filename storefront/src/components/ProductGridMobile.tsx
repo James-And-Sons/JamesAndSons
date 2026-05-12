@@ -29,7 +29,6 @@ export default function ProductGridMobile({ products = [] }: { products: any[] }
             <div className="mobile-product-info">
               <div>
                 <div className="mobile-product-name">{product.name}</div>
-                <div className="mobile-product-sku">SKU: {product.sku || 'N/A'}</div>
               </div>
               <div className="mobile-product-footer">
                 <div className="mobile-product-price">₹{product.d2cPrice?.toLocaleString()} <span>+ GST</span></div>
