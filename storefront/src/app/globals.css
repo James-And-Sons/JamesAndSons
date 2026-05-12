@@ -704,15 +704,16 @@ body {
 }
 
 /* Account profile card — light mode */
-[data-theme='light'] .account-profile-card,
-@media (prefers-color-scheme: light) { .account-profile-card } {
+[data-theme='light'] .account-profile-card {
   background: linear-gradient(150deg, #f5ede0 0%, #ede5d0 100%) !important;
   border-color: rgba(0,0,0,0.1) !important;
 }
 
-[data-theme='light'] .account-profile-card {
-  background: linear-gradient(150deg, #f5ede0 0%, #ede5d0 100%) !important;
-  border-color: rgba(0,0,0,0.1) !important;
+@media (prefers-color-scheme: light) {
+  .account-profile-card {
+    background: linear-gradient(150deg, #f5ede0 0%, #ede5d0 100%) !important;
+    border-color: rgba(0,0,0,0.1) !important;
+  }
 }
 
 /* Blog mobile card — light mode text visibility */
