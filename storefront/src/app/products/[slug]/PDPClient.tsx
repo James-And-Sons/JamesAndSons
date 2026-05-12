@@ -487,8 +487,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         </div>
       </div>
 
-      </div>
-
       {/* Lightbox Overlay */}
       {lightboxOpen && (
         <div
