@@ -204,8 +204,8 @@ export default function CartPageClient() {
           </div>
 
           <div className="flex justify-between items-center mb-8 bg-[var(--obsidian)] p-4 border border-[var(--border)]">
-            <span className="font-mono text-[12px] uppercase tracking-widest text-[var(--gold)]">Total</span>
-            <span className="font-serif text-[28px] text-[var(--gold-light)]">{formatPrice(subtotal + gst + (shipping ?? 0))}</span>
+            <span className="font-mono text-[14px] uppercase tracking-widest text-[var(--gold)]">Total</span>
+            <span className="font-serif text-[32px] text-[var(--gold-light)]">{formatPrice(subtotal + gst + (shipping ?? 0))}</span>
           </div>
 
           <button onClick={handleCheckout} className="btn-primary w-full py-4 text-[12px] tracking-[0.2em] hover:bg-[var(--gold-light)] transition-colors group relative overflow-hidden">
