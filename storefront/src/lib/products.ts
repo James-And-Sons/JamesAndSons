@@ -1,7 +1,8 @@
 import { prisma } from './prisma';
 import { Product } from './utils';
+import { unstable_cache } from 'next/cache';
 
-export async function getProducts(filter?: string): Promise<Product[]> {
+async function getProductsRaw(filter?: string): Promise<Product[]> {
   try {
     const dbProducts = await prisma.product.findMany({
       include: {
@@ -14,7 +15,7 @@ export async function getProducts(filter?: string): Promise<Product[]> {
       ...p,
       collection: p.category?.name || 'Uncategorized',
       longDescription: p.description,
-      finishes: ['Gold', 'Silver'], // Mock data for finishes (can be moved to DB later)
+      finishes: ['Gold', 'Silver'], 
       spaces: p.spaces.map(s => s.name),
       specs: (p.specs as any) || [],
       images: p.images,
@@ -36,11 +37,17 @@ export async function getProducts(filter?: string): Promise<Product[]> {
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+export const getProducts = unstable_cache(
+  async (filter?: string) => getProductsRaw(filter),
+  ['products-list'],
+  { revalidate: 3600, tags: ['products'] }
+);
+
+async function getProductBySlugRaw(slug: string): Promise<Product | undefined> {
   try {
     const p = await prisma.product.findUnique({
       where: { slug },
-      include: { category: true, spaces: true }
+      include: { category: true, spaces: true, variants: true }
     });
     
     if (!p) return undefined;
@@ -60,7 +67,13 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
   }
 }
 
-export async function getSpaces() {
+export const getProductBySlug = unstable_cache(
+  async (slug: string) => getProductBySlugRaw(slug),
+  ['product-detail'],
+  { revalidate: 3600, tags: ['products'] }
+);
+
+async function getSpacesRaw() {
   try {
     const spaces = await prisma.space.findMany({
       include: {
@@ -76,3 +89,9 @@ export async function getSpaces() {
     return [];
   }
 }
+
+export const getSpaces = unstable_cache(
+  async () => getSpacesRaw(),
+  ['spaces-list'],
+  { revalidate: 3600, tags: ['spaces'] }
+);
