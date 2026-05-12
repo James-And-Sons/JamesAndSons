@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useWishlistStore } from '@/store/wishlist';
 import { useRouter } from 'next/navigation';
 import { checkPincode, getSavedPincode } from '@/app/products/actions';
+import Image from 'next/image';
 
 export default function CartPageClient() {
   const router = useRouter();
@@ -139,25 +140,24 @@ export default function CartPageClient() {
           ))}
         </div>
 
-        <div className="cart-items-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="cart-items-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
           {items.map(item => (
-            <div key={item.product.id} className="cart-mobile-card" style={{ padding: '20px', gap: '18px' }}>
-              <Link href={`/products/${item.product.slug}`} className="cart-card-image" style={{ width: '100px', height: '120px' }}>
+            <div key={item.product.id} className="cart-mobile-card" style={{ padding: '24px', gap: '20px', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', maxWidth: '320px' }}>
+              <Link href={`/products/${item.product.slug}`} className="cart-card-image" style={{ width: '160px', height: '200px' }}>
                 {item.product.images?.[0] ? (
-                  <img src={item.product.images[0]} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={item.product.images[0]} alt={item.product.name} width={160} height={200} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <svg width="40" height="50" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
+                  <svg width="60" height="80" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
                     <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
                     <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
                   </svg>
                 )}
               </Link>
-              <div className="cart-card-info" style={{ gap: '4px' }}>
-                <div className="cart-card-header" style={{ marginBottom: '4px' }}>
+              <div className="cart-card-info" style={{ gap: '8px', alignItems: 'center', width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                   <span className="cart-card-coll" style={{ fontSize: '11px' }}>{item.product.collection}</span>
-                  <button onClick={() => removeItem(item.product.id)} className="cart-card-remove" style={{ position: 'static' }}>✕</button>
+                  <Link href={`/products/${item.product.slug}`} className="cart-card-name" style={{ fontSize: '20px', fontWeight: 400 }}>{item.product.name}</Link>
                 </div>
-                <Link href={`/products/${item.product.slug}`} className="cart-card-name" style={{ fontSize: '18px', marginBottom: '8px' }}>{item.product.name}</Link>
                 
                 <div style={{ marginBottom: '16px' }}>
                   <button 
@@ -173,7 +173,7 @@ export default function CartPageClient() {
                       gap: '8px', 
                       background: 'rgba(201,168,76,0.1)', 
                       border: '0.5px solid rgba(201,168,76,0.3)', 
-                      padding: '6px 12px', 
+                      padding: '8px 16px', 
                       borderRadius: '8px', 
                       color: 'var(--gold)', 
                       fontSize: '12px',
@@ -187,14 +187,16 @@ export default function CartPageClient() {
                   </button>
                 </div>
 
-                <div className="cart-card-footer">
-                  <div className="qty-stepper" style={{ transform: 'scale(1.1)', transformOrigin: 'left' }}>
+                <div className="cart-card-footer" style={{ width: '100%', justifyContent: 'center', gap: '20px' }}>
+                  <div className="qty-stepper" style={{ transform: 'scale(1.1)' }}>
                     <button onClick={() => updateQty(item.product.id, item.quantity - 1)}>−</button>
                     <span>{item.quantity}</span>
                     <button onClick={() => updateQty(item.product.id, item.quantity + 1)}>+</button>
                   </div>
-                  <div className="cart-card-price" style={{ fontSize: '20px' }}>{formatPrice(item.product.d2cPrice * item.quantity)}</div>
+                  <div className="cart-card-price" style={{ fontSize: '22px' }}>{formatPrice(item.product.d2cPrice * item.quantity)}</div>
                 </div>
+                
+                <button onClick={() => removeItem(item.product.id)} style={{ marginTop: '16px', color: 'var(--text-dim)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'transparent', border: 'none' }}>Remove Item</button>
               </div>
             </div>
           ))}

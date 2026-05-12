@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useWishlistStore } from '@/store/wishlist';
 import { checkPincode, getSavedPincode } from '../actions';
 import { useEffect } from 'react';
+import Image from 'next/image';
 
 type Variant = {
   id: string;
@@ -100,7 +101,13 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           style={{ margin: '0 20px', position: 'relative', height: '320px', borderRadius: '24px', border: '0.5px solid var(--border)', overflow: 'hidden', cursor: activeImages.length > 0 ? 'zoom-in' : 'default' }}
         >
           {activeImages.length > 0 ? (
-            <img src={activeImages[activeImg]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <Image 
+              src={activeImages[activeImg]} 
+              alt={product.name} 
+              fill
+              priority
+              style={{ objectFit: 'cover' }} 
+            />
           ) : (
             <div style={{ width: '100%', height: '100%', background: 'linear-gradient(150deg, #1a160a 0%, #0d0b06 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="100" height="130" viewBox="0 0 100 130" stroke="var(--gold)" fill="none" opacity="0.6">
@@ -129,17 +136,15 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           )}
         </div>
 
-
-
         {/* Product Info Header */}
-        <div style={{ padding: '20px 24px 0' }}>
-          <div style={{ fontSize: '11px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ padding: '20px 24px 0', textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <div style={{ width: '4px', height: '4px', background: 'var(--gold)', borderRadius: '50%' }} />
             {product.category?.name}
           </div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', color: 'var(--cream)', lineHeight: 1.2, fontWeight: 300 }}>{product.name}</h1>
           <div style={{ fontSize: '12px', color: 'var(--text-dim)', letterSpacing: '0.06em', marginTop: '6px' }}>SKU: {selectedVariant?.sku || product.sku}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '8px' }}>
             <div style={{ width: '6px', height: '6px', background: availableStock > 0 ? 'var(--green)' : 'var(--gold)', borderRadius: '50%' }} />
             <div style={{ fontSize: '12px', color: availableStock > 0 ? 'var(--green)' : 'var(--gold)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {availableStock > 0 ? `${availableStock} in stock` : 'Made to Order'}
@@ -148,8 +153,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         </div>
 
         {/* Mobile Pricing Row */}
-        <div style={{ padding: '20px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
+        <div style={{ padding: '20px 24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
               {displayPrice ? 'Price inclusive of taxes' : 'Price on request'}
             </div>
@@ -162,24 +167,13 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               </div>
             )}
           </div>
-          <div style={{ textAlign: 'right' }}>
-            {product.bisCertification && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px', marginBottom: '4px' }}>
-                <i className="ti ti-shield-check" style={{ fontSize: '13px', color: 'var(--gold)' }}></i>
-                <span style={{ color: 'var(--gold)', fontSize: '10px', letterSpacing: '0.06em' }}>BIS Certified</span>
-              </div>
-            )}
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Luxury Living<br />Estate Heritage
-            </div>
-          </div>
         </div>
 
         {/* Variant Selector */}
         {variants.length > 0 && (
-          <div style={{ padding: '20px 24px 0' }}>
+          <div style={{ padding: '20px 24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>Select Finish</div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {variants.map(v => (
                 <div 
                   key={v.id} 
@@ -201,25 +195,22 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         )}
 
         {/* Quantity Row */}
-        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Qty</div>
           <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
             <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '40px', height: '40px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px' }}>−</button>
             <div style={{ width: '36px', textAlign: 'center', fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-mono)' }}>{qty}</div>
             <button onClick={() => setQty(q => Math.min(availableStock || 999, q + 1))} style={{ width: '40px', height: '40px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px' }}>+</button>
           </div>
-          <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-            Total: <span style={{ color: 'var(--gold-light)', fontSize: '13px' }}>{formatPrice(displayPrice * qty)}</span>
-          </div>
         </div>
 
         {/* Primary Actions */}
-        <div style={{ padding: '24px 24px 0', display: 'flex', gap: '12px' }}>
+        <div style={{ padding: '24px 24px 0', display: 'flex', justifyContent: 'center', gap: '12px' }}>
           <button 
             onClick={handleAddToCart}
             disabled={availableStock === 0}
             className="btn-primary" 
-            style={{ flex: 1, height: '52px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '14px' }}
+            style={{ flex: 1, maxWidth: '280px', height: '52px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '14px' }}
           >
             <i className="ti ti-shopping-bag-plus" style={{ fontSize: '18px' }}></i>
             {availableStock === 0 ? 'Made to Order' : added ? '✓ Added to Cart' : 'Add to Cart'}
@@ -229,23 +220,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </button>
         </div>
 
-        {/* Secondary Action — B2B only */}
-        {isB2B && (
-          <Link href={`/rfq?product=${product.slug}`} className="btn-outline" style={{ display: 'flex', height: '50px', borderRadius: '16px', border: '0.5px solid var(--border)', fontSize: '13px', color: 'var(--gold)', letterSpacing: '0.06em', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '12px 24px 0', width: 'auto' }}>
-            <i className="ti ti-file-text" style={{ fontSize: '16px' }}></i>
-            Request Custom Quote
-          </Link>
-        )}
-
-        {/* Trust — warranty only */}
-        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <i className="ti ti-shield-check" style={{ fontSize: '16px', color: 'var(--gold)' }}></i>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>2-Year Warranty Included</span>
-        </div>
-
         {/* Pincode Section */}
         <div style={{ margin: '20px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '16px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>Check Delivery Estimate</div>
+          <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px', textAlign: 'center' }}>Check Delivery Estimate</div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
             <input 
               placeholder="Enter pincode" 
@@ -257,7 +234,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <button onClick={() => handleCheckPincode(pincode)} className="btn-outline" style={{ flexShrink: 0, borderRadius: '12px', padding: '0 18px', fontSize: '13px', whiteSpace: 'nowrap' }}>Check</button>
           </div>
           {shippingRes && (
-            <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
               <i className="ti ti-truck"></i> Estimated by {shippingRes.etd}
             </div>
           )}
@@ -266,8 +243,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         {/* Description Card */}
         {product.description && (
           <div style={{ margin: '16px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '20px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance & Craftsmanship</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+            <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px', textAlign: 'center' }}>Provenance & Craftsmanship</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, textAlign: 'center' }}>
               {product.description}
             </div>
           </div>
@@ -275,7 +252,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
         {/* Technical Specs Card */}
         <div style={{ margin: '12px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px 12px', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '0.5px solid var(--border)' }}>Technical Specifications</div>
+          <div style={{ padding: '16px 20px 12px', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '0.5px solid var(--border)', textAlign: 'center' }}>Technical Specifications</div>
           <div style={{ padding: '0 20px' }}>
             {[
               { key: 'Material', val: product.materialAndFinish?.join(', ') || 'Metals' },
@@ -283,14 +260,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               { key: 'Style', val: product.style?.join(', ') || 'Modern' },
               { key: 'GST Rate', val: `${product.gstRate}%` }
             ].map(spec => (
-              <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', flex: '0 0 90px' }}>{spec.key}</div>
+              <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)', justifyContent: 'center' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', flex: '0 0 90px', textAlign: 'right' }}>{spec.key}</div>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Ultra-slim Footer */}
+        <div style={{ textAlign: 'center', padding: '30px 20px 0', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          Estate Heritage · Authenticity Guaranteed
+        </div>
       </div>
 
       {/* ── DESKTOP LAYOUT (hidden md:grid) ── */}
@@ -427,8 +408,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   <i className="ti ti-chevron-right"></i>
                 </button>
                 <div style={{ position: 'absolute', bottom: '-32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px' }}>
-                  {activeImages.map((_: any, i: number) => (
-                    <div key={i} onClick={() => setActiveImg(i)} style={{ width: i === activeImg ? '18px' : '7px', height: '7px', borderRadius: i === activeImg ? '4px' : '50%', background: i === activeImg ? 'var(--gold)' : 'rgba(255,255,255,0.4)', transition: 'all 0.3s', cursor: 'pointer' }} />
+                  {activeImages.map((_: any, idx: number) => (
+                    <div
+                      key={idx}
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: idx === activeImg ? 'var(--gold)' : 'rgba(255,255,255,0.2)',
+                        transition: 'all 0.3s ease',
+                        transform: idx === activeImg ? 'scale(1.3)' : 'scale(1)'
+                      }}
+                    />
                   ))}
                 </div>
               </>

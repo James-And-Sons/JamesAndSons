@@ -646,26 +646,75 @@ body {
   .cart-items-mobile { display: block !important; }
   .cart-summary-container {
     position: fixed !important;
-    bottom: 60px !important;
+    bottom: 64px !important;
     left: 0 !important;
     right: 0 !important;
     z-index: 49 !important;
     padding: 0 !important;
   }
-  /* Compact summary for mobile — just total + checkout */
+  /* Ultra-slim compact summary for mobile */
   .cart-summary-container > div {
     border-radius: 0 !important;
-    padding: 14px 16px !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.3) !important;
+    padding: 10px 16px !important;
+    border-top: 1px solid var(--border) !important;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+    background: color-mix(in srgb, var(--obsidian) 98%, transparent) !important;
+    backdrop-filter: blur(24px) !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
   }
-  /* Hide the detailed breakdown on mobile, keep only total + checkout */
-  .cart-summary-container .space-y-4 { display: none !important; }
-  .cart-summary-container .mt-8.text-center { display: none !important; }
-  .cart-summary-container > div > h3 { display: none !important; }
-  .cart-summary-container > div > div.mt-8.text-center { display: none !important; }
+  
+  .cart-summary-container .flex.justify-between.items-center.mb-8 {
+    margin-bottom: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  
+  .cart-summary-container .font-mono.text-\[14px\] {
+    font-size: 9px !important;
+    opacity: 0.5 !important;
+    margin-bottom: -4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+  }
+  
+  .cart-summary-container .font-serif.text-\[32px\] {
+    font-size: 19px !important;
+    color: var(--gold-light) !important;
+    line-height: 1.2 !important;
+  }
+
+  .cart-summary-container button {
+    width: auto !important;
+    min-width: 130px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    height: 44px !important;
+    flex-shrink: 0 !important;
+    font-size: 10px !important;
+  }
+
+  .cart-summary-container button i {
+    font-size: 12px !important;
+  }
+
+  /* Hide the detailed breakdown and other sections in the sticky footer */
+  .cart-summary-container .space-y-4,
+  .cart-summary-container .mt-8.text-center,
+  .cart-summary-container > div > h3,
+  .cart-summary-container #pincode-section { 
+    display: none !important; 
+  }
 
   /* Checkout mobile layout */
   .checkout-layout {

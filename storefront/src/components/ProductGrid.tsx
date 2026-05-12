@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { formatPrice, Product } from '@/lib/utils';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
+import Image from 'next/image';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts }: { initialFilter?: string, initialProducts: Product[] }) {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
@@ -188,7 +189,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
               <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
                 {product.images && product.images[0] ? (
-                  <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={product.images[0]} alt={product.name} width={400} height={400} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28 }}></i>
                 )}

@@ -1,6 +1,6 @@
 'use client';
-import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
+import Image from 'next/image';
 
 export default function ProductGridMobile({ products = [] }: { products: any[] }) {
   const { addItem } = useCartStore();
@@ -21,7 +21,7 @@ export default function ProductGridMobile({ products = [] }: { products: any[] }
           <Link key={product.id || index} href={`/products/${product.slug}`} className="mobile-product-card">
             <div className="mobile-product-img">
               {product.images && product.images[0] ? (
-                <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                <Image src={product.images[0]} alt={product.name} width={300} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
               ) : (
                 <i className="ti ti-bulb mobile-product-img-icon"></i>
               )}
