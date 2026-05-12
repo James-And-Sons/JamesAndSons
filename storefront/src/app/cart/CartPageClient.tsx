@@ -89,52 +89,57 @@ export default function CartPageClient() {
           </div>
         </div>
 
-        <div className="cart-items-desktop">
+        <div className="cart-items-desktop" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           {items.map(item => (
-            <div key={item.product.id} className="cart-item-grid" style={{ alignItems: 'center', paddingBottom: '32px', borderBottom: '1px solid var(--border)' }}>
-              {/* Product Info */}
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-                <Link href={`/products/${item.product.slug}`} style={{ width: '100px', height: '125px', background: 'var(--surface2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, textDecoration: 'none' }}>
-                  <svg width="60" height="75" viewBox="0 0 100 120" stroke="var(--gold)" fill="none" style={{ opacity: 0.6 }}>
-                    <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
-                    <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
-                    <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
-                  </svg>
-                </Link>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>{item.product.collection}</div>
-                  <Link href={`/products/${item.product.slug}`} style={{ textDecoration: 'none' }}>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 300, color: 'var(--cream)', lineHeight: 1.2, marginBottom: '12px' }}>{item.product.name}</div>
-                  </Link>
-                  <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                    <button onClick={() => removeItem(item.product.id)} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-dim)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.2s', padding: 0 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}>
-                      Remove
-                    </button>
-                    <button 
-                      onClick={() => { toggleItem(item.product); removeItem(item.product.id); }} 
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gold)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'opacity 0.2s', padding: 0 }}
-                    >
-                      {isInWishlist(item.product.id) ? 'Already in Wishlist' : 'Move to Wishlist'}
-                    </button>
+            <div key={item.product.id} className="cart-item-row" style={{ display: 'grid', gridTemplateColumns: '140px 1.5fr 1fr 1fr 100px', gap: '32px', alignItems: 'center', padding: '32px', background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', transition: 'transform 0.3s ease' }}>
+              {/* Image */}
+              <Link href={`/products/${item.product.slug}`} style={{ width: '140px', height: '175px', background: 'var(--void)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', display: 'block' }}>
+                {item.product.images?.[0] ? (
+                  <Image src={item.product.images[0]} alt={item.product.name} width={140} height={175} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.3 }}></i>
                   </div>
+                )}
+              </Link>
+
+              {/* Product Info */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{item.product.collection}</div>
+                <Link href={`/products/${item.product.slug}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', color: 'var(--cream)', lineHeight: 1.2 }}>{item.product.name}</div>
+                </Link>
+                <div style={{ display: 'flex', gap: '20px', marginTop: '16px' }}>
+                  <button onClick={() => removeItem(item.product.id)} style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--text-dim)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}>Remove</button>
+                  <button 
+                    onClick={() => { toggleItem(item.product); removeItem(item.product.id); }} 
+                    style={{ background: 'transparent', border: 'none', padding: 0, color: 'var(--gold)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                  >
+                    Move to Wishlist
+                  </button>
                 </div>
               </div>
 
               {/* Price */}
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--text)' }}>
-                {formatPrice(item.product.d2cPrice)}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Unit Price</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: 'var(--text)' }}>{formatPrice(item.product.d2cPrice)}</div>
               </div>
 
               {/* Quantity */}
-              <div className="qty-stepper">
-                <button onClick={() => updateQty(item.product.id, item.quantity - 1)}>−</button>
-                <span>{item.quantity}</span>
-                <button onClick={() => updateQty(item.product.id, item.quantity + 1)}>+</button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Quantity</div>
+                <div className="qty-stepper" style={{ border: '1px solid var(--border)', background: 'var(--void)' }}>
+                  <button onClick={() => updateQty(item.product.id, item.quantity - 1)} style={{ padding: '0 15px' }}>−</button>
+                  <span style={{ minWidth: '30px' }}>{item.quantity}</span>
+                  <button onClick={() => updateQty(item.product.id, item.quantity + 1)} style={{ padding: '0 15px' }}>+</button>
+                </div>
               </div>
 
-              {/* Total */}
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)', textAlign: 'right' }}>
-                {formatPrice(item.product.d2cPrice * item.quantity)}
+              {/* Subtotal */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: '8px' }}>Subtotal</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', color: 'var(--gold-light)' }}>{formatPrice(item.product.d2cPrice * item.quantity)}</div>
               </div>
             </div>
           ))}

@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/utils';
 import Navigation from '@/components/Navigation';
 import PDPClient from './PDPClient';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/utils/supabase/server';
 
 
@@ -63,7 +64,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
         {/* Related Products */}
         {related.length > 0 && (
           <section className="section" style={{ borderTop: '1px solid var(--border)', padding: '40px 0' }}>
-            <div className="section-header" style={{ padding: '0 24px', marginBottom: '24px' }}>
+            <div className="section-header" style={{ padding: '0 16px', marginBottom: '20px' }}>
               <div>
                 <div className="section-label">From the Same Collection</div>
                 <h2 className="section-title" style={{ fontSize: 'clamp(24px, 4vw, 32px)' }}>You May Also <em>Love</em></h2>
@@ -71,19 +72,21 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
               <Link href="/collections" className="link-all">View All →</Link>
             </div>
 
-            {/* Mobile Scroll */}
-            <div className="md:hidden" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '0 24px 20px', scrollbarWidth: 'none' }}>
+            {/* Mobile Scroll — Edge-to-Edge Experience */}
+            <div className="md:hidden" style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '0 16px 24px', scrollbarWidth: 'none' }}>
               {related.map((p: any) => (
                 <Link key={p.id} href={`/products/${p.slug}`} style={{ flexShrink: 0, width: '160px', textDecoration: 'none' }}>
-                  <div style={{ height: '180px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                  <div style={{ height: '200px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '12px' }}>
                     {p.images?.[0] ? (
-                      <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <Image src={p.images[0]} alt={p.name} fill style={{ objectFit: 'cover' }} />
                     ) : (
-                      <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.3 }}></i>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.2 }}></i>
+                      </div>
                     )}
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '4px' }}>{p.name}</div>
-                  <div style={{ fontSize: '13px', color: 'var(--gold-light)' }}>{formatPrice(p.d2cPrice)}</div>
+                  <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '2px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--gold-light)', opacity: 0.8 }}>{formatPrice(p.d2cPrice)}</div>
                 </Link>
               ))}
             </div>

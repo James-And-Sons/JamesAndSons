@@ -629,6 +629,7 @@ body {
     line-height: 1;
   }
   [data-theme='light'] .cart-card-remove { color: #8a7a60; }
+  .cart-items-mobile { display: none; }
 }
 
 /* ── MOBILE-SPECIFIC OVERRIDES (max-width: 768px) ── */
@@ -646,11 +647,12 @@ body {
   .cart-items-mobile { display: block !important; }
   .cart-summary-container {
     position: fixed !important;
-    bottom: 64px !important;
+    bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 49 !important;
+    z-index: 999 !important;
     padding: 0 !important;
+    background: var(--obsidian) !important;
   }
   /* Ultra-slim compact summary for mobile */
   .cart-summary-container > div {
