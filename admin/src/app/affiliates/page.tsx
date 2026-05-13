@@ -46,11 +46,12 @@ export default async function AffiliatesPage() {
       {/* Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         {[
-          { label: 'Total Affiliates', value: affiliates.length.toString() },
-          { label: 'Active', value: affiliates.filter(a => a.status === 'ACTIVE').length.toString(), color: '#4CAF7A' },
+          { label: 'Total Affiliates', value: (affiliates as any[]).length.toString() },
+          { label: 'Active', value: (affiliates as any[]).filter((a: any) => a.status === 'ACTIVE').length.toString(), color: '#4CAF7A' },
           { label: 'Total Revenue Attributed', value: `₹${totalRevenue.toLocaleString('en-IN')}`, color: 'var(--gold)' },
           { label: 'Total Commission Earned', value: `₹${totalCommission.toLocaleString('en-IN')}` },
         ].map(stat => (
+
           <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px 24px' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{stat.label}</div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', color: stat.color ?? 'var(--cream)' }}>{stat.value}</div>
