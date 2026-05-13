@@ -13,6 +13,24 @@ enum Role {
   B2B_APPROVER
 }
 
+enum CouponType {
+  PERCENTAGE    // e.g. 20% off
+  FIXED_AMOUNT  // e.g. ₹500 off
+  FREE_SHIPPING // waives shipping cost
+}
+
+enum CouponStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  EXHAUSTED     // usageLimit reached
+}
+
+enum AffiliateStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -188,6 +206,9 @@ model Order {
   totalAmount    Float
   taxAmount      Float
   shippingAmount Float
+  discountAmount Float       @default(0)   // Actual INR amount discounted
+  couponCode     String?                   // Denormalized for quick display
+  affiliateCode  String?                   // Denormalized for quick display
   
   shippingAddress String
   shippingPhone   String?
@@ -197,7 +218,6 @@ model Order {
   billingAddress  String
   gstin           String?
   companyName     String?
-  discountCode    DiscountCode?
   
   trackingNumber String?
   awbNumber      String?     // For logistics (Shiprocket/Delhivery)
@@ -212,10 +232,12 @@ model Order {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  user           User          @relation(fields: [userId], references: [id])
-  items          OrderItem[]
-  returnRequests ReturnRequest[]
-  tickets        Ticket[]
+  user                User                 @relation(fields: [userId], references: [id])
+  items               OrderItem[]
+  returnRequests      ReturnRequest[]
+  tickets             Ticket[]
+  couponUsage         CouponUsage?
+  affiliateConversion AffiliateConversion?
 }
 
 model OrderItem {
@@ -363,14 +385,86 @@ model AbandonedCart {
   updatedAt   DateTime @updatedAt
 }
 
-model DiscountCode {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  percentage  Float
-  expiresAt   DateTime
-  used        Boolean  @default(false)
-  orderId     String?  @unique
-  order       Order?   @relation(fields: [orderId], references: [id])
+// ─────────────────────────────────────────────
+// PROMOTIONS ENGINE
+// ─────────────────────────────────────────────
+
+model Coupon {
+  id                String       @id @default(uuid())
+  code              String       @unique  // Human-readable e.g. "LUXE20"
+  description       String?               // Internal admin note
+  type              CouponType   @default(PERCENTAGE)
+  value             Float                 // 20 (percent) or 500 (INR)
+  status            CouponStatus @default(ACTIVE)
+
+  // Constraints
+  minOrderAmount    Float?                // Minimum cart subtotal to apply
+  maxDiscountCap    Float?                // Max discount INR (for % coupons)
+  usageLimit        Int?                  // Total uses across all users
+  usageLimitPerUser Int?    @default(1)   // Times one user can use this code
+  usedCount         Int     @default(0)
+
+  // Validity window
+  startsAt          DateTime?             // Optional future start date
+  expiresAt         DateTime?
+
+  // Attribution — link to external partner or affiliate
+  source            String?               // "internal" | "pauket" | "coupondunia"
+  affiliateId       String?
+  affiliate         Affiliate?   @relation(fields: [affiliateId], references: [id])
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  usages            CouponUsage[]
+}
+
+model CouponUsage {
+  id             String   @id @default(uuid())
+  couponId       String
+  userId         String?           // null for guest checkouts
+  orderId        String   @unique
+  discountAmount Float             // Actual INR amount discounted on this order
+  createdAt      DateTime @default(now())
+
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  order          Order    @relation(fields: [orderId], references: [id])
+}
+
+model Affiliate {
+  id              String          @id @default(uuid())
+  name            String
+  email           String          @unique
+  phone           String?
+  affiliateCode   String          @unique  // URL param: ?ref=DESIGNERSTUDIO
+  commissionRate  Float           @default(5.0)  // % of order subtotal
+  status          AffiliateStatus @default(ACTIVE)
+  notes           String?
+
+  // Running lifetime totals (updated on each conversion)
+  totalRevenue    Float           @default(0)
+  totalCommission Float           @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  coupons         Coupon[]
+  conversions     AffiliateConversion[]
+}
+
+model AffiliateConversion {
+  id               String    @id @default(uuid())
+  affiliateId      String
+  orderId          String    @unique
+  orderRevenue     Float               // Subtotal of the attributed order
+  commissionAmount Float               // commission earned on this order
+  isPaid           Boolean   @default(false)
+  paidAt           DateTime?
+
+  createdAt        DateTime  @default(now())
+
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id])
+  order            Order     @relation(fields: [orderId], references: [id])
 }
 
 model UserAddress {

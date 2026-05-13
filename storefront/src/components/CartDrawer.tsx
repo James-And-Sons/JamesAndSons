@@ -5,9 +5,10 @@ import { formatPrice } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useWishlistStore } from '@/store/wishlist';
+import CouponInput from '@/components/CouponInput';
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQty, total, itemCount } = useCartStore();
+  const { items, isOpen, closeCart, removeItem, updateQty, total, itemCount, appliedCoupon, discountedTotal } = useCartStore();
   const { toggleItem } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
 
@@ -35,7 +36,8 @@ export default function CartDrawer() {
   const currentItems = mounted ? items : [];
   const currentCount = mounted ? itemCount() : 0;
   const cartTotal = mounted ? total() : 0;
-  const gst = cartTotal * 0.18; // 18% GST as per inspiration
+  const finalTotal = mounted ? discountedTotal() : 0;
+  const gst = finalTotal * 0.18;
 
   if (!mounted) return null;
 
@@ -194,12 +196,9 @@ export default function CartDrawer() {
                 </div>
               ))}
 
-              {/* Promo Row */}
-              <div style={{ margin: '12px 0 0', display: 'flex', gap: '8px' }}>
-                <div style={{ flex: 1, background: '#181510', border: '0.5px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '11px 14px', fontSize: '12px', color: '#7A7060', letterSpacing: '0.04em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <i className="ti ti-tag" style={{ color: '#C9A84C', fontSize: '14px' }}></i>
-                  Apply promo code or B2B discount
-                </div>
+              {/* Coupon Input */}
+              <div style={{ margin: '12px 0 0' }}>
+                <CouponInput />
               </div>
 
               {/* Order Summary Card */}
@@ -210,13 +209,20 @@ export default function CartDrawer() {
                 </div>
                 <div style={{ padding: '4px 0' }}>
                   <SummaryRow label="Subtotal" value={formatPrice(cartTotal)} />
+                  {appliedCoupon && (
+                    <SummaryRow
+                      label={`Promo: ${appliedCoupon.code}`}
+                      value={appliedCoupon.freeShipping ? 'Free Shipping' : `- ${formatPrice(appliedCoupon.discountAmount)}`}
+                      highlight
+                    />
+                  )}
                   <SummaryRow label="GST (18%)" value={formatPrice(gst)} />
-                  <SummaryRow label="Shipping" value="At next step" muted />
+                  <SummaryRow label="Shipping" value={appliedCoupon?.freeShipping ? 'Free' : 'At next step'} muted={!appliedCoupon?.freeShipping} highlight={!!appliedCoupon?.freeShipping} />
                   <SummaryRow label="Installation" value="Free" highlight />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', margin: '0 8px 8px', background: 'rgba(201,168,76,0.07)', border: '0.5px solid rgba(201,168,76,0.2)', borderRadius: '12px' }}>
                   <div style={{ fontSize: '11px', color: '#C9A84C', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total</div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', color: '#E2C97A' }}>{formatPrice(cartTotal + gst)}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', color: '#E2C97A' }}>{formatPrice(finalTotal + gst)}</div>
                 </div>
               </div>
 

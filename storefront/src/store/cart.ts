@@ -7,9 +7,18 @@ export type CartItem = {
   quantity: number;
 };
 
+export type AppliedCoupon = {
+  couponId: string;
+  code: string;
+  discountAmount: number;
+  freeShipping: boolean;
+  description: string;
+};
+
 type CartStore = {
   items: CartItem[];
   isOpen: boolean;
+  appliedCoupon: AppliedCoupon | null;
   openCart: () => void;
   closeCart: () => void;
   addItem: (product: Product, qty?: number) => void;
@@ -18,6 +27,9 @@ type CartStore = {
   clearCart: () => void;
   total: () => number;
   itemCount: () => number;
+  applyCoupon: (coupon: AppliedCoupon) => void;
+  removeCoupon: () => void;
+  discountedTotal: () => number;
 };
 
 export const useCartStore = create<CartStore>()(
@@ -25,6 +37,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      appliedCoupon: null,
 
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
@@ -58,11 +71,21 @@ export const useCartStore = create<CartStore>()(
         }));
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], appliedCoupon: null }),
 
       total: () => get().items.reduce((sum, i) => sum + i.product.d2cPrice * i.quantity, 0),
 
       itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+
+      applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
+
+      removeCoupon: () => set({ appliedCoupon: null }),
+
+      discountedTotal: () => {
+        const subtotal = get().total();
+        const discount = get().appliedCoupon?.discountAmount ?? 0;
+        return Math.max(0, subtotal - discount);
+      },
     }),
     { name: 'jns-cart' }
   )

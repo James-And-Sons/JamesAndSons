@@ -32,6 +32,10 @@ type CheckoutForm = {
   pincode: string;
   gstin?: string;
   companyName?: string;
+  couponCode?: string;      // Applied coupon code
+  couponId?: string;        // Resolved coupon ID from validation
+  discountAmount?: number;  // Pre-validated discount amount
+  affiliateCode?: string;   // From jns_ref cookie
 };
 
 import { createRazorpayOrder, createPaymentLink } from '@/lib/razorpay';
@@ -67,7 +71,8 @@ export async function createOrder(
     const cleanAddress = form.address.trim().replace(/[^\w\s,.-]/g, '');
     const shippingAddress = `${cleanAddress}, ${form.city.trim()}, ${form.state.trim()} - ${form.pincode.trim()}`;
     const orderNumber = `JNS-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
-    const totalAmount = subtotal + gst + shipping;
+    const discountAmount = form.discountAmount ?? 0;
+    const totalAmount = subtotal + gst + shipping - discountAmount;
 
     // 1. Create order as PENDING
     const order = await prisma.order.create({
@@ -75,9 +80,12 @@ export async function createOrder(
         orderNumber,
         userId: user.id,
         status: 'PENDING',
-        totalAmount,
+        totalAmount: Math.max(0, totalAmount),
         taxAmount: gst,
         shippingAmount: shipping,
+        discountAmount,
+        couponCode: form.couponCode || null,
+        affiliateCode: form.affiliateCode || null,
         shippingAddress: `${cleanAddress}, ${form.city.trim()}, ${form.state.trim()} - ${form.pincode.trim()}`,
         shippingPhone: form.phone.trim(),
         shippingCity: form.city.trim(),
@@ -97,8 +105,8 @@ export async function createOrder(
       },
     });
 
-    // 2. Generate Razorpay Order
-    const rpOrder = await createRazorpayOrder(totalAmount * 100, order.id);
+    // 2. Generate Razorpay Order (on discounted total)
+    const rpOrder = await createRazorpayOrder(Math.max(0, totalAmount) * 100, order.id);
 
     // 3. Link Razorpay Order to Prisma
     await prisma.order.update({
@@ -149,7 +157,8 @@ export async function createOrder(
       razorpayOrderId: rpOrder.id,
       amount: rpOrder.amount,
       currency: rpOrder.currency,
-      key: process.env.RAZORPAY_KEY_ID
+      key: process.env.RAZORPAY_KEY_ID,
+      discountAmount,
     };
   } catch (error: any) {
     console.error('CRITICAL: Order creation failed:', error);
@@ -273,6 +282,30 @@ export async function verifyPayment(
       // Don't fail the user payment if automation fails
     }
 
+    // === PROMOTIONS: Record Coupon Usage & Affiliate Conversion ===
+    try {
+      const paidOrder = await prisma.order.findUnique({ where: { id: internalOrderId } });
+      if (paidOrder) {
+        // Record coupon usage
+        if (paidOrder.couponCode) {
+          const { applyCouponToOrder } = await import('@/app/promotions/actions');
+          const coupon = await prisma.coupon.findUnique({ where: { code: paidOrder.couponCode } });
+          if (coupon) {
+            await applyCouponToOrder(internalOrderId, coupon.id, paidOrder.discountAmount, paidOrder.userId);
+          }
+        }
+        // Record affiliate conversion
+        if (paidOrder.affiliateCode) {
+          const { recordAffiliateConversion } = await import('@/app/promotions/actions');
+          const orderSubtotal = paidOrder.totalAmount - paidOrder.taxAmount - paidOrder.shippingAmount + paidOrder.discountAmount;
+          await recordAffiliateConversion(internalOrderId, paidOrder.affiliateCode, orderSubtotal);
+        }
+      }
+    } catch (promotionsError) {
+      console.error('Promotions recording error:', promotionsError);
+      // Non-fatal: payment is still confirmed
+    }
+
     return { success: true };
   } catch (error: any) {
     console.error('Payment verification failed:', error);
@@ -357,21 +390,28 @@ export async function syncAbandonedCartAction(email: string, phone: string, cart
   }
 }
 
+// Legacy wrapper — kept for backward compatibility.
+// Uses the new Coupon model under the hood.
 export async function generateDiscountCode(percentage: number = 5) {
   const code = `JNS${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
-  const discount = await prisma.discountCode.create({
+  const coupon = await prisma.coupon.create({
     data: {
       code,
-      percentage,
-      expiresAt
-    }
+      type: 'PERCENTAGE',
+      value: percentage,
+      usageLimit: 1,
+      usageLimitPerUser: 1,
+      expiresAt,
+      source: 'internal',
+    },
   });
 
-  return discount.code;
+  return coupon.code;
 }
+
 
 export async function getUserAddressesAction() {
   const supabase = await createClient();
