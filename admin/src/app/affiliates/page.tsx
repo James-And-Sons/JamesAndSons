@@ -82,7 +82,7 @@ export default async function AffiliatesPage() {
           </div>
         )}
 
-        {affiliates.map(aff => {
+        {affiliates.map((aff: any) => {
           const s = STATUS_COLORS[aff.status] ?? STATUS_COLORS.SUSPENDED;
           return (
             <div key={aff.id} style={{ padding: '16px 24px', borderBottom: '0.5px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 120px 80px 100px 100px 100px 48px', gap: '12px', alignItems: 'center' }}>
