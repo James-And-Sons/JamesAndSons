@@ -78,7 +78,7 @@ export default async function PromotionsPage() {
           </div>
         )}
 
-        {coupons.map(coupon => {
+        {coupons.map((coupon: any) => {
           const s = STATUS_COLORS[coupon.status] ?? STATUS_COLORS.EXPIRED;
           return (
             <div key={coupon.id} style={{ padding: '16px 24px', borderBottom: '0.5px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 90px 100px 80px 100px 80px 80px 48px', gap: '12px', alignItems: 'center' }}>

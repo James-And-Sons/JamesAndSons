@@ -1,3 +1,4 @@
+'use client';
 import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction, generatePaymentLinkAction, syncAbandonedCartAction, getUserAddressesAction } from './actions';
 import { getCookie } from 'cookies-next';
 import { useCartStore } from '@/store/cart';
