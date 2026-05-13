@@ -24,9 +24,28 @@ export default function MobileHeader({ user }: { user: any }) {
         <div className="mobile-icon-btn" onClick={() => window.dispatchEvent(new Event('open-search'))}>
           <i className="ti ti-search" aria-hidden="true"></i>
         </div>
-        <Link href={user ? '/account' : '/login'} className="mobile-icon-btn" style={{ textDecoration: 'none' }}>
-          <i className="ti ti-user" aria-hidden="true"></i>
+        <Link href={user ? '/account' : '/login'} style={{ textDecoration: 'none' }}>
+          {user ? (
+            <div className="mobile-icon-btn">
+              <i className="ti ti-user" aria-hidden="true"></i>
+            </div>
+          ) : (
+            <div style={{ 
+              fontSize: '10px', 
+              fontFamily: 'var(--font-mono)', 
+              color: 'var(--gold)', 
+              letterSpacing: '0.12em', 
+              border: '1px solid rgba(196,160,90,0.3)', 
+              padding: '6px 12px', 
+              borderRadius: '20px', 
+              textTransform: 'uppercase',
+              background: 'rgba(196,160,90,0.05)'
+            }}>
+              Sign In
+            </div>
+          )}
         </Link>
+
       </div>
     </div>
   );
