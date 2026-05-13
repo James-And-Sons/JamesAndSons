@@ -180,8 +180,9 @@ export default function CartDrawer() {
               <Link 
                 href="/cart" 
                 onClick={closeCart} 
+                className="hidden md:flex"
                 style={{ 
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  flex: 1, alignItems: 'center', justifyContent: 'center', 
                   border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
                   height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
                   letterSpacing: '0.12em', transition: 'all 0.2s' 
@@ -189,6 +190,7 @@ export default function CartDrawer() {
               >
                 VIEW CART
               </Link>
+
               <Link 
                 href="/checkout" 
                 onClick={closeCart} 
