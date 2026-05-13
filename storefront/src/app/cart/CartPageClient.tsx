@@ -120,7 +120,7 @@ export default function CartPageClient() {
               <div key={item.product.id} className="cart-item-card" style={{ background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', padding: '20px', display: 'flex', gap: '24px', position: 'relative' }}>
                 {/* Image */}
                 <Link href={`/products/${item.product.slug}`} className="cart-item-image" style={{ width: '140px', height: '175px', background: 'var(--void)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
-                  <Image src={item.product.images?.[0] || '/placeholder.jpg'} alt={item.product.name} width={140} height={175} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={item.product.images?.[0] || '/images/brand-placeholder.png'} alt={item.product.name} width={140} height={175} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </Link>
 
                 {/* Info */}
