@@ -542,7 +542,7 @@ export default function CheckoutPageInner({
           </div>
         </div>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '16px 20px' }}>
-          {['GST Invoice Included', 'Free Installation (metro)', '2-Year Warranty'].map(t => (
+          {['GST Invoice Included', 'Heritage Craftsmanship', 'Pan-India Delivery', '2-Year Warranty'].map(t => (
             <div key={t} style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0' }}>
               <span style={{ color: 'var(--gold)' }}>✓</span>{t}
             </div>

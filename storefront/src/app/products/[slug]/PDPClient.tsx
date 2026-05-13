@@ -247,10 +247,19 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </button>
         )}
 
-        {/* Trust — warranty only */}
-        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <i className="ti ti-shield-check" style={{ fontSize: '16px', color: 'var(--gold)' }}></i>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>2-Year Warranty Included</span>
+        {/* Trust — Brand Highlights */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', borderTop: '0.5px solid var(--border)', borderBottom: '0.5px solid var(--border)', padding: '20px 24px', margin: '24px 0 0' }}>
+          {[
+            { icon: 'ti-award', label: 'Heritage Craftsmanship' },
+            { icon: 'ti-truck-delivery', label: 'Pan-India Delivery' },
+            { icon: 'ti-shield-check', label: '2-Year Warranty' },
+            { icon: 'ti-sparkles', label: 'Curated Brilliance' }
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className={`ti ${item.icon}`} style={{ color: 'var(--gold)', fontSize: '15px' }}></i>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.label}</span>
+            </div>
+          ))}
         </div>
 
         {/* Pincode Section */}
@@ -475,10 +484,10 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 {[
-                  { icon: 'ti-package', label: 'White Glove Delivery' },
+                  { icon: 'ti-award', label: 'Heritage Craftsmanship' },
+                  { icon: 'ti-truck-delivery', label: 'Pan-India Delivery' },
                   { icon: 'ti-shield-check', label: '2-Year Warranty' },
-                  { icon: 'ti-recycled', label: 'LED Efficiency' },
-                  { icon: 'ti-certificate', label: 'BIS Certified' }
+                  { icon: 'ti-sparkles', label: 'Curated Brilliance' }
                 ].map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', fontSize: '11px', color: 'var(--text-muted)' }}>
                     <i className={`ti ${item.icon}`} style={{ color: 'var(--gold)', fontSize: '14px' }}></i>
