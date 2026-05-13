@@ -9,17 +9,19 @@ export async function requireAdmin() {
     redirect('/login');
   }
 
-  // Check if user has admin role or is in the whitelist
-  // Based on your previous setup, we check the user's email
+  const whitelisted = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
   const adminEmails = [
     'abhishikt@growth-ho.com',
     'vishal@jamesandsons.in',
-    'james@jamesandsons.in'
+    'james@jamesandsons.in',
+    ...whitelisted
   ];
 
   if (!adminEmails.includes(user.email || '')) {
+    console.warn(`Unauthorized admin access attempt: ${user.email}`);
     redirect('/login?error=Unauthorized');
   }
+
 
   return user;
 }
