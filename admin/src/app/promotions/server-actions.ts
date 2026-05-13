@@ -24,7 +24,7 @@ export async function adminCreateCoupon(data: {
   source?: string;
   affiliateId?: string;
 }) {
-  return prisma.coupon.create({
+  return (prisma as any).coupon.create({
     data: {
       ...data,
       code: data.code.trim().toUpperCase(),
@@ -33,7 +33,7 @@ export async function adminCreateCoupon(data: {
 }
 
 export async function adminUpdateCouponStatus(couponId: string, status: 'ACTIVE' | 'PAUSED') {
-  return prisma.coupon.update({ where: { id: couponId }, data: { status } });
+  return (prisma as any).coupon.update({ where: { id: couponId }, data: { status } });
 }
 
 export async function adminBulkGenerateCoupons(data: {
@@ -57,7 +57,7 @@ export async function adminBulkGenerateCoupons(data: {
 
   for (const code of codes) {
     try {
-      await prisma.coupon.create({
+      await (prisma as any).coupon.create({
         data: {
           code,
           type: data.type,
@@ -87,31 +87,31 @@ export async function adminCreateAffiliate(data: {
   commissionRate?: number;
   notes?: string;
 }) {
-  return prisma.affiliate.create({
+  return (prisma as any).affiliate.create({
     data: { ...data, affiliateCode: data.affiliateCode.trim().toUpperCase() },
   });
 }
 
 export async function adminUpdateAffiliateStatus(affiliateId: string, status: 'ACTIVE' | 'SUSPENDED') {
-  return prisma.affiliate.update({ where: { id: affiliateId }, data: { status } });
+  return (prisma as any).affiliate.update({ where: { id: affiliateId }, data: { status } });
 }
 
 export async function adminMarkConversionsPaid(conversionIds: string[]) {
-  return prisma.affiliateConversion.updateMany({
+  return (prisma as any).affiliateConversion.updateMany({
     where: { id: { in: conversionIds } },
     data: { isPaid: true, paidAt: new Date() },
   });
 }
 
 export async function adminListCoupons() {
-  return prisma.coupon.findMany({
+  return (prisma as any).coupon.findMany({
     include: { _count: { select: { usages: true } }, affiliate: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
   });
 }
 
 export async function adminGetCouponDetail(id: string) {
-  return prisma.coupon.findUnique({
+  return (prisma as any).coupon.findUnique({
     where: { id },
     include: {
       usages: {
@@ -125,7 +125,7 @@ export async function adminGetCouponDetail(id: string) {
 }
 
 export async function adminListAffiliates() {
-  return prisma.affiliate.findMany({
+  return (prisma as any).affiliate.findMany({
     include: {
       _count: { select: { conversions: true } },
       coupons: { select: { code: true, status: true } },
@@ -135,7 +135,7 @@ export async function adminListAffiliates() {
 }
 
 export async function adminGetAffiliateDetail(id: string) {
-  return prisma.affiliate.findUnique({
+  return (prisma as any).affiliate.findUnique({
     where: { id },
     include: {
       conversions: {
@@ -146,3 +146,4 @@ export async function adminGetAffiliateDetail(id: string) {
     },
   });
 }
+

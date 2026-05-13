@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth';
 import { formatPrice } from '@/lib/utils';
 
 async function getAffiliates() {
-  return prisma.affiliate.findMany({
+  return (prisma as any).affiliate.findMany({
     include: {
       _count: { select: { conversions: true } },
       coupons: { select: { code: true, status: true } },
@@ -12,6 +12,7 @@ async function getAffiliates() {
     orderBy: { totalRevenue: 'desc' },
   });
 }
+
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   ACTIVE:    { bg: 'rgba(76,175,122,0.12)',  color: '#4CAF7A' },

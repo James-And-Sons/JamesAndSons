@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 
 async function getCoupons() {
-  return prisma.coupon.findMany({
+  return (prisma as any).coupon.findMany({
     include: {
       _count: { select: { usages: true } },
       affiliate: { select: { name: true } },
@@ -11,6 +11,7 @@ async function getCoupons() {
     orderBy: { createdAt: 'desc' },
   });
 }
+
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   ACTIVE:    { bg: 'rgba(76,175,122,0.12)',  color: '#4CAF7A' },
