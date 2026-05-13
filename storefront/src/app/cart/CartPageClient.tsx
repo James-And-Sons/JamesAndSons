@@ -77,10 +77,21 @@ export default function CartPageClient() {
 
   return (
     <div className="cart-layout">
+      {/* Mobile Title Area */}
+      <div className="md:hidden" style={{ padding: '0 0 32px' }}>
+        <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '4px' }}>Your Selection</div>
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', fontWeight: 400, color: 'var(--cream)', margin: 0 }}>
+          Shopping <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Bag</em>
+        </h2>
+        <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <i className="ti ti-package" style={{ fontSize: '13px', color: 'var(--gold)' }}></i>
+          {items.length} item{items.length !== 1 ? 's' : ''} · Free installation included
+        </div>
+      </div>
 
       {/* Items List */}
       <div>
-        <div className="cart-headers" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '32px' }}>
+        <div className="cart-headers hidden md:block" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '32px' }}>
           <div className="cart-item-grid">
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Product</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Price</span>
@@ -145,64 +156,43 @@ export default function CartPageClient() {
           ))}
         </div>
 
-        <div className="cart-items-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
+        <div className="cart-items-mobile" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {items.map(item => (
-            <div key={item.product.id} className="cart-mobile-card" style={{ padding: '24px', gap: '20px', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', maxWidth: '320px' }}>
-              <Link href={`/products/${item.product.slug}`} className="cart-card-image" style={{ width: '160px', height: '200px' }}>
+            <div key={item.product.id} style={{ background: 'var(--surface2)', borderRadius: '20px', border: '0.5px solid var(--border)', padding: '16px', display: 'flex', gap: '16px', position: 'relative' }}>
+              <Link href={`/products/${item.product.slug}`} style={{ width: '80px', height: '100px', background: 'var(--void)', borderRadius: '14px', overflow: 'hidden', border: '0.5px solid var(--border)', flexShrink: 0 }}>
                 {item.product.images?.[0] ? (
-                  <Image src={item.product.images[0]} alt={item.product.name} width={160} height={200} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={item.product.images[0]} alt={item.product.name} width={80} height={100} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <svg width="60" height="80" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
-                    <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
-                    <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
-                  </svg>
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className="ti ti-lamp" style={{ fontSize: '24px', color: 'var(--gold)', opacity: 0.3 }}></i>
+                  </div>
                 )}
               </Link>
-              <div className="cart-card-info" style={{ gap: '8px', alignItems: 'center', width: '100%' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-                  <span className="cart-card-coll" style={{ fontSize: '11px' }}>{item.product.collection}</span>
-                  <Link href={`/products/${item.product.slug}`} className="cart-card-name" style={{ fontSize: '20px', fontWeight: 400 }}>{item.product.name}</Link>
-                </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--gold)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{item.product.collection}</div>
+                <Link href={`/products/${item.product.slug}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--cream)', lineHeight: 1.2, marginBottom: '6px' }}>{item.product.name}</div>
+                </Link>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)', marginBottom: '12px' }}>{formatPrice(item.product.d2cPrice)}</div>
                 
-                <div style={{ marginBottom: '16px' }}>
-                  <button 
-                    onClick={() => { 
-                      if (window.confirm("Move this item to your wishlist? It will be removed from your bag.")) {
-                        toggleItem(item.product); 
-                        removeItem(item.product.id); 
-                      }
-                    }} 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px', 
-                      background: 'rgba(201,168,76,0.1)', 
-                      border: '0.5px solid rgba(201,168,76,0.3)', 
-                      padding: '8px 16px', 
-                      borderRadius: '8px', 
-                      color: 'var(--gold)', 
-                      fontSize: '12px',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}
-                  >
-                    <i className="ti ti-heart" style={{ fontSize: '14px' }}></i>
-                    {isInWishlist(item.product.id) ? 'Already in Wishlist' : 'Move to Wishlist'}
-                  </button>
-                </div>
-
-                <div className="cart-card-footer" style={{ width: '100%', justifyContent: 'center', gap: '20px' }}>
-                  <div className="qty-stepper" style={{ transform: 'scale(1.1)' }}>
-                    <button onClick={() => updateQty(item.product.id, item.quantity - 1)}>−</button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => updateQty(item.product.id, item.quantity + 1)}>+</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="qty-stepper" style={{ background: 'var(--void)', height: '32px' }}>
+                    <button onClick={() => updateQty(item.product.id, item.quantity - 1)} style={{ width: '32px' }}>−</button>
+                    <span style={{ minWidth: '24px' }}>{item.quantity}</span>
+                    <button onClick={() => updateQty(item.product.id, item.quantity + 1)} style={{ width: '32px' }}>+</button>
                   </div>
-                  <div className="cart-card-price" style={{ fontSize: '22px' }}>{formatPrice(item.product.d2cPrice * item.quantity)}</div>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button 
+                      onClick={() => { toggleItem(item.product); removeItem(item.product.id); }}
+                      style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <i className="ti ti-heart"></i>
+                      Save
+                    </button>
+                  </div>
                 </div>
-                
-                <button onClick={() => removeItem(item.product.id)} style={{ marginTop: '16px', color: 'var(--text-dim)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'transparent', border: 'none' }}>Remove Item</button>
               </div>
+              <button onClick={() => removeItem(item.product.id)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'var(--text-dim)', fontSize: '14px', cursor: 'pointer' }}>✕</button>
             </div>
           ))}
         </div>
@@ -210,104 +200,135 @@ export default function CartPageClient() {
 
       {/* Summary */}
       <div className="cart-summary-container">
-        <div className="bg-[var(--surface)] p-8 border-t-[4px] border-t-[var(--gold)] border-[var(--border)] shadow-2xl sticky top-32">
-          <h3 className="font-serif text-[24px] text-[var(--cream)] mb-6 font-light">Order Summary</h3>
-
-          <div className="space-y-4 mb-8">
-            <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Subtotal</span>
-              <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(subtotal)}</span>
-            </div>
-            <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Estimated GST</span>
-              <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(gst)}</span>
-            </div>
-            <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Shipping</span>
-              <span className={`font-serif text-[18px] ${shipping === 0 ? 'text-[var(--gold)]' : 'text-[var(--cream)]'}`}>
-                {shipping === 0 ? (isShippingCalculated || subtotal > 50000 ? 'Complimentary' : 'Calculated at next step') : (shipping === null ? 'Calculated at next step' : formatPrice(shipping))}
-              </span>
-            </div>
+        <div style={{ background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', overflow: 'hidden' }} className="sticky top-32">
+          <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: 'var(--cream)', margin: 0, fontWeight: 300 }}>Order Summary</h3>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{items.length} item{items.length !== 1 ? 's' : ''}</div>
           </div>
 
-          <div className="flex justify-between items-center mb-8 bg-[var(--obsidian)] p-4 border border-[var(--border)]">
-            <span className="font-mono text-[14px] uppercase tracking-widest text-[var(--gold)]">Total</span>
-            <span className="font-serif text-[32px] text-[var(--gold-light)]">{formatPrice(subtotal + gst + (shipping ?? 0))}</span>
-          </div>
-
-          <button onClick={handleCheckout} className="btn-primary w-full py-3 text-[11px] tracking-[0.2em] hover:bg-[var(--gold-light)] transition-all group relative overflow-hidden flex items-center justify-center gap-2">
-            <i className="ti ti-lock" style={{ fontSize: '14px' }}></i>
-            <span className="relative z-10">Secure Checkout</span>
-          </button>
-
-          {/* Pincode Estimator */}
-          <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-            <button 
-              onClick={() => setShowPincode(!showPincode)}
-              style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}
-            >
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)' }}>
-                Estimate Shipping & Delivery
+          <div style={{ padding: '24px' }}>
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Subtotal</span>
+                <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(subtotal)}</span>
               </div>
-              <i className={`ti ${showPincode ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ color: 'var(--gold-light)', fontSize: '14px' }}></i>
+              <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">GST (18%)</span>
+                <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(subtotal * 0.18)}</span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Shipping</span>
+                <span className={`font-serif text-[18px] ${shipping === 0 ? 'text-[var(--gold)]' : 'text-[var(--cream)]'}`}>
+                  {shipping === 0 ? (isShippingCalculated || subtotal > 50000 ? 'Complimentary' : 'Calculated at next step') : (shipping === null ? 'Calculated at next step' : formatPrice(shipping))}
+                </span>
+              </div>
+              <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Installation</span>
+                <span className="font-serif text-[14px] text-[var(--green)] flex items-center gap-1">
+                  <i className="ti ti-check"></i>
+                  Free
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center mb-8 bg-[var(--void)] p-4 border border-[var(--border)] rounded-xl">
+              <span className="font-mono text-[12px] uppercase tracking-widest text-[var(--gold)]">Total</span>
+              <span className="font-serif text-[32px] text-[var(--gold-light)]">{formatPrice(subtotal + (subtotal * 0.18) + (shipping ?? 0))}</span>
+            </div>
+
+            <button onClick={handleCheckout} className="btn-primary w-full py-4 text-[11px] tracking-[0.2em] rounded-xl flex items-center justify-center gap-2">
+              <i className="ti ti-lock" style={{ fontSize: '14px' }}></i>
+              Secure Checkout
             </button>
-            
-            {showPincode && (
-              <div style={{ marginTop: '16px', animation: 'fadeIn 0.3s ease' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input 
-                    placeholder="Enter Pincode" 
-                    maxLength={6} 
-                    value={pincode}
-                    onChange={e => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setPincode(val);
-                      if (val.length === 6) handleCheckPincode(val);
-                      else setShippingRes(null);
-                    }}
-                    style={{ flex: 1, background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none' }}
-                  />
-                  <button 
-                    onClick={() => handleCheckPincode(pincode)}
-                    disabled={pincode.length !== 6 || checkingPincode}
-                    style={{ 
-                      background: 'transparent', 
-                      border: '1px solid var(--border)', 
-                      color: 'var(--text)', 
-                      padding: '0 15px', 
-                      fontSize: '11px', 
-                      textTransform: 'uppercase', 
-                      letterSpacing: '0.1em',
-                      cursor: pincode.length === 6 ? 'pointer' : 'not-allowed',
-                      opacity: pincode.length === 6 ? 1 : 0.5
-                    }}
-                  >
-                    {checkingPincode ? '...' : 'Check'}
-                  </button>
+
+            {/* Pincode Estimator */}
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <button 
+                onClick={() => setShowPincode(!showPincode)}
+                style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: '8px 0' }}
+              >
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                  Estimate Shipping & Delivery
                 </div>
-                
-                {shippingRes && (
-                  <div style={{ marginTop: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
-                      <span>✓</span>
-                      <span>Deliver to {shippingRes.city}</span>
-                    </div>
-                    <div style={{ marginTop: '4px', fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)' }}>
-                      Arriving by <span style={{ color: 'var(--gold-light)' }}>{shippingRes.etd}</span>
-                    </div>
+                <i className={`ti ${showPincode ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ color: 'var(--gold-light)', fontSize: '14px' }}></i>
+              </button>
+              
+              {showPincode && (
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      placeholder="Enter Pincode" 
+                      maxLength={6} 
+                      value={pincode}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setPincode(val);
+                        if (val.length === 6) handleCheckPincode(val);
+                        else setShippingRes(null);
+                      }}
+                      style={{ flex: 1, background: 'var(--void)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none', borderRadius: '8px' }}
+                    />
+                    <button 
+                      onClick={() => handleCheckPincode(pincode)}
+                      disabled={pincode.length !== 6 || checkingPincode}
+                      style={{ 
+                        background: 'transparent', 
+                        border: '1px solid var(--border)', 
+                        color: 'var(--text)', 
+                        padding: '0 15px', 
+                        fontSize: '11px', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.1em',
+                        cursor: pincode.length === 6 ? 'pointer' : 'not-allowed',
+                        opacity: pincode.length === 6 ? 1 : 0.5,
+                        borderRadius: '8px'
+                      }}
+                    >
+                      {checkingPincode ? '...' : 'Check'}
+                    </button>
                   </div>
-                )}
+                  
+                  {shippingRes && (
+                    <div style={{ marginTop: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                        <span>✓</span>
+                        <span>Deliver to {shippingRes.city}</span>
+                      </div>
+                      <div style={{ marginTop: '4px', fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)' }}>
+                        Arriving by <span style={{ color: 'var(--gold-light)' }}>{shippingRes.etd}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Trust Badges */}
+            <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(76,175,122,0.1)', padding: '12px', borderRadius: '12px', border: '0.5px solid rgba(76,175,122,0.2)' }}>
+                <i className="ti ti-shield-check" style={{ color: 'var(--green)', fontSize: '18px' }}></i>
+                <div style={{ fontSize: '11px', color: 'var(--text)', lineHeight: 1.4 }}>
+                  <span style={{ color: 'var(--green)', fontWeight: 500 }}>Authenticity Guaranteed</span> — Inspected and secured for transit.
+                </div>
               </div>
-            )}
-          </div>
-          
-          {/* Trust Badge */}
-          <div className="mt-8 text-center border border-[var(--border)] p-4 bg-[var(--obsidian)]">
-            <div className="font-mono text-[9px] tracking-widest uppercase text-[var(--gold)] mb-2">Authenticity Guaranteed</div>
-            <p className="font-body text-[11px] text-[var(--text-dim)]">Every piece is inspected for quality and securely packaged for transit.</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', opacity: 0.6 }}>
+                <TrustBadge icon="ti-tools" label="Free Install" />
+                <TrustBadge icon="ti-receipt" label="GST Invoice" />
+                <TrustBadge icon="ti-shield" label="2-Yr Warranty" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TrustBadge({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <i className={`ti ${icon}`} style={{ color: 'var(--gold)', fontSize: '12px' }}></i>
+      {label}
     </div>
   );
 }

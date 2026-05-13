@@ -19,10 +19,14 @@ export default async function AccountPage() {
   // Fetch from Prisma for B2B status (Source of Truth)
   let dbUser: any = null;
   try {
+    // Try finding by Supabase ID first, then fallback to email
     dbUser = await prisma.user.findUnique({
       where: { id: user.id },
       include: { company: true }
-    })
+    }) || (user.email ? await prisma.user.findUnique({
+      where: { email: user.email },
+      include: { company: true }
+    }) : null);
   } catch (error) {
     console.error('Error fetching dbUser in AccountPage:', error);
   }
@@ -30,12 +34,15 @@ export default async function AccountPage() {
   // Fetch recent orders
   let orders: any[] = []
   try {
-    orders = await prisma.order.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 3,
-      include: { items: { include: { product: true } } }
-    })
+    // Use the dbUser.id which is our internal primary key for orders
+    if (dbUser) {
+      orders = await prisma.order.findMany({
+        where: { userId: dbUser.id },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        include: { items: { include: { product: true } } }
+      })
+    }
   } catch (error) {
     console.error('Error fetching orders in AccountPage:', error);
   }
@@ -93,22 +100,6 @@ export default async function AccountPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border)' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>{orders.length}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Orders</div>
-              </div>
-              <div style={{ width: '0.5px', background: 'var(--border)', alignSelf: 'stretch' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>—</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Saved</div>
-              </div>
-              <div style={{ width: '0.5px', background: 'var(--border)', alignSelf: 'stretch' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--gold-light)' }}>—</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>In Cart</div>
-              </div>
-            </div>
           </div>
 
           {/* Account Menu Section */}

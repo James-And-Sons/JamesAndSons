@@ -1,16 +1,24 @@
 'use client';
 import { useWishlistStore } from '@/store/wishlist';
+import { useCartStore } from '@/store/cart';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 export default function AccountWishlistClient() {
-  const { items } = useWishlistStore();
+  const { items, removeItem } = useWishlistStore();
+  const { addItem, openCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleMoveToCart = (item: any) => {
+    addItem(item);
+    removeItem(item.id);
+    openCart();
+  };
 
   if (!mounted) return <div className="h-40 animate-pulse bg-[var(--surface2)]" />;
 
@@ -35,21 +43,29 @@ export default function AccountWishlistClient() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {items.slice(0, 3).map((item) => (
-          <Link key={item.id} href={`/products/${item.slug}`} className="group block">
-            <div className="aspect-square bg-[var(--surface2)] border border-[var(--border)] overflow-hidden mb-2">
-              {item.images?.[0] ? (
-                <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center opacity-20">
-                   <svg width="30" height="40" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
-                    <path d="M20 70 Q50 30 80 70" strokeWidth="2" />
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className="font-mono text-[12px] uppercase tracking-widest text-[var(--gold)] truncate">{item.name}</div>
-            <div className="font-body text-[14px] text-[var(--text-muted)]">{formatPrice(item.d2cPrice)}</div>
-          </Link>
+          <div key={item.id} className="group flex flex-col">
+            <Link href={`/products/${item.slug}`} className="block flex-1">
+              <div className="aspect-square bg-[var(--surface2)] border border-[var(--border)] overflow-hidden mb-2">
+                {item.images?.[0] ? (
+                  <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center opacity-20">
+                     <svg width="30" height="40" viewBox="0 0 100 120" stroke="var(--gold)" fill="none">
+                      <path d="M20 70 Q50 30 80 70" strokeWidth="2" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="font-mono text-[11px] uppercase tracking-widest text-[var(--gold)] truncate">{item.name}</div>
+              <div className="font-body text-[13px] text-[var(--text-muted)] mb-3">{formatPrice(item.d2cPrice)}</div>
+            </Link>
+            <button 
+              onClick={() => handleMoveToCart(item)}
+              className="w-full py-2 border border-[var(--border)] font-mono text-[9px] uppercase tracking-[0.15em] text-[var(--cream)] hover:bg-[var(--gold)] hover:text-black hover:border-[var(--gold)] transition-all duration-300"
+            >
+              Move to Cart
+            </button>
+          </div>
         ))}
       </div>
       {items.length > 3 && (
