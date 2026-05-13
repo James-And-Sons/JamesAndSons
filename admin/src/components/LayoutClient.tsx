@@ -8,7 +8,8 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const isLoginPage = pathname === '/login';
+  const isLoginPage = pathname?.startsWith('/login');
+
 
   return (
     <ThemeProvider>

@@ -18,9 +18,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0A0905] p-6">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0A0905] overflow-y-auto">
       {/* Background Ambience */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
+
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#C9A84C]/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#C9A84C]/5 rounded-full blur-[120px]" />
       </div>
