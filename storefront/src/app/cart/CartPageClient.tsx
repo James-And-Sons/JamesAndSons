@@ -108,8 +108,9 @@ export default function CartPageClient() {
           </h1>
           <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '8px 18px', fontSize: '11px', color: 'var(--text-muted)' }}>
             <i className="ti ti-package" style={{ color: 'var(--gold)' }}></i>
-            {itemCount()} {itemCount() === 1 ? 'item' : 'items'} · Complimentary installation
+            {itemCount()} {itemCount() === 1 ? 'item' : 'items'}
           </div>
+
         </div>
 
         <div className="cart-grid">
