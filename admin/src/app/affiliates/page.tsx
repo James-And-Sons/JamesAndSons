@@ -23,8 +23,9 @@ export default async function AffiliatesPage() {
   await requireAdmin();
   const affiliates = await getAffiliates();
 
-  const totalRevenue = affiliates.reduce((s, a) => s + a.totalRevenue, 0);
-  const totalCommission = affiliates.reduce((s, a) => s + a.totalCommission, 0);
+  const totalRevenue = (affiliates as any[]).reduce((s: number, a: any) => s + (a.totalRevenue || 0), 0);
+  const totalCommission = (affiliates as any[]).reduce((s: number, a: any) => s + (a.totalCommission || 0), 0);
+
 
   return (
     <div style={{ padding: '32px' }}>

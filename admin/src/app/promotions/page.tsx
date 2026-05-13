@@ -52,9 +52,10 @@ export default async function PromotionsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         {[
           { label: 'Total Coupons', value: coupons.length },
-          { label: 'Active', value: coupons.filter(c => c.status === 'ACTIVE').length, color: '#4CAF7A' },
-          { label: 'Total Redemptions', value: coupons.reduce((s, c) => s + c.usedCount, 0) },
-          { label: 'Exhausted', value: coupons.filter(c => c.status === 'EXHAUSTED').length, color: '#C85050' },
+          { label: 'Active', value: coupons.filter((c: any) => c.status === 'ACTIVE').length, color: '#4CAF7A' },
+          { label: 'Total Redemptions', value: coupons.reduce((s: number, c: any) => s + (c.usedCount || 0), 0) },
+          { label: 'Exhausted', value: coupons.filter((c: any) => c.status === 'EXHAUSTED').length, color: '#C85050' },
+
         ].map(stat => (
           <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px 24px' }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{stat.label}</div>
