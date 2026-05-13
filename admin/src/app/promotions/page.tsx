@@ -3,7 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 
 async function getCoupons() {
-  return (prisma as any).coupon.findMany({
+  const p = prisma as any;
+  if (!p.coupon) {
+    console.error('Prisma Coupon model is not initialized');
+    return [];
+  }
+  return p.coupon.findMany({
     include: {
       _count: { select: { usages: true } },
       affiliate: { select: { name: true } },

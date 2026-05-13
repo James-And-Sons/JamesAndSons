@@ -4,7 +4,12 @@ import { requireAdmin } from '@/lib/auth';
 import { formatPrice } from '@/lib/utils';
 
 async function getAffiliates() {
-  return (prisma as any).affiliate.findMany({
+  const p = prisma as any;
+  if (!p.affiliate) {
+    console.error('Prisma Affiliate model is not initialized');
+    return [];
+  }
+  return p.affiliate.findMany({
     include: {
       _count: { select: { conversions: true } },
       coupons: { select: { code: true, status: true } },
