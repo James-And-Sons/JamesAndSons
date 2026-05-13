@@ -12,8 +12,10 @@ export async function requireAdmin() {
   const whitelisted = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
   const adminEmails = [
     'abhishikt@growth-ho.com',
+    'admin@jamesandsons.in',
     'vishal@jamesandsons.in',
     'james@jamesandsons.in',
+
     ...whitelisted
   ];
 
