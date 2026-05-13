@@ -132,11 +132,12 @@ export default function CartDrawer() {
                         </div>
                       </div>
                       <button 
-                        onClick={() => removeItem(item.product.id)}
-                        style={{ background: 'none', border: 'none', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}
+                        onClick={() => { toggleItem(item.product); removeItem(item.product.id); }}
+                        style={{ background: 'none', border: 'none', fontSize: '10px', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
-                        Remove
+                        <i className="ti ti-heart"></i> Move to wishlist
                       </button>
+
                     </div>
                   </div>
                 </div>
