@@ -168,14 +168,33 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Link href="/checkout" onClick={closeCart} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', background: 'var(--gold)', color: '#0A0905', borderRadius: '8px', padding: '16px', textDecoration: 'none', fontSize: '12px', fontWeight: 600, letterSpacing: '0.1em' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Link 
+                href="/cart" 
+                onClick={closeCart} 
+                style={{ 
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
+                  height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
+                  letterSpacing: '0.12em', transition: 'all 0.2s' 
+                }}
+              >
+                VIEW CART
+              </Link>
+              <Link 
+                href="/checkout" 
+                onClick={closeCart} 
+                style={{ 
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  background: 'var(--gold)', color: '#0A0905', borderRadius: '8px', 
+                  height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
+                  letterSpacing: '0.12em', transition: 'all 0.2s' 
+                }}
+              >
                 CHECKOUT
               </Link>
-              <Link href="/cart" onClick={closeCart} style={{ display: 'block', textAlign: 'center', fontSize: '11px', color: 'var(--text-dim)', textDecoration: 'underline', textUnderlineOffset: '4px' }}>
-                View detailed bag
-              </Link>
             </div>
+
           </div>
         )}
       </div>
