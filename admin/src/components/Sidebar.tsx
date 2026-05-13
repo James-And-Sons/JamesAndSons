@@ -27,7 +27,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     { name: 'B2B Workspace', href: '/b2b' },
     { name: 'Pages / CMS', href: '/pages' },
     { name: 'Blog', href: '/blog' },
+    { name: 'Coupons', href: '/promotions' },
+    { name: 'Affiliates', href: '/affiliates' },
     { name: 'Tickets', href: '/tickets', badge: openTickets },
+
     { name: 'Customers', href: '/customers' },
     { name: 'Admin Settings', href: '/account' },
   ];

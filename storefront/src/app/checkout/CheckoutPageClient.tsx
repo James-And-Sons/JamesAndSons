@@ -1,16 +1,12 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useCartStore } from '@/store/cart';
-import { formatPrice } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 import { createOrder, verifyPayment, validatePincodeDelivery, calculateShippingRateAction, generatePaymentLinkAction, syncAbandonedCartAction, getUserAddressesAction } from './actions';
+import { getCookie } from 'cookies-next';
 
 export default function CheckoutPageInner({ 
   initialData 
 }: { 
   initialData?: { name: string; email: string; phone: string; pincode?: string; address?: string; city?: string; state?: string } 
 }) {
-  const { items, total, clearCart } = useCartStore();
+  const { items, total, clearCart, appliedCoupon, discountedTotal } = useCartStore();
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
@@ -30,7 +26,9 @@ export default function CheckoutPageInner({
   const [showGst, setShowGst] = useState(false);
 
   const subtotal = total();
-  const gst = subtotal * 0.05;
+  const finalSubtotal = discountedTotal();
+  const gst = finalSubtotal * 0.18;
+
   const totalWeight = items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0);
 
   const [paymentFailed, setPaymentFailed] = useState(false);
@@ -72,7 +70,8 @@ export default function CheckoutPageInner({
     return () => clearTimeout(timer);
   }, [form.email, form.phone, step]);
 
-  const grandTotal = subtotal + gst + (shipping || 0);
+  const grandTotal = finalSubtotal + gst + (shipping || 0);
+
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
   const [lastPincode, setLastPincode] = useState('');
@@ -110,8 +109,16 @@ export default function CheckoutPageInner({
     setLoading(true);
     setOrderError('');
     try {
+      const affiliateCode = getCookie('jns_ref') as string || undefined;
+      
       const result = await createOrder(
-        form,
+        {
+          ...form,
+          couponCode: appliedCoupon?.code,
+          couponId: appliedCoupon?.couponId,
+          discountAmount: appliedCoupon?.discountAmount,
+          affiliateCode: affiliateCode
+        },
         items.map(i => ({ product: i.product, quantity: i.quantity })),
         subtotal,
         gst,
@@ -499,11 +506,25 @@ export default function CheckoutPageInner({
             ))}
           </div>
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {[['Subtotal', formatPrice(subtotal)], ['GST (~5%)', formatPrice(gst)], ['Shipping', shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : formatPrice(shipping))]].map(([l, v]) => (
-              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                <span>{l}</span><span style={{ color: v === 'FREE' ? 'var(--green)' : 'inherit' }}>{v}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
+            </div>
+            {appliedCoupon && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+                <span>Promo: {appliedCoupon.code}</span>
+                <span>{appliedCoupon.freeShipping ? 'FREE SHIP' : `- ${formatPrice(appliedCoupon.discountAmount)}`}</span>
               </div>
-            ))}
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <span>GST (18%)</span><span>{formatPrice(gst)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <span>Shipping</span>
+              <span style={{ color: (shipping === 0 || appliedCoupon?.freeShipping) ? 'var(--green)' : 'inherit' }}>
+                {appliedCoupon?.freeShipping ? 'FREE' : (shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : formatPrice(shipping)))}
+              </span>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
               <span>Total</span>
               <span style={{ color: 'var(--gold-light)' }}>{formatPrice(grandTotal)}</span>

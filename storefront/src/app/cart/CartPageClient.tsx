@@ -7,10 +7,11 @@ import { useWishlistStore } from '@/store/wishlist';
 import { useRouter } from 'next/navigation';
 import { checkPincode, getSavedPincode } from '@/app/products/actions';
 import Image from 'next/image';
+import CouponInput from '@/components/CouponInput';
 
 export default function CartPageClient() {
   const router = useRouter();
-  const { items, removeItem, updateQty, total } = useCartStore();
+  const { items, removeItem, updateQty, total, appliedCoupon, discountedTotal } = useCartStore();
   const { toggleItem, isInWishlist } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
   const [pincode, setPincode] = useState('');
@@ -53,10 +54,11 @@ export default function CartPageClient() {
   if (!mounted) return <div style={{ minHeight: '50vh' }} />;
 
   const subtotal = total();
-  const gst = subtotal * 0.05;
+  const finalSubtotal = discountedTotal();
+  const gst = finalSubtotal * 0.18;
   const isShippingCalculated = !!shippingRes?.success;
-  const shipping = isShippingCalculated ? shippingRes.rate : (subtotal > 50000 ? 0 : null);
-  const grandTotal = subtotal + gst + (shipping || 0);
+  const shipping = isShippingCalculated ? shippingRes.rate : (appliedCoupon?.freeShipping ? 0 : (subtotal > 50000 ? 0 : null));
+  const grandTotal = finalSubtotal + gst + (shipping || 0);
 
   if (items.length === 0) {
     return (
@@ -212,14 +214,24 @@ export default function CartPageClient() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Subtotal</span>
                 <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(subtotal)}</span>
               </div>
+              
+              {appliedCoupon && (
+                <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--gold)]">Promo: {appliedCoupon.code}</span>
+                  <span className="font-serif text-[18px] text-[var(--gold-light)]">
+                    {appliedCoupon.freeShipping ? 'Free Shipping' : `- ${formatPrice(appliedCoupon.discountAmount)}`}
+                  </span>
+                </div>
+              )}
+
               <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">GST (18%)</span>
-                <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(subtotal * 0.18)}</span>
+                <span className="font-serif text-[18px] text-[var(--cream)]">{formatPrice(gst)}</span>
               </div>
               <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Shipping</span>
-                <span className={`font-serif text-[18px] ${shipping === 0 ? 'text-[var(--gold)]' : 'text-[var(--cream)]'}`}>
-                  {shipping === 0 ? (isShippingCalculated || subtotal > 50000 ? 'Complimentary' : 'Calculated at next step') : (shipping === null ? 'Calculated at next step' : formatPrice(shipping))}
+                <span className={`font-serif text-[18px] ${(shipping === 0 || appliedCoupon?.freeShipping) ? 'text-[var(--gold)]' : 'text-[var(--cream)]'}`}>
+                  {appliedCoupon?.freeShipping ? 'Free' : (shipping === 0 ? (isShippingCalculated || subtotal > 50000 ? 'Complimentary' : 'Calculated at next step') : (shipping === null ? 'Calculated at next step' : formatPrice(shipping)))}
                 </span>
               </div>
               <div className="flex justify-between items-baseline border-b border-dashed border-[var(--border)] pb-4">
@@ -229,11 +241,16 @@ export default function CartPageClient() {
                   Free
                 </span>
               </div>
+
+              {/* Coupon Input */}
+              <div style={{ marginTop: '24px' }}>
+                <CouponInput />
+              </div>
             </div>
 
             <div className="flex justify-between items-center mb-8 bg-[var(--void)] p-4 border border-[var(--border)] rounded-xl">
               <span className="font-mono text-[12px] uppercase tracking-widest text-[var(--gold)]">Total</span>
-              <span className="font-serif text-[32px] text-[var(--gold-light)]">{formatPrice(subtotal + (subtotal * 0.18) + (shipping ?? 0))}</span>
+              <span className="font-serif text-[32px] text-[var(--gold-light)]">{formatPrice(grandTotal)}</span>
             </div>
 
             <button onClick={handleCheckout} className="btn-primary w-full py-4 text-[11px] tracking-[0.2em] rounded-xl flex items-center justify-center gap-2">
