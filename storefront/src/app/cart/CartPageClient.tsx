@@ -66,29 +66,60 @@ export default function CartPageClient() {
   }
 
   return (
-    <div className="cart-page-container" style={{ background: 'var(--bg)', minHeight: '100vh', padding: 'clamp(20px, 5vw, 60px) 0' }}>
+    <div className="cart-page-container" style={{ background: 'var(--bg)', minHeight: '100vh', padding: 'clamp(40px, 8vw, 80px) 0' }}>
+      <style jsx>{`
+        .cart-grid {
+          display: grid;
+          grid-template-columns: 1fr 380px;
+          gap: 40px;
+          align-items: start;
+        }
+        @media (max-width: 1024px) {
+          .cart-grid {
+            grid-template-columns: 1fr;
+            gap: 32px;
+          }
+          .cart-sidebar {
+            position: static !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .cart-item-card {
+            flex-direction: column;
+            gap: 16px !important;
+          }
+          .cart-item-image {
+            width: 100% !important;
+            height: 200px !important;
+          }
+          .qty-stepper {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      `}</style>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         
         {/* Title Area */}
-        <div style={{ marginBottom: '40px' }}>
-          <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Selection</div>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(32px, 5vw, 48px)', color: 'var(--cream)', margin: 0, fontWeight: 300 }}>
+        <div style={{ marginBottom: '48px' }}>
+          <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.25em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Selection</div>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(36px, 6vw, 56px)', color: 'var(--cream)', margin: 0, fontWeight: 300, lineHeight: 1.1 }}>
             Shopping <em style={{ color: '#E2C97A', fontStyle: 'italic' }}>Bag</em>
           </h1>
-          <div style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '6px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '20px', padding: '8px 18px', fontSize: '11px', color: 'var(--text-muted)' }}>
             <i className="ti ti-package" style={{ color: 'var(--gold)' }}></i>
-            {itemCount()} {itemCount() === 1 ? 'item' : 'items'} · Free installation included
+            {itemCount()} {itemCount() === 1 ? 'item' : 'items'} · Complimentary installation
           </div>
         </div>
 
-        <div className="cart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '40px', alignItems: 'start' }}>
+        <div className="cart-grid">
           
           {/* Main List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {items.map(item => (
               <div key={item.product.id} className="cart-item-card" style={{ background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', padding: '20px', display: 'flex', gap: '24px', position: 'relative' }}>
                 {/* Image */}
-                <Link href={`/products/${item.product.slug}`} style={{ width: 'clamp(100px, 15vw, 140px)', height: 'clamp(125px, 20vw, 175px)', background: 'var(--void)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
+                <Link href={`/products/${item.product.slug}`} className="cart-item-image" style={{ width: '140px', height: '175px', background: 'var(--void)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
                   <Image src={item.product.images?.[0] || '/placeholder.jpg'} alt={item.product.name} width={140} height={175} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </Link>
 
@@ -126,7 +157,7 @@ export default function CartPageClient() {
           </div>
 
           {/* Sidebar */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: '100px' }}>
+          <div className="cart-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: '100px' }}>
             
             {/* Coupon Section */}
             <div style={{ background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', padding: '24px' }}>
