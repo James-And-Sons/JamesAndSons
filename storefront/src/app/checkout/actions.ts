@@ -238,9 +238,12 @@ export async function verifyPayment(
           })),
           payment_method: "Prepaid",
           sub_total: fullOrder.totalAmount - fullOrder.taxAmount - fullOrder.shippingAmount,
-          length: 10, breadth: 10, height: 10, // Default for now
-          weight: 0.5,
+          length: fullOrder.items[0]?.product.length || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 65 : 30),
+          breadth: fullOrder.items[0]?.product.breadth || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 45 : 30),
+          height: fullOrder.items[0]?.product.height || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 35 : 60),
+          weight: fullOrder.items[0]?.product.weight || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 4.0 : 1.6),
         };
+
 
         console.log('--- Shiprocket Automation Debug ---');
         console.log('Payload:', JSON.stringify(shiprocketParams, null, 2));

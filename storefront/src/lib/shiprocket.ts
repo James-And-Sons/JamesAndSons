@@ -190,7 +190,12 @@ export async function syncProductToShiprocket(product: any) {
       });
     });
   } else {
-    // Sync the main product
+    const isChandelier = product.name?.toLowerCase().includes('chandelier');
+    const defaultWeight = isChandelier ? 4.0 : 1.6;
+    const defaultLength = isChandelier ? 65 : 30;
+    const defaultBreadth = isChandelier ? 45 : 30;
+    const defaultHeight = isChandelier ? 35 : 60;
+
     itemsToSync.push({
       name: product.name,
       sku: product.sku,
@@ -198,14 +203,15 @@ export async function syncProductToShiprocket(product: any) {
       selling_price: product.d2cPrice,
       qty: product.stockQuantity || 0,
       hsn_code: product.hsnCode || '',
-      weight: product.weight || 0.5,
-      length: product.length || 10, 
-      breadth: product.breadth || 10, 
-      height: product.height || 10,
+      weight: product.weight || defaultWeight,
+      length: product.length || defaultLength, 
+      breadth: product.breadth || defaultBreadth, 
+      height: product.height || defaultHeight,
       category_code: "default",
       type: "Single",
       channel_id: 10319482
     });
+
   }
 
   const results = [];

@@ -288,6 +288,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance & Craftsmanship</div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
               {product.description}
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '0.5px dashed var(--border)', fontSize: '11px', fontStyle: 'italic', color: 'var(--gold-light)' }}>
+                * All pieces are shipped in reinforced heritage crates to ensure pristine arrival.
+              </div>
             </div>
           </div>
         )}
@@ -300,7 +303,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               { key: 'Material', val: product.materialAndFinish?.join(', ') || 'Metals' },
               { key: 'Bulb Type', val: product.bulbType?.join(', ') || 'LED' },
               { key: 'Style', val: product.style?.join(', ') || 'Modern' },
-              { key: 'GST Rate', val: `${product.gstRate}%` }
+              { key: 'Packaging', val: product.name.toLowerCase().includes('chandelier') ? '65 x 45 x 35 cm' : '30 x 30 x 60 cm' },
+              { key: 'Box Weight', val: product.name.toLowerCase().includes('chandelier') ? '4.0 kg' : '1.6 kg' }
             ].map(spec => (
               <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', flex: '0 0 90px' }}>{spec.key}</div>
@@ -513,6 +517,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     { key: 'Material & Finish', val: product.materialAndFinish?.join(', ') || 'Estate Metals' },
                     { key: 'Illumination', val: product.bulbType?.join(', ') || 'LED Engine' },
                     { key: 'Design Style', val: product.style?.join(', ') || 'Modern Heritage' },
+                    { key: 'Box Dimensions', val: product.name.toLowerCase().includes('chandelier') ? '65 x 45 x 35 cm' : '30 x 30 x 60 cm' },
+                    { key: 'Shipping Weight', val: product.name.toLowerCase().includes('chandelier') ? '4.0 kg' : '1.6 kg' },
                     { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
                   ].map(spec => (
                     <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: spec.key === 'Compliance' ? 'none' : '1px dashed var(--border)' }}>
