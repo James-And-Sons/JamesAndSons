@@ -150,9 +150,9 @@ export async function createOrder(
       data: { recovered: true }
     }).catch(() => null); // Ignore if no record exists
 
-    return { 
-      success: true, 
-      orderNumber: order.orderNumber, 
+    return {
+      success: true,
+      orderNumber: order.orderNumber,
       orderId: order.id,
       razorpayOrderId: rpOrder.id,
       amount: rpOrder.amount,
@@ -163,9 +163,9 @@ export async function createOrder(
   } catch (error: any) {
     console.error('CRITICAL: Order creation failed:', error);
     // Return the actual error message to the client for debugging
-    return { 
-      success: false, 
-      error: error.message || 'An internal error occurred during order creation.' 
+    return {
+      success: false,
+      error: error.message || 'An internal error occurred during order creation.'
     };
   }
 }
@@ -206,7 +206,7 @@ export async function verifyPayment(
     try {
       const fullOrder = await prisma.order.findUnique({
         where: { id: internalOrderId },
-        include: { 
+        include: {
           items: { include: { product: true } },
           user: true
         }
@@ -238,24 +238,23 @@ export async function verifyPayment(
           })),
           payment_method: "Prepaid",
           sub_total: fullOrder.totalAmount - fullOrder.taxAmount - fullOrder.shippingAmount,
-          length: fullOrder.items[0]?.product.length || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 65 : 30),
-          breadth: fullOrder.items[0]?.product.breadth || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 45 : 30),
-          height: fullOrder.items[0]?.product.height || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 35 : 60),
-          weight: fullOrder.items[0]?.product.weight || (fullOrder.items[0]?.product.name.toLowerCase().includes('chandelier') ? 4.0 : 1.6),
+          length: fullOrder.items[0]?.product.length || 10,
+          breadth: fullOrder.items[0]?.product.breadth || 10,
+          height: fullOrder.items[0]?.product.height || 10,
+          weight: fullOrder.items[0]?.product.weight || 0.5,
         };
-
 
         console.log('--- Shiprocket Automation Debug ---');
         console.log('Payload:', JSON.stringify(shiprocketParams, null, 2));
 
         const shipRes = await createShiprocketOrder(shiprocketParams);
-        
+
         console.log('Shiprocket Response:', JSON.stringify(shipRes, null, 2));
 
         if (shipRes.success) {
           // STEP 2: Automatically assign AWB (Courier)
           const awbRes = await assignAWB(shipRes.shipment_id);
-          
+
           await prisma.order.update({
             where: { id: internalOrderId },
             data: {
@@ -264,7 +263,7 @@ export async function verifyPayment(
               fulfillmentError: awbRes.success ? null : `Order created, but AWB failed: ${awbRes.message}`
             }
           });
-          
+
           if (awbRes.success) {
             console.log(`Order pushed and AWB assigned: ${awbRes.awb_code}`);
           }
@@ -273,8 +272,8 @@ export async function verifyPayment(
           await prisma.order.update({
             where: { id: internalOrderId },
             data: {
-              fulfillmentError: typeof shipRes.message === 'object' 
-                ? JSON.stringify(shipRes.message) 
+              fulfillmentError: typeof shipRes.message === 'object'
+                ? JSON.stringify(shipRes.message)
                 : shipRes.message || 'Unknown Shiprocket Error'
             }
           });

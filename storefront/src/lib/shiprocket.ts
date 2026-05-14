@@ -4,7 +4,7 @@ let tokenExpiryTime: number = 0;
 
 export async function getShiprocketToken() {
   const now = Date.now();
-  
+
   // If we have a valid token (with 5 mins buffer), reuse it
   if (cachedToken && now < tokenExpiryTime - 5 * 60 * 1000) {
     return cachedToken;
@@ -34,10 +34,10 @@ export async function getShiprocketToken() {
 
     const data = await res.json();
     cachedToken = data.token;
-    
+
     // Simplistic expiry: assume token is good for 9 days (Shiprocket tokens usually last 10)
-    tokenExpiryTime = now + 9 * 24 * 60 * 60 * 1000; 
-    
+    tokenExpiryTime = now + 9 * 24 * 60 * 60 * 1000;
+
     return cachedToken;
   } catch (err) {
     console.error('getShiprocketToken Error:', err);
@@ -65,13 +65,13 @@ export async function checkPincodeServiceability(pickupPostcode: string, deliver
     if (data.status === 200 && data.data && data.data.available_courier_companies?.length > 0) {
       // Find the fastest/recommended courier
       const couriers = data.data.available_courier_companies;
-      return { 
-        status: 200, 
+      return {
+        status: 200,
         serviceable: true,
-        estimatedDeliveryDate: couriers[0].etd 
+        estimatedDeliveryDate: couriers[0].etd
       };
     }
-    
+
     return { status: 404, serviceable: false, message: 'Pincode not serviceable' };
   } catch (err) {
     console.error('Shiprocket Serviceability Error:', err);
@@ -105,16 +105,16 @@ export async function createShiprocketOrder(params: any) {
   try {
     const res = await fetch('https://apiv2.shiprocket.in/v1/external/orders/create/adhoc', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(params),
       cache: 'no-store'
     });
 
     const data = await res.json();
-    
+
     if (data.status_code === 1 || data.order_id) {
       return { success: true, order_id: data.order_id, shipment_id: data.shipment_id };
     } else {
@@ -137,9 +137,9 @@ export async function assignAWB(shipmentId: number) {
   try {
     const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/assign/awb', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ shipment_id: shipmentId }),
       cache: 'no-store'
@@ -147,8 +147,8 @@ export async function assignAWB(shipmentId: number) {
 
     const data = await res.json();
     if (data.status === 200 || data.awb_assign_status === 1) {
-      return { 
-        success: true, 
+      return {
+        success: true,
         awb_code: data.response.data.awb_code,
         courier_name: data.response.data.courier_name
       };
@@ -180,9 +180,9 @@ export async function syncProductToShiprocket(product: any) {
         selling_price: v.d2cPrice || product.d2cPrice,
         qty: v.stockQuantity || 0,
         hsn_code: product.hsnCode || '',
-        weight: v.weight || product.weight || 0.5, 
-        length: v.length || product.length || 10, 
-        breadth: v.breadth || product.breadth || 10, 
+        weight: v.weight || product.weight || 0.5,
+        length: v.length || product.length || 10,
+        breadth: v.breadth || product.breadth || 10,
         height: v.height || product.height || 10,
         category_code: "default",
         type: "Single",
@@ -190,12 +190,7 @@ export async function syncProductToShiprocket(product: any) {
       });
     });
   } else {
-    const isChandelier = product.name?.toLowerCase().includes('chandelier');
-    const defaultWeight = isChandelier ? 4.0 : 1.6;
-    const defaultLength = isChandelier ? 65 : 30;
-    const defaultBreadth = isChandelier ? 45 : 30;
-    const defaultHeight = isChandelier ? 35 : 60;
-
+    // Sync the main product
     itemsToSync.push({
       name: product.name,
       sku: product.sku,
@@ -203,15 +198,14 @@ export async function syncProductToShiprocket(product: any) {
       selling_price: product.d2cPrice,
       qty: product.stockQuantity || 0,
       hsn_code: product.hsnCode || '',
-      weight: product.weight || defaultWeight,
-      length: product.length || defaultLength, 
-      breadth: product.breadth || defaultBreadth, 
-      height: product.height || defaultHeight,
+      weight: product.weight || 0.5,
+      length: product.length || 10,
+      breadth: product.breadth || 10,
+      height: product.height || 10,
       category_code: "default",
       type: "Single",
       channel_id: 10319482
     });
-
   }
 
   const results = [];
@@ -219,9 +213,9 @@ export async function syncProductToShiprocket(product: any) {
     try {
       const res = await fetch('https://apiv2.shiprocket.in/v1/external/products', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(item),
         cache: 'no-store'
@@ -264,7 +258,7 @@ export async function getShippingRates(deliveryPincode: string, weightKg: number
       // Get the cheapest or recommended rate
       const firstCourier = couriers[0];
       const rate = firstCourier.rate;
-      
+
       // Get city/state from the first courier (destination info)
       // Note: Shiprocket returns these in the courier objects
       const city = firstCourier.city || '';
@@ -299,9 +293,9 @@ export async function generateLabel(shipmentIds: number[]) {
   try {
     const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/generate/label', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ shipment_id: shipmentIds }),
       cache: 'no-store'
@@ -325,9 +319,9 @@ export async function requestPickup(shipmentIds: number[]) {
   try {
     const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/generate/pickup', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ shipment_id: shipmentIds }),
       cache: 'no-store'
@@ -350,9 +344,9 @@ export async function createShiprocketReturnOrder(params: any) {
   try {
     const res = await fetch('https://apiv2.shiprocket.in/v1/external/orders/create/return', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(params),
       cache: 'no-store'
