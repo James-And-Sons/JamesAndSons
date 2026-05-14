@@ -18,6 +18,9 @@ type Variant = {
   mrp: number | null;
   stockQuantity: number;
   images: string[];
+  actualHeight?: number | null;
+  actualWidth?: number | null;
+  actualDepth?: number | null;
 };
 
 export default function PDPClient({ product, variants, isB2B }: { product: any; variants: Variant[]; isB2B: boolean }) {
@@ -82,6 +85,21 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     addItem(product, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const getDimensions = () => {
+    const h = selectedVariant?.actualHeight ?? product.actualHeight;
+    const w = selectedVariant?.actualWidth ?? product.actualWidth;
+    const d = selectedVariant?.actualDepth ?? product.actualDepth;
+
+    if (h || w || d) {
+      const parts = [];
+      if (h) parts.push(`${h}" H`);
+      if (w) parts.push(`${w}" W`);
+      if (d) parts.push(`${d}" D`);
+      return parts.join(' × ');
+    }
+    return product.dimensions || 'Standard';
   };
 
   return (
@@ -300,7 +318,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 { key: 'Material', val: product.materialAndFinish?.join(', ') || 'Metals' },
                 { key: 'Bulb Type', val: product.bulbType?.join(', ') || 'LED' },
                 { key: 'Style', val: product.style?.join(', ') || 'Modern' },
-                { key: 'Packaging', val: product.length ? `${product.length}x${product.breadth}x${product.height} cm` : 'Standard' },
+                { key: 'Dimensions', val: getDimensions() },
                 { key: 'Weight', val: product.weight ? `${product.weight} kg` : 'Standard' }
               ].map(spec => (
                 <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
@@ -514,7 +532,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                       { key: 'Material & Finish', val: product.materialAndFinish?.join(', ') || 'Estate Metals' },
                       { key: 'Illumination', val: product.bulbType?.join(', ') || 'LED Engine' },
                       { key: 'Design Style', val: product.style?.join(', ') || 'Modern Heritage' },
-                      { key: 'Box Size', val: product.length ? `${product.length} x ${product.breadth} x ${product.height} cm` : 'Standard Crate' },
+                      { key: 'Dimensions', val: getDimensions() },
                       { key: 'Ship Weight', val: product.weight ? `${product.weight} kg` : 'Standard' },
                       { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
                     ].map(spec => (
