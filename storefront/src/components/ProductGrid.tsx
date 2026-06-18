@@ -2,10 +2,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { formatPrice, Product } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
 import Image from 'next/image';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts }: { initialFilter?: string, initialProducts: Product[] }) {
+  const router = useRouter();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const { addItem } = useCartStore();
@@ -343,7 +345,14 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
             <div className="product-actions" style={{ zIndex: 2 }}>
               <button className="prod-action-btn" title="Add to Cart" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>+</button>
-              <Link href={`/rfq?product=${product.slug}`} className="prod-action-btn" title="Request Quote" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>Q</Link>
+              <button 
+                className="prod-action-btn" 
+                title="Request Quote" 
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/rfq?product=${product.slug}`); }}
+              >
+                Q
+              </button>
             </div>
 
             <div className="product-img" style={{ position: 'relative' }}>
@@ -370,15 +379,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                     position: 'absolute',
                     inset: 0,
                     zIndex: 1,
-                    transition: 'opacity 0.5s ease',
-                    opacity: 0
                   }}
-                  onLoad={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    if (target) target.style.opacity = '1';
-                  }}
-                // Start at opacity 0 to show the placeholder
-                // Note: In some browsers/states this might flicker, but it's the standard way
                 />
               )}
             </div>
