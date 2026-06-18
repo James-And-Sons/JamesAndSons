@@ -39,7 +39,7 @@ async function getProductsRaw(filter?: string): Promise<Product[]> {
 
 export const getProducts = unstable_cache(
   async (filter?: string) => getProductsRaw(filter),
-  ['products-list'],
+  ['products-list-v2'],
   { revalidate: 3600, tags: ['products'] }
 );
 
@@ -69,7 +69,7 @@ async function getProductBySlugRaw(slug: string): Promise<Product | undefined> {
 
 export const getProductBySlug = unstable_cache(
   async (slug: string) => getProductBySlugRaw(slug),
-  ['product-detail'],
+  ['product-detail-v2'],
   { revalidate: 3600, tags: ['products'] }
 );
 
@@ -92,6 +92,6 @@ async function getSpacesRaw() {
 
 export const getSpaces = unstable_cache(
   async () => getSpacesRaw(),
-  ['spaces-list'],
+  ['spaces-list-v2'],
   { revalidate: 3600, tags: ['spaces'] }
 );
