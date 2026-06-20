@@ -57,7 +57,7 @@ export default function NavClient({ user, products }: { user: { id: string; emai
             </svg>
           </Link>
         ) : (
-          <Link href="/login" className="hide-on-mobile" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
+          <Link href="/login" className="hide-on-mobile" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-sm)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >

@@ -78,7 +78,7 @@ export default function SearchModal({ products, onClose }: Props) {
             ) : (
               <>
                 <div style={{ padding: '12px 20px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{results.length} result{results.length !== 1 ? 's' : ''}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-sm)', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{results.length} result{results.length !== 1 ? 's' : ''}</span>
                 </div>
                 {results.map(product => (
                   <Link
@@ -97,7 +97,7 @@ export default function SearchModal({ products, onClose }: Props) {
                       </svg>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{product.collection} · {product.sku}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-sm)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{product.collection} · {product.sku}</div>
                       <div style={{ fontFamily: 'var(--font-serif)', fontSize: '17px', fontWeight: 300, color: 'var(--cream)', marginTop: '3px' }}>{product.name}</div>
                     </div>
                     <div style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', fontWeight: 300, color: 'var(--gold-light)', flexShrink: 0 }}>
@@ -113,7 +113,7 @@ export default function SearchModal({ products, onClose }: Props) {
         {/* Default state hints */}
         {debouncedQuery.trim().length < 2 && (
           <div style={{ padding: '20px 20px' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '12px' }}>Popular Searches</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-sm)', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '12px' }}>Popular Searches</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {['Crystal', 'LED', 'Grand Foyer', 'Modern', 'Heritage', 'Dining'].map(hint => (
                 <button key={hint} onClick={() => setQuery(hint)} className="filter-btn" style={{ padding: '5px 12px' }}>{hint}</button>

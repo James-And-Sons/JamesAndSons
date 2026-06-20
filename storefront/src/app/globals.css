@@ -23,7 +23,9 @@
   
   --font-serif: var(--font-cormorant);
   --font-mono: var(--font-dm-mono);
-  --font-body: var(--font-libre);
+  --font-xs: 10px;
+  --font-sm: 12px;
+  --font-base: 16px;
 }
 
 body {
@@ -226,10 +228,10 @@ body {
   }
   .mobile-hero-title em { color: var(--gold-light); font-style: italic; }
   .mobile-hero-sub {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-muted);
     line-height: 1.6;
-    max-width: 240px; /* Increased to fit larger font */
+    max-width: 240px;
     margin-bottom: 20px;
     position: relative;
   }
