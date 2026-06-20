@@ -336,28 +336,79 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         </div>
 
         {/* ── DESKTOP LAYOUT (hidden md:grid) ── */}
-        <div className="hidden md:grid" style={{ maxWidth: '1440px', margin: '0 auto', padding: '100px 60px', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr)', gap: '80px', minHeight: '100vh' }}>
+        <div className="hidden md:grid" style={{ maxWidth: '1440px', margin: '0 auto', padding: '40px 60px 80px 60px', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr)', gap: '80px', minHeight: '100vh' }}>
 
           {/* LEFT COLUMN: Gallery */}
-          <div className="pdp-gallery">
+          <div className="pdp-gallery" style={{ display: 'flex', flexDirection: 'column', gap: '32px', position: 'static', height: 'auto', overflow: 'visible', background: 'transparent' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {activeImages.map((img: string, i: number) => (
-                <div
-                  key={i}
-                  className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center min-h-[600px] cursor-zoom-in"
-                  onClick={() => { setActiveImg(i); setLightboxOpen(true); }}
-                >
-                  <Image
-                    src={img}
-                    alt={`${product.name} - view ${i + 1}`}
-                    width={800}
-                    height={1000}
-                    style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
-                    priority={i === 0}
-                  />
+              {activeImages.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Main Active Image Container */}
+                  <div
+                    className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center relative cursor-zoom-in"
+                    style={{ height: '600px' }}
+                    onClick={() => setLightboxOpen(true)}
+                  >
+                    <Image
+                      src={activeImages[activeImg]}
+                      alt={`${product.name} - view ${activeImg + 1}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      priority
+                    />
+                    
+                    {/* Left & Right Chevron Arrows */}
+                    {activeImages.length > 1 && (
+                      <>
+                        <button
+                          onClick={e => { e.stopPropagation(); setActiveImg(i => Math.max(0, i - 1)); }}
+                          style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: activeImg === 0 ? 0.3 : 1 }}
+                          disabled={activeImg === 0}
+                        >
+                          <i className="ti ti-chevron-left" style={{ fontSize: '20px' }}></i>
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setActiveImg(i => Math.min(activeImages.length - 1, i + 1)); }}
+                          style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: activeImg === activeImages.length - 1 ? 0.3 : 1 }}
+                          disabled={activeImg === activeImages.length - 1}
+                        >
+                          <i className="ti ti-chevron-right" style={{ fontSize: '20px' }}></i>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Thumbnails Row */}
+                  {activeImages.length > 1 && (
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                      {activeImages.map((img: string, idx: number) => (
+                        <div
+                          key={idx}
+                          onClick={() => setActiveImg(idx)}
+                          style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '12px',
+                            border: idx === activeImg ? '2px solid var(--gold)' : '1px solid var(--border)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            opacity: idx === activeImg ? 1 : 0.6,
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <Image
+                            src={img}
+                            alt={`${product.name} thumbnail ${idx + 1}`}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-              {activeImages.length === 0 && (
+              ) : (
                 <div className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] flex items-center justify-center min-h-[600px]">
                   <svg width="120" height="160" viewBox="0 0 100 120" stroke="var(--gold)" fill="none" opacity="0.3">
                     <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
@@ -366,6 +417,35 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   </svg>
                 </div>
               )}
+            </div>
+
+            {/* Description & Technical Specs - Moved here to fill space below product image */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '20px' }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>The Masterpiece</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                  {product.description || 'Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.'}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text)' }}>Specifications</div>
+                <div style={{ padding: '8px 24px' }}>
+                  {[
+                    { key: 'Material & Finish', val: product.materialAndFinish?.join(', ') || 'Estate Metals' },
+                    { key: 'Illumination', val: product.bulbType?.join(', ') || 'LED Engine' },
+                    { key: 'Design Style', val: product.style?.join(', ') || 'Modern Heritage' },
+                    { key: 'Dimensions', val: getDimensions() },
+                    { key: 'Ship Weight', val: product.weight ? `${product.weight} kg` : 'Standard' },
+                    { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
+                  ].map(spec => (
+                    <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: spec.key === 'Compliance' ? 'none' : '1px dashed var(--border)' }}>
+                      <div style={{ flex: '0 0 140px', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{spec.key}</div>
+                      <div style={{ flex: 1, fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>{spec.val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -452,11 +532,11 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
                   <button
                     className="btn-primary"
-                    style={{ flex: 1, height: '54px', borderRadius: '12px', fontSize: '14px' }}
+                    style={{ flex: 1, height: '54px', borderRadius: '12px', fontSize: '14px', whiteSpace: 'nowrap' }}
                     onClick={handleAddToCart}
                     disabled={availableStock === 0}
                   >
-                    {availableStock === 0 ? 'Notify Availability' : added ? '✓ Successfully Added' : 'Add to Collection'}
+                    {availableStock === 0 ? 'Notify Availability' : added ? '✓ Added to Cart' : 'Add to Cart'}
                   </button>
 
                   <button
@@ -483,15 +563,15 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', padding: '24px', borderRadius: '16px' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>Delivery Check</div>
-                  <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <input
                       placeholder="Enter Pincode"
                       maxLength={6}
                       value={pincode}
                       onChange={e => { const val = e.target.value.replace(/\D/g, ''); setPincode(val); if (val.length === 6) handleCheckPincode(val); else setShippingRes(null); }}
-                      style={{ flex: 1, background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '14px', outline: 'none', borderRadius: '8px' }}
+                      style={{ flex: 1, minWidth: 0, height: '46px', boxSizing: 'border-box', background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '14px', outline: 'none', borderRadius: '8px' }}
                     />
-                    <button onClick={() => handleCheckPincode(pincode)} disabled={pincode.length !== 6 || checkingPincode} className="btn-outline" style={{ padding: '0 24px', fontSize: '11px', height: '46px', borderRadius: '8px' }}>{checkingPincode ? '...' : 'Check'}</button>
+                    <button onClick={() => handleCheckPincode(pincode)} disabled={pincode.length !== 6 || checkingPincode} className="btn-outline" style={{ padding: '0 24px', fontSize: '11px', height: '46px', minHeight: 'none', boxSizing: 'border-box', borderRadius: '8px' }}>{checkingPincode ? '...' : 'Check'}</button>
                   </div>
                   {shippingRes && (
                     <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontSize: '13px', fontFamily: 'var(--font-body)' }}>
@@ -513,35 +593,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                       {item.label}
                     </div>
                   ))}
-                </div>
-              </div>
-
-              {/* Description & Technical Specs */}
-              <div style={{ marginTop: '20px' }}>
-                <div style={{ marginBottom: '32px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>The Masterpiece</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
-                    {product.description || 'Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.'}
-                  </div>
-                </div>
-
-                <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-                  <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text)' }}>Specifications</div>
-                  <div style={{ padding: '8px 24px' }}>
-                    {[
-                      { key: 'Material & Finish', val: product.materialAndFinish?.join(', ') || 'Estate Metals' },
-                      { key: 'Illumination', val: product.bulbType?.join(', ') || 'LED Engine' },
-                      { key: 'Design Style', val: product.style?.join(', ') || 'Modern Heritage' },
-                      { key: 'Dimensions', val: getDimensions() },
-                      { key: 'Ship Weight', val: product.weight ? `${product.weight} kg` : 'Standard' },
-                      { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
-                    ].map(spec => (
-                      <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: spec.key === 'Compliance' ? 'none' : '1px dashed var(--border)' }}>
-                        <div style={{ flex: '0 0 140px', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{spec.key}</div>
-                        <div style={{ flex: 1, fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>{spec.val}</div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
 
