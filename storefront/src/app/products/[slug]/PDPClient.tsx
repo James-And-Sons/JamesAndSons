@@ -451,7 +451,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
           {/* RIGHT COLUMN: Info & Actions (Sticky) */}
           <div className="pdp-info" style={{ paddingTop: '0px' }}>
-            <div style={{ position: 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ position: 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '-18px' }}>
 
               {/* Header Info */}
               <div>
