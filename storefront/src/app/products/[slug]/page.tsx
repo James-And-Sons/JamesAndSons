@@ -73,7 +73,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
             </div>
 
             {/* Mobile Scroll — Edge-to-Edge Experience */}
-            <div className="md:hidden" style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '0 16px 24px', scrollbarWidth: 'none' }}>
+            <div className="flex md:hidden" style={{ gap: '12px', overflowX: 'auto', padding: '0 16px 24px', scrollbarWidth: 'none' }}>
               {related.map((p: any) => (
                 <Link key={p.id} href={`/products/${p.slug}`} style={{ flexShrink: 0, width: '160px', textDecoration: 'none' }}>
                   <div style={{ height: '200px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '12px' }}>

@@ -691,4 +691,15 @@ body {
   color: #1a1408;
 }
 
+/* Tailwind v4 Layer Override: Ensure md:hidden utility takes precedence over unlayered .flex class */
+@media (min-width: 768px) {
+  .md\:hidden {
+    display: none !important;
+  }
+}
+
+
+
+
+
 
