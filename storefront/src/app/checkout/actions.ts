@@ -171,6 +171,7 @@ export async function createOrder(
 }
 
 import crypto from 'crypto';
+import { fulfillPaidOrder } from '@/lib/fulfillment';
 
 export async function verifyPayment(
   razorpayOrderId: string,
@@ -189,123 +190,15 @@ export async function verifyPayment(
       throw new Error('Invalid payment signature');
     }
 
-    // Generate Sequential Invoice Number
-    const invoiceNumber = await generateSequentialInvoiceNumber();
-
-    await prisma.order.update({
-      where: { id: internalOrderId },
-      data: {
-        status: 'PAID',
-        razorpayPaymentId,
-        razorpaySignature,
-        invoiceNumber, // Save the sequential invoice number
-      },
+    // Delegate status updates, Shiprocket push, AWB assignment, emailing, and promo tracking to fulfillPaidOrder
+    const fulfillmentResult = await fulfillPaidOrder({
+      orderId: internalOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
     });
 
-    // === AUTOMATION: Create Shiprocket Shipment immediately ===
-    try {
-      const fullOrder = await prisma.order.findUnique({
-        where: { id: internalOrderId },
-        include: {
-          items: { include: { product: true } },
-          user: true
-        }
-      });
-
-      if (fullOrder) {
-        // Trigger Invoice Email
-        await sendInvoiceEmail(fullOrder);
-
-        const shiprocketParams = {
-          order_id: fullOrder.orderNumber,
-          order_date: fullOrder.createdAt.toISOString().split('T')[0],
-          pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-          billing_customer_name: fullOrder.user.firstName,
-          billing_last_name: fullOrder.user.lastName,
-          billing_address: fullOrder.shippingAddress.split(',').slice(0, -2).join(', ') || fullOrder.shippingAddress,
-          billing_city: fullOrder.shippingCity || '',
-          billing_pincode: fullOrder.shippingPincode || '',
-          billing_state: fullOrder.shippingState || '',
-          billing_country: "India",
-          billing_email: fullOrder.user.email.trim().toLowerCase(),
-          billing_phone: (fullOrder.shippingPhone || fullOrder.user.phone || '9999999999').replace(/\D/g, '').slice(-10) || '9999999999',
-          shipping_is_billing: true,
-          order_items: fullOrder.items.map(item => ({
-            name: item.product.name,
-            sku: item.product.sku,
-            units: item.quantity,
-            selling_price: item.unitPrice,
-          })),
-          payment_method: "Prepaid",
-          sub_total: fullOrder.totalAmount - fullOrder.taxAmount - fullOrder.shippingAmount,
-          length: fullOrder.items[0]?.product.length || 10,
-          breadth: fullOrder.items[0]?.product.breadth || 10,
-          height: fullOrder.items[0]?.product.height || 10,
-          weight: fullOrder.items[0]?.product.weight || 0.5,
-        };
-
-        console.log('--- Shiprocket Automation Debug ---');
-        console.log('Payload:', JSON.stringify(shiprocketParams, null, 2));
-
-        const shipRes = await createShiprocketOrder(shiprocketParams);
-
-        console.log('Shiprocket Response:', JSON.stringify(shipRes, null, 2));
-
-        if (shipRes.success) {
-          // STEP 2: Automatically assign AWB (Courier)
-          const awbRes = await assignAWB(shipRes.shipment_id);
-
-          await prisma.order.update({
-            where: { id: internalOrderId },
-            data: {
-              trackingNumber: awbRes.success ? awbRes.awb_code : null,
-              awbNumber: shipRes.shipment_id?.toString(),
-              fulfillmentError: awbRes.success ? null : `Order created, but AWB failed: ${awbRes.message}`
-            }
-          });
-
-          if (awbRes.success) {
-            console.log(`Order pushed and AWB assigned: ${awbRes.awb_code}`);
-          }
-        } else {
-          console.error('Shiprocket Order Sync Failed:', shipRes.message);
-          await prisma.order.update({
-            where: { id: internalOrderId },
-            data: {
-              fulfillmentError: typeof shipRes.message === 'object'
-                ? JSON.stringify(shipRes.message)
-                : shipRes.message || 'Unknown Shiprocket Error'
-            }
-          });
-        }
-      }
-    } catch (automationError) {
-      console.error('Shiprocket Automation Error:', automationError);
-      // Don't fail the user payment if automation fails
-    }
-
-    // === PROMOTIONS: Record Coupon Usage & Affiliate Conversion ===
-    try {
-      const paidOrder = await prisma.order.findUnique({ where: { id: internalOrderId } });
-      if (paidOrder) {
-        // Record coupon usage
-        if (paidOrder.couponCode) {
-          const { applyCouponToOrder } = await import('@/app/promotions/actions');
-          const coupon = await prisma.coupon.findUnique({ where: { code: paidOrder.couponCode } });
-          if (coupon) {
-            await applyCouponToOrder(internalOrderId, coupon.id, paidOrder.discountAmount, paidOrder.userId);
-          }
-        }
-        // Record affiliate conversion
-        if (paidOrder.affiliateCode) {
-          const { recordAffiliateConversion } = await import('@/app/promotions/actions');
-          const orderSubtotal = paidOrder.totalAmount - paidOrder.taxAmount - paidOrder.shippingAmount + paidOrder.discountAmount;
-          await recordAffiliateConversion(internalOrderId, paidOrder.affiliateCode, orderSubtotal);
-        }
-      }
-    } catch (promotionsError) {
-      console.error('Promotions recording error:', promotionsError);
-      // Non-fatal: payment is still confirmed
+    if (!fulfillmentResult.success) {
+      throw new Error(fulfillmentResult.error || 'Fulfillment process failed');
     }
 
     return { success: true };
