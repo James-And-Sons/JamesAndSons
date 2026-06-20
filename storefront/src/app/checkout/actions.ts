@@ -74,6 +74,18 @@ export async function createOrder(
     const discountAmount = form.discountAmount ?? 0;
     const totalAmount = subtotal + gst + shipping - discountAmount;
 
+    // Validate that all products exist in the database (handles stale carts in localStorage)
+    const productIds = cartItems.map(item => item.product.id);
+    const dbProducts = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true }
+    });
+    const dbProductIds = new Set(dbProducts.map(p => p.id));
+    const missingProductIds = productIds.filter(id => !dbProductIds.has(id));
+    if (missingProductIds.length > 0) {
+      throw new Error("Some items in your cart are no longer available. Please clear your cart and try again.");
+    }
+
     // 1. Create order as PENDING
     const order = await prisma.order.create({
       data: {
