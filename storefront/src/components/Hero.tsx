@@ -19,7 +19,7 @@ export default function Hero() {
           className="hero-svg live-chandelier object-contain"
         />
 
-        <div className="font-serif italic text-[#D4AF37] text-[18px] tracking-[0.1em] mb-4 py-12 opacity-90 animate-fadeIn">
+        <div className="font-serif italic text-[var(--gold-pale)] text-[24px] tracking-[0.1em] mb-4 py-12 opacity-95 animate-fadeIn">
           &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
         </div>
 
@@ -68,7 +68,7 @@ export default function Hero() {
           </div>
           <div className="mobile-hero-title">Illuminate<br /><em>with Purpose</em></div>
           
-          <div className="font-serif italic text-[#D4AF37] text-[12px] tracking-[0.05em] mb-3 opacity-90">
+          <div className="font-serif italic text-[var(--gold-pale)] text-[15px] tracking-[0.05em] mb-3 opacity-95">
             &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
           </div>
           

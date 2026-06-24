@@ -770,6 +770,42 @@ body {
   }
 }
 
+/* Force constant light styling for mobile space cards with thumbnail images,
+   as their background image remains dark and constant across both themes. */
+.mobile-space-card.has-image .mobile-space-name,
+[data-theme='light'] .mobile-space-card.has-image .mobile-space-name,
+[data-theme='light'] .mobile-space-card[style].has-image .mobile-space-name,
+[data-theme='light'] .mobile-space-card[style].has-image div .mobile-space-name {
+  color: #F5EFE6 !important; /* Constant light cream color */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+}
+
+.mobile-space-card.has-image .mobile-space-count,
+[data-theme='light'] .mobile-space-card.has-image .mobile-space-count,
+[data-theme='light'] .mobile-space-card[style].has-image .mobile-space-count,
+[data-theme='light'] .mobile-space-card[style].has-image div .mobile-space-count {
+  color: rgba(255, 255, 255, 0.7) !important; /* Constant semi-transparent white */
+  opacity: 0.95 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+}
+
+.mobile-space-card.has-image .mobile-space-arrow,
+[data-theme='light'] .mobile-space-card.has-image .mobile-space-arrow,
+[data-theme='light'] .mobile-space-card[style].has-image .mobile-space-arrow {
+  background: rgba(255,255,255,0.15) !important;
+  border-color: rgba(255,255,255,0.25) !important;
+  color: #E2C882 !important; /* Constant bright warm gold */
+}
+
+/* Ensure the dark gradient overlay remains dark and rich in both light and dark themes */
+.mobile-space-card.has-image::before,
+[data-theme='light'] .mobile-space-card.has-image::before,
+[data-theme='light'] .mobile-space-card[style].has-image::before {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.85) 100%) !important;
+  z-index: 1 !important;
+}
+
+
 
 
 
