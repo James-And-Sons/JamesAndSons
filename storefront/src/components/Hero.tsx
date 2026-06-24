@@ -11,13 +11,12 @@ export default function Hero() {
         {/* Abstract Chandelier Graphics */}
         <div className="hero-chandelier"></div>
         <Image
-          src="/images/hero-chandelier.jpg"
+          src="/images/hero-chandelier.png"
           alt="James & Sons Heritage Chandelier"
-          width={400}
-          height={500}
+          width={450}
+          height={580}
           priority
-          className="hero-svg object-contain"
-          style={{ mixBlendMode: 'screen' }}
+          className="hero-svg live-chandelier object-contain"
         />
 
         <div className="font-serif italic text-[#D4AF37] text-[18px] tracking-[0.1em] mb-4 py-12 opacity-90 animate-fadeIn">
@@ -56,13 +55,12 @@ export default function Hero() {
       <section className="mobile-hero-section md:hidden mt-4">
         <div className="mobile-hero-visual">
           <Image
-            src="/images/hero-chandelier.jpg"
+            src="/images/hero-chandelier.png"
             alt="James & Sons Heritage Chandelier"
-            width={160}
-            height={200}
+            width={180}
+            height={230}
             priority
-            className="mobile-chandelier-svg object-contain"
-            style={{ mixBlendMode: 'screen' }}
+            className="mobile-chandelier-svg live-chandelier object-contain"
           />
           <div className="mobile-hero-badge">
             <div className="mobile-hero-badge-dot"></div>

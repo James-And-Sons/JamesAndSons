@@ -724,6 +724,41 @@ body {
   }
 }
 
+/* Theme-responsive live chandelier glowing & breathing animations */
+.hero-svg.live-chandelier {
+  animation: float 6s ease-in-out infinite, chandelier-glow-dark 4s ease-in-out infinite alternate;
+}
+
+[data-theme='light'] .hero-svg.live-chandelier {
+  animation: float 6s ease-in-out infinite, chandelier-glow-light 4s ease-in-out infinite alternate;
+}
+
+.mobile-chandelier-svg.live-chandelier {
+  animation: mobile-float 6s ease-in-out infinite, chandelier-glow-dark 4s ease-in-out infinite alternate;
+}
+
+[data-theme='light'] .mobile-chandelier-svg.live-chandelier {
+  animation: mobile-float 6s ease-in-out infinite, chandelier-glow-light 4s ease-in-out infinite alternate;
+}
+
+@keyframes chandelier-glow-dark {
+  0% {
+    filter: drop-shadow(0 0 10px rgba(245, 233, 200, 0.2)) brightness(0.98) contrast(1.02);
+  }
+  100% {
+    filter: drop-shadow(0 0 35px rgba(226, 200, 130, 0.55)) brightness(1.08) contrast(1.05);
+  }
+}
+
+@keyframes chandelier-glow-light {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(196, 160, 90, 0.15)) brightness(0.96) contrast(1.05);
+  }
+  100% {
+    filter: drop-shadow(0 0 25px rgba(196, 160, 90, 0.35)) brightness(1.03) contrast(1.12);
+  }
+}
+
 
 
 
