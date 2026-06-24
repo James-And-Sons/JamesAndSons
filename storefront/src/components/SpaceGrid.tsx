@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 type Space = {
   id: string;
@@ -38,7 +39,14 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
         {/* Main large space */}
         <Link href={`/collections?space=${encodeURIComponent(mainSpace.name)}`} className="space-card block">
           {mainSpace.image ? (
-            <div className="space-card-bg" style={{ backgroundImage: `url(${mainSpace.image})`, backgroundSize: 'cover', opacity: 1 }}></div>
+            <Image
+              src={mainSpace.image}
+              alt={mainSpace.name}
+              fill
+              priority
+              className="space-card-bg object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           ) : (
             <div className="space-card-bg"></div>
           )}
@@ -68,7 +76,13 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
           {otherSpaces.map((space) => (
             <Link key={space.id} href={`/collections?space=${encodeURIComponent(space.name)}`} className="space-card block">
               {space.image ? (
-                <div className="space-card-bg" style={{ backgroundImage: `url(${space.image})`, backgroundSize: 'cover', opacity: 1 }}></div>
+                <Image
+                  src={space.image}
+                  alt={space.name}
+                  fill
+                  className="space-card-bg object-cover"
+                  sizes="(max-width: 768px) 100vw, 25vw"
+                />
               ) : (
                 <div className="space-card-bg"></div>
               )}
@@ -107,9 +121,18 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
             <Link
               key={space.id}
               href={`/collections?space=${encodeURIComponent(space.name)}`}
-              className={`mobile-space-card ${space.image ? '' : bgClass}`}
-              style={space.image ? { backgroundImage: `url(${space.image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              className={`mobile-space-card ${space.image ? 'has-image' : bgClass}`}
             >
+              {space.image && (
+                <Image
+                  src={space.image}
+                  alt={space.name}
+                  fill
+                  className="absolute inset-0 object-cover"
+                  sizes="(max-width: 768px) 140px, 100vw"
+                  priority={index < 2}
+                />
+              )}
               {!space.image && <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>}
               <div style={{ position: 'relative', zIndex: 2 }}>
                 <div className="mobile-space-name">{space.name}</div>

@@ -18,6 +18,13 @@ export default function CloudinaryUpload({
 }: CloudinaryUploadProps) {
   const [images, setImages] = useState<string[]>(defaultImages);
 
+  const handleClose = () => {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+  };
+
   const handleUpload = (result: any) => {
     if (result.event === 'success') {
       const url = result.info.secure_url;
@@ -27,6 +34,7 @@ export default function CloudinaryUpload({
         return newImages;
       });
     }
+    handleClose();
   };
 
   const removeImage = (urlToRemove: string) => {
@@ -65,6 +73,7 @@ export default function CloudinaryUpload({
               apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY
             }}
             onSuccess={handleUpload}
+            onClose={handleClose}
           >
             {({ open }) => (
               <button

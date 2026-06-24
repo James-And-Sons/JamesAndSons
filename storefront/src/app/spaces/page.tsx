@@ -33,12 +33,18 @@ export default async function SpacesPage() {
               <Link
                 key={space.id}
                 href={`/collections?space=${space.slug}`}
-                className={`mobile-space-card ${space.image ? '' : bgClass}`}
-                style={{
-                  width: '100%',
-                  ...(space.image ? { backgroundImage: `url(${space.image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {})
-                }}
+                className={`mobile-space-card ${space.image ? 'has-image' : bgClass}`}
+                style={{ width: '100%' }}
               >
+                {space.image && (
+                  <Image
+                    src={space.image}
+                    alt={space.name}
+                    fill
+                    className="absolute inset-0 object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                )}
                 {!space.image && <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>}
                 <div style={{ position: 'relative', zIndex: 2 }}>
                   <div className="mobile-space-name">{space.name}</div>

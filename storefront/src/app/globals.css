@@ -321,9 +321,28 @@ body {
     position: absolute;
     inset: 0;
     background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.5) 100%);
+    z-index: 1;
   }
   [data-theme='light'] .mobile-space-card::before {
     background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.15) 100%);
+  }
+  /* Enhanced legibility for cards with thumbnail images */
+  .mobile-space-card.has-image::before {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.85) 100%) !important;
+    z-index: 1;
+  }
+  .mobile-space-card.has-image .mobile-space-name {
+    color: var(--cream) !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .mobile-space-card.has-image .mobile-space-count {
+    color: var(--text-muted) !important;
+    opacity: 0.9;
+  }
+  .mobile-space-card.has-image .mobile-space-arrow {
+    background: rgba(255,255,255,0.15) !important;
+    border-color: rgba(255,255,255,0.25) !important;
+    color: var(--gold-light) !important;
   }
   [data-theme='light'] .mobile-space-name { color: #1a1408; }
   [data-theme='light'] .mobile-space-count { color: #5a4a30; }
