@@ -66,3 +66,28 @@ export async function createPaymentLink(amount: number, orderNumber: string, cus
     throw error;
   }
 }
+
+/**
+ * Initiates a full or partial refund for a Razorpay payment.
+ */
+export async function refundRazorpayPayment(paymentId: string, amount?: number, reason?: string) {
+  try {
+    const rzp = getRazorpayInstance();
+    const params: any = {
+      notes: {
+        reason: reason || 'Order fulfillment failed, automated instant refund'
+      }
+    };
+    if (amount !== undefined) {
+      params.amount = Math.round(amount);
+    }
+    console.log(`[Razorpay] Initiating refund for payment ID: ${paymentId}, amount: ${amount || 'FULL'}`);
+    const refund = await rzp.payments.refund(paymentId, params);
+    console.log(`[Razorpay] Refund initiated successfully: ${refund.id}`);
+    return refund;
+  } catch (error) {
+    console.error('Razorpay Refund Failed:', error);
+    throw error;
+  }
+}
+

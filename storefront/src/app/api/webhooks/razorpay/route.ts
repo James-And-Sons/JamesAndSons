@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { fulfillPaidOrder } from '@/lib/fulfillment';
+import { refundRazorpayPayment } from '@/lib/razorpay';
 
 export async function POST(req: Request) {
   try {
@@ -37,18 +38,51 @@ export async function POST(req: Request) {
 
       if (order) {
         console.log(`[Webhook] Processing fulfillment for Razorpay Order: ${rpOrderId} (JNS Order: ${order.orderNumber})`);
-        const result = await fulfillPaidOrder({
-          orderId: order.id,
-          razorpayPaymentId,
-          razorpaySignature,
-        });
+        try {
+          const result = await fulfillPaidOrder({
+            orderId: order.id,
+            razorpayPaymentId,
+            razorpaySignature,
+          });
 
-        if (!result.success) {
-          console.error(`[Webhook] Fulfillment failed for order ${order.orderNumber}:`, result.error);
-          return NextResponse.json({ error: result.error || 'Fulfillment failed' }, { status: 500 });
+          if (!result.success) {
+            console.error(`[Webhook] Fulfillment failed for order ${order.orderNumber}:`, result.error);
+            if (razorpayPaymentId) {
+              console.log(`[Webhook] Initiating automated refund for JNS Order ${order.orderNumber} due to fulfillment failure.`);
+              await refundRazorpayPayment(razorpayPaymentId, undefined, `Fulfillment failed: ${result.error || 'Unknown Error'}`);
+              
+              // Mark order as cancelled/refunded in DB
+              await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                  status: 'CANCELLED',
+                  fulfillmentError: `Fulfillment failed: ${result.error || 'Unknown Error'}. Automated instant refund initiated.`,
+                }
+              });
+            }
+            return NextResponse.json({ error: result.error || 'Fulfillment failed, automated refund initiated' }, { status: 500 });
+          }
+        } catch (fulfillmentErr: any) {
+          console.error(`[Webhook] Exception during fulfillment for order ${order.orderNumber}:`, fulfillmentErr);
+          if (razorpayPaymentId) {
+            await refundRazorpayPayment(razorpayPaymentId, undefined, `Fulfillment exception: ${fulfillmentErr.message || 'Unknown Error'}`);
+            await prisma.order.update({
+              where: { id: order.id },
+              data: {
+                status: 'CANCELLED',
+                fulfillmentError: `Fulfillment exception: ${fulfillmentErr.message || 'Unknown Error'}. Automated instant refund initiated.`,
+              }
+            });
+          }
+          return NextResponse.json({ error: fulfillmentErr.message || 'Fulfillment exception, automated refund initiated' }, { status: 500 });
         }
       } else {
-        console.warn(`[Webhook] No order found in database matching Razorpay Order ID: ${rpOrderId}`);
+        console.error(`[Webhook] CRITICAL: No order found in database matching Razorpay Order ID: ${rpOrderId}`);
+        if (razorpayPaymentId) {
+          console.log(`[Webhook] Initiating automated refund for unmatched Razorpay Order ID ${rpOrderId}`);
+          await refundRazorpayPayment(razorpayPaymentId, undefined, `No matching order found for Razorpay Order ID: ${rpOrderId}`);
+        }
+        return NextResponse.json({ error: 'Order not found, automated refund initiated' }, { status: 400 });
       }
     }
 

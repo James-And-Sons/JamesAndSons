@@ -38,7 +38,7 @@ type CheckoutForm = {
   affiliateCode?: string;   // From jns_ref cookie
 };
 
-import { createRazorpayOrder, createPaymentLink } from '@/lib/razorpay';
+import { createRazorpayOrder, createPaymentLink, refundRazorpayPayment } from '@/lib/razorpay';
 
 export async function createOrder(
   form: CheckoutForm,
@@ -202,15 +202,32 @@ export async function verifyPayment(
       throw new Error('Invalid payment signature');
     }
 
-    // Delegate status updates, Shiprocket push, AWB assignment, emailing, and promo tracking to fulfillPaidOrder
-    const fulfillmentResult = await fulfillPaidOrder({
-      orderId: internalOrderId,
-      razorpayPaymentId,
-      razorpaySignature,
-    });
+    // Since signature matches, payment is captured. Attempt to fulfill:
+    try {
+      const fulfillmentResult = await fulfillPaidOrder({
+        orderId: internalOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+      });
 
-    if (!fulfillmentResult.success) {
-      throw new Error(fulfillmentResult.error || 'Fulfillment process failed');
+      if (!fulfillmentResult.success) {
+        throw new Error(fulfillmentResult.error || 'Fulfillment process failed');
+      }
+    } catch (fulfillError: any) {
+      console.error('[VerifyPayment] Fulfillment failed, initiating automated instant refund:', fulfillError);
+      try {
+        await refundRazorpayPayment(razorpayPaymentId, undefined, `Fulfillment failed: ${fulfillError.message || 'Unknown Error'}`);
+        await prisma.order.update({
+          where: { id: internalOrderId },
+          data: {
+            status: 'CANCELLED',
+            fulfillmentError: `Fulfillment failed: ${fulfillError.message || 'Unknown Error'}. Automated instant refund initiated.`,
+          }
+        });
+      } catch (refundError) {
+        console.error('[VerifyPayment] CRITICAL: Failed to automatically refund client payment:', refundError);
+      }
+      throw fulfillError;
     }
 
     return { success: true };
