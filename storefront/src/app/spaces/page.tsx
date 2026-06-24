@@ -97,20 +97,20 @@ export default async function SpacesPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300" />
 
               <div className="absolute bottom-0 left-0 right-0 p-10 lg:p-12 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gold)] mb-2">
+                <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-[#E2C882] mb-2">
                   {space._count.products} Fixtures
                 </div>
-                <h2 className="font-serif text-3xl font-light text-[var(--cream)] group-hover:text-white transition-colors">
+                <h2 className="font-serif text-3xl font-light text-[#F5EFE6] group-hover:text-white transition-colors">
                   {space.name}
                 </h2>
                 {space.description && (
-                  <p className="font-body text-sm text-[var(--text-muted)] mt-3 line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                  <p className="font-body text-sm text-white/70 mt-3 line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
                     {space.description}
                   </p>
                 )}
               </div>
 
-              <div className="absolute top-6 right-6 w-10 h-10 border border-[var(--border-gold)] rounded-full flex items-center justify-center text-[var(--gold)] opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+              <div className="absolute top-6 right-6 w-10 h-10 border border-white/20 rounded-full flex items-center justify-center text-[#E2C882] opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                 →
               </div>
             </Link>

@@ -805,6 +805,28 @@ body {
   z-index: 1 !important;
 }
 
+/* Force constant light styling for all desktop space cards (.space-card)
+   since their content overlay is always dark/gradient across both themes. */
+.space-card .space-card-name,
+[data-theme='light'] .space-card .space-card-name {
+  color: #F5EFE6 !important; /* Constant light cream */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+}
+
+.space-card .space-card-count,
+[data-theme='light'] .space-card .space-card-count {
+  color: rgba(255, 255, 255, 0.7) !important; /* Constant semi-transparent white */
+  opacity: 0.95 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+}
+
+.space-card .space-card-arrow,
+[data-theme='light'] .space-card .space-card-arrow {
+  border-color: rgba(255,255,255,0.25) !important;
+  color: #E2C882 !important; /* Constant warm gold */
+}
+
+
 
 
 
