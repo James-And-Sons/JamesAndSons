@@ -104,13 +104,18 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
           const iconClass = index === 0 ? "ti-home" : index === 1 ? "ti-glass" : index === 2 ? "ti-bed" : index === 3 ? "ti-briefcase" : "ti-door";
           
           return (
-            <Link key={space.id} href={`/collections?space=${encodeURIComponent(space.name)}`} className={`mobile-space-card ${bgClass}`}>
-              <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>
-              <div>
+            <Link
+              key={space.id}
+              href={`/collections?space=${encodeURIComponent(space.name)}`}
+              className={`mobile-space-card ${space.image ? '' : bgClass}`}
+              style={space.image ? { backgroundImage: `url(${space.image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            >
+              {!space.image && <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>}
+              <div style={{ position: 'relative', zIndex: 2 }}>
                 <div className="mobile-space-name">{space.name}</div>
                 <div className="mobile-space-count">{space._count.products} Designs</div>
               </div>
-              <div className="mobile-space-arrow"><i className="ti ti-arrow-up-right"></i></div>
+              <div className="mobile-space-arrow" style={{ zIndex: 2 }}><i className="ti ti-arrow-up-right"></i></div>
             </Link>
           );
         })}
