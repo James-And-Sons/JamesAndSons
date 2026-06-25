@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { updateOrderStatus, updateTrackingNumber } from '../actions';
-import { syncRazorpayPayment, trackShiprocketShipment, generateOrderLabel, requestOrderPickup } from './logistics-actions';
+import { syncRazorpayPayment, trackShiprocketShipment, generateOrderLabel, requestOrderPickup, retryLogisticsSync } from './logistics-actions';
 
 const STATUS_OPTIONS = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
@@ -10,12 +10,14 @@ export default function OrderStatusControls({
   orderId, 
   currentStatus,
   razorpayOrderId,
-  awbNumber
+  awbNumber,
+  fulfillmentError
 }: { 
   orderId: string, 
   currentStatus: string,
   razorpayOrderId?: string | null,
-  awbNumber?: string | null
+  awbNumber?: string | null,
+  fulfillmentError?: string | null
 }) {
   const [isPending, startTransition] = useTransition();
   const [tracking, setTracking] = useState('');
@@ -81,11 +83,28 @@ export default function OrderStatusControls({
     });
   };
 
+  const handleRetryLogistics = () => {
+    startTransition(async () => {
+      const result = await retryLogisticsSync(orderId);
+      if (!result.success) alert('Logistics Sync Failed: ' + result.error);
+      else alert('Logistics synced successfully and AWB assigned!');
+    });
+  };
+
   return (
     <div className="bg-surface border border-border p-6 space-y-6">
       <div className="flex justify-between items-center border-b border-border pb-3">
         <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted m-0">Manage Order</h3>
         <div className="flex gap-2">
+          {((currentStatus === 'PAID' || currentStatus === 'PROCESSING') && (!awbNumber || fulfillmentError)) && (
+            <button 
+              onClick={handleRetryLogistics}
+              disabled={isPending}
+              className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#d97706] text-white hover:bg-[#b45309] transition-colors disabled:opacity-50"
+            >
+              {isPending ? 'Syncing...' : 'Retry Shiprocket Sync'}
+            </button>
+          )}
           {currentStatus === 'PENDING' && razorpayOrderId && (
             <button 
               onClick={handleSyncPayment}

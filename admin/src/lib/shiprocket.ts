@@ -170,7 +170,13 @@ export async function syncProductToShiprocket(product: any) {
 
       const data = await res.json();
       if (!res.ok) {
-        console.error(`Shiprocket Sync Failed for SKU ${item.sku}:`, data);
+        const isSkuTaken = data.errors?.sku?.some((msg: string) => msg.includes('already been taken')) || 
+                           (typeof data.message === 'string' && data.message.includes('already been taken'));
+        if (isSkuTaken) {
+          console.log(`[Shiprocket] SKU ${item.sku} is already registered in Shiprocket catalogue. Skipping sync.`);
+        } else {
+          console.error(`Shiprocket Sync Failed for SKU ${item.sku}:`, data);
+        }
       }
       results.push({ sku: item.sku, success: res.ok, data });
     } catch (err) {
@@ -271,4 +277,40 @@ export async function requestPickup(shipmentIds: number[]) {
     return null;
   }
 }
+
+/**
+ * Assign an AWB (Tracking Number) to a shipment
+ */
+export async function assignAWB(shipmentId: number) {
+  const token = await getShiprocketToken();
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/assign/awb', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ shipment_id: shipmentId }),
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (data.status === 200 || data.awb_assign_status === 1) {
+      return {
+        success: true,
+        awb_code: data.response.data.awb_code,
+        courier_name: data.response.data.courier_name
+      };
+    } else {
+      console.error('AWB Assignment Failed:', data);
+      return { success: false, message: data.message || 'AWB Assignment failed' };
+    }
+  } catch (err) {
+    console.error('assignAWB Error:', err);
+    return { success: false, message: 'API Call Failed' };
+  }
+}
+
 

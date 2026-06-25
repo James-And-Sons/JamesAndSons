@@ -46,7 +46,7 @@ export async function trackShiprocketShipment(awbNumber: string) {
   }
 }
 
-import { generateLabel, requestPickup } from '@/lib/shiprocket';
+import { generateLabel, requestPickup, createShiprocketOrder, assignAWB } from '@/lib/shiprocket';
 
 export async function generateOrderLabel(shipmentId: string) {
   try {
@@ -67,3 +67,129 @@ export async function requestOrderPickup(shipmentId: string) {
   }
 }
 
+export async function retryLogisticsSync(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: true,
+        items: { include: { product: true } }
+      }
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    let trackingNumber = order.trackingNumber;
+    let awbNumber = order.awbNumber;
+    let fulfillmentError = order.fulfillmentError;
+    let finalStatus = order.status;
+
+    // Case 1: Order already created in Shiprocket (we have shipment ID in awbNumber), but AWB assignment failed.
+    if (order.awbNumber && !isNaN(parseInt(order.awbNumber)) && !order.trackingNumber) {
+      console.log(`[RetryLogistics] Shipment already exists (ID: ${order.awbNumber}). Assigning AWB...`);
+      const awbRes = await assignAWB(parseInt(order.awbNumber));
+
+      if (awbRes.success) {
+        trackingNumber = awbRes.awb_code;
+        fulfillmentError = null;
+        finalStatus = 'PROCESSING';
+      } else {
+        fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
+        throw new Error(awbRes.message || 'AWB Assignment failed');
+      }
+    } else {
+      // Case 2: Order was never created in Shiprocket. Create order + assign AWB.
+      console.log(`[RetryLogistics] Creating new Shiprocket order...`);
+      const parts = order.shippingAddress.split(', ');
+      const pincodeStr = parts.pop()?.split(' - ')[1] || order.shippingPincode || '110030';
+      const stateStr = parts.pop() || order.shippingState || '';
+      const cityStr = parts.pop() || order.shippingCity || '';
+      const addrStr = parts.join(', ') || order.shippingAddress;
+
+      const firstProduct = order.items[0]?.product;
+      const length = firstProduct?.length || 10;
+      const breadth = firstProduct?.breadth || 10;
+      const height = firstProduct?.height || 10;
+      const weight = firstProduct?.weight || 0.5;
+
+      const shiprocketParams = {
+        order_id: order.orderNumber,
+        order_date: order.createdAt.toISOString().split('T')[0],
+        pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
+        billing_customer_name: order.user.firstName,
+        billing_last_name: order.user.lastName,
+        billing_address: addrStr,
+        billing_city: cityStr,
+        billing_pincode: pincodeStr,
+        billing_state: stateStr,
+        billing_country: "India",
+        billing_email: order.user.email.trim().toLowerCase(),
+        billing_phone: (order.shippingPhone || order.user.phone || '9999999999').replace(/\D/g, '').slice(-10) || '9999999999',
+        shipping_is_billing: true,
+        order_items: order.items.map(item => ({
+          name: item.product.name,
+          sku: item.product.sku,
+          units: item.quantity,
+          selling_price: item.unitPrice,
+        })),
+        payment_method: "Prepaid",
+        sub_total: order.totalAmount - order.taxAmount - order.shippingAmount,
+        length,
+        breadth,
+        height,
+        weight,
+      };
+
+      const shipRes = await createShiprocketOrder(shiprocketParams);
+
+      if (shipRes.success) {
+        awbNumber = shipRes.shipment_id?.toString();
+        console.log(`[RetryLogistics] Shiprocket order created successfully. Shipment ID: ${shipRes.shipment_id}`);
+
+        const awbRes = await assignAWB(shipRes.shipment_id);
+
+        if (awbRes.success) {
+          trackingNumber = awbRes.awb_code;
+          fulfillmentError = null;
+          finalStatus = 'PROCESSING';
+        } else {
+          fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
+          throw new Error(awbRes.message || 'AWB Assignment failed');
+        }
+      } else {
+        const errorMsg = typeof shipRes.message === 'object'
+          ? JSON.stringify(shipRes.message)
+          : shipRes.message || 'Unknown Shiprocket Error';
+        fulfillmentError = errorMsg;
+        throw new Error(errorMsg);
+      }
+    }
+
+    // Save final status back to the order
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        trackingNumber,
+        awbNumber,
+        fulfillmentError,
+        status: finalStatus as any,
+      },
+    });
+
+    revalidatePath(`/orders/${orderId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('retryLogisticsSync error:', error);
+    // Update the error note on database
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        fulfillmentError: error.message || 'Fulfillment sync retry failed',
+      },
+    });
+    revalidatePath(`/orders/${orderId}`);
+    return { success: false, error: error.message };
+  }
+}

@@ -223,7 +223,13 @@ export async function syncProductToShiprocket(product: any) {
 
       const data = await res.json();
       if (!res.ok) {
-        console.error(`Shiprocket Sync Failed for SKU ${item.sku}:`, data);
+        const isSkuTaken = data.errors?.sku?.some((msg: string) => msg.includes('already been taken')) || 
+                           (typeof data.message === 'string' && data.message.includes('already been taken'));
+        if (isSkuTaken) {
+          console.log(`[Shiprocket] SKU ${item.sku} is already registered in Shiprocket catalogue. Skipping sync.`);
+        } else {
+          console.error(`Shiprocket Sync Failed for SKU ${item.sku}:`, data);
+        }
       }
       results.push({ sku: item.sku, success: res.ok, data });
     } catch (err) {

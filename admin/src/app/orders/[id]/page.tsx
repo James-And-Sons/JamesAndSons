@@ -166,6 +166,7 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
         currentStatus={order.status} 
         razorpayOrderId={order.razorpayOrderId} 
         awbNumber={order.awbNumber}
+        fulfillmentError={order.fulfillmentError}
       />
     </div>
   );

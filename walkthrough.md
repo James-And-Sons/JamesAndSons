@@ -46,3 +46,16 @@ The following recordings demonstrate the successful resolution of all identified
 <!-- slide -->
 ![Final QA Verification](file:///Users/abhishikt_mac/.gemini/antigravity/brain/372a0882-14fc-4447-9172-6106748b5f60/final_qa_verification_1774338287608.webp)
 ````
+
+## 5. Shiprocket Sync & Logistics Recovery Flow
+
+We implemented warning suppression and a robust retry mechanism for Shiprocket synchronization issues:
+
+### Log Noise Reduction
+- **SKU Already Exists (422)**: Suppressed verbose error reporting when attempting to sync products whose SKUs are already registered in the Shiprocket catalog. This eliminates cluttered log outputs for harmless duplicates.
+
+### Recovery from Wallet Balance or API Failures
+- **Manual Retry Control**: Added a "Retry Shiprocket Sync" button to the Admin Order Detail panel. It is displayed when an order is paid or processing but has failed fulfillment or is missing its AWB number.
+- **Two-Phase Action (`retryLogisticsSync`)**:
+  - **Phase 1**: If the shipment was already created in Shiprocket (returning a shipment ID, which is stored in `awbNumber`) but AWB assignment failed (e.g., due to insufficient wallet balance), the retry action directly calls the `assignAWB` endpoint using that ID to avoid duplicate order errors.
+  - **Phase 2**: If the shipment was never created, it attempts a full order creation on Shiprocket, followed by AWB assignment.

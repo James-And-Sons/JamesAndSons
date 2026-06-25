@@ -13,6 +13,24 @@ enum Role {
   B2B_APPROVER
 }
 
+enum CouponType {
+  PERCENTAGE    // e.g. 20% off
+  FIXED_AMOUNT  // e.g. ₹500 off
+  FREE_SHIPPING // waives shipping cost
+}
+
+enum CouponStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  EXHAUSTED     // usageLimit reached
+}
+
+enum AffiliateStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -54,16 +72,18 @@ model User {
   role      Role     @default(CUSTOMER)
   phone     String?
   companyId String?
+  lastPincode String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   company        Company?       @relation(fields: [companyId], references: [id])
   orders         Order[]
   rfqs           RFQ[]
   tickets        Ticket[]
+  addresses      UserAddress[]
   ticketMessages TicketMessage[]
-
+ 
   blogPosts   BlogPost[]
 }
 
@@ -77,7 +97,7 @@ model Company {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
+ 
   parent          Company?  @relation("CompanyHierarchy", fields: [parentId], references: [id])
   subsidiaries    Company[] @relation("CompanyHierarchy")
   users           User[]
@@ -139,12 +159,12 @@ model Product {
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
+ 
   // Actual Product Dimensions (for display/filtering)
   actualHeight     Float?   // in inches
   actualWidth      Float?   // in inches
   actualDepth      Float?   // in inches
-
+ 
   spaces           Space[]
   variants         ProductVariant[]
   orderItems       OrderItem[]
@@ -169,28 +189,35 @@ model ProductVariant {
   actualHeight  Float?   // in inches
   actualWidth   Float?   // in inches
   actualDepth   Float?   // in inches
-
+ 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
+ 
   product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Order {
   id             String      @id @default(uuid())
   orderNumber    String      @unique
+  invoiceNumber  String?     @unique
   userId         String
   status         OrderStatus @default(PENDING)
   
   totalAmount    Float
   taxAmount      Float
   shippingAmount Float
+  discountAmount Float       @default(0)   // Actual INR amount discounted
+  couponCode     String?                   // Denormalized for quick display
+  affiliateCode  String?                   // Denormalized for quick display
   
   shippingAddress String
+  shippingPhone   String?
   shippingCity    String?
   shippingState   String?
   shippingPincode String?
   billingAddress  String
+  gstin           String?
+  companyName     String?
   
   trackingNumber String?
   awbNumber      String?     // For logistics (Shiprocket/Delhivery)
@@ -204,11 +231,13 @@ model Order {
   
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-
-  user           User          @relation(fields: [userId], references: [id])
-  items          OrderItem[]
-  returnRequests ReturnRequest[]
-  tickets        Ticket[]
+ 
+  user                User                 @relation(fields: [userId], references: [id])
+  items               OrderItem[]
+  returnRequests      ReturnRequest[]
+  tickets             Ticket[]
+  couponUsage         CouponUsage?
+  affiliateConversion AffiliateConversion?
 }
 
 model OrderItem {
@@ -233,7 +262,7 @@ model ReturnRequest {
   
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-
+ 
   order     Order        @relation(fields: [orderId], references: [id])
 }
 
@@ -248,7 +277,7 @@ model RFQ {
   
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
+ 
   user        User      @relation(fields: [userId], references: [id])
   items       RFQItem[]
 }
@@ -275,11 +304,10 @@ model Ticket {
   
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-
+ 
   user         User         @relation(fields: [userId], references: [id])
   order        Order?       @relation(fields: [orderId], references: [id])
   ticketMessages TicketMessage[]
-
 }
 
 model TicketMessage {
@@ -290,7 +318,7 @@ model TicketMessage {
   isAdmin   Boolean  @default(false)
   
   createdAt DateTime @default(now())
-
+ 
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id])
 }
@@ -306,6 +334,7 @@ model Page {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
 model BlogPost {
   id          Int      @id @default(autoincrement())
   slug        String   @unique
@@ -329,9 +358,127 @@ model Space {
   slug        String   @unique
   description String?
   image       String?
-
+ 
   products    Product[]
-
+ 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model InvoiceCounter {
+  id        Int      @id @default(1)
+  year      String   // e.g. "2026-27"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model AbandonedCart {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  phone       String?
+  cartData    Json     // Items and amounts
+  step        Int      @default(1)
+  lastSeen    DateTime @default(now())
+  recovered   Boolean  @default(false)
+  nudgeSent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// PROMOTIONS ENGINE
+// ─────────────────────────────────────────────
+ 
+model Coupon {
+  id                String       @id @default(uuid())
+  code              String       @unique  // Human-readable e.g. "LUXE20"
+  description       String?               // Internal admin note
+  type              CouponType   @default(PERCENTAGE)
+  value             Float                 // 20 (percent) or 500 (INR)
+  status            CouponStatus @default(ACTIVE)
+ 
+  // Constraints
+  minOrderAmount    Float?                // Minimum cart subtotal to apply
+  maxDiscountCap    Float?                // Max discount INR (for % coupons)
+  usageLimit        Int?                  // Total uses across all users
+  usageLimitPerUser Int?    @default(1)   // Times one user can use this code
+  usedCount         Int     @default(0)
+ 
+  // Validity window
+  startsAt          DateTime?             // Optional future start date
+  expiresAt         DateTime?
+ 
+  // Attribution — link to external partner or affiliate
+  source            String?               // "internal" | "pauket" | "coupondunia"
+  affiliateId       String?
+  affiliate         Affiliate?   @relation(fields: [affiliateId], references: [id])
+ 
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+ 
+  usages            CouponUsage[]
+}
+ 
+model CouponUsage {
+  id             String   @id @default(uuid())
+  couponId       String
+  userId         String?           // null for guest checkouts
+  orderId        String   @unique
+  discountAmount Float             // Actual INR amount discounted on this order
+  createdAt      DateTime @default(now())
+ 
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  order          Order    @relation(fields: [orderId], references: [id])
+}
+ 
+model Affiliate {
+  id              String          @id @default(uuid())
+  name            String
+  email           String          @unique
+  phone           String?
+  affiliateCode   String          @unique  // URL param: ?ref=DESIGNERSTUDIO
+  commissionRate  Float           @default(5.0)  // % of order subtotal
+  status          AffiliateStatus @default(ACTIVE)
+  notes           String?
+ 
+  // Running lifetime totals (updated on each conversion)
+  totalRevenue    Float           @default(0)
+  totalCommission Float           @default(0)
+ 
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+ 
+  coupons         Coupon[]
+  conversions     AffiliateConversion[]
+}
+ 
+model AffiliateConversion {
+  id               String    @id @default(uuid())
+  affiliateId      String
+  orderId          String    @unique
+  orderRevenue     Float               // Subtotal of the attributed order
+  commissionAmount Float               // commission earned on this order
+  isPaid           Boolean   @default(false)
+  paidAt           DateTime?
+ 
+  createdAt        DateTime  @default(now())
+ 
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id])
+  order            Order     @relation(fields: [orderId], references: [id])
+}
+ 
+model UserAddress {
+  id              String   @id @default(uuid())
+  userId          String
+  name            String   // e.g. "Home", "Office"
+  street          String
+  city            String
+  state           String
+  pincode         String
+  phone           String?
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+ 
+  user            User     @relation(fields: [userId], references: [id])
 }
