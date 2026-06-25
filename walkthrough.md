@@ -59,3 +59,8 @@ We implemented warning suppression and a robust retry mechanism for Shiprocket s
 - **Two-Phase Action (`retryLogisticsSync`)**:
   - **Phase 1**: If the shipment was already created in Shiprocket (returning a shipment ID, which is stored in `awbNumber`) but AWB assignment failed (e.g., due to insufficient wallet balance), the retry action directly calls the `assignAWB` endpoint using that ID to avoid duplicate order errors.
   - **Phase 2**: If the shipment was never created, it attempts a full order creation on Shiprocket, followed by AWB assignment.
+
+### Automated Cancellation & Refund Integration
+- **Order Cancellation API**: Added `cancelShiprocketOrder` to both storefront and admin codebases. When an order's status is changed to `CANCELLED` through the admin portal, this function automatically looks up the order on Shiprocket using the channel order number and cancels it.
+- **Instant Razorpay Refund**: Implemented `refundRazorpayPayment` in the admin portal. When an order with an active `razorpayPaymentId` is marked as `CANCELLED`, the system automatically triggers a full refund via the Razorpay API.
+- **Database Status & Logging**: Appends clear status notes to the order's `fulfillmentError` column detailing the success/failure of the cancellation and refund operations.
