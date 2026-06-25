@@ -75,8 +75,8 @@ export default function CartDrawer() {
           top: 0, right: 0, bottom: 0,
           width: '400px',
           maxWidth: '100vw',
-          background: '#0A0905',
-          borderLeft: '1px solid rgba(255,255,255,0.05)',
+          background: 'var(--obsidian)',
+          borderLeft: '1px solid var(--border)',
           zIndex: 10000,
           display: 'flex',
           flexDirection: 'column',
@@ -106,7 +106,7 @@ export default function CartDrawer() {
         </div>
 
         {/* Scrollable Items Area */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 32px', background: '#0A0905' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 32px', background: 'var(--obsidian)' }}>
           {currentItems.length === 0 ? (
             <div style={{ textAlign: 'center', paddingTop: '100px' }}>
               <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '24px' }}>Your bag is currently empty.</p>
@@ -115,7 +115,7 @@ export default function CartDrawer() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {currentItems.map((item) => (
-                <div key={item.product.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '24px 0', display: 'flex', gap: '20px', position: 'relative' }}>
+                <div key={item.product.id} style={{ borderBottom: '1px solid var(--border)', padding: '24px 0', display: 'flex', gap: '20px', position: 'relative' }}>
                   <div style={{ width: '70px', height: '90px', background: 'var(--void)', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
                     <Image src={item.product.images?.[0] || '/images/brand-placeholder.png'} alt={item.product.name} width={70} height={90} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
@@ -127,7 +127,7 @@ export default function CartDrawer() {
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', borderRadius: '6px', border: '1px solid var(--border)' }}>
                           <button onClick={() => updateQty(item.product.id, item.quantity - 1)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>−</button>
                           <span style={{ fontSize: '11px', color: 'var(--cream)', width: '16px', textAlign: 'center' }}>{item.quantity}</span>
                           <button onClick={() => updateQty(item.product.id, item.quantity + 1)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>+</button>
@@ -150,7 +150,7 @@ export default function CartDrawer() {
 
         {/* Footer */}
         {currentItems.length > 0 && (
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px' }}>
+          <div style={{ borderTop: '1px solid var(--border)', padding: '32px' }}>
             <div style={{ marginBottom: '24px' }}>
               <CouponInput />
             </div>
@@ -170,7 +170,7 @@ export default function CartDrawer() {
                 <span>GST (18%)</span>
                 <span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--cream)', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--cream)', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
                 <span>Total</span>
                 <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{formatPrice(grandTotal)}</span>
               </div>
