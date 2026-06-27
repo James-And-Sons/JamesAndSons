@@ -64,3 +64,14 @@ We implemented warning suppression and a robust retry mechanism for Shiprocket s
 - **Order Cancellation API**: Added `cancelShiprocketOrder` to both storefront and admin codebases. When an order's status is changed to `CANCELLED` through the admin portal, this function automatically looks up the order on Shiprocket using the channel order number and cancels it.
 - **Instant Razorpay Refund**: Implemented `refundRazorpayPayment` in the admin portal. When an order with an active `razorpayPaymentId` is marked as `CANCELLED`, the system automatically triggers a full refund via the Razorpay API.
 - **Database Status & Logging**: Appends clear status notes to the order's `fulfillmentError` column detailing the success/failure of the cancellation and refund operations.
+
+### Branding, Copywriting & Trust Badges
+- **Theme-Aware Branding Logos**: Copied the light and dark mode logo assets (`logo-light.png` and `logo-dark.png`) to public images. Created styling wrappers that automatically switch visibility of the logo depending on the active dark/light mode context (using Tailwind and CSS selectors). Rendered these logos side-by-side with the brand name in:
+  - Storefront desktop navigation header (`Navigation.tsx`)
+  - Storefront mobile navigation header (`MobileHeader.tsx`)
+  - Admin sidebar header (`Sidebar.tsx`)
+- **Copywriting Adjustments**:
+  - Removed all mentions of installation and "Free Installation" from the cart page and checkout window.
+  - Replaced the order confirmation success message mentioning "Our installation team will reach out" to refer to coordination by the "concierge team".
+  - Removed "2-Year Warranty" from the checkout page trust badges, replacing it with "Secure Transit".
+
