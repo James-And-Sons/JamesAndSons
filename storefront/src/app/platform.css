@@ -2388,3 +2388,44 @@
     overflow-x: hidden !important;
     max-width: 100vw;
   }
+
+  /* Logo dark/light mode switching */
+  .logo-light-img {
+    display: none;
+  }
+  .logo-dark-img {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: light) {
+    .logo-light-img {
+      display: block;
+    }
+    .logo-dark-img {
+      display: none;
+    }
+  }
+
+  [data-theme='light'] .logo-light-img {
+    display: block !important;
+  }
+  [data-theme='light'] .logo-dark-img {
+    display: none !important;
+  }
+
+  [data-theme='dark'] .logo-light-img {
+    display: none !important;
+  }
+  [data-theme='dark'] .logo-dark-img {
+    display: block !important;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) .logo-light-img {
+      display: block !important;
+    }
+    :root:not([data-theme='dark']) .logo-dark-img {
+      display: none !important;
+    }
+  }
+

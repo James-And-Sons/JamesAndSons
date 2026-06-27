@@ -206,7 +206,7 @@ export default function CheckoutPageInner({
           Your order <strong style={{ color: 'var(--gold-light)', fontFamily: 'var(--font-mono)' }}>{orderNumber}</strong> has been placed successfully.
         </p>
         <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '32px' }}>
-          A GST invoice and tracking info will be sent to your email. Our installation team will reach out to schedule delivery.
+          A GST invoice and tracking info will be sent to your email. Our concierge team will reach out to coordinate delivery.
         </p>
         <div style={{ display: 'flex', gap: '12px', rowGap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '24px' }}>
           <a href="/account" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 28px', whiteSpace: 'nowrap', minWidth: '180px' }}>View My Orders</a>
@@ -542,7 +542,7 @@ export default function CheckoutPageInner({
           </div>
         </div>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '16px 20px' }}>
-          {['GST Invoice Included', 'Heritage Craftsmanship', 'Pan-India Delivery', '2-Year Warranty'].map(t => (
+          {['GST Invoice Included', 'Heritage Craftsmanship', 'Pan-India Delivery', 'Secure Transit'].map(t => (
             <div key={t} style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0' }}>
               <span style={{ color: 'var(--gold)' }}>✓</span>{t}
             </div>

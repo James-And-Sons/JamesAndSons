@@ -190,7 +190,6 @@ export default function CartPageClient() {
                     highlight={appliedCoupon?.freeShipping || shipping === 0}
                     muted={shipping === null && !appliedCoupon?.freeShipping}
                   />
-                  <SummaryRow label="Installation" value="Free" highlight />
                 </div>
 
                 <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>

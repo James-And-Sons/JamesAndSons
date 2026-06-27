@@ -132,3 +132,19 @@ body {
   .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
   .p-10 { padding: 1.5rem !important; }
 }
+
+/* Logo dark/light mode switching */
+.logo-light-img {
+  display: none;
+}
+.logo-dark-img {
+  display: block;
+}
+
+.light .logo-light-img {
+  display: block !important;
+}
+.light .logo-dark-img {
+  display: none !important;
+}
+

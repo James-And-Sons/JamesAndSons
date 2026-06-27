@@ -21,8 +21,10 @@ export default async function Navigation() {
   return (
     <>
       <nav className="main-nav hidden md:flex">
-        <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          James <span>&amp;</span> Sons
+        <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '36px', width: 'auto' }} />
+          <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '36px', width: 'auto' }} />
+          <span>James <span style={{ color: 'var(--gold-pale)', fontStyle: 'italic', fontWeight: 300 }}>&amp;</span> Sons</span>
         </Link>
         <ul className="nav-links">
           <li><Link href="/">Home</Link></li>
