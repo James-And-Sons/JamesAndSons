@@ -70,6 +70,8 @@ We implemented warning suppression and a robust retry mechanism for Shiprocket s
   - Storefront desktop navigation header (`Navigation.tsx`)
   - Storefront mobile navigation header (`MobileHeader.tsx`)
   - Admin sidebar header (`Sidebar.tsx`)
+  - *Update*: Processed both logo assets with a Python image processing script (using flood-fill) to make their solid outer white and black backgrounds transparent. Increased the sizes of the logos globally (e.g. from `36px` to `48px` on desktop) for better visual impact.
+  - *Update*: Reverted the branding text typography in the desktop top navbar and mobile headers back to their original CSS class rules to keep formatting (letter spacing, colors, font weight) identical to the old mobile view layout.
 - **Copywriting Adjustments**:
   - Removed all mentions of installation and "Free Installation" from the cart page and checkout window.
   - Replaced the order confirmation success message mentioning "Our installation team will reach out" to refer to coordination by the "concierge team".

@@ -19,8 +19,8 @@ export default function MobileHeader({ user }: { user: any }) {
   return (
     <div className="mobile-page-header md:hidden" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-        <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '40px', width: 'auto' }} />
-        <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '40px', width: 'auto' }} />
+        <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '52px', width: 'auto' }} />
+        <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '52px', width: 'auto' }} />
         <div className="mobile-brand-name">James <em>&amp;</em> Sons</div>
       </Link>
 
