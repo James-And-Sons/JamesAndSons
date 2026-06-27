@@ -56,13 +56,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         <div className="h-[64px] flex flex-col justify-center px-8 border-b border-border relative overflow-hidden bg-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img h-9 w-auto z-10" />
-              <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img h-9 w-auto z-10" />
+              <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img h-11 w-auto z-10" />
+              <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img h-11 w-auto z-10" />
               <div>
-                <h1 className="font-serif text-[14px] font-light tracking-[0.15em] text-accent-hover uppercase z-10 leading-none">
+                <h1 className="font-serif text-[16px] font-light tracking-[0.2em] text-accent-hover uppercase z-10 leading-none">
                   James <span className="text-[#f5e9c8] italic font-light">&</span> Sons
                 </h1>
-                <p className="font-mono text-[7px] text-muted mt-1 uppercase tracking-[0.15em] z-10 leading-none">Admin Portal</p>
+                <p className="font-mono text-[8px] text-muted mt-1 uppercase tracking-[0.18em] z-10 leading-none">Admin Portal</p>
               </div>
             </div>
             {onClose && (
