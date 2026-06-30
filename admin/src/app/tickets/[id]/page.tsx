@@ -19,6 +19,14 @@ const STATUS_COLORS: Record<string, string> = {
   CLOSED: 'text-muted border-border bg-background',
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  GENERAL: 'General Inquiry',
+  RETURN: 'Return Request',
+  DAMAGE: 'Product Defect / Damage',
+  SHIPPING: 'Logistics & Delivery',
+  BILLING: 'Billing & Invoice',
+};
+
 export default async function AdminTicketDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const ticket = await prisma.ticket.findUnique({
@@ -37,13 +45,27 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
     const message = formData.get('message') as string;
     if (!message.trim()) return;
 
-    // For admin, we use a generic 'Admin' ID or fetch the authenticated admin's ID.
-    // Assuming backend logic or generic 'ADMIN' placeholder if auth isn't fully wired for this action.
+    // Ensure the ADMIN placeholder user exists in the database
+    let adminUser = await prisma.user.findUnique({ where: { id: 'ADMIN' } });
+    if (!adminUser) {
+      await prisma.user.create({
+        data: {
+          id: 'ADMIN',
+          email: 'support@jamesandsons.in',
+          role: 'ADMIN',
+          firstName: 'Support',
+          lastName: 'Concierge',
+          password: 'SUPABASE_AUTH'
+        }
+      });
+    }
+
     await prisma.ticketMessage.create({
       data: {
         ticketId: params.id,
         authorId: 'ADMIN', 
-        message
+        message,
+        isAdmin: true
       }
     });
 
@@ -60,14 +82,19 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
+      {/* Header Panel */}
       <div className="flex justify-between items-center bg-surface p-6 border border-border">
         <div>
           <Link href="/tickets" className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted hover:text-accent mb-4 inline-block transition-colors">
             ← Back to Inbox
           </Link>
           <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">{ticket.subject}</h1>
-          <div className="font-mono text-[11px] text-muted mt-2 tracking-widest uppercase">
-            {ticket.ticketNumber} · {ticket.user.firstName} {ticket.user.lastName} ({ticket.user.email})
+          <div className="font-mono text-[11px] text-muted mt-2 tracking-widest uppercase flex gap-2 items-center flex-wrap">
+            <span>{ticket.ticketNumber}</span>
+            <span>·</span>
+            <span>{ticket.user.firstName} {ticket.user.lastName} ({ticket.user.email})</span>
+            <span>·</span>
+            <span className="text-accent">{CATEGORY_LABELS[ticket.category] || ticket.category}</span>
           </div>
         </div>
         <div className="text-right">
@@ -82,6 +109,24 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
         </div>
       </div>
 
+      {/* Selected Items Detail Panel for Returns/Defects */}
+      {ticket.orderItems && Array.isArray(ticket.orderItems) && (
+        <div className="bg-surface border border-border p-6 space-y-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
+            Customer Selected Items for return / issue report
+          </div>
+          <div className="divide-y divide-border border-t border-b border-border">
+            {ticket.orderItems.map((item: any, idx: number) => (
+              <div key={idx} className="flex justify-between items-center py-3">
+                <span className="text-primary font-serif text-[15px]">{item.name}</span>
+                <span className="font-mono text-[12px] text-accent">QTY: {item.quantity}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main Conversation Box */}
       <div className="bg-surface border border-border flex flex-col">
         {/* Messages */}
         <div className="p-8 flex flex-col gap-6 max-h-[600px] overflow-y-auto">
@@ -99,6 +144,33 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
                     : 'bg-background border border-border text-secondary rounded-tl-none'}
                 `}>
                   {msg.message}
+
+                  {/* Inline attachments inside messages */}
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border">
+                      {msg.attachments.map((url: string, imgIdx: number) => {
+                        const isPdf = url.toLowerCase().endsWith('.pdf');
+                        return (
+                          <a 
+                            key={imgIdx} 
+                            href={url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="block w-[50px] h-[50px] border border-border rounded-[4px] overflow-hidden bg-background cursor-pointer hover:border-accent"
+                          >
+                            {isPdf ? (
+                              <div className="flex flex-col items-center justify-center h-full text-muted">
+                                <span className="text-[8px] font-mono text-red-500">PDF</span>
+                              </div>
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                            )}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -106,22 +178,30 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
         </div>
 
         {/* Reply Area */}
-        <div className="p-6 border-t border-border bg-background">
-          <form action={addReply} className="flex flex-col gap-4">
-            <textarea 
-              name="message" 
-              required
-              rows={4}
-              placeholder="Type your response to the customer..."
-              className="w-full bg-surface border border-border p-4 text-[14px] font-body text-primary focus:outline-none focus:border-accent resize-vertical"
-            />
-            <div className="flex justify-end">
-              <button type="submit" className="btn-primary font-mono text-[10px] uppercase tracking-[0.1em] px-6 py-3">
-                Send Reply
-              </button>
-            </div>
-          </form>
-        </div>
+        {ticket.status !== 'CLOSED' ? (
+          <div className="p-6 border-t border-border bg-background">
+            <form action={addReply} className="flex flex-col gap-4">
+              <textarea 
+                name="message" 
+                required
+                rows={4}
+                placeholder="Type your response to the customer..."
+                className="w-full bg-surface border border-border p-4 text-[14px] font-body text-primary focus:outline-none focus:border-accent resize-vertical"
+              />
+              <div className="flex justify-end">
+                <button type="submit" className="btn-primary font-mono text-[10px] uppercase tracking-[0.1em] px-6 py-3">
+                  Send Reply
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="p-6 border-t border-border bg-surface-muted text-center">
+            <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
+              This ticket has been locked/closed.
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

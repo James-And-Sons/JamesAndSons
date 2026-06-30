@@ -25,15 +25,27 @@ async function main() {
       title: 'Contact Us',
       slug: 'contact',
       content: `
-        <h2>Get in Touch</h2>
-        <p>We are here to assist you with any inquiries regarding our collections, your orders, or custom design needs.</p>
-        <br/>
-        <strong>Email:</strong> support@jamesandsons.com<br/>
-        <strong>Phone:</strong> +91 1800-419-LUXE<br/>
-        <br/>
-        <h2>Visit Our Showroom</h2>
-        <p>Experience our collections in person at our flagship gallery.</p>
-        <p>123 Heritage Boulevard, New Delhi, 110001, India</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px;">
+          <div>
+            <h3 style="font-family: var(--font-serif); font-size: 24px; color: var(--gold); margin-bottom: 24px;">Visit Our Showroom</h3>
+            <p style="color: var(--text-muted); margin-bottom: 8px; font-weight: 500;">James & Sons Gallery</p>
+            <p style="color: var(--text-muted); margin-bottom: 24px;">Mohalla Peer Mattha, Dhobi Wali Gali,<br/>Parav Dubey, Aligarh, Uttar Pradesh, 202001</p>
+            
+            <h3 style="font-family: var(--font-serif); font-size: 20px; color: var(--gold); margin-bottom: 16px;">Contact Details</h3>
+            <p style="color: var(--text-muted); margin-bottom: 8px;">Inquiries: connect@jamesandsons.in</p>
+            <p style="color: var(--text-muted); margin-bottom: 8px;">Support: support@jamesandsons.in</p>
+            <p style="color: var(--text-muted);">Phone: +91 9045 808115</p>
+          </div>
+          <div style="background: var(--surface); padding: 32px; border: 1px solid var(--border);">
+            <h3 style="font-family: var(--font-serif); font-size: 20px; color: var(--gold); margin-bottom: 24px;">Support Hours</h3>
+            <p style="color: var(--text-muted); margin-bottom: 8px;">Monday – Friday: 10 AM – 7 PM</p>
+            <p style="color: var(--text-muted); margin-bottom: 32px;">Saturday: 11 AM – 4 PM</p>
+            <div style="padding-top: 24px; border-top: 1px solid var(--border);">
+              <p style="color: var(--gold); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase;">Need immediate help?</p>
+              <a href="/account/tickets" style="display: inline-block; margin-top: 12px; color: var(--text); border: 1px solid var(--gold); padding: 10px 20px; text-decoration: none; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; transition: all 0.3s ease;">Raise a Support Ticket</a>
+            </div>
+          </div>
+        </div>
       `,
       metaTitle: 'Contact Us | James & Sons',
       metaDescription: 'Get in touch with James & Sons for support, custom requests, and showroom visits.'
@@ -109,7 +121,7 @@ async function main() {
         <p>Due to the delicate and high-value nature of luxury lighting, returns are only accepted within 7 days of delivery <strong>if the product arrives physically damaged or materially defective</strong>.</p>
         <br/>
         <h2>Process</h2>
-        <p>To initiate a return request, please use the Support Tickets portal within your Account dashboard or email us directly at support@jamesandsons.com within 48 hours of unpacking along with photographic evidence.</p>
+        <p>To initiate a return request, please use the Support Tickets portal within your Account dashboard or email us directly at support@jamesandsons.in within 48 hours of unpacking along with photographic evidence.</p>
         <br/>
         <h2>B2B Specifics</h2>
         <p>Bulk orders placed through the B2B portal are bound by their specific master service agreements and are generally non-refundable unless specified otherwise prior to invoicing.</p>

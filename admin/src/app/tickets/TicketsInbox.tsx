@@ -66,8 +66,10 @@ export default function TicketsInbox({ tickets }: { tickets: Ticket[] }) {
           {tickets.map(ticket => (
             <tr key={ticket.id} className="border-b border-border hover:bg-surface-muted transition-colors">
               <td className="px-6 py-4">
-                <div className="font-mono text-[12px] text-accent">{ticket.ticketNumber}</div>
-                <div className="font-serif text-[15px] text-primary mt-1">{ticket.subject}</div>
+                <Link href={`/tickets/${ticket.id}`} className="group block cursor-pointer">
+                  <div className="font-mono text-[12px] text-accent group-hover:underline">{ticket.ticketNumber}</div>
+                  <div className="font-serif text-[15px] text-primary mt-1 group-hover:text-accent transition-colors">{ticket.subject}</div>
+                </Link>
                 <div className="font-body text-[11px] text-muted mt-0.5">{new Date(ticket.createdAt).toLocaleDateString()}</div>
               </td>
               <td className="px-6 py-4">

@@ -301,6 +301,9 @@ model Ticket {
   subject      String
   description  String
   status       TicketStatus @default(OPEN)
+  category     String       @default("GENERAL")
+  attachments  String[]
+  orderItems   Json?
   
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -316,6 +319,7 @@ model TicketMessage {
   authorId  String
   message   String
   isAdmin   Boolean  @default(false)
+  attachments String[]
   
   createdAt DateTime @default(now())
  

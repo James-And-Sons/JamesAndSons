@@ -153,13 +153,13 @@ export default async function AccountPage() {
           <div style={{ padding: '24px 16px 0' }}>
             <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Support & Utilities</div>
             <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
-              <a href="mailto:hello@jamesandsons.com" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '15px 16px', textDecoration: 'none' }}>
+              <a href="mailto:connect@jamesandsons.in" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '15px 16px', textDecoration: 'none' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '17px' }}>
                   <i className="ti ti-headset"></i>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>Contact Concierge</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>hello@jamesandsons.com</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>connect@jamesandsons.in</div>
                 </div>
                 <i className="ti ti-chevron-right" style={{ fontSize: '16px', color: 'var(--border)' }}></i>
               </a>
@@ -265,7 +265,7 @@ export default async function AccountPage() {
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '16px' }}>
                   Questions about an order or custom design? Our concierge team is with you.
                 </p>
-                <a href="mailto:hello@jamesandsons.com" className="btn-outline" style={{ display: 'block', textAlign: 'center', padding: '10px', textDecoration: 'none' }}>
+                <a href="mailto:connect@jamesandsons.in" className="btn-outline" style={{ display: 'block', textAlign: 'center', padding: '10px', textDecoration: 'none' }}>
                   Contact Concierge
                 </a>
               </div>

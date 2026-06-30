@@ -40,18 +40,27 @@ export default function Footer() {
               <li><Link href="/terms" className="footer-link">Terms &amp; Conditions</Link></li>
               <li><Link href="/privacy" className="footer-link">Privacy Policy</Link></li>
               <li><Link href="/shipping-policy" className="footer-link">Shipping Policy</Link></li>
-              <li><Link href="/returns" className="footer-link">Returns</Link></li>
+              <li><Link href="/returns-policy" className="footer-link">Returns Policy</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 style={{ color: 'var(--text)', marginBottom: '16px', textTransform: 'uppercase' }}>Support</h4>
-            <Link 
-              href="/account/tickets" 
-              className="btn-support-ticket"
-            >
-              Raise a Ticket
-            </Link>
+            <h4 style={{ color: 'var(--text)', marginBottom: '12px', textTransform: 'uppercase' }}>Support</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-start' }}>
+              <Link 
+                href="/account/tickets" 
+                className="btn-support-ticket"
+              >
+                Raise a Ticket
+              </Link>
+              <Link 
+                href="/returns" 
+                className="footer-link"
+                style={{ fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none' }}
+              >
+                Returns Portal
+              </Link>
+            </div>
           </div>
           
         </div>
