@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import TicketDetailClient from './TicketDetailClient'
+import { addZohoComment } from '@/lib/zoho'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,6 +119,20 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
     } catch (e) {
       console.error('Error adding reply:', e)
       return { success: false, error: 'Database transaction failed' }
+    }
+
+    // Push reply comment to Zoho Desk (failure-tolerant)
+    try {
+      const ticketRecord = await prisma.ticket.findUnique({
+        where: { id: params.id },
+        select: { zohoId: true }
+      });
+      if (ticketRecord?.zohoId) {
+        await addZohoComment(ticketRecord.zohoId, message);
+        console.log(`Successfully synced reply to Zoho Desk ticket ${ticketRecord.zohoId}`);
+      }
+    } catch (zohoError) {
+      console.error('Failed to sync reply to Zoho Desk:', zohoError);
     }
 
     revalidatePath(`/account/tickets/${params.id}`)

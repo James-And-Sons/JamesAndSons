@@ -304,6 +304,7 @@ model Ticket {
   category     String       @default("GENERAL")
   attachments  String[]
   orderItems   Json?
+  zohoId       String?      @unique
   
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -320,6 +321,7 @@ model TicketMessage {
   message   String
   isAdmin   Boolean  @default(false)
   attachments String[]
+  zohoId    String?  @unique
   
   createdAt DateTime @default(now())
 
