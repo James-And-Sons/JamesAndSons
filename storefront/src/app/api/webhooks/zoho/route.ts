@@ -2,20 +2,33 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
+// Strips HTML wrappers from Zoho's comment payloads
+const stripHtml = (html: string) => {
+  return html.replace(/<[^>]*>/g, '').trim();
+};
+
 export async function POST(request: Request) {
   try {
-    const payload = await request.json();
-    console.log('Received Zoho Desk Webhook Payload:', JSON.stringify(payload, null, 2));
+    const rawPayload = await request.json();
+    console.log('Received Zoho Desk Webhook Payload:', JSON.stringify(rawPayload, null, 2));
 
-    // Extract event type, ticket details, and comment details defensively
-    const event = (payload.event || payload.eventType || '').toLowerCase();
+    // Zoho Desk webhooks deliver events inside an array block
+    const data = Array.isArray(rawPayload) ? rawPayload[0] : rawPayload;
+    if (!data) {
+      console.warn('Zoho Desk Webhook: Empty payload block.');
+      return NextResponse.json({ success: true, message: 'Empty payload block' });
+    }
+
+    const event = (data.eventType || data.event || '').toLowerCase();
+    const innerPayload = data.payload || {};
     
-    const ticketData = payload.ticket || payload.data?.ticket || payload.data || {};
-    const zohoTicketId = ticketData.id || ticketData.ticketId || payload.ticketId;
-    
+    // For comment events, Zoho lists the target ticket under payload.ticketId.
+    // For ticket updates, the payload represents the ticket, so we check payload.id.
+    const zohoTicketId = innerPayload.ticketId || innerPayload.id || data.ticketId;
+
     if (!zohoTicketId) {
-      console.warn('Zoho Desk Webhook skipped: Missing zohoTicketId in payload.');
-      return NextResponse.json({ success: true, message: 'No ticket ID found in payload' });
+      console.warn('Zoho Desk Webhook skipped: Missing ticket reference ID.');
+      return NextResponse.json({ success: true, message: 'Missing ticket ID' });
     }
 
     // Locate the local ticket associated with this Zoho ticket ID
@@ -28,8 +41,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'No matching local ticket' });
     }
 
-    // 1. Synchronize Ticket Status
-    const zohoStatus = (ticketData.status || '').toUpperCase();
+    // 1. Synchronize Ticket Status (resolved or closed)
+    const zohoStatus = (innerPayload.status || '').toUpperCase();
     if (zohoStatus) {
       let nextStatus = localTicket.status;
       if (zohoStatus === 'RESOLVED') {
@@ -37,7 +50,7 @@ export async function POST(request: Request) {
       } else if (zohoStatus === 'CLOSED') {
         nextStatus = 'CLOSED';
       } else if (zohoStatus === 'OPEN' && localTicket.status === 'RESOLVED') {
-        nextStatus = 'OPEN'; // Automatically reopen if re-opened in Zoho
+        nextStatus = 'OPEN'; // Re-open
       }
 
       if (nextStatus !== localTicket.status) {
@@ -50,20 +63,23 @@ export async function POST(request: Request) {
     }
 
     // 2. Synchronize Support Agent Comments / Replies
-    const commentData = payload.comment || payload.data?.comment || {};
-    const zohoCommentId = commentData.id || commentData.commentId;
-    const commentText = commentData.content || commentData.description;
+    const isCommentEvent = event.includes('comment') || innerPayload.content !== undefined;
+    const zohoCommentId = innerPayload.id;
+    const rawCommentText = innerPayload.content || '';
     
     // Ensure the comment is created by a support representative (not a customer portal loopback)
-    const isAgentComment = commentData.creator?.type === 'Agent' || commentData.isPublic === true;
+    const commenterType = (innerPayload.commenter?.type || '').toUpperCase();
+    const isAgentComment = commenterType === 'AGENT' || innerPayload.isPublic === true;
 
-    if (zohoCommentId && commentText && isAgentComment) {
+    if (isCommentEvent && zohoCommentId && rawCommentText && isAgentComment) {
       // Prevent duplicate insertions via the comment ID constraint
       const existingMessage = await prisma.ticketMessage.findUnique({
         where: { zohoId: String(zohoCommentId) }
       });
 
       if (!existingMessage) {
+        const cleanCommentText = stripHtml(rawCommentText);
+
         // Ensure the local ADMIN profile exists in Postgres to satisfy foreign key constraints
         let adminUser = await prisma.user.findUnique({ where: { id: 'ADMIN' } });
         if (!adminUser) {
@@ -84,7 +100,7 @@ export async function POST(request: Request) {
           data: {
             ticketId: localTicket.id,
             authorId: 'ADMIN',
-            message: commentText,
+            message: cleanCommentText,
             isAdmin: true,
             zohoId: String(zohoCommentId)
           }
@@ -98,7 +114,7 @@ export async function POST(request: Request) {
           });
         }
 
-        console.log(`Successfully synced Zoho Desk comment ${zohoCommentId} into local Ticket #${localTicket.ticketNumber}`);
+        console.log(`Successfully synced Zoho comment ${zohoCommentId} into local Ticket #${localTicket.ticketNumber}`);
         revalidatePath(`/account/tickets/${localTicket.id}`);
       }
     }

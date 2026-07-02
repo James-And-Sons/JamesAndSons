@@ -21,6 +21,7 @@ type Variant = {
   actualHeight?: number | null;
   actualWidth?: number | null;
   actualDepth?: number | null;
+  dimensionUnit?: string | null;
 };
 
 export default function PDPClient({ product, variants, isB2B }: { product: any; variants: Variant[]; isB2B: boolean }) {
@@ -91,12 +92,14 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     const h = selectedVariant?.actualHeight ?? product.actualHeight;
     const w = selectedVariant?.actualWidth ?? product.actualWidth;
     const d = selectedVariant?.actualDepth ?? product.actualDepth;
+    const unit = selectedVariant?.dimensionUnit ?? product.dimensionUnit ?? 'INCH';
+    const suffix = unit === 'CM' ? ' cm' : '"';
 
     if (h || w || d) {
       const parts = [];
-      if (h) parts.push(`${h}" H`);
-      if (w) parts.push(`${w}" W`);
-      if (d) parts.push(`${d}" D`);
+      if (h) parts.push(`${h}${suffix} H`);
+      if (w) parts.push(`${w}${suffix} W`);
+      if (d) parts.push(`${d}${suffix} D`);
       return parts.join(' × ');
     }
     return product.dimensions || 'Standard';

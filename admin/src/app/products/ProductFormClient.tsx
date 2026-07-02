@@ -32,6 +32,11 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Dimension Unit ('INCH' or 'CM')
+  const [dimensionUnit, setDimensionUnit] = useState<'INCH' | 'CM'>(
+    defaultValues?.dimensionUnit || 'INCH'
+  );
+
   // Images
   const [images, setImages] = useState<string[]>(defaultValues?.images || []);
 
@@ -132,13 +137,22 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
         actualDepth: (v.actualDepth && v.actualDepth.trim()) ? parseFloat(v.actualDepth) : null,
       })),
       specs: specs.reduce((acc: any, s) => { if (s.key) acc[s.key] = s.value; return acc; }, {}),
+      dimensionUnit,
     };
 
     try {
       const url = mode === 'add' ? '/api/products' : `/api/products/${defaultValues.id}`;
       const method = mode === 'add' ? 'POST' : 'PUT';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const text = await res.text();
+        try {
+          const parsed = JSON.parse(text);
+          throw new Error(parsed.error || text);
+        } catch {
+          throw new Error(text);
+        }
+      }
       router.push('/products');
       router.refresh();
     } catch (e: any) {
@@ -245,30 +259,62 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             </div>
 
             <div className="md:col-span-2 space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-1 h-4 bg-accent"></div>
-                <h4 className="font-mono text-[10px] uppercase tracking-widest text-primary">Physical Dimensions (Display)</h4>
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-4 bg-accent"></div>
+                  <h4 className="font-mono text-[10px] uppercase tracking-widest text-primary">Physical Dimensions (Display)</h4>
+                </div>
+                <div className="flex gap-1 bg-background p-1 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setDimensionUnit('INCH')}
+                    className={`px-3 py-1 font-mono text-[9px] uppercase tracking-widest border transition-all ${
+                      dimensionUnit === 'INCH' 
+                        ? 'bg-accent border-accent text-black font-semibold' 
+                        : 'border-transparent text-muted hover:text-primary'
+                    }`}
+                  >
+                    Inches (")
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDimensionUnit('CM')}
+                    className={`px-3 py-1 font-mono text-[9px] uppercase tracking-widest border transition-all ${
+                      dimensionUnit === 'CM' 
+                        ? 'bg-accent border-accent text-black font-semibold' 
+                        : 'border-transparent text-muted hover:text-primary'
+                    }`}
+                  >
+                    CM (cm)
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-6 bg-background/50 p-4 border border-border">
                 <div>
-                  <label className={labelCls}>Height (in)</label>
+                  <label className={labelCls}>Height ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label>
                   <div className="relative">
                     <input type="number" step="0.1" name="actualHeight" defaultValue={defaultValues?.actualHeight} className={`${inputCls} !pr-8`} placeholder="0.0" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">"</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">
+                      {dimensionUnit === 'INCH' ? '"' : 'cm'}
+                    </span>
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>Width (in)</label>
+                  <label className={labelCls}>Width ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label>
                   <div className="relative">
                     <input type="number" step="0.1" name="actualWidth" defaultValue={defaultValues?.actualWidth} className={`${inputCls} !pr-8`} placeholder="0.0" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">"</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">
+                      {dimensionUnit === 'INCH' ? '"' : 'cm'}
+                    </span>
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>Depth (in)</label>
+                  <label className={labelCls}>Depth ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label>
                   <div className="relative">
                     <input type="number" step="0.1" name="actualDepth" defaultValue={defaultValues?.actualDepth} className={`${inputCls} !pr-8`} placeholder="Optional" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">"</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">
+                      {dimensionUnit === 'INCH' ? '"' : 'cm'}
+                    </span>
                   </div>
                 </div>
                 <p className="col-span-3 font-mono text-[8px] text-muted uppercase tracking-widest">Note: Depth is optional. If left blank, it will be hidden on the storefront.</p>
@@ -286,8 +332,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
           </div>
           {specs.map((spec, i) => (
             <div key={i} className="flex gap-3 items-center animate-in fade-in slide-in-from-left-2 duration-200">
-              <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Finish)" className={`${inputCls} w-1/4 !py-2 !text-[12px]`} />
-              <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. Polished Brass)" className={`${inputCls} flex-1 !py-2 !text-[12px]`} />
+              <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Finish)" className={`${inputCls.replace(/\bw-full\b/, '')} w-1/3 !py-2 !text-[12px]`} />
+              <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. Polished Brass)" className={`${inputCls.replace(/\bw-full\b/, '')} flex-1 !py-2 !text-[12px]`} />
               <button type="button" onClick={() => removeSpec(i)} className="btn-ghost !text-red-400 hover:!bg-red-400/10 !p-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
@@ -345,10 +391,12 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     <div><label className={labelCls}>Height (cm)</label><input type="number" step="0.1" value={v.height} onChange={e => updateVariant(i, 'height', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 col-span-3 bg-accent/5 p-3 border border-accent/10">
-                    <div className="col-span-3 font-mono text-[8px] uppercase tracking-widest text-accent mb-2">Actual Product Dimensions (in)</div>
-                    <div><label className={labelCls}>Height (in)</label><input type="number" step="0.1" value={v.actualHeight} onChange={e => updateVariant(i, 'actualHeight', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
-                    <div><label className={labelCls}>Width (in)</label><input type="number" step="0.1" value={v.actualWidth} onChange={e => updateVariant(i, 'actualWidth', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
-                    <div><label className={labelCls}>Depth (in)</label><input type="number" step="0.1" value={v.actualDepth} onChange={e => updateVariant(i, 'actualDepth', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
+                    <div className="col-span-3 font-mono text-[8px] uppercase tracking-widest text-accent mb-2">
+                      Actual Product Dimensions ({dimensionUnit === 'INCH' ? 'in' : 'cm'})
+                    </div>
+                    <div><label className={labelCls}>Height ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label><input type="number" step="0.1" value={v.actualHeight} onChange={e => updateVariant(i, 'actualHeight', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
+                    <div><label className={labelCls}>Width ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label><input type="number" step="0.1" value={v.actualWidth} onChange={e => updateVariant(i, 'actualWidth', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
+                    <div><label className={labelCls}>Depth ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label><input type="number" step="0.1" value={v.actualDepth} onChange={e => updateVariant(i, 'actualDepth', e.target.value)} className={inputCls} placeholder="Inherit" /></div>
                   </div>
                   <div className="col-span-3">
                     <label className={labelCls}>Variant Images</label>

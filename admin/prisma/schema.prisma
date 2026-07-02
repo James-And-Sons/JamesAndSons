@@ -164,6 +164,7 @@ model Product {
   actualHeight     Float?   // in inches
   actualWidth      Float?   // in inches
   actualDepth      Float?   // in inches
+  dimensionUnit    String   @default("INCH")
  
   spaces           Space[]
   variants         ProductVariant[]
@@ -189,6 +190,7 @@ model ProductVariant {
   actualHeight  Float?   // in inches
   actualWidth   Float?   // in inches
   actualDepth   Float?   // in inches
+  dimensionUnit String   @default("INCH")
  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
