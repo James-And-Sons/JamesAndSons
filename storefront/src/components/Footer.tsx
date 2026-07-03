@@ -67,9 +67,9 @@ export default function Footer() {
         
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} James & Sons. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
             <span className="footer-link" style={{ cursor: 'pointer' }}>Instagram</span>
-            <span className="footer-link" style={{ cursor: 'pointer' }}>Pinterest</span>
+            <a href="https://pin.it/1KZxSIww1" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ textDecoration: 'none' }}>Pinterest</a>
             <span className="footer-link" style={{ cursor: 'pointer' }}>LinkedIn</span>
           </div>
         </div>
