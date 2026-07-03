@@ -7,17 +7,20 @@ import fs from 'fs';
 import path from 'path';
 
 function logSyncHistory(sku: string, quantity: number, channel: string, status: 'SUCCESS' | 'FAILED' | 'SKIPPED', error?: string) {
+  const newEntry = {
+    timestamp: new Date().toISOString(),
+    sku,
+    quantity,
+    channel,
+    status,
+    error: error || null
+  };
+
+  // Always output to console for serverless environment streams (like Vercel logs)
+  console.log(`[Sync Log] ${JSON.stringify(newEntry)}`);
+
   try {
     const logPath = path.join(process.cwd(), 'inventory-sync-history.json');
-    const newEntry = {
-      timestamp: new Date().toISOString(),
-      sku,
-      quantity,
-      channel,
-      status,
-      error: error || null
-    };
-
     let history = [];
     if (fs.existsSync(logPath)) {
       const fileContent = fs.readFileSync(logPath, 'utf8');
@@ -33,8 +36,12 @@ function logSyncHistory(sku: string, quantity: number, channel: string, status: 
       history = history.slice(-1000);
     }
     fs.writeFileSync(logPath, JSON.stringify(history, null, 2), 'utf8');
-  } catch (err) {
-    console.error('[Sync Orchestrator] Failed to write inventory sync history log:', err);
+  } catch (err: any) {
+    if (err.code === 'EROFS') {
+      console.log(`[Sync Orchestrator] Running in read-only serverless environment. File logging to ${err.path} skipped.`);
+    } else {
+      console.error('[Sync Orchestrator] Failed to write inventory sync history log:', err);
+    }
   }
 }
 
