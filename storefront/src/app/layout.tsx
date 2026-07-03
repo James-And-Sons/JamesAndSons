@@ -61,6 +61,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+        <meta name="p:domain_verify" content="05e17f9bd7917ad9a8dd38bdc291baf3"/>
       </head>
       <body
         className={`${cormorant.variable} ${dmMono.variable} ${libreBaskerville.variable} antialiased`}

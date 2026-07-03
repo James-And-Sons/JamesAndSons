@@ -60,6 +60,44 @@ export async function fulfillPaidOrder({
 
   console.log(`[FulfillPaidOrder] Order ${order.orderNumber} status set to PAID. Invoice: ${invoiceNumber}`);
 
+  // Decrement inventory for each item in the order
+  try {
+    for (const item of updatedOrder.items) {
+      if (item.variantId) {
+        console.log(`[FulfillPaidOrder] Decrementing variant ${item.variantId} inventory by ${item.quantity}`);
+        await prisma.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stockQuantity: {
+              decrement: item.quantity
+            }
+          }
+        });
+        // Keeping parent product stock in sync
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stockQuantity: {
+              decrement: item.quantity
+            }
+          }
+        });
+      } else {
+        console.log(`[FulfillPaidOrder] Decrementing product ${item.productId} inventory by ${item.quantity}`);
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stockQuantity: {
+              decrement: item.quantity
+            }
+          }
+        });
+      }
+    }
+  } catch (stockError) {
+    console.error(`[FulfillPaidOrder] Failed to decrement inventory for order ${updatedOrder.orderNumber}:`, stockError);
+  }
+
   // 4. Send invoice email with PDF attachment
   try {
     await sendInvoiceEmail(updatedOrder);
