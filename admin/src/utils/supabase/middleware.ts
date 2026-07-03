@@ -42,7 +42,9 @@ export async function updateSession(request: NextRequest) {
                       request.nextUrl.pathname.startsWith('/forgot-password') ||
                       request.nextUrl.pathname.startsWith('/update-password')
     
-    const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks')
+    const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks') ||
+                      request.nextUrl.pathname.startsWith('/api/admin/export') ||
+                      request.nextUrl.pathname.startsWith('/api/admin/sync-all')
 
     if (!user && !isAuthPage && !isWebhook) {
       return NextResponse.redirect(new URL('/login', request.url))
