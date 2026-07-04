@@ -1,3 +1,5 @@
+import aws4 from 'aws4';
+
 async function getLwaAccessToken() {
   const clientId = process.env.AMAZON_LWA_CLIENT_ID;
   const clientSecret = process.env.AMAZON_LWA_CLIENT_SECRET;
@@ -78,18 +80,31 @@ export async function syncToAmazon(product: any) {
       }
     };
 
-    const headers = {
-      'Content-Type': 'application/json',
-      'x-amz-access-token': accessToken,
-      'host': new URL(spApiEndpoint).hostname,
-      'x-amz-date': new Date().toISOString().replace(/[:-]/g, '').split('.')[0] + 'Z'
+    const host = new URL(spApiEndpoint).hostname;
+    const requestOptions: any = {
+      host: host,
+      path: path,
+      method: 'PUT',
+      service: 'execute-api',
+      region: process.env.AWS_REGION || 'eu-west-1',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-amz-access-token': accessToken,
+      },
+      body: JSON.stringify(payload)
     };
+
+    // Sign the options using AWS credentials
+    aws4.sign(requestOptions, {
+      accessKeyId: awsAccessKey,
+      secretAccessKey: awsSecretKey
+    });
 
     console.log(`[Amazon Sync] Syncing SKU ${sku} to Amazon Listings Items API...`);
     const response = await fetch(url, {
       method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(payload)
+      headers: requestOptions.headers,
+      body: requestOptions.body
     });
 
     if (!response.ok) {
