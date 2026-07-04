@@ -4,9 +4,11 @@ async function getLwaAccessToken() {
   const refreshToken = process.env.AMAZON_LWA_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
+    console.warn('[Amazon Sync] Missing Amazon LWA credentials (client id, secret, or refresh token).');
     throw new Error('Missing Amazon LWA credentials.');
   }
 
+  console.log('[Amazon Sync] Fetching LWA Access Token from Amazon...');
   const res = await fetch('https://api.amazon.com/auth/o2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -20,21 +22,24 @@ async function getLwaAccessToken() {
 
   if (!res.ok) {
     const text = await res.text();
+    console.error(`[Amazon Sync] LWA Token Exchange failed: ${res.status} - ${text}`);
     throw new Error(`Failed to refresh Amazon LWA Access Token: ${text}`);
   }
 
   const data = await res.json();
+  console.log('[Amazon Sync] LWA Access Token retrieved successfully.');
   return data.access_token;
 }
 
 export async function syncToAmazon(product: any) {
+  console.log(`[Amazon Sync] Starting Amazon SP-API sync process for SKU: ${product.sku}...`);
   const sellerId = process.env.AMAZON_SELLER_ID;
   const awsAccessKey = process.env.AWS_ACCESS_KEY_ID;
   const awsSecretKey = process.env.AWS_SECRET_ACCESS_KEY;
-  const spApiEndpoint = process.env.AMAZON_SP_API_ENDPOINT || 'https://sellingpartnerapi-fe.amazon.com';
+  const spApiEndpoint = process.env.AMAZON_SP_API_ENDPOINT || 'https://sellingpartnerapi-eu.amazon.com';
 
   if (!sellerId || !awsAccessKey || !awsSecretKey) {
-    console.warn('[Amazon Sync] Missing Amazon credentials (sellerId/awsAccessKey/awsSecretKey). Skipping Amazon SP-API sync.');
+    console.warn('[Amazon Sync] Missing AWS credentials (sellerId, access key, or secret key). Skipping Amazon SP-API sync.');
     return { success: false, reason: 'Credentials missing' };
   }
 
