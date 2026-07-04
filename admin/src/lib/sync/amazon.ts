@@ -36,8 +36,8 @@ async function getLwaAccessToken() {
 export async function syncToAmazon(product: any) {
   console.log(`[Amazon Sync] Starting Amazon SP-API sync process for SKU: ${product.sku}...`);
   const sellerId = process.env.AMAZON_SELLER_ID;
-  const awsAccessKey = process.env.AWS_ACCESS_KEY_ID;
-  const awsSecretKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const awsAccessKey = process.env.AMAZON_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const awsSecretKey = process.env.AMAZON_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
   const spApiEndpoint = process.env.AMAZON_SP_API_ENDPOINT || 'https://sellingpartnerapi-eu.amazon.com';
 
   if (!sellerId || !awsAccessKey || !awsSecretKey) {
