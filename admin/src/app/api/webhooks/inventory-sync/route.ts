@@ -47,12 +47,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Product not found in DB' });
     }
 
-    // 3. Dispatch the orchestration asynchronously to prevent trigger blocking
-    orchestrateSync(product).catch(err => {
-      console.error('[Supabase Webhook] Background sync orchestration failed:', err);
-    });
+    // 3. Await the orchestration to prevent serverless freezing
+    await orchestrateSync(product);
 
-    return NextResponse.json({ success: true, message: 'Sync triggered successfully in the background' });
+    return NextResponse.json({ success: true, message: 'Sync completed successfully' });
   } catch (error: any) {
     console.error('[Supabase Webhook] Error processing webhook:', error);
     return NextResponse.json({ error: error.message || 'Internal webhook error' }, { status: 500 });

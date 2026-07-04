@@ -17,25 +17,27 @@ export async function GET(req: NextRequest) {
       include: { variants: true }
     });
 
-    console.log(`[Bulk Sync] Found ${products.length} products. Dispatched sync orchestrator for all items...`);
+    console.log(`[Bulk Sync] Found ${products.length} products. Starting sequential sync execution...`);
     
-    // We execute them in the background so the HTTP request returns immediately
-    (async () => {
-      for (const product of products) {
-        try {
-          await orchestrateSync(product);
-          // Small delay between products to respect potential rate limits on external APIs
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (syncErr) {
-          console.error(`[Bulk Sync] Failed to sync product ${product.sku}:`, syncErr);
-        }
+    const resultsSummary: any[] = [];
+    for (const product of products) {
+      try {
+        await orchestrateSync(product);
+        resultsSummary.push({ sku: product.sku, status: 'PROCESSED' });
+        // Small delay between products to respect potential rate limits on external APIs
+        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (syncErr: any) {
+        console.error(`[Bulk Sync] Failed to sync product ${product.sku}:`, syncErr);
+        resultsSummary.push({ sku: product.sku, status: 'FAILED', error: syncErr.message });
       }
-      console.log('[Bulk Sync] Completed bulk sync sequence.');
-    })();
+    }
+
+    console.log('[Bulk Sync] Completed bulk sync sequence.');
 
     return NextResponse.json({
       success: true,
-      message: `Sync initiated in the background for ${products.length} existing products.`
+      message: `Sync completed for ${products.length} products.`,
+      summary: resultsSummary
     });
   } catch (error: any) {
     console.error('[Bulk Sync] Error executing bulk sync:', error);
