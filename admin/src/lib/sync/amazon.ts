@@ -46,16 +46,17 @@ export async function syncToAmazon(product: any) {
   const accessToken = await getLwaAccessToken();
 
   const syncListingItem = async (sku: string, name: string, price: number, quantity: number) => {
-    const path = `/listings/2021-08-01/sellers/${sellerId}/listingsItems/${sku}`;
+    const marketplaceId = process.env.AMAZON_MARKETPLACE_ID || 'A21TJRUUN4KGV';
+    const path = `/listings/2021-08-01/sellers/${sellerId}/listingsItems/${sku}?marketplaceIds=${marketplaceId}`;
     const url = `${spApiEndpoint}${path}`;
 
     const payload = {
-      productType: 'PRODUCT',
+      productType: 'LIGHT_FIXTURE',
       requirements: 'LISTING_OFFER_ONLY',
       attributes: {
         purchasable_offer: [
           {
-            marketplace_id: process.env.AMAZON_MARKETPLACE_ID || 'A21TJRUUN4KGV',
+            marketplace_id: marketplaceId,
             currency: 'INR',
             our_price: [
               {
