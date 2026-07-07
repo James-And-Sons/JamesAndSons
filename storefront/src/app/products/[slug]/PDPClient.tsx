@@ -47,7 +47,38 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(variants.length > 0 ? variants[0] : null);
+
+  // Synthesize original/parent product option
+  const parentOption: Variant = {
+    id: 'original',
+    name: product.name,
+    sku: product.sku,
+    d2cPrice: product.d2cPrice,
+    mrp: product.mrp,
+    stockQuantity: product.stockQuantity,
+    images: product.images || [],
+    actualHeight: product.actualHeight,
+    actualWidth: product.actualWidth,
+    actualDepth: product.actualDepth,
+    dimensionUnit: product.dimensionUnit,
+    power: product.power,
+    voltage: product.voltage,
+    googleProductCategory: product.googleProductCategory,
+    color: product.color,
+    size: product.size,
+    material: product.material,
+    countryOfOrigin: product.countryOfOrigin,
+    brand: product.brand,
+    warranty: product.warranty,
+    materialAndFinish: product.materialAndFinish,
+    bulbType: product.bulbType,
+    style: product.style,
+    specs: product.specs,
+    weight: product.weight
+  };
+
+  const allOptions = variants.length > 0 ? [parentOption, ...variants] : [];
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(allOptions.length > 0 ? allOptions[0] : null);
   const [pincode, setPincode] = useState('');
   const [shippingRes, setShippingRes] = useState<any>(null);
   const [checkingPincode, setCheckingPincode] = useState(false);
@@ -100,7 +131,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
   const handleAddToCart = () => {
     if (qty > availableStock) return;
-    addItem(product, qty);
+    
+    const cartProduct = {
+      ...product,
+      id: (selectedVariant && selectedVariant.id !== 'original') ? selectedVariant.id : product.id,
+      name: (selectedVariant && selectedVariant.id !== 'original') ? `${product.name} - ${selectedVariant.name}` : product.name,
+      sku: (selectedVariant && selectedVariant.id !== 'original') ? selectedVariant.sku : product.sku,
+      d2cPrice: displayPrice,
+      mrp: displayMrp,
+      images: activeImages,
+    };
+
+    addItem(cartProduct, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -216,7 +258,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <div style={{ width: '4px', height: '4px', background: 'var(--gold)', borderRadius: '50%' }} />
               {product.category?.name}
             </div>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', color: 'var(--cream)', lineHeight: 1.2, fontWeight: 300 }}>{product.name}</h1>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '30px', color: 'var(--cream)', lineHeight: 1.2, fontWeight: 300 }}>{selectedVariant?.name || product.name}</h1>
             <div style={{ fontSize: '12px', color: 'var(--text-dim)', letterSpacing: '0.06em', marginTop: '6px' }}>SKU: {selectedVariant?.sku || product.sku}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
               <div style={{ width: '6px', height: '6px', background: availableStock > 0 ? 'var(--green)' : 'var(--gold)', borderRadius: '50%' }} />
@@ -255,11 +297,11 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
 
           {/* Variant Selector */}
-          {variants.length > 0 && (
+          {allOptions.length > 0 && (
             <div style={{ padding: '20px 24px 0' }}>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>Select Finish</div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {variants.map(v => (
+                {allOptions.map(v => (
                   <div
                     key={v.id}
                     onClick={() => { setSelectedVariant(v); setActiveImg(0); }}
@@ -379,7 +421,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
 
           {/* Mobile Variant Comparison Table */}
-          {variants.length > 1 && (
+          {allOptions.length > 1 && (
             <div style={{ margin: '12px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px 12px', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '0.5px solid var(--border)' }}>Compare Options</div>
               <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -393,7 +435,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     </tr>
                   </thead>
                   <tbody>
-                    {variants.map(v => {
+                    {allOptions.map(v => {
                       const vPrice = v.d2cPrice || product.d2cPrice;
                       const isSelected = selectedVariant?.id === v.id;
                       
@@ -557,7 +599,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               </div>
 
               {/* Desktop Variant Comparison Table */}
-              {variants.length > 1 && (
+              {allOptions.length > 1 && (
                 <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
                   <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text)' }}>Compare Variants</div>
                   <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -572,7 +614,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                         </tr>
                       </thead>
                       <tbody>
-                        {variants.map(v => {
+                        {allOptions.map(v => {
                           const vPrice = v.d2cPrice || product.d2cPrice;
                           const isSelected = selectedVariant?.id === v.id;
                           
@@ -650,7 +692,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--gold)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>{product.category?.name || 'Exclusive Design'}</div>
                 </div>
 
-                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '56px', color: 'var(--cream)', lineHeight: 1.1, fontWeight: 300, marginBottom: '16px' }}>{product.name}</h1>
+                <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '56px', color: 'var(--cream)', lineHeight: 1.1, fontWeight: 300, marginBottom: '16px' }}>{selectedVariant?.name || product.name}</h1>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-dim)', letterSpacing: '0.1em' }}>SKU: {selectedVariant?.sku || product.sku}</div>
@@ -677,11 +719,11 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               </div>
 
               {/* Finish Selector */}
-              {variants.length > 0 && (
+              {allOptions.length > 0 && (
                 <div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '16px' }}>Available Finishes</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                    {variants.map(v => (
+                    {allOptions.map(v => (
                       <button
                         key={v.id}
                         onClick={() => { setSelectedVariant(v); setActiveImg(0); }}
