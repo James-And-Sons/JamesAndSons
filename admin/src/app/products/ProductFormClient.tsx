@@ -8,6 +8,17 @@ type Space = { id: string; name: string };
 
 type Spec = { key: string; value: string };
 
+const GOOGLE_PRODUCT_CATEGORIES = [
+  "Home & Garden > Lighting > Light Fixtures",
+  "Home & Garden > Lighting > Light Fixtures > Chandeliers",
+  "Home & Garden > Lighting > Light Fixtures > Ceiling Light Fixtures",
+  "Home & Garden > Lighting > Light Fixtures > Wall Light Fixtures",
+  "Home & Garden > Lighting > Light Fixtures > Lamps",
+  "Home & Garden > Lighting > Lighting Hardware & Accessories",
+  "Home & Garden > Lighting > Light Fixtures > Track Lighting",
+  "Home & Garden > Lighting > Light Fixtures > Recessed Lighting"
+];
+
 type Variant = {
   id?: string;
   name: string;
@@ -794,12 +805,16 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
               </div>
               <div className="col-span-3">
                 <label className={labelCls}>Google Product Category Taxonomy</label>
-                <input
+                <select
                   value={parentValues.googleProductCategory}
                   onChange={e => handleParentFieldChange('googleProductCategory', e.target.value)}
                   className={inputCls}
-                  placeholder="Home & Garden > Lighting > Light Fixtures"
-                />
+                >
+                  <option value="">Select Google Product Category</option>
+                  {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className={labelCls}>Dominant Color tag</label>
@@ -1136,14 +1151,18 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     className={inputCls}
                   />
                 </div>
-                <div className="col-span-3">
+                 <div className="col-span-3">
                   <label className={labelCls}>Google Product Category Override</label>
-                  <input
+                  <select
                     value={variants[activeTab].googleProductCategory}
                     onChange={e => updateVariantField(activeTab, 'googleProductCategory', e.target.value)}
-                    placeholder={parentValues.googleProductCategory || 'Inherit'}
                     className={inputCls}
-                  />
+                  >
+                    <option value="">Inherit Parent ({parentValues.googleProductCategory || 'None'})</option>
+                    {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className={labelCls}>Color Override</label>
