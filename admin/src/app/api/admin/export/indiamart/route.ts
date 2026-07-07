@@ -37,7 +37,13 @@ export async function GET() {
       'Image URL 1',
       'Image URL 2',
       'Image URL 3',
-      'Technical Specs'
+      'Technical Specs',
+      'Power',
+      'Voltage',
+      'Brand',
+      'Warranty',
+      'Country of Origin',
+      'BIS Certification'
     ];
 
     const rows = [];
@@ -73,7 +79,16 @@ export async function GET() {
           const vMrp = v.mrp || p.mrp;
           const vB2B = v.b2bPrice || p.b2bPrice;
           const vImages = v.images && v.images.length > 0 ? v.images : p.images;
-          const specsText = formatSpecs(p.specs);
+          const specsText = formatSpecs(v.specs && Object.keys(v.specs).length > 0 ? v.specs : p.specs);
+
+          const matVal = v.materialAndFinish && v.materialAndFinish.length > 0 ? v.materialAndFinish.join(', ') : p.materialAndFinish?.join(', ');
+          const bulbVal = v.bulbType && v.bulbType.length > 0 ? v.bulbType.join(', ') : p.bulbType?.join(', ');
+          const styleVal = v.style && v.style.length > 0 ? v.style.join(', ') : p.style?.join(', ');
+          const powerVal = v.power || p.power || '';
+          const voltageVal = v.voltage || p.voltage || '';
+          const brandVal = v.brand || p.brand || 'James and Sons';
+          const warrantyVal = v.warranty || p.warranty || '';
+          const originVal = v.countryOfOrigin || p.countryOfOrigin || 'India';
 
           rows.push([
             escapeCSV(`${p.name} - ${v.name}`),
@@ -86,17 +101,29 @@ export async function GET() {
             escapeCSV(p.description),
             escapeCSV('Piece'),
             escapeCSV(getDimensionsText(v, p)),
-            escapeCSV(p.materialAndFinish?.join(', ')),
-            escapeCSV(p.bulbType?.join(', ')),
-            escapeCSV(p.style?.join(', ')),
+            escapeCSV(matVal),
+            escapeCSV(bulbVal),
+            escapeCSV(styleVal),
             escapeCSV(vImages[0] || ''),
             escapeCSV(vImages[1] || ''),
             escapeCSV(vImages[2] || ''),
-            escapeCSV(specsText)
+            escapeCSV(specsText),
+            escapeCSV(powerVal),
+            escapeCSV(voltageVal),
+            escapeCSV(brandVal),
+            escapeCSV(warrantyVal),
+            escapeCSV(originVal),
+            escapeCSV(p.bisCertification || '')
           ].join(','));
         }
       } else {
         const specsText = formatSpecs(p.specs);
+        const powerVal = p.power || '';
+        const voltageVal = p.voltage || '';
+        const brandVal = p.brand || 'James and Sons';
+        const warrantyVal = p.warranty || '';
+        const originVal = p.countryOfOrigin || 'India';
+
         rows.push([
           escapeCSV(p.name),
           escapeCSV(p.sku),
@@ -114,7 +141,13 @@ export async function GET() {
           escapeCSV(p.images[0] || ''),
           escapeCSV(p.images[1] || ''),
           escapeCSV(p.images[2] || ''),
-          escapeCSV(specsText)
+          escapeCSV(specsText),
+          escapeCSV(powerVal),
+          escapeCSV(voltageVal),
+          escapeCSV(brandVal),
+          escapeCSV(warrantyVal),
+          escapeCSV(originVal),
+          escapeCSV(p.bisCertification || '')
         ].join(','));
       }
     }

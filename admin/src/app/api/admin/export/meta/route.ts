@@ -82,11 +82,11 @@ export async function GET(req: NextRequest) {
         }
       } else {
         const brandVal = p.brand || 'James and Sons';
-        const googleCatVal = p.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
+        const googleCatVal = p.googleProductCategory || p.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
         const colorVal = p.color || '';
         const sizeVal = p.size || '';
         const materialVal = p.material || '';
-        const originVal = p.countryOfOrigin || 'India';
+        const originVal = p.countryOfOrigin || p.countryOfOrigin || 'India';
 
         rows.push([
           escapeCSV(p.sku),
@@ -114,11 +114,11 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="pinterest_catalog_feed.csv"'
+        'Content-Disposition': 'attachment; filename="meta_catalog_feed.csv"'
       }
     });
   } catch (error: any) {
-    console.error('Pinterest CSV export failed:', error);
+    console.error('Meta CSV export failed:', error);
     return NextResponse.json({ error: error.message || 'Export failed' }, { status: 500 });
   }
 }

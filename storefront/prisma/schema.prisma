@@ -166,6 +166,18 @@ model Product {
   actualDepth      Float?   // in inches
   dimensionUnit    String   @default("INCH")
 
+  // Additional listing fields for platforms (Amazon, Flipkart, Indiamart, Meta, Pinterest)
+  power                 String?
+  voltage               String?
+  googleProductCategory String?
+  color                 String?
+  size                  String?
+  material              String?
+  countryOfOrigin       String?          @default("India")
+  brand                 String?          @default("James and Sons")
+  warranty              String?
+  bulletPoints          String[]
+
   spaces           Space[]
   variants         ProductVariant[]
   orderItems       OrderItem[]
@@ -191,6 +203,22 @@ model ProductVariant {
   actualWidth   Float?   // in inches
   actualDepth   Float?   // in inches
   dimensionUnit String   @default("INCH")
+
+  // Additional listing and override fields
+  power                 String?
+  voltage               String?
+  googleProductCategory String?
+  color                 String?
+  size                  String?
+  material              String?
+  countryOfOrigin       String?
+  brand                 String?
+  warranty              String?
+  bulletPoints          String[]
+  materialAndFinish     String[]
+  bulbType              String[]
+  style                 String[]
+  specs                 Json?
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

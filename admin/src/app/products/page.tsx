@@ -61,7 +61,18 @@ export default async function ProductsPage({
       <div className="flex justify-between items-center bg-surface p-6 border border-border">
         <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Catalog &amp; Pricing</h1>
         <div className="flex gap-4">
-          <a href="/api/admin/export/indiamart" download="indiamart_catalog.csv" className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background flex items-center">Export IndiaMART CSV</a>
+          <div className="relative group flex items-center z-20">
+            <button className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background flex items-center gap-1 cursor-pointer">
+              Export Feeds ▾
+            </button>
+            <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-background border border-border py-2 w-48 shadow-lg">
+              <a href="/api/admin/export/pinterest" download="pinterest_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary transition-colors">Pinterest Feed</a>
+              <a href="/api/admin/export/meta" download="meta_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary border-t border-border/30 transition-colors">Meta Feed</a>
+              <a href="/api/admin/export/amazon" download="amazon_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary border-t border-border/30 transition-colors">Amazon Feed</a>
+              <a href="/api/admin/export/flipkart" download="flipkart_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary border-t border-border/30 transition-colors">Flipkart Feed</a>
+              <a href="/api/admin/export/indiamart" download="indiamart_catalog.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary border-t border-border/30 transition-colors">IndiaMART Feed</a>
+            </div>
+          </div>
           <Link href="/products/import" className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background flex items-center">Import CSV</Link>
           <Link href="/products/add" className="btn-primary flex items-center">Add Product</Link>
         </div>

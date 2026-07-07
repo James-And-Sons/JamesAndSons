@@ -130,12 +130,33 @@ model Product {
   // Inventory
   stockQuantity    Int      @default(0)
   weight           Float?   // in kg
+  length           Float?   // in cm
+  breadth          Float?   // in cm
+  height           Float?   // in cm
   
   categoryId       String
   category         Category @relation(fields: [categoryId], references: [id])
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+ 
+  // Actual Product Dimensions (for display/filtering)
+  actualHeight     Float?   // in inches
+  actualWidth      Float?   // in inches
+  actualDepth      Float?   // in inches
+  dimensionUnit    String   @default("INCH")
+
+  // Additional listing fields for platforms (Amazon, Flipkart, Indiamart, Meta, Pinterest)
+  power                 String?
+  voltage               String?
+  googleProductCategory String?
+  color                 String?
+  size                  String?
+  material              String?
+  countryOfOrigin       String?          @default("India")
+  brand                 String?          @default("James and Sons")
+  warranty              String?
+  bulletPoints          String[]
 
   spaces           Space[]
   variants         ProductVariant[]
@@ -153,10 +174,35 @@ model ProductVariant {
   b2bPrice      Float?
   stockQuantity Int      @default(0)
   images        String[]
+  weight        Float?   // in kg
+  length        Float?   // in cm
+  breadth       Float?   // in cm
+  height        Float?   // in cm
   
+  actualHeight  Float?   // in inches
+  actualWidth   Float?   // in inches
+  actualDepth   Float?   // in inches
+  dimensionUnit String   @default("INCH")
+
+  // Additional listing and override fields
+  power                 String?
+  voltage               String?
+  googleProductCategory String?
+  color                 String?
+  size                  String?
+  material              String?
+  countryOfOrigin       String?
+  brand                 String?
+  warranty              String?
+  bulletPoints          String[]
+  materialAndFinish     String[]
+  bulbType              String[]
+  style                 String[]
+  specs                 Json?
+ 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
+ 
   product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 

@@ -22,6 +22,23 @@ type Variant = {
   actualWidth?: number | null;
   actualDepth?: number | null;
   dimensionUnit?: string | null;
+  power?: string | null;
+  voltage?: string | null;
+  googleProductCategory?: string | null;
+  color?: string | null;
+  size?: string | null;
+  material?: string | null;
+  countryOfOrigin?: string | null;
+  brand?: string | null;
+  warranty?: string | null;
+  materialAndFinish?: string[] | null;
+  bulbType?: string[] | null;
+  style?: string[] | null;
+  specs?: any;
+  weight?: number | null;
+  length?: number | null;
+  breadth?: number | null;
+  height?: number | null;
 };
 
 export default function PDPClient({ product, variants, isB2B }: { product: any; variants: Variant[]; isB2B: boolean }) {
@@ -103,6 +120,41 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       return parts.join(' × ');
     }
     return product.dimensions || 'Standard';
+  };
+
+  const getSpecsList = () => {
+    const parentSpecs = product.specs && typeof product.specs === 'object' ? product.specs : {};
+    const variantSpecs = selectedVariant?.specs && typeof selectedVariant.specs === 'object' ? selectedVariant.specs : {};
+    const mergedSpecs = { ...parentSpecs, ...variantSpecs };
+
+    const baseSpecs = [
+      { key: 'Brand', val: selectedVariant?.brand || product.brand || 'James and Sons' },
+      { key: 'Material & Finish', val: (selectedVariant?.materialAndFinish && selectedVariant.materialAndFinish.length > 0) ? selectedVariant.materialAndFinish.join(', ') : (product.materialAndFinish?.join(', ') || 'Estate Metals') },
+      { key: 'Bulb Type', val: (selectedVariant?.bulbType && selectedVariant.bulbType.length > 0) ? selectedVariant.bulbType.join(', ') : (product.bulbType?.join(', ') || 'LED Engine') },
+      { key: 'Design Style', val: (selectedVariant?.style && selectedVariant.style.length > 0) ? selectedVariant.style.join(', ') : (product.style?.join(', ') || 'Modern Heritage') },
+      { key: 'Power', val: selectedVariant?.power || product.power || null },
+      { key: 'Voltage', val: selectedVariant?.voltage || product.voltage || null },
+      { key: 'Dimensions', val: getDimensions() },
+      { key: 'Weight', val: (selectedVariant?.weight !== null && selectedVariant?.weight !== undefined) ? `${selectedVariant.weight} kg` : (product.weight ? `${product.weight} kg` : 'Standard') },
+      { key: 'Warranty', val: selectedVariant?.warranty || product.warranty || null },
+      { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
+    ];
+
+    const finalSpecs: { key: string; val: string }[] = [];
+    baseSpecs.forEach(spec => {
+      if (spec.val) {
+        finalSpecs.push({ key: spec.key, val: String(spec.val) });
+      }
+    });
+
+    const standardKeys = new Set(baseSpecs.map(s => s.key.toLowerCase()));
+    Object.entries(mergedSpecs).forEach(([k, v]) => {
+      if (!standardKeys.has(k.toLowerCase()) && v) {
+        finalSpecs.push({ key: k, val: String(v) });
+      }
+    });
+
+    return finalSpecs;
   };
 
   return (
@@ -317,13 +369,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           <div style={{ margin: '12px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px 12px', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '0.5px solid var(--border)' }}>Technical Specifications</div>
             <div style={{ padding: '0 20px' }}>
-              {[
-                { key: 'Material', val: product.materialAndFinish?.join(', ') || 'Metals' },
-                { key: 'Bulb Type', val: product.bulbType?.join(', ') || 'LED' },
-                { key: 'Style', val: product.style?.join(', ') || 'Modern' },
-                { key: 'Dimensions', val: getDimensions() },
-                { key: 'Weight', val: product.weight ? `${product.weight} kg` : 'Standard' }
-              ].map(spec => (
+              {getSpecsList().map(spec => (
                 <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', flex: '0 0 90px' }}>{spec.key}</div>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
@@ -331,6 +377,73 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               ))}
             </div>
           </div>
+
+          {/* Mobile Variant Comparison Table */}
+          {variants.length > 1 && (
+            <div style={{ margin: '12px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px 12px', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '0.5px solid var(--border)' }}>Compare Options</div>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '0.5px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                      <th style={{ padding: '10px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Option</th>
+                      <th style={{ padding: '10px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Price</th>
+                      <th style={{ padding: '10px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Specs</th>
+                      <th style={{ padding: '10px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dimensions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variants.map(v => {
+                      const vPrice = v.d2cPrice || product.d2cPrice;
+                      const isSelected = selectedVariant?.id === v.id;
+                      
+                      const specParts = [];
+                      const pwr = v.power || product.power;
+                      const volt = v.voltage || product.voltage;
+                      const col = v.color || product.color;
+                      if (pwr) specParts.push(pwr);
+                      if (volt) specParts.push(volt);
+                      if (col) specParts.push(col);
+                      const specSummary = specParts.join(' | ') || 'Standard';
+
+                      const vH = v.actualHeight ?? product.actualHeight;
+                      const vW = v.actualWidth ?? product.actualWidth;
+                      const vD = v.actualDepth ?? product.actualDepth;
+                      const vUnit = v.dimensionUnit ?? product.dimensionUnit ?? 'INCH';
+                      const vSuffix = vUnit === 'CM' ? 'cm' : '"';
+                      const dimSummary = (vH || vW || vD) 
+                        ? [vH && `${vH}${vSuffix}`, vW && `${vW}${vSuffix}`, vD && `${vD}${vSuffix}`].filter(Boolean).join(' × ')
+                        : 'Standard';
+
+                      return (
+                        <tr 
+                          key={v.id} 
+                          onClick={() => { setSelectedVariant(v); setActiveImg(0); }}
+                          style={{ 
+                            borderBottom: '0.5px solid rgba(255,255,255,0.05)', 
+                            background: isSelected ? 'rgba(196,160,90,0.08)' : 'transparent'
+                          }}
+                        >
+                          <td style={{ padding: '12px 16px', fontSize: '11px', color: isSelected ? 'var(--gold-light)' : 'var(--cream)', fontWeight: isSelected ? 500 : 300 }}>
+                            {v.name}
+                          </td>
+                          <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>
+                            {formatPrice(vPrice)}
+                          </td>
+                          <td style={{ padding: '12px 16px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {specSummary}
+                          </td>
+                          <td style={{ padding: '12px 16px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {dimSummary}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Ultra-slim Footer */}
           <div style={{ textAlign: 'center', padding: '30px 20px 0', fontSize: '9px', color: 'var(--text-dim)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
@@ -434,21 +547,87 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text)' }}>Specifications</div>
                 <div style={{ padding: '8px 24px' }}>
-                  {[
-                    { key: 'Material & Finish', val: product.materialAndFinish?.join(', ') || 'Estate Metals' },
-                    { key: 'Illumination', val: product.bulbType?.join(', ') || 'LED Engine' },
-                    { key: 'Design Style', val: product.style?.join(', ') || 'Modern Heritage' },
-                    { key: 'Dimensions', val: getDimensions() },
-                    { key: 'Ship Weight', val: product.weight ? `${product.weight} kg` : 'Standard' },
-                    { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
-                  ].map(spec => (
-                    <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: spec.key === 'Compliance' ? 'none' : '1px dashed var(--border)' }}>
+                  {getSpecsList().map((spec, sIdx, sArr) => (
+                    <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: sIdx === sArr.length - 1 ? 'none' : '1px dashed var(--border)' }}>
                       <div style={{ flex: '0 0 140px', fontSize: '10px', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{spec.key}</div>
                       <div style={{ flex: 1, fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>{spec.val}</div>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Desktop Variant Comparison Table */}
+              {variants.length > 1 && (
+                <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text)' }}>Compare Variants</div>
+                  <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+                          <th style={{ padding: '12px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Variant</th>
+                          <th style={{ padding: '12px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Price</th>
+                          <th style={{ padding: '12px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Specs</th>
+                          <th style={{ padding: '12px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dimensions</th>
+                          <th style={{ padding: '12px 16px', fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variants.map(v => {
+                          const vPrice = v.d2cPrice || product.d2cPrice;
+                          const isSelected = selectedVariant?.id === v.id;
+                          
+                          const specParts = [];
+                          const pwr = v.power || product.power;
+                          const volt = v.voltage || product.voltage;
+                          const col = v.color || product.color;
+                          if (pwr) specParts.push(pwr);
+                          if (volt) specParts.push(volt);
+                          if (col) specParts.push(col);
+                          const specSummary = specParts.join(' | ') || 'Standard';
+
+                          const vH = v.actualHeight ?? product.actualHeight;
+                          const vW = v.actualWidth ?? product.actualWidth;
+                          const vD = v.actualDepth ?? product.actualDepth;
+                          const vUnit = v.dimensionUnit ?? product.dimensionUnit ?? 'INCH';
+                          const vSuffix = vUnit === 'CM' ? 'cm' : '"';
+                          const dimSummary = (vH || vW || vD) 
+                            ? [vH && `${vH}${vSuffix}`, vW && `${vW}${vSuffix}`, vD && `${vD}${vSuffix}`].filter(Boolean).join(' × ')
+                            : 'Standard';
+
+                          return (
+                            <tr 
+                              key={v.id} 
+                              onClick={() => { setSelectedVariant(v); setActiveImg(0); }}
+                              style={{ 
+                                borderBottom: '0.5px solid rgba(255,255,255,0.05)', 
+                                cursor: 'pointer',
+                                background: isSelected ? 'rgba(196,160,90,0.08)' : 'transparent',
+                                transition: 'background 0.2s'
+                              }}
+                            >
+                              <td style={{ padding: '14px 16px', fontSize: '12px', color: isSelected ? 'var(--gold-light)' : 'var(--cream)', fontWeight: isSelected ? 500 : 300 }}>
+                                {v.name}
+                              </td>
+                              <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>
+                                {formatPrice(vPrice)}
+                              </td>
+                              <td style={{ padding: '14px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                {specSummary}
+                              </td>
+                              <td style={{ padding: '14px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                {dimSummary}
+                              </td>
+                              <td style={{ padding: '14px 16px', fontSize: '11px', color: v.stockQuantity > 0 ? 'var(--green)' : 'var(--gold)' }}>
+                                {v.stockQuantity > 0 ? 'In Stock' : 'Made to Order'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
