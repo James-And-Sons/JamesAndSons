@@ -80,16 +80,31 @@ export async function syncToAmazon(product: any) {
       }
     };
 
-    const headers = {
-      'Content-Type': 'application/json',
-      'x-amz-access-token': accessToken
+    // AWS Signature V4 signing configuration
+    const requestOptions = {
+      host: new URL(spApiEndpoint).hostname,
+      path: path,
+      method: 'PUT',
+      service: 'execute-api',
+      region: process.env.AWS_REGION || 'eu-west-1',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-amz-access-token': accessToken
+      },
+      body: JSON.stringify(payload)
     };
+
+    // Sign the request using aws4
+    aws4.sign(requestOptions, {
+      accessKeyId: awsAccessKey,
+      secretAccessKey: awsSecretKey
+    });
 
     console.log(`[Amazon Sync] Syncing SKU ${sku} to Amazon Listings Items API...`);
     const response = await fetch(url, {
       method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(payload)
+      headers: requestOptions.headers as any,
+      body: requestOptions.body
     });
 
     if (!response.ok) {
