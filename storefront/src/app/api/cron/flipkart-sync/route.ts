@@ -38,107 +38,117 @@ export async function GET(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  console.log('[Flipkart Cron Sync] Starting seller orders fetch...');
+  console.log('[Cron Sync] Starting consolidated background tasks...');
   const historyPath = '/Users/abhishikt_mac/Skills/Coding/Growth-ho clients/JamesAndSons/admin/inventory-sync-history.json';
 
   try {
-    const token = await getFlipkartAccessToken();
-    
-    // Call the Flipkart Seller API to search for newly approved orders
-    const res = await fetch('https://api.flipkart.net/sellers/v3/orders/search', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        filter: {
-          states: ['APPROVED']
-        }
-      })
-    });
+    // 1. Fetch Flipkart orders (if seller keys exist)
+    let token = '';
+    let orders = [];
+    try {
+      token = await getFlipkartAccessToken();
+      const res = await fetch('https://api.flipkart.net/sellers/v3/orders/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          filter: {
+            states: ['APPROVED']
+          }
+        })
+      });
 
-    if (!res.ok) {
-      throw new Error(`Flipkart API returned: ${res.statusText}`);
+      if (res.ok) {
+        const data = await res.json();
+        orders = data.orders || [];
+        console.log(`[Flipkart Cron Sync] Fetched ${orders.length} approved orders from Flipkart.`);
+      } else {
+        console.warn(`[Flipkart Cron] Seller API returned status: ${res.status}`);
+      }
+    } catch (flipkartErr) {
+      console.warn('[Flipkart Cron] Connection skipped or app keys unconfigured:', flipkartErr);
     }
 
-    const data = await res.json();
-    const orders = data.orders || [];
+    // 2. Refresh Zoho access token
+    const clientId = process.env.ZOHO_CLIENT_ID;
+    const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+    const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+    const accountsDomain = process.env.ZOHO_ACCOUNTS_DOMAIN || 'accounts.zoho.com';
+    const isIndia = accountsDomain.endsWith('.in');
+    const apiBase = isIndia 
+      ? 'https://www.zohoapis.in/inventory/v1' 
+      : 'https://www.zohoapis.com/inventory/v1';
+    const orgId = process.env.ZOHO_INVENTORY_ORG_ID || '';
 
-    console.log(`[Flipkart Cron Sync] Fetched ${orders.length} approved orders from Flipkart.`);
+    if (clientId && clientSecret && refreshToken && orgId) {
+      const params = new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'refresh_token'
+      });
 
-    // Map each order to Zoho Inventory
-    const orgId = process.env.ZOHO_INVENTORY_ORG_ID || process.env.NEXT_PUBLIC_ZOHO_DESK_ORG_ID || '';
-    const apiDomain = process.env.ZOHO_INVENTORY_API_DOMAIN || 'inventory.zoho.com';
+      const zohoRes = await fetch(`https://${accountsDomain}/oauth/v2/token`, {
+        method: 'POST',
+        body: params,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
 
-    // In a real loop, fetch Zoho oauth token once and iterate
-    if (orders.length > 0) {
-      // Lazy import zoho access token refresh to save memory
-      const clientId = process.env.ZOHO_CLIENT_ID;
-      const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-      const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-      const accountsDomain = process.env.ZOHO_ACCOUNTS_DOMAIN || 'accounts.zoho.com';
+      if (zohoRes.ok) {
+        const zohoData = await zohoRes.json();
+        const zohoToken = zohoData.access_token;
 
-      if (clientId && clientSecret && refreshToken) {
-        const params = new URLSearchParams({
-          refresh_token: refreshToken,
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: 'refresh_token'
-        });
+        // Sync Flipkart Orders
+        for (const order of orders) {
+          try {
+            const salesOrderPayload = {
+              customer_id: "FLIPKART_MARKETPLACE_CONTACT_ID",
+              salesorder_number: `FK-${order.order_id}`,
+              date: new Date().toISOString().split('T')[0],
+              custom_fields: [{ label: "Channel Origin", value: "Flipkart Seller" }],
+              line_items: order.order_items.map((item: any) => ({
+                sku: item.sku,
+                name: item.title,
+                rate: Number(item.price),
+                quantity: Number(item.quantity)
+              })),
+              shipping_charge: 0,
+              billing_address: {
+                address: order.billing_address.address_line,
+                city: order.billing_address.city,
+                state: order.billing_address.state,
+                zip: order.billing_address.pincode,
+                country: "India"
+              }
+            };
 
-        const zohoRes = await fetch(`https://${accountsDomain}/oauth/v2/token`, {
-          method: 'POST',
-          body: params,
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        });
-
-        if (zohoRes.ok) {
-          const zohoData = await zohoRes.json();
-          const zohoToken = zohoData.access_token;
-
-          for (const order of orders) {
-            try {
-              // Map Flipkart structure to Zoho Sales Order
-              const salesOrderPayload = {
-                customer_id: "FLIPKART_MARKETPLACE_CONTACT_ID",
-                salesorder_number: `FK-${order.order_id}`,
-                date: new Date().toISOString().split('T')[0],
-                custom_fields: [
-                  { label: "Channel Origin", value: "Flipkart Seller" }
-                ],
-                line_items: order.order_items.map((item: any) => ({
-                  sku: item.sku,
-                  name: item.title,
-                  rate: Number(item.price),
-                  quantity: Number(item.quantity)
-                })),
-                shipping_charge: 0,
-                billing_address: {
-                  address: order.billing_address.address_line,
-                  city: order.billing_address.city,
-                  state: order.billing_address.state,
-                  zip: order.billing_address.pincode,
-                  country: "India"
-                }
-              };
-
-              await fetch(`https://${apiDomain}/api/v1/salesorders`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Zoho-oauthtoken ${zohoToken}`,
-                  'X-com-zoho-organizationid': orgId,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(salesOrderPayload)
-              });
-              
-              console.log(`[Flipkart Cron Sync] Synced order FK-${order.order_id} to Zoho Inventory.`);
-            } catch (syncErr) {
-              console.error(`[Flipkart Cron Sync] Failed to map order ${order.order_id}:`, syncErr);
-            }
+            await fetch(`${apiBase}/salesorders`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Zoho-oauthtoken ${zohoToken}`,
+                'X-com-zoho-organizationid': orgId,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(salesOrderPayload)
+            });
+            
+            console.log(`[Flipkart Cron Sync] Synced order FK-${order.order_id} to Zoho.`);
+          } catch (syncErr) {
+            console.error(`[Flipkart Cron Sync] Failed to map order ${order.order_id}:`, syncErr);
           }
         }
+
+        // Run automated catalog sync (uploading new products/variants from Supabase to Zoho)
+        try {
+          const { syncCatalogToZoho } = await import('@/lib/integrations/catalog');
+          await syncCatalogToZoho(zohoToken);
+        } catch (catalogErr) {
+          console.error('[Catalog Cron Sync] Failed:', catalogErr);
+        }
+      } else {
+        throw new Error('Zoho token refresh failed during background cron.');
       }
     }
 
