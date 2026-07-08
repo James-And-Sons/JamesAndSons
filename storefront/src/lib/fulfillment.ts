@@ -216,5 +216,16 @@ export async function fulfillPaidOrder({
     console.error(`[FulfillPaidOrder] Failed to record promotions for order ${updatedOrder.orderNumber}:`, promoError);
   }
 
+  // Trigger Serverless Integrations (Zoho Sales Order, Onsitego Registration, Urban Company Dispatch)
+  // Run asynchronously in background so checkout response is instant and does not block client UI
+  try {
+    const { runOrderIntegrations } = await import('./integrations/orchestrator');
+    runOrderIntegrations(updatedOrder.id).catch(err => {
+      console.error(`[FulfillPaidOrder] Integrations run failed for order ${updatedOrder.orderNumber}:`, err);
+    });
+  } catch (integrationImportError) {
+    console.error(`[FulfillPaidOrder] Failed to import integrations orchestrator:`, integrationImportError);
+  }
+
   return { success: true };
 }

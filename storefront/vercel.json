@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/flipkart-sync",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}
