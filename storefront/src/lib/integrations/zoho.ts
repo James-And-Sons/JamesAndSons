@@ -69,9 +69,13 @@ export async function syncOrderToZoho(orderId: string) {
   const shippingCity = shippingParts.pop() || order.shippingCity || '';
   const shippingAddr = shippingParts.join(', ') || order.shippingAddress;
 
+  const customerId = order.b2bFlag 
+    ? (process.env.ZOHO_B2B_CONTACT_ID || '3919589000000083001')
+    : (process.env.ZOHO_RETAIL_CONTACT_ID || '3919589000000083001');
+
   // Build the payload
   const salesOrderPayload = {
-    customer_id: order.b2bFlag ? "ZOHO_B2B_CONTACT_ID" : "RETAIL_WALKIN_CONTACT_ID",
+    customer_id: customerId,
     salesorder_number: order.orderNumber,
     date: new Date(order.createdAt).toISOString().split('T')[0],
     shipment_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
