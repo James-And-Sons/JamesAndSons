@@ -118,7 +118,7 @@ export default function CartPageClient() {
           {/* Main List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {items.map(item => (
-              <div key={item.product.id} className="cart-item-card" style={{ background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', padding: '20px', display: 'flex', gap: '24px', position: 'relative' }}>
+              <div key={`${item.product.id}-${item.warranty?.planSku || 'none'}`} className="cart-item-card" style={{ background: 'var(--surface2)', borderRadius: '24px', border: '1px solid var(--border)', padding: '20px', display: 'flex', gap: '24px', position: 'relative' }}>
                 {/* Image */}
                 <Link href={`/products/${item.product.slug}`} className="cart-item-image" style={{ width: '140px', height: '175px', background: 'var(--void)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
                   <Image src={item.product.images?.[0] || '/images/brand-placeholder.png'} alt={item.product.name} width={140} height={175} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -131,19 +131,27 @@ export default function CartPageClient() {
                     <Link href={`/products/${item.product.slug}`} style={{ textDecoration: 'none' }}>
                       <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(18px, 3vw, 24px)', color: 'var(--cream)', margin: '0 0 8px', fontWeight: 400, lineHeight: 1.2 }}>{item.product.name}</h3>
                     </Link>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(16px, 2.5vw, 20px)', color: '#E2C97A' }}>{formatPrice(item.product.d2cPrice)}</div>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(16px, 2.5vw, 20px)', color: '#E2C97A' }}>
+                      {formatPrice(item.product.d2cPrice)}
+                    </div>
+                    {item.warranty && (
+                      <div style={{ fontSize: '12px', color: 'var(--gold)', marginTop: '8px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <i className="ti ti-shield-check" style={{ fontSize: '14px' }}></i>
+                        <span>{item.warranty.planName} (+{formatPrice(item.warranty.price)})</span>
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
                     <div className="qty-stepper" style={{ background: 'var(--void)', border: '1px solid var(--border)', borderRadius: '12px' }}>
-                      <button onClick={() => updateQty(item.product.id, item.quantity - 1)} style={{ padding: '8px 16px' }}>−</button>
+                      <button onClick={() => updateQty(item.product.id, item.quantity - 1, item.warranty?.planSku)} style={{ padding: '8px 16px' }}>−</button>
                       <span style={{ minWidth: '32px', textAlign: 'center', fontSize: '14px' }}>{item.quantity}</span>
-                      <button onClick={() => updateQty(item.product.id, item.quantity + 1)} style={{ padding: '8px 16px' }}>+</button>
+                      <button onClick={() => updateQty(item.product.id, item.quantity + 1, item.warranty?.planSku)} style={{ padding: '8px 16px' }}>+</button>
                     </div>
                     
                     <div style={{ display: 'flex', gap: '20px' }}>
                       <button 
-                        onClick={() => { toggleItem(item.product); removeItem(item.product.id); }}
+                        onClick={() => { toggleItem(item.product); removeItem(item.product.id, item.warranty?.planSku); }}
                         style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                       >
                         <i className="ti ti-heart"></i> Save
@@ -152,7 +160,7 @@ export default function CartPageClient() {
                   </div>
                 </div>
 
-                <button onClick={() => removeItem(item.product.id)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--void)', border: '1px solid var(--border)', width: '32px', height: '32px', borderRadius: '50%', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>✕</button>
+                <button onClick={() => removeItem(item.product.id, item.warranty?.planSku)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'var(--void)', border: '1px solid var(--border)', width: '32px', height: '32px', borderRadius: '50%', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>✕</button>
               </div>
             ))}
           </div>

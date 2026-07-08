@@ -30,6 +30,13 @@ export default function CheckoutPageInner({
   });
   const [showGst, setShowGst] = useState(false);
 
+  // Urban Company States
+  const [ucServiceable, setUcServiceable] = useState<boolean | null>(null);
+  const [ucSlots, setUcSlots] = useState<any[]>([]);
+  const [selectedUcSlot, setSelectedUcSlot] = useState<string | null>(null);
+  const [selectedUcTime, setSelectedUcTime] = useState<string | null>(null);
+  const [bookInstallation, setBookInstallation] = useState<boolean>(false);
+
   const subtotal = total();
   const finalSubtotal = discountedTotal();
   const gst = finalSubtotal * 0.18;
@@ -75,7 +82,43 @@ export default function CheckoutPageInner({
     return () => clearTimeout(timer);
   }, [form.email, form.phone, step]);
 
-  const grandTotal = finalSubtotal + gst + (shipping || 0);
+  // Urban Company Pincode Serviceability Check
+  useEffect(() => {
+    if (form.pincode.length === 6) {
+      const checkUc = async () => {
+        try {
+          const res = await fetch(`/api/urbancompany/pincodes?code=${form.pincode}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.serviceable) {
+              setUcServiceable(true);
+              setUcSlots(data.slots);
+              setSelectedUcSlot(data.slots[0]?.date || null);
+              setSelectedUcTime(data.slots[0]?.times[0] || null);
+            } else {
+              setUcServiceable(false);
+              setUcSlots([]);
+              setSelectedUcSlot(null);
+              setSelectedUcTime(null);
+              setBookInstallation(false);
+            }
+          }
+        } catch (err) {
+          console.error('UC service check failed:', err);
+        }
+      };
+      checkUc();
+    } else {
+      setUcServiceable(null);
+      setUcSlots([]);
+      setSelectedUcSlot(null);
+      setSelectedUcTime(null);
+      setBookInstallation(false);
+    }
+  }, [form.pincode]);
+
+  const installationFee = bookInstallation ? (subtotal > 50000 ? 0 : 1499) : 0;
+  const grandTotal = finalSubtotal + gst + (shipping || 0) + installationFee;
 
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
@@ -122,9 +165,12 @@ export default function CheckoutPageInner({
           couponCode: appliedCoupon?.code,
           couponId: appliedCoupon?.couponId,
           discountAmount: appliedCoupon?.discountAmount,
-          affiliateCode: affiliateCode
+          affiliateCode: affiliateCode,
+          bookInstallation,
+          ucSlotDate: selectedUcSlot || undefined,
+          ucSlotTime: selectedUcTime || undefined
         },
-        items.map(i => ({ product: i.product, quantity: i.quantity })),
+        items.map(i => ({ product: i.product, quantity: i.quantity, warranty: i.warranty })),
         subtotal,
         gst,
         shipping || 0
@@ -474,6 +520,88 @@ export default function CheckoutPageInner({
                     {etd ? `Arriving by ${etd}` : 'Ships within 24-48 hours'}
                   </div>
                 </div>
+
+                {/* Urban Company Installation Section */}
+                {ucServiceable === true && (
+                  <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                      <input
+                        type="checkbox"
+                        id="uc-installation-checkbox"
+                        checked={bookInstallation}
+                        onChange={(e) => setBookInstallation(e.target.checked)}
+                        style={{ accentColor: 'var(--gold)', cursor: 'pointer' }}
+                      />
+                      <label htmlFor="uc-installation-checkbox" style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', cursor: 'pointer', fontWeight: 400 }}>
+                        Professional Chandelier Installation
+                      </label>
+                    </div>
+                    {bookInstallation && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', paddingLeft: '24px' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Select Date</div>
+                          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                            {ucSlots.map(slot => (
+                              <button
+                                key={slot.date}
+                                onClick={() => setSelectedUcSlot(slot.date)}
+                                style={{
+                                  padding: '8px 12px',
+                                  fontSize: '11px',
+                                  background: selectedUcSlot === slot.date ? 'var(--gold)' : 'var(--void)',
+                                  color: selectedUcSlot === slot.date ? 'var(--obsidian)' : 'var(--text)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontWeight: selectedUcSlot === slot.date ? 600 : 400,
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {slot.displayDate}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {selectedUcSlot && (
+                          <div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Select Time Window</div>
+                            <select
+                              value={selectedUcTime || ''}
+                              onChange={(e) => setSelectedUcTime(e.target.value)}
+                              style={{
+                                width: '100%',
+                                background: 'var(--void)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--text)',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                outline: 'none'
+                              }}
+                            >
+                              {ucSlots.find(s => s.date === selectedUcSlot)?.times.map((time: string) => (
+                                <option key={time} value={time}>{time}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <div style={{ fontSize: '10px', color: 'var(--gold)', marginTop: '4px' }}>
+                          {subtotal > 50000 ? '✨ Free Premium Installation Applied' : '⚡ ₹1,499 service charge will apply'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {ucServiceable === false && (
+                  <div style={{ padding: '16px', background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.1)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>⚠️</span>
+                      <span>Chandelier Installation is not available at pincode {form.pincode}.</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -501,12 +629,19 @@ export default function CheckoutPageInner({
           <div className="section-label" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>Order Summary</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
             {items.map(item => (
-              <div key={item.product.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+              <div key={`${item.product.id}-${item.warranty?.planSku || 'none'}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', marginBottom: '2px' }}>{item.product.name}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Qty {item.quantity}</div>
+                  {item.warranty && (
+                    <div style={{ fontSize: '10px', color: 'var(--gold)', marginTop: '2px' }}>
+                      🛡️ {item.warranty.planName}
+                    </div>
+                  )}
                 </div>
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--gold-light)', flexShrink: 0 }}>{formatPrice(item.product.d2cPrice * item.quantity)}</span>
+                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--gold-light)', flexShrink: 0 }}>
+                  {formatPrice((item.product.d2cPrice + (item.warranty?.price || 0)) * item.quantity)}
+                </span>
               </div>
             ))}
           </div>
@@ -529,6 +664,15 @@ export default function CheckoutPageInner({
                 {appliedCoupon?.freeShipping ? 'FREE' : (shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : formatPrice(shipping)))}
               </span>
             </div>
+
+            {bookInstallation && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                <span>UC Installation</span>
+                <span style={{ color: installationFee === 0 ? 'var(--green)' : 'inherit' }}>
+                  {installationFee === 0 ? 'FREE' : formatPrice(installationFee)}
+                </span>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
               <span>Total</span>

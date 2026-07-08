@@ -258,6 +258,14 @@ model Order {
   razorpaySignature String?
   
   fulfillmentError  String?  // Logs errors from Shiprocket/Logistics
+
+  b2bFlag                Boolean  @default(false)
+  zohoPricebookId        String?
+  zohoSalesOrderId       String?
+  onsitegoCertificateUrl String?
+  ucTicketId             String?
+  ucInstallationStatus   String   @default("NONE")
+  ucInstallationSlot     String?
   
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -278,6 +286,11 @@ model OrderItem {
   quantity  Int
   unitPrice Float
   total     Float
+  
+  // Onsitego Warranty Selection
+  warrantyPlanSku  String?
+  warrantyPlanName String?
+  warrantyPrice    Float?
   
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
@@ -516,4 +529,29 @@ model UserAddress {
   updatedAt       DateTime @updatedAt
 
   user            User     @relation(fields: [userId], references: [id])
+}
+
+model OnsitegoMapping {
+  id              String   @id @default(uuid())
+  minPrice        Float
+  maxPrice        Float
+  onsitegoPlanSku String   @unique
+  planName        String
+  coverageYears   Int      @default(1)
+  planPriceD2c    Float
+  createdAt       DateTime @default(now())
+
+  @@map("onsitego_mappings")
+}
+
+model UcServiceMapping {
+  id                  String   @id @default(uuid())
+  sku                 String   @unique
+  ucServiceId         String
+  technicianCount     Int      @default(1)
+  weightCategory      String
+  estimatedSetupHours Float    @default(2.0)
+  createdAt           DateTime @default(now())
+
+  @@map("uc_service_mappings")
 }

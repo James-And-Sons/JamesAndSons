@@ -115,31 +115,38 @@ export default function CartDrawer() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {currentItems.map((item) => (
-                <div key={item.product.id} style={{ borderBottom: '1px solid var(--border)', padding: '24px 0', display: 'flex', gap: '20px', position: 'relative' }}>
+                <div key={`${item.product.id}-${item.warranty?.planSku || 'none'}`} style={{ borderBottom: '1px solid var(--border)', padding: '24px 0', display: 'flex', gap: '20px', position: 'relative' }}>
                   <div style={{ width: '70px', height: '90px', background: 'var(--void)', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
                     <Image src={item.product.images?.[0] || '/images/brand-placeholder.png'} alt={item.product.name} width={70} height={90} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
                       <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--cream)', margin: '0 0 2px', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.product.name}</h3>
-                      <div style={{ fontSize: '13px', color: 'var(--gold-light)', opacity: 0.9 }}>{formatPrice(item.product.d2cPrice)}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--gold-light)', opacity: 0.9 }}>
+                        {formatPrice(item.product.d2cPrice)}
+                      </div>
+                      {item.warranty && (
+                        <div style={{ fontSize: '11px', color: 'var(--gold)', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <i className="ti ti-shield-check" style={{ fontSize: '13px' }}></i>
+                          <span>{item.warranty.planName} (+{formatPrice(item.warranty.price)})</span>
+                        </div>
+                      )}
                     </div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                          <button onClick={() => updateQty(item.product.id, item.quantity - 1)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>−</button>
+                          <button onClick={() => updateQty(item.product.id, item.quantity - 1, item.warranty?.planSku)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>−</button>
                           <span style={{ fontSize: '11px', color: 'var(--cream)', width: '16px', textAlign: 'center' }}>{item.quantity}</span>
-                          <button onClick={() => updateQty(item.product.id, item.quantity + 1)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>+</button>
+                          <button onClick={() => updateQty(item.product.id, item.quantity + 1, item.warranty?.planSku)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>+</button>
                         </div>
                       </div>
                       <button 
-                        onClick={() => { toggleItem(item.product); removeItem(item.product.id); }}
+                        onClick={() => { toggleItem(item.product); removeItem(item.product.id, item.warranty?.planSku); }}
                         style={{ background: 'none', border: 'none', fontSize: '10px', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         <i className="ti ti-heart"></i> Move to wishlist
                       </button>
-
                     </div>
                   </div>
                 </div>

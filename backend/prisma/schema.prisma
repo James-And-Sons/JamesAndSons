@@ -227,6 +227,14 @@ model Order {
   razorpayPaymentId String?
   razorpaySignature String?
   
+  b2bFlag             Boolean   @default(false)
+  zohoPricebookId     String?
+  zohoSalesOrderId    String?
+  onsitegoCertificateUrl String?
+  ucTicketId          String?
+  ucInstallationStatus String    @default("NONE")
+  ucInstallationSlot   String?
+  
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -244,6 +252,11 @@ model OrderItem {
   quantity  Int
   unitPrice Float
   total     Float
+  
+  // Onsitego Warranty Selection
+  warrantyPlanSku  String?
+  warrantyPlanName String?
+  warrantyPrice    Float?
   
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])

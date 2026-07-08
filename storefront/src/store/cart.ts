@@ -5,6 +5,11 @@ import type { Product } from '@/lib/utils';
 export type CartItem = {
   product: Product;
   quantity: number;
+  warranty?: {
+    planSku: string;
+    planName: string;
+    price: number;
+  } | null;
 };
 
 export type AppliedCoupon = {
@@ -21,9 +26,9 @@ type CartStore = {
   appliedCoupon: AppliedCoupon | null;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (product: Product, qty?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQty: (productId: string, qty: number) => void;
+  addItem: (product: Product, qty?: number, warranty?: CartItem['warranty']) => void;
+  removeItem: (productId: string, warrantySku?: string | null) => void;
+  updateQty: (productId: string, qty: number, warrantySku?: string | null) => void;
   clearCart: () => void;
   total: () => number;
   itemCount: () => number;
@@ -42,38 +47,51 @@ export const useCartStore = create<CartStore>()(
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
 
-      addItem: (product, qty = 1) => {
+      addItem: (product, qty = 1, warranty = null) => {
         set(state => {
-          const existing = state.items.find(i => i.product.id === product.id);
+          const existing = state.items.find(i => 
+            i.product.id === product.id && 
+            (i.warranty?.planSku === warranty?.planSku)
+          );
           if (existing) {
             return {
               items: state.items.map(i =>
-                i.product.id === product.id ? { ...i, quantity: i.quantity + qty } : i
+                (i.product.id === product.id && i.warranty?.planSku === warranty?.planSku)
+                  ? { ...i, quantity: i.quantity + qty }
+                  : i
               ),
               isOpen: true,
             };
           }
-          return { items: [...state.items, { product, quantity: qty }], isOpen: true };
+          return { items: [...state.items, { product, quantity: qty, warranty }], isOpen: true };
         });
       },
 
-      removeItem: (productId) => {
-        set(state => ({ items: state.items.filter(i => i.product.id !== productId) }));
+      removeItem: (productId, warrantySku = null) => {
+        set(state => ({ 
+          items: state.items.filter(i => 
+            !(i.product.id === productId && i.warranty?.planSku === warrantySku)
+          ) 
+        }));
       },
 
-      updateQty: (productId, qty) => {
+      updateQty: (productId, qty, warrantySku = null) => {
         if (qty < 1) {
-          get().removeItem(productId);
+          get().removeItem(productId, warrantySku);
           return;
         }
         set(state => ({
-          items: state.items.map(i => i.product.id === productId ? { ...i, quantity: qty } : i),
+          items: state.items.map(i => 
+            (i.product.id === productId && i.warranty?.planSku === warrantySku) 
+              ? { ...i, quantity: qty } 
+              : i
+          ),
         }));
       },
 
       clearCart: () => set({ items: [], appliedCoupon: null }),
 
-      total: () => get().items.reduce((sum, i) => sum + i.product.d2cPrice * i.quantity, 0),
+      total: () => get().items.reduce((sum, i) => sum + (i.product.d2cPrice + (i.warranty?.price || 0)) * i.quantity, 0),
 
       itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 

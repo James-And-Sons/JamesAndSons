@@ -85,6 +85,10 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
+  // Onsitego warranty states
+  const [warranties, setWarranties] = useState<any[]>([]);
+  const [selectedWarranty, setSelectedWarranty] = useState<any | null>(null);
+
   const handleSwipe = (endX: number) => {
     if (touchStartX === null) return;
     const diff = touchStartX - endX;
@@ -106,6 +110,27 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     loadPincode();
   }, []);
 
+  const displayPrice = selectedVariant?.d2cPrice ?? product.d2cPrice;
+  const displayMrp = selectedVariant?.mrp ?? product.mrp;
+  const availableStock = selectedVariant?.stockQuantity ?? product.stockQuantity;
+
+  // Fetch Onsitego plans whenever price changes
+  useEffect(() => {
+    const fetchWarranties = async () => {
+      try {
+        const res = await fetch(`/api/warranties?price=${displayPrice}`);
+        if (res.ok) {
+          const data = await res.json();
+          setWarranties(data);
+          setSelectedWarranty(null);
+        }
+      } catch (err) {
+        console.error('Failed to load warranties:', err);
+      }
+    };
+    fetchWarranties();
+  }, [displayPrice]);
+
   const handleCheckPincode = async (code: string) => {
     if (code.length !== 6) return;
     setCheckingPincode(true);
@@ -125,10 +150,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const isWishlisted = items.some(i => i.id === product.id);
   const { toggleItem } = useWishlistStore();
 
-  const displayPrice = selectedVariant?.d2cPrice ?? product.d2cPrice;
-  const displayMrp = selectedVariant?.mrp ?? product.mrp;
-  const availableStock = selectedVariant?.stockQuantity ?? product.stockQuantity;
-
   const handleAddToCart = () => {
     if (qty > availableStock) return;
     
@@ -142,9 +163,84 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       images: activeImages,
     };
 
-    addItem(cartProduct, qty);
+    const selectedWarrantyPayload = selectedWarranty ? {
+      planSku: selectedWarranty.onsitegoPlanSku,
+      planName: selectedWarranty.planName,
+      price: selectedWarranty.planPriceD2c
+    } : null;
+
+    addItem(cartProduct, qty, selectedWarrantyPayload);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const renderWarrantySelector = () => {
+    if (warranties.length === 0) return null;
+    return (
+      <div style={{ padding: '20px 0', borderTop: '0.5px solid var(--border)', marginTop: '20px', marginBottom: '10px' }}>
+        <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px' }}>
+          Onsitego Extended Protection Plan
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {warranties.map(plan => (
+            <label
+              key={plan.onsitegoPlanSku}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                background: selectedWarranty?.onsitegoPlanSku === plan.onsitegoPlanSku ? 'rgba(196,160,90,0.06)' : 'var(--surface)',
+                border: selectedWarranty?.onsitegoPlanSku === plan.onsitegoPlanSku ? '1px solid rgba(196,160,90,0.3)' : '0.5px solid var(--border)',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <input
+                type="radio"
+                name="onsitego-plan"
+                checked={selectedWarranty?.onsitegoPlanSku === plan.onsitegoPlanSku}
+                onChange={() => setSelectedWarranty(plan)}
+                style={{ accentColor: 'var(--gold)' }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--cream)' }}>{plan.planName}</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '2px' }}>100% Cashless Repairs & Zero Dep</div>
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 500 }}>
+                +{formatPrice(plan.planPriceD2c)}
+              </div>
+            </label>
+          ))}
+          
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 16px',
+              background: selectedWarranty === null ? 'rgba(196,160,90,0.06)' : 'var(--surface)',
+              border: selectedWarranty === null ? '1px solid rgba(196,160,90,0.3)' : '0.5px solid var(--border)',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <input
+              type="radio"
+              name="onsitego-plan"
+              checked={selectedWarranty === null}
+              onChange={() => setSelectedWarranty(null)}
+              style={{ accentColor: 'var(--gold)' }}
+            />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>No Extended Protection</div>
+            </div>
+          </label>
+        </div>
+      </div>
+    );
   };
 
   const getDimensions = () => {
@@ -332,6 +428,11 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
               Total: <span style={{ color: 'var(--gold-light)', fontSize: '13px' }}>{formatPrice(displayPrice * qty)}</span>
             </div>
+          </div>
+
+          {/* Warranty Selector */}
+          <div style={{ padding: '0 24px' }}>
+            {renderWarrantySelector()}
           </div>
 
           {/* Primary Actions */}
@@ -744,6 +845,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   </div>
                 </div>
               )}
+
+              {/* Warranty Selector */}
+              {renderWarrantySelector()}
 
               {/* Actions Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

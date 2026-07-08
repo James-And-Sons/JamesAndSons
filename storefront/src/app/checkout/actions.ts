@@ -20,6 +20,11 @@ type CartItem = {
     height?: number | null;
   };
   quantity: number;
+  warranty?: {
+    planSku: string;
+    planName: string;
+    price: number;
+  } | null;
 };
 
 type CheckoutForm = {
@@ -36,6 +41,9 @@ type CheckoutForm = {
   couponId?: string;        // Resolved coupon ID from validation
   discountAmount?: number;  // Pre-validated discount amount
   affiliateCode?: string;   // From jns_ref cookie
+  bookInstallation?: boolean;
+  ucSlotDate?: string;
+  ucSlotTime?: string;
 };
 
 import { createRazorpayOrder, createPaymentLink, refundRazorpayPayment } from '@/lib/razorpay';
@@ -106,12 +114,17 @@ export async function createOrder(
         billingAddress: `${cleanAddress}, ${form.city.trim()}, ${form.state.trim()} - ${form.pincode.trim()}`,
         gstin: form.gstin?.trim() || null,
         companyName: form.companyName?.trim() || null,
+        ucInstallationStatus: form.bookInstallation ? 'DRAFT_PENDING' : 'NONE',
+        ucInstallationSlot: form.bookInstallation ? `${form.ucSlotDate} ${form.ucSlotTime}` : null,
         items: {
           create: cartItems.map(item => ({
             productId: item.product.id,
             quantity: item.quantity,
             unitPrice: item.product.d2cPrice,
-            total: item.product.d2cPrice * item.quantity,
+            total: (item.product.d2cPrice + (item.warranty?.price || 0)) * item.quantity,
+            warrantyPlanSku: item.warranty?.planSku || null,
+            warrantyPlanName: item.warranty?.planName || null,
+            warrantyPrice: item.warranty?.price || null,
           })),
         },
       },
