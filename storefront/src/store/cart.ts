@@ -51,12 +51,12 @@ export const useCartStore = create<CartStore>()(
         set(state => {
           const existing = state.items.find(i => 
             i.product.id === product.id && 
-            (i.warranty?.planSku === warranty?.planSku)
+            ((i.warranty?.planSku || null) === (warranty?.planSku || null))
           );
           if (existing) {
             return {
               items: state.items.map(i =>
-                (i.product.id === product.id && i.warranty?.planSku === warranty?.planSku)
+                (i.product.id === product.id && (i.warranty?.planSku || null) === (warranty?.planSku || null))
                   ? { ...i, quantity: i.quantity + qty }
                   : i
               ),
@@ -70,7 +70,7 @@ export const useCartStore = create<CartStore>()(
       removeItem: (productId, warrantySku = null) => {
         set(state => ({ 
           items: state.items.filter(i => 
-            !(i.product.id === productId && i.warranty?.planSku === warrantySku)
+            !(i.product.id === productId && (i.warranty?.planSku || null) === (warrantySku || null))
           ) 
         }));
       },
@@ -82,7 +82,7 @@ export const useCartStore = create<CartStore>()(
         }
         set(state => ({
           items: state.items.map(i => 
-            (i.product.id === productId && i.warranty?.planSku === warrantySku) 
+            (i.product.id === productId && (i.warranty?.planSku || null) === (warrantySku || null)) 
               ? { ...i, quantity: qty } 
               : i
           ),
