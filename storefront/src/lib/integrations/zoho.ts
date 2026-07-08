@@ -47,7 +47,13 @@ export async function syncOrderToZoho(orderId: string) {
 
   const accessToken = await getZohoAccessToken();
   const orgId = process.env.ZOHO_INVENTORY_ORG_ID || process.env.NEXT_PUBLIC_ZOHO_DESK_ORG_ID || '';
-  const apiDomain = process.env.ZOHO_INVENTORY_API_DOMAIN || 'inventory.zoho.com';
+  
+  // Build correct base URL for Zoho Inventory API (supporting new zohoapis domains)
+  const accountsDomain = process.env.ZOHO_ACCOUNTS_DOMAIN || 'accounts.zoho.com';
+  const isIndia = accountsDomain.endsWith('.in');
+  const apiBase = isIndia 
+    ? 'https://www.zohoapis.in/inventory/v1' 
+    : 'https://www.zohoapis.com/inventory/v1';
 
   // Parse addresses
   const billingParts = order.billingAddress.split(', ');
@@ -109,7 +115,7 @@ export async function syncOrderToZoho(orderId: string) {
     (salesOrderPayload as any).pricebook_id = order.zohoPricebookId;
   }
 
-  const res = await fetch(`https://${apiDomain}/api/v1/salesorders`, {
+  const res = await fetch(`${apiBase}/salesorders`, {
     method: 'POST',
     headers: {
       'Authorization': `Zoho-oauthtoken ${accessToken}`,
