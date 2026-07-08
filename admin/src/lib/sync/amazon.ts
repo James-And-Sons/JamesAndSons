@@ -1,4 +1,6 @@
 import aws4 from 'aws4';
+import fs from 'fs';
+import * as pathModule from 'path';
 
 async function getLwaAccessToken() {
   const clientId = process.env.AMAZON_LWA_CLIENT_ID;
@@ -101,18 +103,69 @@ export async function syncToAmazon(product: any) {
     });
 
     console.log(`[Amazon Sync] Syncing SKU ${sku} to Amazon Listings Items API...`);
+    
+    const requestTimestamp = new Date().toISOString();
     const response = await fetch(url, {
       method: 'PUT',
       headers: requestOptions.headers as any,
       body: requestOptions.body
     });
 
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((val, key) => {
+      responseHeaders[key] = val;
+    });
+
+    const responseBody = await response.text();
+    const requestId = responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-request-id'] || 'N/A';
+
+    // Format debugging info exactly as requested by Amazon Support
+    const debugContent = `===========================================================
+AMAZON SP-API SUPPORT DIAGNOSTIC LOG
+Generated: ${requestTimestamp}
+===========================================================
+1. Marketplace Submitted:
+   ${marketplaceId} (Amazon India)
+
+2. API and Operation Called:
+   Listings Items API -> PUT listingsItem
+
+3. The Timestamp (Request):
+   ${requestTimestamp}
+
+4. The Request ID (Response Header):
+   ${requestId}
+
+5. Application ID (LWA Client ID):
+   ${process.env.AMAZON_LWA_CLIENT_ID || 'N/A'}
+
+6. Full Endpoint:
+   ${url}
+
+7. Request Headers:
+${JSON.stringify(requestOptions.headers, null, 2)}
+
+8. Request Body:
+${requestOptions.body}
+
+9. Response Headers:
+${JSON.stringify(responseHeaders, null, 2)}
+
+10. Response Body:
+${responseBody}
+===========================================================
+`;
+
+    // Save to workspace file for download / review
+    const logFilePath = pathModule.resolve(process.cwd(), 'amazon-debug-log.txt');
+    fs.writeFileSync(logFilePath, debugContent, 'utf8');
+    console.log(`[Amazon Sync] Diagnostic log written to: ${logFilePath}`);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Amazon SP-API Listings Items PUT error for ${sku}: ${response.status} - ${errorText}`);
+      throw new Error(`Amazon SP-API Listings Items PUT error for ${sku}: ${response.status} - ${responseBody}`);
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseBody);
     console.log(`[Amazon Sync] SKU ${sku} sync result:`, JSON.stringify(result));
     return result;
   };
