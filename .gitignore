@@ -35,3 +35,7 @@ yarn-error.log*
 
 # prisma
 /generated/prisma
+
+# scratch files
+/scratch
+
