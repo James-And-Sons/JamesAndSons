@@ -157,9 +157,13 @@ ${responseBody}
 `;
 
     // Save to workspace file for download / review
-    const logFilePath = pathModule.resolve(process.cwd(), 'amazon-debug-log.txt');
-    fs.writeFileSync(logFilePath, debugContent, 'utf8');
-    console.log(`[Amazon Sync] Diagnostic log written to: ${logFilePath}`);
+    try {
+      const logFilePath = pathModule.resolve(process.cwd(), 'amazon-debug-log.txt');
+      fs.writeFileSync(logFilePath, debugContent, 'utf8');
+      console.log(`[Amazon Sync] Diagnostic log written to: ${logFilePath}`);
+    } catch (writeErr: any) {
+      console.warn(`[Amazon Sync] Could not write diagnostic log file (possibly read-only filesystem): ${writeErr.message}`);
+    }
 
     if (!response.ok) {
       throw new Error(`Amazon SP-API Listings Items PUT error for ${sku}: ${response.status} - ${responseBody}`);
