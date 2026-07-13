@@ -35,12 +35,7 @@ export async function GET(req: NextRequest) {
     // Clear any old data starting from Row 8
     const lastRow = sheet.rowCount;
     if (lastRow >= 8) {
-      for (let r = 8; r <= lastRow; r++) {
-        const row = sheet.getRow(r);
-        for (let c = 1; c <= 418; c++) {
-          row.getCell(c).value = null;
-        }
-      }
+      sheet.spliceRows(8, lastRow - 7);
     }
 
     let rowIdx = 8;
