@@ -257,11 +257,12 @@ export async function GET(req: NextRequest) {
     const fileBuffer = await workbook.xlsx.writeBuffer();
 
     // 4. Send back as binary attachment
-    return new Response(fileBuffer as any, {
+    return new NextResponse(fileBuffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.ms-excel.sheet.macroEnabled.12',
-        'Content-Disposition': 'attachment; filename="amazon_listing_feed.xlsm"'
+        'Content-Disposition': 'attachment; filename="amazon_listing_feed.xlsm"',
+        'Content-Length': fileBuffer.byteLength.toString()
       }
     });
 
