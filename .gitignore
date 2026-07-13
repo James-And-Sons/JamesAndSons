@@ -39,3 +39,7 @@ yarn-error.log*
 # scratch files
 /scratch
 
+# Amazon debug logs
+amazon-debug-log.txt
+
+

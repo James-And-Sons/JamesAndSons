@@ -51,7 +51,7 @@ export async function syncToAmazon(product: any) {
 
   const syncListingItem = async (sku: string, name: string, price: number, quantity: number) => {
     const marketplaceId = process.env.AMAZON_MARKETPLACE_ID || 'A21TJRUUN4KGV';
-    const path = `/listings/2021-08-01/sellers/${sellerId}/listingsItems/${sku}?marketplaceIds=${marketplaceId}`;
+    const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
     const url = `${spApiEndpoint}${path}`;
 
     const payload = {
