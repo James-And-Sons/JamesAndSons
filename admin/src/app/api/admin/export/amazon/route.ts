@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
-import ExcelJS from 'exceljs';
 import fs from 'fs';
+import * as XLSX from 'xlsx';
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -14,8 +14,21 @@ function extractNumber(text: any): number | null {
   return null;
 }
 
+function writeCell(sheet: any, row: number, col: number, value: any) {
+  const cellRef = XLSX.utils.encode_cell({ r: row - 1, c: col - 1 });
+  if (value === null || value === undefined) {
+    delete sheet[cellRef];
+    return;
+  }
+  let type = 's';
+  if (typeof value === 'number') type = 'n';
+  else if (typeof value === 'boolean') type = 'b';
+  
+  sheet[cellRef] = { t: type, v: value };
+}
+
 export async function GET(req: NextRequest) {
-  console.log('[Amazon Export] GET request initiated');
+  console.log('[Amazon Export] GET request initiated (using SheetJS)');
   try {
     // 1. Fetch products with their variants from DB
     console.log('[Amazon Export] Stage 1: Querying database...');
@@ -25,50 +38,43 @@ export async function GET(req: NextRequest) {
     });
     console.log(`[Amazon Export] Successfully retrieved ${products.length} products.`);
 
-    // 2. Resolve and Load template xlsm (using exceljs)
+    // 2. Resolve and Load template xlsm
     console.log('[Amazon Export] Stage 2: Locating template file...');
     let templatePath = path.join(process.cwd(), 'public', 'LAMP_LIGHT_FIXTURE.xlsm');
     
     if (!fs.existsSync(templatePath)) {
       console.warn(`[Amazon Export] Template not found in public folder: ${templatePath}`);
-      // Fallback: Check root folder
       const rootPath = path.join(process.cwd(), 'LAMP_LIGHT_FIXTURE.xlsm');
-      console.log(`[Amazon Export] Checking root folder fallback path: ${rootPath}`);
       if (fs.existsSync(rootPath)) {
         templatePath = rootPath;
-        console.log(`[Amazon Export] Resolved template to root folder fallback path!`);
       } else {
-        // Fallback: Check scripts folder relative path
         const parentPath = path.resolve(process.cwd(), '..', 'LAMP_LIGHT_FIXTURE.xlsm');
-        console.log(`[Amazon Export] Checking monorepo parent folder fallback path: ${parentPath}`);
         if (fs.existsSync(parentPath)) {
           templatePath = parentPath;
-          console.log(`[Amazon Export] Resolved template to monorepo parent folder fallback path!`);
         } else {
-          console.error(`[Amazon Export] CRITICAL: Template file not found in any expected location!`);
           throw new Error('Template file LAMP_LIGHT_FIXTURE.xlsm not found on server.');
         }
       }
     }
 
-    console.log(`[Amazon Export] Reading workbook file into buffer from: ${templatePath}`);
-    const fileBytes = fs.readFileSync(templatePath);
-    console.log(`[Amazon Export] File read successfully. Size: ${fileBytes.length} bytes. Loading into ExcelJS...`);
-
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(fileBytes as any);
-    console.log('[Amazon Export] Workbook loaded and parsed successfully in ExcelJS.');
+    console.log(`[Amazon Export] Reading workbook from: ${templatePath}`);
+    // Load with VBA macros support enabled
+    const workbook = XLSX.readFile(templatePath, { bookVBA: true });
+    console.log('[Amazon Export] Workbook parsed successfully by SheetJS.');
     
-    const sheet = workbook.getWorksheet('Template');
+    const sheet = workbook.Sheets['Template'];
     if (!sheet) {
       throw new Error("Worksheet 'Template' not found in the workbook");
     }
 
-    // Clear any old data starting from Row 8
-    console.log('[Amazon Export] Stage 3: Cleaving sheet Rows...');
-    const lastRow = sheet.rowCount;
-    if (lastRow >= 8) {
-      sheet.spliceRows(8, lastRow - 7);
+    // 3. Clear old data starting from Row 8
+    console.log('[Amazon Export] Stage 3: Clearing old data from Template sheet...');
+    for (const key of Object.keys(sheet)) {
+      if (key.startsWith('!')) continue;
+      const cell = XLSX.utils.decode_cell(key);
+      if (cell.r >= 7) {
+        delete sheet[key];
+      }
     }
 
     let rowIdx = 8;
@@ -86,56 +92,52 @@ export async function GET(req: NextRequest) {
 
       // Write Parent row if variants exist
       if (hasVariants) {
-        const parentRow = sheet.getRow(rowIdx);
-
-        parentRow.getCell(1).value = p.sku; // SKU
-        parentRow.getCell(2).value = "LIGHT_FIXTURE"; // Product Type
-        parentRow.getCell(3).value = "Create or Replace (Full Update)"; // Listing Action
-        parentRow.getCell(4).value = "Parent"; // Parentage Level
-        parentRow.getCell(6).value = "Size/Color"; // Variation Theme Name
-        parentRow.getCell(7).value = p.name; // Item Name
-        parentRow.getCell(9).value = pBrand; // Brand Name
+        writeCell(sheet, rowIdx, 1, p.sku); // SKU
+        writeCell(sheet, rowIdx, 2, "LIGHT_FIXTURE"); // Product Type
+        writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
+        writeCell(sheet, rowIdx, 4, "Parent"); // Parentage Level
+        writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
+        writeCell(sheet, rowIdx, 7, p.name); // Item Name
+        writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
 
         // Images
         if (pImages.length > 0) {
-          parentRow.getCell(22).value = pImages[0];
+          writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
-            parentRow.getCell(23 + idx).value = img;
+            writeCell(sheet, rowIdx, 23 + idx, img);
           });
         }
-        parentRow.getCell(32).value = pDesc; // Product Description
+        writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
         // Bullets
         pBullets.slice(0, 5).forEach((b, idx) => {
-          parentRow.getCell(33 + idx).value = b;
+          writeCell(sheet, rowIdx, 33 + idx, b);
         });
 
         if (pMaterial) {
-          parentRow.getCell(49).value = pMaterial; // Material
+          writeCell(sheet, rowIdx, 49, pMaterial); // Material
         }
 
         // Wattage
         const pWatt = extractNumber(p.power);
         if (pWatt !== null) {
-          parentRow.getCell(83).value = pWatt;
-          parentRow.getCell(84).value = "Watts";
+          writeCell(sheet, rowIdx, 83, pWatt);
+          writeCell(sheet, rowIdx, 84, "Watts");
         }
 
         // Voltage
         const pVolt = extractNumber(p.voltage);
         if (pVolt !== null) {
-          parentRow.getCell(85).value = pVolt;
-          parentRow.getCell(86).value = "Volts";
+          writeCell(sheet, rowIdx, 85, pVolt);
+          writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        parentRow.getCell(312).value = pOrigin; // Country of Origin
+        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
 
         rowIdx++;
 
         // Write Children rows
         for (const v of variants) {
-          const childRow = sheet.getRow(rowIdx);
-
           const vSku = v.sku;
           const vPrice = v.d2cPrice || p.d2cPrice;
           const vMrp = v.mrp || p.mrp;
@@ -152,67 +154,65 @@ export async function GET(req: NextRequest) {
           const vBrand = v.brand || pBrand;
           const vBullets = (v.bulletPoints && v.bulletPoints.length > 0) ? v.bulletPoints : pBullets;
 
-          childRow.getCell(1).value = vSku; // SKU
-          childRow.getCell(2).value = "LIGHT_FIXTURE"; // Product Type
-          childRow.getCell(3).value = "Create or Replace (Full Update)"; // Listing Action
-          childRow.getCell(4).value = "Child"; // Parentage Level
-          childRow.getCell(5).value = p.sku; // Parent SKU
-          childRow.getCell(6).value = "Size/Color"; // Variation Theme Name
-          childRow.getCell(7).value = `${p.name} - ${v.name}`; // Item Name
-          childRow.getCell(9).value = vBrand; // Brand Name
-          childRow.getCell(10).value = "SellerSKU"; // Product Id Type
-          childRow.getCell(11).value = vSku; // Product Id
+          writeCell(sheet, rowIdx, 1, vSku); // SKU
+          writeCell(sheet, rowIdx, 2, "LIGHT_FIXTURE"); // Product Type
+          writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
+          writeCell(sheet, rowIdx, 4, "Child"); // Parentage Level
+          writeCell(sheet, rowIdx, 5, p.sku); // Parent SKU
+          writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
+          writeCell(sheet, rowIdx, 7, `${p.name} - ${v.name}`); // Item Name
+          writeCell(sheet, rowIdx, 9, vBrand); // Brand Name
+          writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
+          writeCell(sheet, rowIdx, 11, vSku); // Product Id
 
           // Images
           if (vImages.length > 0) {
-            childRow.getCell(22).value = vImages[0];
+            writeCell(sheet, rowIdx, 22, vImages[0]);
             vImages.slice(1, 9).forEach((img, idx) => {
-              childRow.getCell(23 + idx).value = img;
+              writeCell(sheet, rowIdx, 23 + idx, img);
             });
           }
-          childRow.getCell(32).value = pDesc; // Product Description
+          writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
           // Bullets
           vBullets.slice(0, 5).forEach((b, idx) => {
-            childRow.getCell(33 + idx).value = b;
+            writeCell(sheet, rowIdx, 33 + idx, b);
           });
 
           if (vMaterial) {
-            childRow.getCell(49).value = vMaterial; // Material
+            writeCell(sheet, rowIdx, 49, vMaterial); // Material
           }
 
           if (vWatt !== null) {
-            childRow.getCell(83).value = vWatt;
-            childRow.getCell(84).value = "Watts";
+            writeCell(sheet, rowIdx, 83, vWatt);
+            writeCell(sheet, rowIdx, 84, "Watts");
           }
           if (vVolt !== null) {
-            childRow.getCell(85).value = vVolt;
-            childRow.getCell(86).value = "Volts";
+            writeCell(sheet, rowIdx, 85, vVolt);
+            writeCell(sheet, rowIdx, 86, "Volts");
           }
 
           // Weight
-          childRow.getCell(197).value = vWeight;
-          childRow.getCell(198).value = "kg";
+          writeCell(sheet, rowIdx, 197, vWeight);
+          writeCell(sheet, rowIdx, 198, "kg");
 
           // Dimensions
-          childRow.getCell(229).value = vHeight;
-          childRow.getCell(230).value = "cm";
-          childRow.getCell(231).value = vLength;
-          childRow.getCell(232).value = "cm";
-          childRow.getCell(233).value = vWidth;
-          childRow.getCell(234).value = "cm";
+          writeCell(sheet, rowIdx, 229, vHeight);
+          writeCell(sheet, rowIdx, 230, "cm");
+          writeCell(sheet, rowIdx, 231, vLength);
+          writeCell(sheet, rowIdx, 232, "cm");
+          writeCell(sheet, rowIdx, 233, vWidth);
+          writeCell(sheet, rowIdx, 234, "cm");
 
-          childRow.getCell(269).value = vStock; // Quantity (IN)
-          childRow.getCell(273).value = vPrice; // Your Price INR
-          childRow.getCell(274).value = vMrp; // Maximum Retail Price
-          childRow.getCell(312).value = vOrigin; // Country of Origin
+          writeCell(sheet, rowIdx, 269, vStock); // Quantity (IN)
+          writeCell(sheet, rowIdx, 273, vPrice); // Your Price INR
+          writeCell(sheet, rowIdx, 274, vMrp); // Maximum Retail Price
+          writeCell(sheet, rowIdx, 312, vOrigin); // Country of Origin
 
           rowIdx++;
         }
       } else {
         // Single product with no variants
-        const singleRow = sheet.getRow(rowIdx);
-
         const pSku = p.sku;
         const pPrice = p.d2cPrice;
         const pMrp = p.mrp;
@@ -224,70 +224,75 @@ export async function GET(req: NextRequest) {
         const pWidth = p.breadth || 10.0;
         const pHeight = p.height || 10.0;
 
-        singleRow.getCell(1).value = pSku; // SKU
-        singleRow.getCell(2).value = "LIGHT_FIXTURE"; // Product Type
-        singleRow.getCell(3).value = "Create or Replace (Full Update)"; // Listing Action
-        singleRow.getCell(4).value = null; // Parentage Level
-        singleRow.getCell(7).value = p.name; // Item Name
-        singleRow.getCell(9).value = pBrand; // Brand Name
-        singleRow.getCell(10).value = "SellerSKU"; // Product Id Type
-        singleRow.getCell(11).value = pSku; // Product Id
+        writeCell(sheet, rowIdx, 1, pSku); // SKU
+        writeCell(sheet, rowIdx, 2, "LIGHT_FIXTURE"); // Product Type
+        writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
+        writeCell(sheet, rowIdx, 4, null); // Parentage Level
+        writeCell(sheet, rowIdx, 7, p.name); // Item Name
+        writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
+        writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
+        writeCell(sheet, rowIdx, 11, pSku); // Product Id
 
         // Images
         if (pImages.length > 0) {
-          singleRow.getCell(22).value = pImages[0];
+          writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
-            singleRow.getCell(23 + idx).value = img;
+            writeCell(sheet, rowIdx, 23 + idx, img);
           });
         }
-        singleRow.getCell(32).value = pDesc; // Product Description
+        writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
         // Bullets
         pBullets.slice(0, 5).forEach((b, idx) => {
-          singleRow.getCell(33 + idx).value = b;
+          writeCell(sheet, rowIdx, 33 + idx, b);
         });
 
         if (pMaterial) {
-          singleRow.getCell(49).value = pMaterial; // Material
+          writeCell(sheet, rowIdx, 49, pMaterial); // Material
         }
 
         if (pWatt !== null) {
-          singleRow.getCell(83).value = pWatt;
-          singleRow.getCell(84).value = "Watts";
+          writeCell(sheet, rowIdx, 83, pWatt);
+          writeCell(sheet, rowIdx, 84, "Watts");
         }
         if (pVolt !== null) {
-          singleRow.getCell(85).value = pVolt;
-          singleRow.getCell(86).value = "Volts";
+          writeCell(sheet, rowIdx, 85, pVolt);
+          writeCell(sheet, rowIdx, 86, "Volts");
         }
 
         // Weight
-        singleRow.getCell(197).value = pWeight;
-        singleRow.getCell(198).value = "kg";
+        writeCell(sheet, rowIdx, 197, pWeight);
+        writeCell(sheet, rowIdx, 198, "kg");
 
         // Dimensions
-        singleRow.getCell(229).value = pHeight;
-        singleRow.getCell(230).value = "cm";
-        singleRow.getCell(231).value = pLength;
-        singleRow.getCell(232).value = "cm";
-        singleRow.getCell(233).value = pWidth;
-        singleRow.getCell(234).value = "cm";
+        writeCell(sheet, rowIdx, 229, pHeight);
+        writeCell(sheet, rowIdx, 230, "cm");
+        writeCell(sheet, rowIdx, 231, pLength);
+        writeCell(sheet, rowIdx, 232, "cm");
+        writeCell(sheet, rowIdx, 233, pWidth);
+        writeCell(sheet, rowIdx, 234, "cm");
 
-        singleRow.getCell(269).value = pStock; // Quantity (IN)
-        singleRow.getCell(273).value = pPrice; // Your Price INR
-        singleRow.getCell(274).value = pMrp; // Maximum Retail Price
-        singleRow.getCell(312).value = pOrigin; // Country of Origin
+        writeCell(sheet, rowIdx, 269, pStock); // Quantity (IN)
+        writeCell(sheet, rowIdx, 273, pPrice); // Your Price INR
+        writeCell(sheet, rowIdx, 274, pMrp); // Maximum Retail Price
+        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
 
         rowIdx++;
       }
     }
 
-    // 3. Write populated workbook into buffer
-    console.log('[Amazon Export] Stage 4: Writing workbook buffer...');
-    const fileBuffer = await workbook.xlsx.writeBuffer() as any;
+    // 4. Write populated workbook into buffer using SheetJS
+    console.log('[Amazon Export] Stage 4: Writing SheetJS workbook buffer...');
+    const fileBuffer = XLSX.write(workbook, {
+      bookType: 'xlsm',
+      type: 'buffer',
+      bookVBA: true // Important: preserves VBA macros!
+    });
+    
     const uint8Array = new Uint8Array(fileBuffer);
     console.log(`[Amazon Export] Workbook buffer generated. Size: ${uint8Array.byteLength} bytes.`);
 
-    // 4. Send back as binary attachment
+    // 5. Send back as binary attachment
     console.log('[Amazon Export] Stage 5: Sending Response...');
     return new Response(uint8Array, {
       status: 200,
