@@ -29,7 +29,8 @@ def main():
         products = json.load(f)
 
     # Load template xlsm
-    template_path = "/Users/abhishikt_mac/Skills/Coding/Growth-ho clients/JamesAndSons/LAMP_LIGHT_FIXTURE.xlsm"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    template_path = os.path.abspath(os.path.join(script_dir, "../LAMP_LIGHT_FIXTURE.xlsm"))
     if not os.path.exists(template_path):
         print(f"Error: Template file not found at {template_path}")
         sys.exit(1)

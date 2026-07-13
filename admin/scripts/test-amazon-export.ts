@@ -6,10 +6,12 @@ import path from 'path';
 const execAsync = promisify(exec);
 
 async function run() {
-  const workspaceRoot = '/Users/abhishikt_mac/Skills/Coding/Growth-ho clients/JamesAndSons';
+  const scriptDir = __dirname;
+  const adminDir = path.dirname(scriptDir);
+  const workspaceRoot = path.dirname(adminDir);
   const tempDir = path.join(workspaceRoot, 'scratch');
-  const scriptPath = path.join(workspaceRoot, 'admin/scripts/generate-amazon-excel.py');
-  const envPath = path.join(workspaceRoot, 'admin/.env.local');
+  const scriptPath = path.join(scriptDir, 'generate-amazon-excel.py');
+  const envPath = path.join(adminDir, '.env.local');
   
   const tempJsonPath = path.join(tempDir, 'test_products.json');
   const tempOutPath = path.join(tempDir, 'test_output.xlsm');

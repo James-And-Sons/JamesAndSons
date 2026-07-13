@@ -5,12 +5,13 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 
+import os from 'os';
+
 const execAsync = promisify(exec);
 
 export async function GET(req: NextRequest) {
-  const workspaceRoot = '/Users/abhishikt_mac/Skills/Coding/Growth-ho clients/JamesAndSons';
-  const tempDir = path.join(workspaceRoot, 'scratch');
-  const scriptPath = path.join(workspaceRoot, 'admin/scripts/generate-amazon-excel.py');
+  const tempDir = os.tmpdir();
+  const scriptPath = path.join(process.cwd(), 'scripts/generate-amazon-excel.py');
   
   const randId = Math.random().toString(36).substring(7);
   const tempJsonPath = path.join(tempDir, `temp_products_${randId}.json`);
@@ -23,8 +24,7 @@ export async function GET(req: NextRequest) {
       orderBy: { name: 'asc' }
     });
 
-    // Ensure temp directory exists
-    await fs.mkdir(tempDir, { recursive: true });
+
 
     // 2. Write temp JSON data
     await fs.writeFile(tempJsonPath, JSON.stringify(products, null, 2), 'utf-8');
