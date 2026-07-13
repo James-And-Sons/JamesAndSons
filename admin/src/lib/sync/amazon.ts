@@ -1,6 +1,7 @@
 import aws4 from 'aws4';
 import fs from 'fs';
 import * as pathModule from 'path';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords } from './mapping';
 
 async function getLwaAccessToken() {
   const clientId = process.env.AMAZON_LWA_CLIENT_ID;
@@ -48,6 +49,19 @@ export async function syncToAmazon(product: any) {
   }
 
   const accessToken = await getLwaAccessToken();
+
+  if (!product.category || !product.spaces) {
+    console.log(`[Amazon Sync] Fetching category and spaces from database for SKU: ${product.sku}...`);
+    const { prisma } = await import('../prisma');
+    const fullDbProduct = await prisma.product.findUnique({
+      where: { id: product.id },
+      include: { category: true, spaces: true }
+    });
+    if (fullDbProduct) {
+      product.category = fullDbProduct.category;
+      product.spaces = fullDbProduct.spaces;
+    }
+  }
 
   const extractNumber = (text: any): number | null => {
     if (text === null || text === undefined) return null;
@@ -138,7 +152,7 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'pendant-lights' // Set pendant-lights as compliant default
+          value: getBrowseNode(product.category?.name || '', name) === '1380491031' ? 'chandeliers' : 'pendant-lights'
         }
       ],
       number_of_items: [
@@ -165,7 +179,35 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'Modern'
+          value: getStyle((v ? v.style : null) || product.style).toLowerCase().replace(/\s+/g, '_')
+        }
+      ],
+      material: [
+        {
+          marketplace_id: marketplaceId,
+          language_tag: 'en_IN',
+          value: getMaterial((v ? v.material : null) || product.materialAndFinish).toLowerCase().replace(/\s+/g, '_')
+        }
+      ],
+      light_fixture_form: [
+        {
+          marketplace_id: marketplaceId,
+          language_tag: 'en_IN',
+          value: getFixtureForm(product.category?.name || '', name).toLowerCase().replace(/\s+/g, '_')
+        }
+      ],
+      light_fixture_installation_location: [
+        {
+          marketplace_id: marketplaceId,
+          language_tag: 'en_IN',
+          value: 'ceiling' // Lowercase enum
+        }
+      ],
+      generic_keyword: [
+        {
+          marketplace_id: marketplaceId,
+          language_tag: 'en_IN',
+          value: generateKeywords(product)
         }
       ],
       room_type: [

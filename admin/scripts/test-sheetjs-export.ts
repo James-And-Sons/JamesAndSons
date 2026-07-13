@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords } from '../src/lib/sync/mapping';
 
 // Load env variables manually from .env.local
 const envPath = path.join(__dirname, '..', '.env.local');
@@ -49,7 +50,11 @@ async function run() {
 
     console.log('Querying database for products...');
     const products = await prisma.product.findMany({
-      include: { variants: true },
+      include: { 
+        variants: true,
+        category: true,
+        spaces: true
+      },
       orderBy: { name: 'asc' }
     });
     console.log(`Successfully retrieved ${products.length} products.`);
@@ -95,6 +100,14 @@ async function run() {
         writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
         writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
+
+        // SEO Attributes
+        writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
+        writeCell(sheet, rowIdx, 17, getStyle(p.style)); // Style
+        writeCell(sheet, rowIdx, 19, getMaterial(p.materialAndFinish)); // Material
+        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
+        writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
 
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
@@ -155,6 +168,14 @@ async function run() {
           writeCell(sheet, rowIdx, 9, vBrand); // Brand Name
           writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
           writeCell(sheet, rowIdx, 11, vSku); // Product Id
+
+          // SEO Attributes
+          writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
+          writeCell(sheet, rowIdx, 17, getStyle(v.style || p.style)); // Style
+          writeCell(sheet, rowIdx, 19, getMaterial(v.material || p.materialAndFinish)); // Material
+          writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+          writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
+          writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
 
           if (vImages.length > 0) {
             writeCell(sheet, rowIdx, 22, vImages[0]);
@@ -219,6 +240,14 @@ async function run() {
         writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
         writeCell(sheet, rowIdx, 11, pSku); // Product Id
 
+        // SEO Attributes
+        writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
+        writeCell(sheet, rowIdx, 17, getStyle(p.style)); // Style
+        writeCell(sheet, rowIdx, 19, getMaterial(p.materialAndFinish)); // Material
+        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
+        writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
+
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
@@ -279,7 +308,6 @@ async function run() {
     console.log(`Updated sheet bounds to: ${sheet['!ref']}`);
 
     // Remove all instruction sheets, keeping ONLY 'Template' sheet
-    console.log('Trimming workbook to only contain the Template sheet...');
     workbook.SheetNames = ['Template'];
     workbook.Sheets = { 'Template': sheet };
 

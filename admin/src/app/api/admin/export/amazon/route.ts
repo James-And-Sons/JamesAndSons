@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords } from '@/lib/sync/mapping';
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -33,7 +34,11 @@ export async function GET(req: NextRequest) {
     // 1. Fetch products with their variants from DB
     console.log('[Amazon Export] Stage 1: Querying database...');
     const products = await prisma.product.findMany({
-      include: { variants: true },
+      include: { 
+        variants: true,
+        category: true,
+        spaces: true
+      },
       orderBy: { name: 'asc' }
     });
     console.log(`[Amazon Export] Successfully retrieved ${products.length} products.`);
@@ -102,6 +107,14 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
         writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
 
+        // SEO Attributes
+        writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
+        writeCell(sheet, rowIdx, 17, getStyle(p.style)); // Style
+        writeCell(sheet, rowIdx, 19, getMaterial(p.materialAndFinish)); // Material
+        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
+        writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
+
         // Images
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
@@ -166,6 +179,14 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 9, vBrand); // Brand Name
           writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
           writeCell(sheet, rowIdx, 11, vSku); // Product Id
+
+          // SEO Attributes
+          writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
+          writeCell(sheet, rowIdx, 17, getStyle(v.style || p.style)); // Style
+          writeCell(sheet, rowIdx, 19, getMaterial(v.material || p.materialAndFinish)); // Material
+          writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+          writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
+          writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
 
           // Images
           if (vImages.length > 0) {
@@ -234,6 +255,14 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
         writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
         writeCell(sheet, rowIdx, 11, pSku); // Product Id
+
+        // SEO Attributes
+        writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
+        writeCell(sheet, rowIdx, 17, getStyle(p.style)); // Style
+        writeCell(sheet, rowIdx, 19, getMaterial(p.materialAndFinish)); // Material
+        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
+        writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
 
         // Images
         if (pImages.length > 0) {
