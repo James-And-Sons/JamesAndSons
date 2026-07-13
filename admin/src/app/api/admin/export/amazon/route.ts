@@ -57,9 +57,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    console.log(`[Amazon Export] Reading workbook from: ${templatePath}`);
-    // Load with VBA macros support enabled
-    const workbook = XLSX.readFile(templatePath, { bookVBA: true });
+    console.log(`[Amazon Export] Reading workbook file into buffer from: ${templatePath}`);
+    const fileBytes = fs.readFileSync(templatePath);
+    console.log(`[Amazon Export] File read successfully. Size: ${fileBytes.length} bytes. Parsing in SheetJS...`);
+
+    const workbook = XLSX.read(fileBytes, { type: 'buffer', bookVBA: true });
     console.log('[Amazon Export] Workbook parsed successfully by SheetJS.');
     
     const sheet = workbook.Sheets['Template'];
