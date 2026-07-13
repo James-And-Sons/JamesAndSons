@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     });
 
     // 2. Load template xlsm (using exceljs)
-    const templatePath = path.join(process.cwd(), 'LAMP_LIGHT_FIXTURE.xlsm');
+    const templatePath = path.join(process.cwd(), 'public', 'LAMP_LIGHT_FIXTURE.xlsm');
     
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
