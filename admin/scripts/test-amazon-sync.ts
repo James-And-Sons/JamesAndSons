@@ -27,17 +27,20 @@ async function testAmazonSync() {
   try {
     const { syncToAmazon } = await import('../src/lib/sync/amazon');
 
-    // Create a mock product payload
-    const mockProduct = {
-      sku: 'J405',
-      name: 'Saucer Flare Pendant Light',
-      d2cPrice: 5999,
-      stockQuantity: 15,
-      variants: []
-    };
+    const { prisma } = await import('../src/lib/prisma');
 
-    console.log('Triggering syncToAmazon for mock product SKU: J405...');
-    const result = await syncToAmazon(mockProduct);
+    console.log('Fetching first product with variants from database...');
+    const product = await prisma.product.findFirst({
+      include: { variants: true }
+    });
+
+    if (!product) {
+      console.error('No products found in the database to sync!');
+      return;
+    }
+
+    console.log(`Triggering syncToAmazon for real product: ${product.name} (SKU: ${product.sku})...`);
+    const result = await syncToAmazon(product);
     console.log('Sync Result:', JSON.stringify(result, null, 2));
 
   } catch (err) {
