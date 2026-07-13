@@ -51,10 +51,13 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    console.log(`[Amazon Export] Reading workbook from: ${templatePath}`);
+    console.log(`[Amazon Export] Reading workbook file into buffer from: ${templatePath}`);
+    const fileBytes = fs.readFileSync(templatePath);
+    console.log(`[Amazon Export] File read successfully. Size: ${fileBytes.length} bytes. Loading into ExcelJS...`);
+
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(templatePath);
-    console.log('[Amazon Export] Workbook parsed successfully.');
+    await workbook.xlsx.load(fileBytes as any);
+    console.log('[Amazon Export] Workbook loaded and parsed successfully in ExcelJS.');
     
     const sheet = workbook.getWorksheet('Template');
     if (!sheet) {
