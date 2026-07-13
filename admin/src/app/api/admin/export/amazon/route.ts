@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import ExcelJS from 'exceljs';
+import fs from 'fs';
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -14,18 +15,46 @@ function extractNumber(text: any): number | null {
 }
 
 export async function GET(req: NextRequest) {
+  console.log('[Amazon Export] GET request initiated');
   try {
     // 1. Fetch products with their variants from DB
+    console.log('[Amazon Export] Stage 1: Querying database...');
     const products = await prisma.product.findMany({
       include: { variants: true },
       orderBy: { name: 'asc' }
     });
+    console.log(`[Amazon Export] Successfully retrieved ${products.length} products.`);
 
-    // 2. Load template xlsm (using exceljs)
-    const templatePath = path.join(process.cwd(), 'public', 'LAMP_LIGHT_FIXTURE.xlsm');
+    // 2. Resolve and Load template xlsm (using exceljs)
+    console.log('[Amazon Export] Stage 2: Locating template file...');
+    let templatePath = path.join(process.cwd(), 'public', 'LAMP_LIGHT_FIXTURE.xlsm');
     
+    if (!fs.existsSync(templatePath)) {
+      console.warn(`[Amazon Export] Template not found in public folder: ${templatePath}`);
+      // Fallback: Check root folder
+      const rootPath = path.join(process.cwd(), 'LAMP_LIGHT_FIXTURE.xlsm');
+      console.log(`[Amazon Export] Checking root folder fallback path: ${rootPath}`);
+      if (fs.existsSync(rootPath)) {
+        templatePath = rootPath;
+        console.log(`[Amazon Export] Resolved template to root folder fallback path!`);
+      } else {
+        // Fallback: Check scripts folder relative path
+        const parentPath = path.resolve(process.cwd(), '..', 'LAMP_LIGHT_FIXTURE.xlsm');
+        console.log(`[Amazon Export] Checking monorepo parent folder fallback path: ${parentPath}`);
+        if (fs.existsSync(parentPath)) {
+          templatePath = parentPath;
+          console.log(`[Amazon Export] Resolved template to monorepo parent folder fallback path!`);
+        } else {
+          console.error(`[Amazon Export] CRITICAL: Template file not found in any expected location!`);
+          throw new Error('Template file LAMP_LIGHT_FIXTURE.xlsm not found on server.');
+        }
+      }
+    }
+
+    console.log(`[Amazon Export] Reading workbook from: ${templatePath}`);
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
+    console.log('[Amazon Export] Workbook parsed successfully.');
     
     const sheet = workbook.getWorksheet('Template');
     if (!sheet) {
@@ -33,6 +62,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Clear any old data starting from Row 8
+    console.log('[Amazon Export] Stage 3: Cleaving sheet Rows...');
     const lastRow = sheet.rowCount;
     if (lastRow >= 8) {
       sheet.spliceRows(8, lastRow - 7);
@@ -249,20 +279,30 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Write populated workbook into buffer
-    const fileBuffer = await workbook.xlsx.writeBuffer();
+    console.log('[Amazon Export] Stage 4: Writing workbook buffer...');
+    const fileBuffer = await workbook.xlsx.writeBuffer() as any;
+    const uint8Array = new Uint8Array(fileBuffer);
+    console.log(`[Amazon Export] Workbook buffer generated. Size: ${uint8Array.byteLength} bytes.`);
 
     // 4. Send back as binary attachment
-    return new NextResponse(fileBuffer as any, {
+    console.log('[Amazon Export] Stage 5: Sending Response...');
+    return new Response(uint8Array, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.ms-excel.sheet.macroEnabled.12',
         'Content-Disposition': 'attachment; filename="amazon_listing_feed.xlsm"',
-        'Content-Length': fileBuffer.byteLength.toString()
+        'Content-Length': uint8Array.byteLength.toString()
       }
     });
 
   } catch (error: any) {
-    console.error('Amazon Excel export failed:', error);
-    return NextResponse.json({ error: error.message || 'Export failed' }, { status: 500 });
+    console.error('[Amazon Export] CRITICAL FAILURE:', error);
+    if (error && error.stack) {
+      console.error('[Amazon Export] Stack trace:', error.stack);
+    }
+    return NextResponse.json({ 
+      error: error.message || 'Export failed',
+      stack: error.stack || 'No stack trace available'
+    }, { status: 500 });
   }
 }
