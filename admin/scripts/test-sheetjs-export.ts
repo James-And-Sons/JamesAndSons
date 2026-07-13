@@ -1,8 +1,24 @@
-import { prisma } from '@/lib/prisma';
-import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import * as XLSX from 'xlsx';
+
+// Load env variables manually from .env.local
+const envPath = path.join(__dirname, '..', '.env.local');
+if (fs.existsSync(envPath)) {
+  console.log('Loading .env.local...');
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const match = line.match(/^\s*([^#=]+)\s*=\s*(.*)\s*$/);
+    if (match) {
+      const key = match[1].trim();
+      let value = match[2].trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value;
+    }
+  }
+}
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -27,50 +43,30 @@ function writeCell(sheet: any, row: number, col: number, value: any) {
   sheet[cellRef] = { t: type, v: value };
 }
 
-export async function GET(req: NextRequest) {
-  console.log('[Amazon Export] GET request initiated (using SheetJS)');
+async function run() {
   try {
-    // 1. Fetch products with their variants from DB
-    console.log('[Amazon Export] Stage 1: Querying database...');
+    const { prisma } = await import('../src/lib/prisma');
+
+    console.log('Querying database for products...');
     const products = await prisma.product.findMany({
       include: { variants: true },
       orderBy: { name: 'asc' }
     });
-    console.log(`[Amazon Export] Successfully retrieved ${products.length} products.`);
+    console.log(`Successfully retrieved ${products.length} products.`);
 
-    // 2. Resolve and Load template xlsm
-    console.log('[Amazon Export] Stage 2: Locating template file...');
-    let templatePath = path.join(process.cwd(), 'public', 'LAMP_LIGHT_FIXTURE.xlsm');
+    const templatePath = path.join(__dirname, '..', 'public', 'LAMP_LIGHT_FIXTURE.xlsm');
+    console.log(`Reading template workbook from: ${templatePath}`);
     
-    if (!fs.existsSync(templatePath)) {
-      console.warn(`[Amazon Export] Template not found in public folder: ${templatePath}`);
-      const rootPath = path.join(process.cwd(), 'LAMP_LIGHT_FIXTURE.xlsm');
-      if (fs.existsSync(rootPath)) {
-        templatePath = rootPath;
-      } else {
-        const parentPath = path.resolve(process.cwd(), '..', 'LAMP_LIGHT_FIXTURE.xlsm');
-        if (fs.existsSync(parentPath)) {
-          templatePath = parentPath;
-        } else {
-          throw new Error('Template file LAMP_LIGHT_FIXTURE.xlsm not found on server.');
-        }
-      }
-    }
-
-    console.log(`[Amazon Export] Reading workbook file into buffer from: ${templatePath}`);
     const fileBytes = fs.readFileSync(templatePath);
-    console.log(`[Amazon Export] File read successfully. Size: ${fileBytes.length} bytes. Parsing in SheetJS...`);
-
     const workbook = XLSX.read(fileBytes, { type: 'buffer', bookVBA: true });
-    console.log('[Amazon Export] Workbook parsed successfully by SheetJS.');
+    console.log('Workbook parsed successfully by SheetJS.');
     
     const sheet = workbook.Sheets['Template'];
     if (!sheet) {
       throw new Error("Worksheet 'Template' not found in the workbook");
     }
 
-    // 3. Clear old data starting from Row 8
-    console.log('[Amazon Export] Stage 3: Clearing old data from Template sheet...');
+    console.log('Clearing old data from Template sheet...');
     for (const key of Object.keys(sheet)) {
       if (key.startsWith('!')) continue;
       const cell = XLSX.utils.decode_cell(key);
@@ -84,7 +80,6 @@ export async function GET(req: NextRequest) {
     for (const p of products) {
       const variants = p.variants || [];
       const hasVariants = variants.length > 0;
-
       const pBrand = p.brand || "James and Sons";
       const pDesc = p.description || p.name;
       const pMaterial = p.material || (p.materialAndFinish && p.materialAndFinish.length > 0 ? p.materialAndFinish[0] : null);
@@ -92,7 +87,6 @@ export async function GET(req: NextRequest) {
       const pBullets = p.bulletPoints || [];
       const pImages = p.images || [];
 
-      // Write Parent row if variants exist
       if (hasVariants) {
         writeCell(sheet, rowIdx, 1, p.sku); // SKU
         writeCell(sheet, rowIdx, 2, "LIGHT_FIXTURE"); // Product Type
@@ -102,7 +96,6 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
         writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
 
-        // Images
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
@@ -111,7 +104,6 @@ export async function GET(req: NextRequest) {
         }
         writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-        // Bullets
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
@@ -120,14 +112,12 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 49, pMaterial); // Material
         }
 
-        // Wattage
         const pWatt = extractNumber(p.power);
         if (pWatt !== null) {
           writeCell(sheet, rowIdx, 83, pWatt);
           writeCell(sheet, rowIdx, 84, "Watts");
         }
 
-        // Voltage
         const pVolt = extractNumber(p.voltage);
         if (pVolt !== null) {
           writeCell(sheet, rowIdx, 85, pVolt);
@@ -138,7 +128,6 @@ export async function GET(req: NextRequest) {
 
         rowIdx++;
 
-        // Write Children rows
         for (const v of variants) {
           const vSku = v.sku;
           const vPrice = v.d2cPrice || p.d2cPrice;
@@ -167,7 +156,6 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
           writeCell(sheet, rowIdx, 11, vSku); // Product Id
 
-          // Images
           if (vImages.length > 0) {
             writeCell(sheet, rowIdx, 22, vImages[0]);
             vImages.slice(1, 9).forEach((img, idx) => {
@@ -176,7 +164,6 @@ export async function GET(req: NextRequest) {
           }
           writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-          // Bullets
           vBullets.slice(0, 5).forEach((b, idx) => {
             writeCell(sheet, rowIdx, 33 + idx, b);
           });
@@ -194,11 +181,9 @@ export async function GET(req: NextRequest) {
             writeCell(sheet, rowIdx, 86, "Volts");
           }
 
-          // Weight
           writeCell(sheet, rowIdx, 197, vWeight);
           writeCell(sheet, rowIdx, 198, "kg");
 
-          // Dimensions
           writeCell(sheet, rowIdx, 229, vHeight);
           writeCell(sheet, rowIdx, 230, "cm");
           writeCell(sheet, rowIdx, 231, vLength);
@@ -214,7 +199,6 @@ export async function GET(req: NextRequest) {
           rowIdx++;
         }
       } else {
-        // Single product with no variants
         const pSku = p.sku;
         const pPrice = p.d2cPrice;
         const pMrp = p.mrp;
@@ -235,7 +219,6 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
         writeCell(sheet, rowIdx, 11, pSku); // Product Id
 
-        // Images
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
@@ -244,7 +227,6 @@ export async function GET(req: NextRequest) {
         }
         writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-        // Bullets
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
@@ -262,11 +244,9 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        // Weight
         writeCell(sheet, rowIdx, 197, pWeight);
         writeCell(sheet, rowIdx, 198, "kg");
 
-        // Dimensions
         writeCell(sheet, rowIdx, 229, pHeight);
         writeCell(sheet, rowIdx, 230, "cm");
         writeCell(sheet, rowIdx, 231, pLength);
@@ -284,7 +264,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Update sheet dimensions (!ref) to include our new rows
-    console.log('[Amazon Export] Stage 4: Updating sheet range bounds...');
     let maxRow = 8;
     let maxCol = 1;
     for (const key of Object.keys(sheet)) {
@@ -297,43 +276,28 @@ export async function GET(req: NextRequest) {
       s: { r: 0, c: 0 },
       e: { r: maxRow - 1, c: Math.max(maxCol - 1, 418) }
     });
-    console.log(`[Amazon Export] Bounds updated to: ${sheet['!ref']}`);
+    console.log(`Updated sheet bounds to: ${sheet['!ref']}`);
 
     // Remove all instruction sheets, keeping ONLY 'Template' sheet
-    console.log('[Amazon Export] Trimming workbook sheets to only include the Template sheet...');
+    console.log('Trimming workbook to only contain the Template sheet...');
     workbook.SheetNames = ['Template'];
     workbook.Sheets = { 'Template': sheet };
 
-    // 4. Write populated workbook into buffer using SheetJS
-    console.log('[Amazon Export] Writing SheetJS workbook buffer...');
+    const outPath = path.join(__dirname, '..', '..', 'amazon_listing_feed.xlsm');
+    console.log(`Writing test output to: ${outPath}`);
+    
     const fileBuffer = XLSX.write(workbook, {
       bookType: 'xlsm',
       type: 'buffer',
-      bookVBA: true // Important: preserves VBA macros!
+      bookVBA: true
     });
+    fs.writeFileSync(outPath, fileBuffer);
+    console.log('Successfully generated populated test Excel file!');
     
-    const uint8Array = new Uint8Array(fileBuffer);
-    console.log(`[Amazon Export] Workbook buffer generated. Size: ${uint8Array.byteLength} bytes.`);
-
-    // 5. Send back as binary attachment
-    console.log('[Amazon Export] Stage 5: Sending Response...');
-    return new Response(uint8Array, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/vnd.ms-excel.sheet.macroEnabled.12',
-        'Content-Disposition': 'attachment; filename="amazon_listing_feed.xlsm"',
-        'Content-Length': uint8Array.byteLength.toString()
-      }
-    });
-
-  } catch (error: any) {
-    console.error('[Amazon Export] CRITICAL FAILURE:', error);
-    if (error && error.stack) {
-      console.error('[Amazon Export] Stack trace:', error.stack);
-    }
-    return NextResponse.json({ 
-      error: error.message || 'Export failed',
-      stack: error.stack || 'No stack trace available'
-    }, { status: 500 });
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('Local export failed:', error);
   }
 }
+
+run();
