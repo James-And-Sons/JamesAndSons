@@ -177,6 +177,16 @@ model Product {
   brand                 String?          @default("James and Sons")
   warranty              String?
   bulletPoints          String[]
+ 
+  // Amazon SEO Overrides
+  amazonFixtureForm        String?
+  amazonMountingType       String?
+  amazonLightingMethod     String?
+  amazonWaterResistance    String?
+  amazonTheme              String?
+  amazonSpecialFeatures    String[]
+  amazonIncludedComponents String?
+  amazonKeywords           String?
 
   spaces           Space[]
   variants         ProductVariant[]

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
-import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords } from '../src/lib/sync/mapping';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName } from '../src/lib/sync/mapping';
 
 // Load env variables manually from .env.local
 const envPath = path.join(__dirname, '..', '.env.local');
@@ -42,6 +42,103 @@ function writeCell(sheet: any, row: number, col: number, value: any) {
   else if (typeof value === 'boolean') type = 'b';
   
   sheet[cellRef] = { t: type, v: value };
+}
+
+function writeRowAttributes(
+  sheet: any,
+  rowIdx: number,
+  p: any,             // parent product
+  sku: string,
+  name: string,
+  brand: string,
+  price: number,
+  mrp: number,
+  color: string,
+  size: string,
+  spaces: any[],
+  v: any = null       // variant if exists
+) {
+  // Brand Name (Col 9)
+  writeCell(sheet, rowIdx, 9, "James & Sons");
+  
+  // Model Number (Col 17)
+  writeCell(sheet, rowIdx, 17, sku);
+  
+  // Model Name (Col 18)
+  writeCell(sheet, rowIdx, 18, name);
+  
+  // Manufacturer (Col 19)
+  writeCell(sheet, rowIdx, 19, "James & Sons");
+
+  // Style (Col 48)
+  writeCell(sheet, rowIdx, 48, getStyle(v ? { ...p, style: v.style || p.style } : p));
+  
+  // Material (Col 49)
+  writeCell(sheet, rowIdx, 49, getMaterial(v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p));
+
+  // Number of Items (Col 54)
+  writeCell(sheet, rowIdx, 54, 1);
+  
+  // Item Type Name (Col 55)
+  writeCell(sheet, rowIdx, 55, getItemTypeName(p));
+
+  // Water Resistance Level (Col 56)
+  writeCell(sheet, rowIdx, 56, getWaterResistanceLevel(p));
+
+  // Color (Col 57)
+  writeCell(sheet, rowIdx, 57, color);
+
+  // Size (Col 58)
+  writeCell(sheet, rowIdx, 58, size);
+
+  // Number of Pieces (Col 59)
+  writeCell(sheet, rowIdx, 59, 1);
+
+  // Theme (Col 63)
+  writeCell(sheet, rowIdx, 63, p.amazonTheme || getStyle(p));
+
+  // Manufacturer Contact Information (Col 68)
+  writeCell(sheet, rowIdx, 68, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
+
+  // Lighting Method (Col 79)
+  writeCell(sheet, rowIdx, 79, getLightingMethod(p));
+
+  // Mounting Type (Col 93)
+  writeCell(sheet, rowIdx, 93, getMountingType(p));
+
+  // Finish Type (Col 94)
+  writeCell(sheet, rowIdx, 94, getFinishType(v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p));
+
+  // Included Components (Col 100)
+  writeCell(sheet, rowIdx, 100, p.amazonIncludedComponents || "1 Pendant Light, Hanging Accessories, Wire");
+
+  // Specific Uses for Product (Col 105)
+  writeCell(sheet, rowIdx, 105, "Ambient Lighting");
+
+  // Bulb Base (Col 127)
+  writeCell(sheet, rowIdx, 127, "E12");
+
+  // Room Type (Col 151-155)
+  const roomNames = (spaces || []).map((s: any) => s.name);
+  if (roomNames.length === 0) {
+    roomNames.push("Living Room", "Dining Room");
+  }
+  roomNames.slice(0, 5).forEach((rn, idx) => {
+    writeCell(sheet, rowIdx, 151 + idx, rn);
+  });
+
+  // Light Fixture Installation Location (Col 241)
+  writeCell(sheet, rowIdx, 241, getInstallationLocation(p));
+
+  // B2B Pricing
+  writeCell(sheet, rowIdx, 283, price); // Your Price INR (B2B)
+  writeCell(sheet, rowIdx, 284, mrp); // Maximum Retail Price (B2B)
+  writeCell(sheet, rowIdx, 289, "Percent"); // Quantity Price Type (B2B)
+  writeCell(sheet, rowIdx, 290, 5); // Quantity Threshold 1
+  writeCell(sheet, rowIdx, 291, 5); // Quantity Price 1 (Percent Discount)
+
+  // Manufacturer's Email or Electronic Address (Col 396)
+  writeCell(sheet, rowIdx, 396, "sales@jamesandsons.com");
 }
 
 async function run() {
@@ -99,15 +196,27 @@ async function run() {
         writeCell(sheet, rowIdx, 4, "Parent"); // Parentage Level
         writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
-        writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
 
-        // SEO Attributes
-        writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
-        writeCell(sheet, rowIdx, 17, getStyle(p.style)); // Style
-        writeCell(sheet, rowIdx, 19, getMaterial(p.materialAndFinish)); // Material
+        // Standardized and expanded attributes
+        writeRowAttributes(
+          sheet,
+          rowIdx,
+          p,
+          p.sku,
+          p.name,
+          pBrand,
+          p.d2cPrice,
+          p.mrp,
+          p.color || "Standard",
+          p.size || "Standard",
+          p.spaces || [],
+          null
+        );
+
+        // Browse Node & Keywords
+        writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
         writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
-        writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
-        writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
+        writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
@@ -120,10 +229,6 @@ async function run() {
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
-
-        if (pMaterial) {
-          writeCell(sheet, rowIdx, 49, pMaterial); // Material
-        }
 
         const pWatt = extractNumber(p.power);
         if (pWatt !== null) {
@@ -165,17 +270,29 @@ async function run() {
           writeCell(sheet, rowIdx, 5, p.sku); // Parent SKU
           writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
           writeCell(sheet, rowIdx, 7, `${p.name} - ${v.name}`); // Item Name
-          writeCell(sheet, rowIdx, 9, vBrand); // Brand Name
           writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
           writeCell(sheet, rowIdx, 11, vSku); // Product Id
 
-          // SEO Attributes
-          writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
-          writeCell(sheet, rowIdx, 17, getStyle(v.style || p.style)); // Style
-          writeCell(sheet, rowIdx, 19, getMaterial(v.material || p.materialAndFinish)); // Material
+          // Standardized and expanded attributes
+          writeRowAttributes(
+            sheet,
+            rowIdx,
+            p,
+            vSku,
+            `${p.name} - ${v.name}`,
+            vBrand,
+            vPrice,
+            vMrp,
+            v.color || "Standard",
+            v.size || "Standard",
+            p.spaces || [],
+            v
+          );
+
+          // Browse Node & Keywords
+          writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
           writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
-          writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
-          writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
+          writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
           if (vImages.length > 0) {
             writeCell(sheet, rowIdx, 22, vImages[0]);
@@ -189,10 +306,6 @@ async function run() {
             writeCell(sheet, rowIdx, 33 + idx, b);
           });
 
-          if (vMaterial) {
-            writeCell(sheet, rowIdx, 49, vMaterial); // Material
-          }
-
           if (vWatt !== null) {
             writeCell(sheet, rowIdx, 83, vWatt);
             writeCell(sheet, rowIdx, 84, "Watts");
@@ -202,20 +315,41 @@ async function run() {
             writeCell(sheet, rowIdx, 86, "Volts");
           }
 
-          writeCell(sheet, rowIdx, 197, vWeight);
+          // Actual Product Weight & Dimensions
+          const actHeight = v.actualHeight || p.actualHeight;
+          const actLength = v.actualWidth || p.actualWidth;
+          const actWidth = v.actualDepth || p.actualDepth;
+
+          writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
           writeCell(sheet, rowIdx, 198, "kg");
 
-          writeCell(sheet, rowIdx, 229, vHeight);
-          writeCell(sheet, rowIdx, 230, "cm");
-          writeCell(sheet, rowIdx, 231, vLength);
-          writeCell(sheet, rowIdx, 232, "cm");
-          writeCell(sheet, rowIdx, 233, vWidth);
-          writeCell(sheet, rowIdx, 234, "cm");
+          if (actHeight) {
+            writeCell(sheet, rowIdx, 229, actHeight);
+            writeCell(sheet, rowIdx, 230, "cm");
+          }
+          if (actLength) {
+            writeCell(sheet, rowIdx, 231, actLength);
+            writeCell(sheet, rowIdx, 232, "cm");
+          }
+          if (actWidth) {
+            writeCell(sheet, rowIdx, 233, actWidth);
+            writeCell(sheet, rowIdx, 234, "cm");
+          }
+
+          // Package Dimensions & Weight
+          writeCell(sheet, rowIdx, 301, vLength); // Item Package Length
+          writeCell(sheet, rowIdx, 302, "Centimetres");
+          writeCell(sheet, rowIdx, 303, vWidth); // Item Package Width
+          writeCell(sheet, rowIdx, 304, "Centimetres");
+          writeCell(sheet, rowIdx, 305, vHeight); // Item Package Height
+          writeCell(sheet, rowIdx, 306, "Centimetres");
+          writeCell(sheet, rowIdx, 307, vWeight); // Package Weight
+          writeCell(sheet, rowIdx, 308, "Kilograms");
 
           writeCell(sheet, rowIdx, 269, vStock); // Quantity (IN)
           writeCell(sheet, rowIdx, 273, vPrice); // Your Price INR
           writeCell(sheet, rowIdx, 274, vMrp); // Maximum Retail Price
-          writeCell(sheet, rowIdx, 312, vOrigin); // Country of Origin
+          writeCell(sheet, rowIdx, 312, vOrigin); // Country of Origin // Country of Origin
 
           rowIdx++;
         }
@@ -236,17 +370,29 @@ async function run() {
         writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
         writeCell(sheet, rowIdx, 4, null); // Parentage Level
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
-        writeCell(sheet, rowIdx, 9, pBrand); // Brand Name
         writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
         writeCell(sheet, rowIdx, 11, pSku); // Product Id
 
-        // SEO Attributes
-        writeCell(sheet, rowIdx, 12, getBrowseNode(p.category.name, p.name)); // Recommended Browse Node
-        writeCell(sheet, rowIdx, 17, getStyle(p.style)); // Style
-        writeCell(sheet, rowIdx, 19, getMaterial(p.materialAndFinish)); // Material
+        // Standardized and expanded attributes
+        writeRowAttributes(
+          sheet,
+          rowIdx,
+          p,
+          pSku,
+          p.name,
+          pBrand,
+          pPrice,
+          pMrp,
+          p.color || "Standard",
+          p.size || "Standard",
+          p.spaces || [],
+          null
+        );
+
+        // Browse Node & Keywords
+        writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
         writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
-        writeCell(sheet, rowIdx, 90, getFixtureForm(p.category.name, p.name)); // Light Fixture Form
-        writeCell(sheet, rowIdx, 93, "Ceiling"); // Light Fixture Installation Location
+        writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
@@ -260,10 +406,6 @@ async function run() {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
 
-        if (pMaterial) {
-          writeCell(sheet, rowIdx, 49, pMaterial); // Material
-        }
-
         if (pWatt !== null) {
           writeCell(sheet, rowIdx, 83, pWatt);
           writeCell(sheet, rowIdx, 84, "Watts");
@@ -273,20 +415,37 @@ async function run() {
           writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        writeCell(sheet, rowIdx, 197, pWeight);
+        // Actual Product Weight & Dimensions
+        writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
         writeCell(sheet, rowIdx, 198, "kg");
 
-        writeCell(sheet, rowIdx, 229, pHeight);
-        writeCell(sheet, rowIdx, 230, "cm");
-        writeCell(sheet, rowIdx, 231, pLength);
-        writeCell(sheet, rowIdx, 232, "cm");
-        writeCell(sheet, rowIdx, 233, pWidth);
-        writeCell(sheet, rowIdx, 234, "cm");
+        if (p.actualHeight) {
+          writeCell(sheet, rowIdx, 229, p.actualHeight);
+          writeCell(sheet, rowIdx, 230, "cm");
+        }
+        if (p.actualWidth) {
+          writeCell(sheet, rowIdx, 231, p.actualWidth);
+          writeCell(sheet, rowIdx, 232, "cm");
+        }
+        if (p.actualDepth) {
+          writeCell(sheet, rowIdx, 233, p.actualDepth);
+          writeCell(sheet, rowIdx, 234, "cm");
+        }
+
+        // Package Dimensions & Weight
+        writeCell(sheet, rowIdx, 301, pLength); // Item Package Length
+        writeCell(sheet, rowIdx, 302, "Centimetres");
+        writeCell(sheet, rowIdx, 303, pWidth); // Item Package Width
+        writeCell(sheet, rowIdx, 304, "Centimetres");
+        writeCell(sheet, rowIdx, 305, pHeight); // Item Package Height
+        writeCell(sheet, rowIdx, 306, "Centimetres");
+        writeCell(sheet, rowIdx, 307, pWeight); // Package Weight
+        writeCell(sheet, rowIdx, 308, "Kilograms");
 
         writeCell(sheet, rowIdx, 269, pStock); // Quantity (IN)
         writeCell(sheet, rowIdx, 273, pPrice); // Your Price INR
         writeCell(sheet, rowIdx, 274, pMrp); // Maximum Retail Price
-        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
+        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin // Country of Origin
 
         rowIdx++;
       }

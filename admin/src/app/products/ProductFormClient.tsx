@@ -105,6 +105,15 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     brand: defaultValues?.brand || 'James and Sons',
     warranty: defaultValues?.warranty || '',
     bulletPoints: defaultValues?.bulletPoints?.join('\n') || '',
+    // Amazon overrides
+    amazonFixtureForm: defaultValues?.amazonFixtureForm || '',
+    amazonMountingType: defaultValues?.amazonMountingType || '',
+    amazonLightingMethod: defaultValues?.amazonLightingMethod || '',
+    amazonWaterResistance: defaultValues?.amazonWaterResistance || '',
+    amazonTheme: defaultValues?.amazonTheme || '',
+    amazonSpecialFeatures: defaultValues?.amazonSpecialFeatures || [] as string[],
+    amazonIncludedComponents: defaultValues?.amazonIncludedComponents || '',
+    amazonKeywords: defaultValues?.amazonKeywords || '',
   });
 
   // Spaces (Product spaces)
@@ -286,6 +295,14 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       bulletPoints: parentValues.bulletPoints ? parentValues.bulletPoints.split('\n').map((s: string) => s.trim()).filter(Boolean) : [],
       images: images.filter((img: string) => img.trim()),
       dimensionUnit,
+      amazonFixtureForm: parentValues.amazonFixtureForm || null,
+      amazonMountingType: parentValues.amazonMountingType || null,
+      amazonLightingMethod: parentValues.amazonLightingMethod || null,
+      amazonWaterResistance: parentValues.amazonWaterResistance || null,
+      amazonTheme: parentValues.amazonTheme || null,
+      amazonSpecialFeatures: parentValues.amazonSpecialFeatures || [],
+      amazonIncludedComponents: parentValues.amazonIncludedComponents || null,
+      amazonKeywords: parentValues.amazonKeywords || null,
       variants: variants.map(v => ({
         name: v.name,
         sku: v.sku,
@@ -872,6 +889,132 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 </div>
               ))}
               {specs.length === 0 && <p className="text-muted font-mono text-[11px]">No specs yet — click "Add Spec" to add filterable attributes.</p>}
+            </div>
+          </div>
+
+          {/* === AMAZON & MARKETPLACE SEO === */}
+          <div className="pt-6 border-t border-border">
+            <h3 className={sectionTitle}>Amazon & Marketplace SEO</h3>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className={labelCls}>Light Fixture Form</label>
+                <select
+                  value={parentValues.amazonFixtureForm}
+                  onChange={e => handleParentFieldChange('amazonFixtureForm', e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Auto-detected (Dynamic)</option>
+                  <option value="Chandelier">Chandelier</option>
+                  <option value="Pendant">Pendant</option>
+                  <option value="Ceiling">Ceiling</option>
+                  <option value="Sconce">Sconce</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Mounting Type</label>
+                <select
+                  value={parentValues.amazonMountingType}
+                  onChange={e => handleParentFieldChange('amazonMountingType', e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Auto-detected (Dynamic)</option>
+                  <option value="Ceiling Mount">Ceiling Mount</option>
+                  <option value="Wall Mount">Wall Mount</option>
+                  <option value="Post Mount">Post Mount</option>
+                  <option value="Floor Mount">Floor Mount</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Lighting Method</label>
+                <select
+                  value={parentValues.amazonLightingMethod}
+                  onChange={e => handleParentFieldChange('amazonLightingMethod', e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Auto-detected (Dynamic)</option>
+                  <option value="Downlight">Downlight</option>
+                  <option value="Uplight">Uplight</option>
+                  <option value="Adjustable">Adjustable</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Water Resistance Level</label>
+                <select
+                  value={parentValues.amazonWaterResistance}
+                  onChange={e => handleParentFieldChange('amazonWaterResistance', e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Auto-detected (Dynamic)</option>
+                  <option value="Not Water Resistant">Not Water Resistant</option>
+                  <option value="Moisture Resistant">Moisture Resistant</option>
+                  <option value="Waterproof">Waterproof</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Design Theme</label>
+                <select
+                  value={parentValues.amazonTheme}
+                  onChange={e => handleParentFieldChange('amazonTheme', e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Auto-detected (Dynamic)</option>
+                  <option value="Modern">Modern</option>
+                  <option value="Vintage">Vintage</option>
+                  <option value="Retro">Retro</option>
+                  <option value="Art Deco">Art Deco</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelCls}>Included Components Override</label>
+                <input
+                  type="text"
+                  value={parentValues.amazonIncludedComponents}
+                  onChange={e => handleParentFieldChange('amazonIncludedComponents', e.target.value)}
+                  className={inputCls}
+                  placeholder="e.g. 1 Pendant Light, Hanging Wire, Canopy"
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className={labelCls}>Special Features</label>
+                <div className="grid grid-cols-3 gap-3 mt-2 border border-border p-4 bg-black/10">
+                  {["Adjustable Height", "Dimmable", "Energy Efficient", "Color Changing", "Rust Resistant"].map(feature => {
+                    const isChecked = parentValues.amazonSpecialFeatures?.includes(feature);
+                    return (
+                      <label key={feature} className="flex items-center gap-2 text-[13px] font-body text-primary cursor-pointer hover:text-accent transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={e => {
+                            const newFeatures = e.target.checked
+                              ? [...(parentValues.amazonSpecialFeatures || []), feature]
+                              : (parentValues.amazonSpecialFeatures || []).filter((f: string) => f !== feature);
+                            handleParentFieldChange('amazonSpecialFeatures', newFeatures);
+                          }}
+                          className="w-4 h-4 rounded border-border bg-background text-accent focus:ring-accent accent-accent"
+                        />
+                        {feature}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <label className={labelCls}>Generic Search Keywords Override (Space-separated)</label>
+                <textarea
+                  value={parentValues.amazonKeywords}
+                  onChange={e => handleParentFieldChange('amazonKeywords', e.target.value)}
+                  rows={2}
+                  className={inputCls}
+                  placeholder="Leave empty for auto-generated SEO keywords. Enter space-separated keywords under 250 characters."
+                />
+              </div>
             </div>
           </div>
 

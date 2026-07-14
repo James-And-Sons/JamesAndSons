@@ -1,20 +1,31 @@
-import * as XLSX from 'xlsx';
+export function getBrowseNode(product: any): string {
+  if (product?.amazonFixtureForm) {
+    const form = product.amazonFixtureForm.toLowerCase();
+    if (form === 'chandelier') return '1380491031';
+    if (form === 'pendant') return '1380493031';
+    if (form === 'ceiling') return '1380488031';
+  }
 
-export function getBrowseNode(categoryName: string, title: string): string {
-  const cat = (categoryName || '').toLowerCase();
-  const t = (title || '').toLowerCase();
+  // Fallback to dynamic classification
+  const cat = (product?.category?.name || '').toLowerCase();
+  const t = (product?.name || '').toLowerCase();
   if (cat.includes('chandelier') || t.includes('chandelier')) {
-    return '1380491031'; // Home & Kitchen > Indoor Lighting > Ceiling Lighting > Chandeliers
+    return '1380491031';
   }
   if (cat.includes('pendant') || cat.includes('hanging') || t.includes('pendant') || t.includes('hanging')) {
-    return '1380493031'; // Home & Kitchen > Indoor Lighting > Ceiling Lighting > Pendant Lights
+    return '1380493031';
   }
-  return '1380488031'; // Home & Kitchen > Indoor Lighting > Fixtures
+  return '1380488031';
 }
 
-export function getFixtureForm(categoryName: string, title: string): string {
-  const cat = (categoryName || '').toLowerCase();
-  const t = (title || '').toLowerCase();
+export function getFixtureForm(product: any): string {
+  if (product?.amazonFixtureForm) {
+    return product.amazonFixtureForm;
+  }
+
+  // Fallback to dynamic classification
+  const cat = (product?.category?.name || '').toLowerCase();
+  const t = (product?.name || '').toLowerCase();
   if (cat.includes('chandelier') || t.includes('chandelier')) {
     return 'Chandelier';
   }
@@ -24,14 +35,18 @@ export function getFixtureForm(categoryName: string, title: string): string {
   return 'Ceiling';
 }
 
-export function getStyle(dbStyles: string[] | string | null | undefined): string {
+export function getStyle(product: any): string {
+  if (product?.amazonTheme) {
+    return product.amazonTheme;
+  }
+
+  const dbStyles = product?.style;
   if (!dbStyles) return 'Modern';
   
   const stylesList: string[] = [];
   if (Array.isArray(dbStyles)) {
     stylesList.push(...dbStyles);
   } else if (typeof dbStyles === 'string') {
-    // split by comma or spaces
     stylesList.push(...dbStyles.split(/[,\s]+/));
   }
 
@@ -61,10 +76,11 @@ export function getStyle(dbStyles: string[] | string | null | undefined): string
     }
   }
 
-  return 'Modern'; // Default style fallback
+  return 'Modern';
 }
 
-export function getMaterial(dbMaterials: string[] | string | null | undefined): string {
+export function getMaterial(product: any): string {
+  const dbMaterials = product?.materialAndFinish;
   if (!dbMaterials) return 'Metal';
 
   const materialsList: string[] = [];
@@ -89,41 +105,57 @@ export function getMaterial(dbMaterials: string[] | string | null | undefined): 
     if (mat.includes('metal')) return 'Metal';
   }
 
-  return 'Metal'; // Default fallback
+  return 'Metal';
+}
+
+export function getMountingType(product: any): string {
+  if (product?.amazonMountingType) {
+    return product.amazonMountingType;
+  }
+  const cat = (product?.category?.name || '').toLowerCase();
+  if (cat.includes('wall') || cat.includes('sconce')) return 'Wall Mount';
+  if (product?.name?.toLowerCase().includes('gate') || product?.name?.toLowerCase().includes('pole') || product?.name?.toLowerCase().includes('post')) return 'Post Mount';
+  return 'Ceiling Mount';
+}
+
+export function getInstallationLocation(product: any): string {
+  const loc = product?.amazonFixtureForm || '';
+  const formLower = loc.toLowerCase();
+  if (formLower === 'sconce') return 'Wall';
+  
+  const name = (product?.name || '').toLowerCase();
+  if (name.includes('gate') || name.includes('pole') || name.includes('post') || name.includes('outdoor')) return 'Outdoor';
+  const cat = (product?.category?.name || '').toLowerCase();
+  if (cat.includes('wall') || cat.includes('sconce')) return 'Wall';
+  return 'Ceiling';
 }
 
 export function generateKeywords(product: any): string {
+  if (product?.amazonKeywords?.trim()) {
+    return product.amazonKeywords.substring(0, 250);
+  }
+
   const keywordsSet = new Set<string>();
 
-  // Add words from title
-  const titleWords = String(product.name || '').toLowerCase().split(/[^a-zA-Z0-9]+/);
-  titleWords.forEach(w => {
-    if (w.length > 2 && w !== 'and' && w !== 'with' && w !== 'for' && w !== 'set') {
-      keywordsSet.add(w);
-    }
-  });
+  const addFilteredWords = (text: string) => {
+    const words = String(text || '').toLowerCase().split(/[^a-zA-Z0-9]+/);
+    const stopWords = new Set(['and', 'with', 'for', 'set', 'light', 'lamp', 'lights', 'lamps', 'fixture', 'fixtures', 'the', 'this', 'a', 'of', 'in', 'on', 'to']);
+    words.forEach(w => {
+      if (w.length > 2 && !stopWords.has(w)) {
+        keywordsSet.add(w);
+      }
+    });
+  };
 
-  // Add category name
-  const catWords = String(product.category?.name || '').toLowerCase().split(/[^a-zA-Z0-9]+/);
-  catWords.forEach(w => {
-    if (w.length > 2 && w !== 'and') {
-      keywordsSet.add(w);
-    }
-  });
+  addFilteredWords(product.name);
+  addFilteredWords(product.category?.name);
 
-  // Add spaces
   if (product.spaces && Array.isArray(product.spaces)) {
     product.spaces.forEach((s: any) => {
-      const spaceWords = String(s.name || '').toLowerCase().split(/[^a-zA-Z0-9]+/);
-      spaceWords.forEach(w => {
-        if (w.length > 2 && w !== 'and') {
-          keywordsSet.add(w);
-        }
-      });
+      addFilteredWords(s.name);
     });
   }
 
-  // Add styles
   const stylesInput = product.style;
   const stylesList: string[] = [];
   if (Array.isArray(stylesInput)) {
@@ -133,19 +165,49 @@ export function generateKeywords(product: any): string {
   }
   stylesList.forEach(s => {
     const sw = s.toLowerCase().trim();
-    if (sw.length > 2) {
+    if (sw.length > 2 && sw !== 'light' && sw !== 'lamp') {
       keywordsSet.add(sw);
     }
   });
 
-  // Add static relevant words
   keywordsSet.add('hanging');
   keywordsSet.add('ceiling');
-  keywordsSet.add('lights');
-  keywordsSet.add('lamp');
-  keywordsSet.add('fixture');
+  keywordsSet.add('indoor');
+  keywordsSet.add('decor');
 
-  // Join to single string up to 250 characters
   const combined = Array.from(keywordsSet).join(' ');
   return combined.substring(0, 250);
+}
+
+export function getFinishType(product: any): string {
+  const mat = String(product.materialAndFinish || '').toLowerCase();
+  if (mat.includes('matte') || mat.includes('mat')) return 'Matte';
+  if (mat.includes('polished') || mat.includes('polish')) return 'Polished';
+  if (mat.includes('brushed') || mat.includes('brush')) return 'Brushed';
+  if (mat.includes('antique') || mat.includes('vintage')) return 'Antique';
+  if (mat.includes('powder coated')) return 'Powder Coated';
+  if (mat.includes('chrome')) return 'Chrome';
+  if (mat.includes('satin')) return 'Satin';
+  return 'Matte';
+}
+
+export function getLightingMethod(product: any): string {
+  if (product?.amazonLightingMethod) {
+    return product.amazonLightingMethod;
+  }
+  return 'Downlight';
+}
+
+export function getWaterResistanceLevel(product: any): string {
+  if (product?.amazonWaterResistance) {
+    return product.amazonWaterResistance;
+  }
+  return 'Not Water Resistant';
+}
+
+export function getItemTypeName(product: any): string {
+  const node = getBrowseNode(product);
+  if (node === '1380491031') return 'Chandeliers';
+  if (node === '1380493031') return 'Pendant Lights';
+  return 'Ceiling Lights';
 }

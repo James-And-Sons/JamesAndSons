@@ -1,7 +1,7 @@
 import aws4 from 'aws4';
 import fs from 'fs';
 import * as pathModule from 'path';
-import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords } from './mapping';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation } from './mapping';
 
 async function getLwaAccessToken() {
   const clientId = process.env.AMAZON_LWA_CLIENT_ID;
@@ -120,7 +120,14 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: brandVal
+          value: 'James & Sons'
+        }
+      ],
+      model_name: [
+        {
+          marketplace_id: marketplaceId,
+          language_tag: 'en_IN',
+          value: name.substring(0, 200)
         }
       ],
       model_number: [
@@ -152,7 +159,7 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: getBrowseNode(product.category?.name || '', name) === '1380491031' ? 'chandeliers' : 'pendant-lights'
+          value: getBrowseNode({ ...product, name }) === '1380491031' ? 'chandeliers' : 'pendant-lights'
         }
       ],
       number_of_items: [
@@ -172,42 +179,42 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: '1 Pendant Light, Hanging Accessories, Wire'
+          value: product.amazonIncludedComponents || '1 Pendant Light, Hanging Accessories, Wire'
         }
       ],
       style: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: getStyle((v ? v.style : null) || product.style).toLowerCase().replace(/\s+/g, '_')
+          value: getStyle({ ...product, style: (v ? v.style : null) || product.style }).toLowerCase().replace(/\s+/g, '_')
         }
       ],
       material: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: getMaterial((v ? v.material : null) || product.materialAndFinish).toLowerCase().replace(/\s+/g, '_')
+          value: getMaterial({ ...product, materialAndFinish: (v ? v.material : null) || product.materialAndFinish }).toLowerCase().replace(/\s+/g, '_')
         }
       ],
       light_fixture_form: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: getFixtureForm(product.category?.name || '', name).toLowerCase().replace(/\s+/g, '_')
+          value: getFixtureForm({ ...product, name }).toLowerCase().replace(/\s+/g, '_')
         }
       ],
       light_fixture_installation_location: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'ceiling' // Lowercase enum
+          value: getInstallationLocation({ ...product, name }).toLowerCase().replace(/\s+/g, '_')
         }
       ],
       generic_keyword: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: generateKeywords(product)
+          value: generateKeywords({ ...product, name })
         }
       ],
       room_type: [
@@ -394,6 +401,7 @@ export async function syncToAmazon(product: any) {
         ];
       }
 
+      const dateStr = new Date().toISOString().split('.')[0] + 'Z';
       attributes.purchasable_offer = [
         {
           marketplace_id: marketplaceId,
@@ -403,7 +411,7 @@ export async function syncToAmazon(product: any) {
               schedule: [
                 {
                   value_with_tax: price,
-                  start_at: new Date().toISOString()
+                  start_at: dateStr
                 }
               ]
             }
@@ -413,7 +421,7 @@ export async function syncToAmazon(product: any) {
               schedule: [
                 {
                   value_with_tax: price * 2,
-                  start_at: new Date().toISOString()
+                  start_at: dateStr
                 }
               ]
             }
