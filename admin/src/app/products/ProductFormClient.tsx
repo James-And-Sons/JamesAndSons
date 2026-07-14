@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
+import SyncButton from '@/components/SyncButton';
 
 type Category = { id: string; name: string };
 type Space = { id: string; name: string };
@@ -1384,6 +1385,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       {/* === SUBMIT === */}
       <div className="pt-6 border-t border-border flex flex-col items-end gap-4">
         <div className="flex gap-4">
+          {mode === 'edit' && defaultValues?.id && (
+            <SyncButton productId={defaultValues.id} label="Sync Marketplaces" />
+          )}
           <button type="button" onClick={() => router.back()} className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-3 hover:text-primary transition-colors bg-background">
             Cancel
           </button>

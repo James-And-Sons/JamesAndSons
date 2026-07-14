@@ -3,6 +3,7 @@ import Link from 'next/link';
 import SearchInput from '@/components/SearchInput';
 import SelectFilter from '@/components/SelectFilter';
 import ClickableRow from '@/components/ClickableRow';
+import SyncButton from '@/components/SyncButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +74,7 @@ export default async function ProductsPage({
               <a href="/api/admin/export/indiamart" download="indiamart_catalog.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary border-t border-border/30 transition-colors">IndiaMART Feed</a>
             </div>
           </div>
+          <SyncButton />
           <Link href="/products/import" className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background flex items-center">Import CSV</Link>
           <Link href="/products/add" className="btn-primary flex items-center">Add Product</Link>
         </div>
@@ -142,7 +144,8 @@ export default async function ProductsPage({
                         <span className="font-mono text-[9px] uppercase tracking-wider text-[#4ade80] border border-[#4ade80]/30 px-2 py-1 bg-[#4ade80]/10">Active</span>
                       )}
                     </td>
-                    <td className="px-8 py-5 text-right">
+                    <td className="px-8 py-5 text-right flex justify-end gap-3 items-center">
+                      <SyncButton productId={product.id} label="Sync" className="btn-ghost text-gold hover:text-gold-hover hover:bg-gold/10 px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider border border-gold/30 cursor-pointer disabled:opacity-50 flex items-center" />
                       <Link prefetch={false} href={`/products/${product.id}/edit`} className="btn-ghost">Edit</Link>
                     </td>
                   </ClickableRow>
