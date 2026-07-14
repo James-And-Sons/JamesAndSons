@@ -79,7 +79,7 @@ export default async function OrdersPage() {
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Order/RFQ ID</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Date</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer / Company</th>
-                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Total Value</th>
+                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Total Value</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Type</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Action</th>
@@ -87,8 +87,21 @@ export default async function OrdersPage() {
             </thead>
             <tbody className="divide-y divide-border/50">
               {combinedRecords.map((record) => {
+                const getStatusStyle = (status: string) => {
+                  const s = status.toUpperCase();
+                  if (['DELIVERED', 'APPROVED', 'PAID', 'SUCCESS', 'SHIPPED', 'QUOTE_SENT'].includes(s)) {
+                    return 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10';
+                  }
+                  if (['PENDING', 'PROCESSING', 'UNDER_REVIEW', 'SUBMITTED'].includes(s)) {
+                    return 'text-amber-500 border-amber-500/30 bg-amber-500/10';
+                  }
+                  if (['CANCELLED', 'REJECTED', 'EXPIRED', 'REFUNDED', 'FAILED'].includes(s)) {
+                    return 'text-rose-500 border-rose-500/30 bg-rose-500/10';
+                  }
+                  return 'text-muted border-border bg-surface-muted';
+                };
+
                 const isRFQ = record.type === 'B2B RFQ';
-                const statusColor = isRFQ ? 'text-accent' : 'text-[#4ade80]';
                 const typeColor = isRFQ ? 'text-[#c084fc] border-[#c084fc]/30 bg-[#c084fc]/10' : 'text-[#60a5fa] border-[#60a5fa]/30 bg-[#60a5fa]/10';
                 
                 return (
@@ -101,9 +114,9 @@ export default async function OrdersPage() {
                       <div className="font-body text-[14px] text-primary">{record.company || record.customerName}</div>
                       <div className="font-mono text-[10px] text-muted mt-1 tracking-wider">{record.email}</div>
                     </td>
-                    <td className="px-8 py-5 font-serif text-[18px] text-gold-light">
+                    <td className="px-8 py-5 font-mono text-[15px] text-gold-light text-right tabular-nums">
                       {isRFQ ? (
-                        <>— <span className="text-[12px] text-muted font-body ml-1">(Pending Quote)</span></>
+                        <span className="text-[11px] text-muted font-body">— (Pending Quote)</span>
                       ) : (
                         `₹${record.totalValue.toLocaleString('en-IN')}`
                       )}
@@ -114,7 +127,7 @@ export default async function OrdersPage() {
                       </span>
                     </td>
                     <td className="px-8 py-5">
-                      <span className={`font-mono text-[9px] uppercase tracking-wider border border-current/30 px-2 py-1 bg-current/10 ${statusColor}`}>
+                      <span className={`font-mono text-[9px] uppercase tracking-wider border px-2 py-1 ${getStatusStyle(record.status)}`}>
                         {record.status.replace('_', ' ')}
                       </span>
                     </td>

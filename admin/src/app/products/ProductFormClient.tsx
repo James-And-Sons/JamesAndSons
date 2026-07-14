@@ -437,8 +437,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             <h3 className={sectionTitle}>Basic Information (Main Product)</h3>
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className={labelCls}>Product Name *</label>
+                <label htmlFor="productName" className={labelCls}>Product Name *</label>
                 <input
+                  id="productName"
                   required
                   value={parentValues.name}
                   onChange={e => handleParentFieldChange('name', e.target.value)}
@@ -447,8 +448,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>SKU Code *</label>
+                <label htmlFor="skuCode" className={labelCls}>SKU Code *</label>
                 <input
+                  id="skuCode"
                   required
                   value={parentValues.sku}
                   onChange={e => handleParentFieldChange('sku', e.target.value)}
@@ -457,8 +459,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div className="col-span-2">
-                <label className={labelCls}>Description</label>
+                <label htmlFor="description" className={labelCls}>Description</label>
                 <textarea
+                  id="description"
                   value={parentValues.description}
                   onChange={e => handleParentFieldChange('description', e.target.value)}
                   rows={4}
@@ -467,8 +470,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>Category *</label>
+                <label htmlFor="categoryId" className={labelCls}>Category *</label>
                 <select
+                  id="categoryId"
                   required
                   value={parentValues.categoryId}
                   onChange={e => handleParentFieldChange('categoryId', e.target.value)}
@@ -505,8 +509,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             <h3 className={sectionTitle}>Pricing &amp; Inventory</h3>
             <div className="grid grid-cols-4 gap-6">
               <div>
-                <label className={labelCls}>MRP (₹) *</label>
+                <label htmlFor="mrp" className={labelCls}>MRP (₹) *</label>
                 <input
+                  id="mrp"
                   required
                   type="number"
                   step="0.01"
@@ -516,8 +521,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>D2C Price (₹) *</label>
+                <label htmlFor="d2cPrice" className={labelCls}>D2C Price (₹) *</label>
                 <input
+                  id="d2cPrice"
                   required
                   type="number"
                   step="0.01"
@@ -527,8 +533,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>B2B Price (₹) *</label>
+                <label htmlFor="b2bPrice" className={labelCls}>B2B Price (₹) *</label>
                 <input
+                  id="b2bPrice"
                   required
                   type="number"
                   step="0.01"
@@ -538,8 +545,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>Stock Qty *</label>
+                <label htmlFor="stockQuantity" className={labelCls}>Stock Qty *</label>
                 <input
+                  id="stockQuantity"
                   required
                   type="number"
                   value={parentValues.stockQuantity}
@@ -550,8 +558,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             </div>
             <div className="grid grid-cols-4 gap-6 mt-6">
               <div>
-                <label className={labelCls}>Weight (kg)</label>
+                <label htmlFor="weight" className={labelCls}>Weight (kg)</label>
                 <input
+                  id="weight"
                   type="number"
                   step="0.01"
                   value={parentValues.weight}
@@ -561,8 +570,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>Length (cm)</label>
+                <label htmlFor="length" className={labelCls}>Length (cm)</label>
                 <input
+                  id="length"
                   type="number"
                   step="0.1"
                   value={parentValues.length}
@@ -572,8 +582,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>Breadth (cm)</label>
+                <label htmlFor="breadth" className={labelCls}>Breadth (cm)</label>
                 <input
+                  id="breadth"
                   type="number"
                   step="0.1"
                   value={parentValues.breadth}
@@ -583,8 +594,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 />
               </div>
               <div>
-                <label className={labelCls}>Height (cm)</label>
+                <label htmlFor="height" className={labelCls}>Height (cm)</label>
                 <input
+                  id="height"
                   type="number"
                   step="0.1"
                   value={parentValues.height}

@@ -102,9 +102,9 @@ export default async function ProductsPage({
               <tr>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Product</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">SKU</th>
-                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">D2C Price (MRP)</th>
-                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">B2B Base Price</th>
-                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Stock</th>
+                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">D2C Price (MRP)</th>
+                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">B2B Base Price</th>
+                <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Stock</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Action</th>
               </tr>
@@ -133,16 +133,16 @@ export default async function ProductsPage({
                       </div>
                     </td>
                     <td className="px-8 py-5 font-mono text-[12px] text-primary">{product.sku}</td>
-                    <td className="px-8 py-5 font-serif text-[18px] text-primary">₹{product.d2cPrice.toLocaleString('en-IN')}</td>
-                    <td className="px-8 py-5 font-serif text-[18px] text-[#4ade80]">₹{product.b2bPrice.toLocaleString('en-IN')}</td>
-                    <td className={`px-8 py-5 font-mono text-[13px] ${isOutOfStock ? 'text-[#ef4444]' : 'text-primary'}`}>
+                    <td className="px-8 py-5 font-mono text-[14px] text-primary text-right tabular-nums">₹{product.d2cPrice.toLocaleString('en-IN')}</td>
+                    <td className="px-8 py-5 font-mono text-[14px] text-[#4ade80] text-right tabular-nums">₹{product.b2bPrice.toLocaleString('en-IN')}</td>
+                    <td className={`px-8 py-5 font-mono text-[13px] text-right tabular-nums ${isOutOfStock ? 'text-rose-500' : 'text-primary'}`}>
                       {product.stockQuantity}
                     </td>
                     <td className="px-8 py-5">
                       {isOutOfStock ? (
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-[#ef4444] border border-[#ef4444]/30 px-2 py-1 bg-[#ef4444]/10">Out of Stock</span>
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-rose-500 border border-rose-500/30 px-2 py-1 bg-rose-500/10">Out of Stock</span>
                       ) : (
-                        <span className="font-mono text-[9px] uppercase tracking-wider text-[#4ade80] border border-[#4ade80]/30 px-2 py-1 bg-[#4ade80]/10">Active</span>
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-emerald-400 border border-emerald-400/30 px-2 py-1 bg-emerald-400/10">Active</span>
                       )}
                     </td>
                     <td className="px-8 py-5 text-right flex justify-end gap-3 items-center">
