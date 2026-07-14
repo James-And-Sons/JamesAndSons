@@ -45,26 +45,29 @@ export default async function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-surface p-6 border border-border">
-        <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Orders &amp; RFQs</h1>
+      <div className="flex justify-between items-center premium-card p-6">
+        <div>
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Orders &amp; RFQs</h1>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">Manage incoming payments, shipping logs and business RFQs</p>
+        </div>
         <OrderActionsClient data={combinedRecords} />
       </div>
 
-      <div className="premium-card flex flex-col">
+      <div className="premium-card flex flex-col overflow-hidden">
         <div className="p-6 border-b border-border flex gap-4 bg-surface-muted/30">
           <input 
             type="text" 
             placeholder="Search by Order ID, Customer, or Email..." 
-            className="w-1/3 px-4 py-2 border border-border bg-background text-primary font-body text-[13px] focus:outline-none focus:border-accent transition-colors placeholder:text-muted/50"
+            className="w-1/3 px-4 py-2.5 border border-border bg-background text-primary font-body text-[13px] focus:outline-none focus:border-accent transition-colors placeholder:text-muted/50"
           />
-          <select className="px-4 py-2 border border-border bg-background text-secondary font-mono text-[10px] uppercase tracking-[0.1em] focus:outline-none focus:border-accent transition-colors">
+          <select className="px-4 py-2.5 border border-border bg-background text-secondary font-mono text-[9px] uppercase tracking-widest focus:outline-none focus:border-accent transition-colors">
             <option>All Statuses</option>
             <option>Pending</option>
             <option>Processing</option>
             <option>Shipped</option>
             <option>Delivered</option>
           </select>
-          <select className="px-4 py-2 border border-border bg-background text-secondary font-mono text-[10px] uppercase tracking-[0.1em] focus:outline-none focus:border-accent transition-colors">
+          <select className="px-4 py-2.5 border border-border bg-background text-secondary font-mono text-[9px] uppercase tracking-widest focus:outline-none focus:border-accent transition-colors">
             <option>All Types</option>
             <option>B2B Orders</option>
             <option>D2C Orders</option>
@@ -74,7 +77,7 @@ export default async function OrdersPage() {
 
         <div className="flex-1 table-responsive">
           <table className="w-full text-left">
-            <thead className="bg-background/50 border-b border-border">
+            <thead className="border-b border-border bg-surface-muted/30">
               <tr>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Order/RFQ ID</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Date</th>
@@ -102,37 +105,37 @@ export default async function OrdersPage() {
                 };
 
                 const isRFQ = record.type === 'B2B RFQ';
-                const typeColor = isRFQ ? 'text-[#c084fc] border-[#c084fc]/30 bg-[#c084fc]/10' : 'text-[#60a5fa] border-[#60a5fa]/30 bg-[#60a5fa]/10';
+                const typeColor = isRFQ ? 'text-purple-400 border-purple-400/30 bg-purple-400/10' : 'text-sky-400 border-sky-400/30 bg-sky-400/10';
                 
                 return (
                   <ClickableRow key={record.id} href={`/orders/${record.id}`}>
-                    <td className="px-8 py-5 font-mono text-[12px] text-primary">{record.displayId}</td>
-                    <td className="px-8 py-5 font-body text-[13px] text-secondary">
+                    <td className="px-8 py-5 font-mono text-[12px] text-accent font-semibold">{record.displayId}</td>
+                    <td className="px-8 py-5 font-mono text-[12px] text-secondary">
                       {record.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </td>
                     <td className="px-8 py-5">
-                      <div className="font-body text-[14px] text-primary">{record.company || record.customerName}</div>
+                      <div className="font-serif text-[16px] text-primary">{record.company || record.customerName}</div>
                       <div className="font-mono text-[10px] text-muted mt-1 tracking-wider">{record.email}</div>
                     </td>
-                    <td className="px-8 py-5 font-mono text-[15px] text-gold-light text-right tabular-nums">
+                    <td className="px-8 py-5 font-mono text-[14px] text-secondary text-right tabular-nums font-semibold">
                       {isRFQ ? (
-                        <span className="text-[11px] text-muted font-body">— (Pending Quote)</span>
+                        <span className="text-[11px] text-muted font-mono uppercase tracking-widest">— (Pending Quote)</span>
                       ) : (
                         `₹${record.totalValue.toLocaleString('en-IN')}`
                       )}
                     </td>
                     <td className="px-8 py-5">
-                      <span className={`font-mono text-[9px] uppercase tracking-wider border px-2 py-1 ${typeColor}`}>
+                      <span className={`font-mono text-[9px] uppercase tracking-wider border px-3 py-1 rounded-full ${typeColor}`}>
                         {record.type}
                       </span>
                     </td>
                     <td className="px-8 py-5">
-                      <span className={`font-mono text-[9px] uppercase tracking-wider border px-2 py-1 ${getStatusStyle(record.status)}`}>
+                      <span className={`font-mono text-[9px] uppercase tracking-wider border px-3 py-1 rounded-full ${getStatusStyle(record.status)}`}>
                         {record.status.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <Link href={`/orders/${record.id}`} className="btn-ghost">
+                      <Link href={`/orders/${record.id}`} className="font-mono text-[9px] uppercase tracking-[0.12em] text-muted hover:text-white transition-colors">
                         {isRFQ ? 'Review' : 'View Details →'}
                       </Link>
                     </td>
@@ -152,7 +155,7 @@ export default async function OrdersPage() {
         </div>
         
         <div className="p-6 border-t border-border flex justify-between items-center bg-background/50">
-          <span className="font-mono text-[10px] tracking-wider text-muted">Showing 1 to {combinedRecords.length} of {combinedRecords.length} entries</span>
+          <span className="font-mono text-[9px] tracking-wider text-muted">Showing 1 to {combinedRecords.length} of {combinedRecords.length} entries</span>
           <div className="flex gap-2">
             <button className="px-4 py-2 border border-border text-[9px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50" disabled>Prev</button>
             <button className="px-4 py-2 border border-border text-[9px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50" disabled>Next</button>

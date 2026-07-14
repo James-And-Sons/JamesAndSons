@@ -21,15 +21,18 @@ export default async function PagesDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-surface p-6 border border-border">
-        <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">CMS Pages</h1>
-        <Link href="/pages/new" className="btn-primary">Create New Page</Link>
+      <div className="flex justify-between items-center premium-card p-6">
+        <div>
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">CMS Pages</h1>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">{pages.length} pages mapped</p>
+        </div>
+        <Link href="/pages/new" className="btn-primary font-mono text-[10px] uppercase tracking-[0.12em] px-8 py-3 shadow-lg shadow-accent/20">Create New Page</Link>
       </div>
 
-      <div className="bg-surface border border-border shadow-sm flex flex-col">
+      <div className="premium-card flex flex-col overflow-hidden">
         <div className="flex-1 overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-background/50 border-b border-border">
+            <thead className="border-b border-border bg-surface-muted/30">
               <tr>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Title</th>
                 <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Slug mapping</th>
@@ -42,27 +45,31 @@ export default async function PagesDashboard() {
               {pages.map((page) => (
                 <ClickableRow key={page.id} href={`/pages/${page.id}`}>
                   <td className="px-8 py-5">
-                    <div className="font-body text-[14px] text-primary font-medium">{page.title}</div>
+                    <div className="font-serif text-[17px] text-primary">{page.title}</div>
                   </td>
-                  <td className="px-8 py-5 font-mono text-[12px] text-muted">/{page.slug}</td>
+                  <td className="px-8 py-5 font-mono text-[11px] text-muted">/{page.slug}</td>
                   <td className="px-8 py-5">
                     <form action={togglePublishStatus.bind(null, page.id, page.isPublished)}>
                       <button 
                         type="submit"
-                        className={`font-mono text-[9px] uppercase tracking-wider border px-2 py-1 ${page.isPublished ? 'text-[#4ade80] border-[#4ade80]/30 bg-[#4ade80]/10' : 'text-muted border-border bg-background'}`}
+                        className={`font-mono text-[9px] uppercase tracking-wider border px-3 py-1 rounded-full ${
+                          page.isPublished 
+                            ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10' 
+                            : 'text-amber-500 border-amber-500/30 bg-amber-500/10'
+                        }`}
                       >
                         {page.isPublished ? 'Published' : 'Draft'}
                       </button>
                     </form>
                   </td>
-                  <td className="px-8 py-5 font-body text-[13px] text-secondary">
+                  <td className="px-8 py-5 font-mono text-[12px] text-secondary">
                     {page.updatedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                   </td>
-                  <td className="px-8 py-5 text-right flex justify-end gap-3">
-                    <Link href={`/pages/${page.id}`} className="btn-ghost">
+                  <td className="px-8 py-5 text-right flex justify-end gap-3 items-center">
+                    <Link href={`/pages/${page.id}`} className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted hover:text-white transition-colors">
                       Edit
                     </Link>
-                    <a href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3001'}/${page.slug}`} target="_blank" rel="noreferrer" className="btn-ghost !text-muted">
+                    <a href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3001'}/${page.slug}`} target="_blank" rel="noreferrer" className="font-mono text-[9px] uppercase tracking-[0.1em] text-accent hover:text-white transition-colors">
                       View
                     </a>
                   </td>

@@ -11,9 +11,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  OPEN: 'text-[#f59e0b] border-[#f59e0b]/20 bg-[#f59e0b]/10',
-  IN_PROGRESS: 'text-[#60a5fa] border-[#60a5fa]/20 bg-[#60a5fa]/10',
-  RESOLVED: 'text-[#4ade80] border-[#4ade80]/20 bg-[#4ade80]/10',
+  OPEN: 'text-amber-500 border-amber-500/30 bg-amber-500/10',
+  IN_PROGRESS: 'text-sky-400 border-sky-400/30 bg-sky-400/10',
+  RESOLVED: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10',
   CLOSED: 'text-muted border-border bg-background',
 };
 
@@ -47,9 +47,9 @@ export default function TicketsInbox({ tickets }: { tickets: Ticket[] }) {
   };
 
   return (
-    <div className="table-responsive">
+    <div className="premium-card overflow-hidden">
       <table className="w-full text-left">
-        <thead className="border-b border-border bg-surface-muted">
+        <thead className="border-b border-border bg-surface-muted/30">
           <tr>
             <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Ticket</th>
             <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer</th>
@@ -59,18 +59,18 @@ export default function TicketsInbox({ tickets }: { tickets: Ticket[] }) {
             <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Msgs</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-border/50">
           {tickets.length === 0 && (
             <tr><td colSpan={6} className="px-6 py-12 text-center font-mono text-[11px] text-muted uppercase tracking-widest">No tickets raised yet</td></tr>
           )}
           {tickets.map(ticket => (
-            <tr key={ticket.id} className="border-b border-border hover:bg-surface-muted transition-colors">
+            <tr key={ticket.id} className="hover:bg-surface-muted/50 transition-colors">
               <td className="px-6 py-4">
                 <Link href={`/tickets/${ticket.id}`} className="group block cursor-pointer">
                   <div className="font-mono text-[12px] text-accent group-hover:underline">{ticket.ticketNumber}</div>
                   <div className="font-serif text-[15px] text-primary mt-1 group-hover:text-accent transition-colors">{ticket.subject}</div>
                 </Link>
-                <div className="font-body text-[11px] text-muted mt-0.5">{new Date(ticket.createdAt).toLocaleDateString()}</div>
+                <div className="font-mono text-[10px] text-muted mt-1">{new Date(ticket.createdAt).toLocaleDateString()}</div>
               </td>
               <td className="px-6 py-4">
                 <div className="font-serif text-[15px] text-primary">{ticket.user.firstName} {ticket.user.lastName}</div>
@@ -80,7 +80,7 @@ export default function TicketsInbox({ tickets }: { tickets: Ticket[] }) {
                 {ticket.order ? ticket.order.orderNumber : '—'}
               </td>
               <td className="px-6 py-4">
-                <span className={`font-mono text-[9px] uppercase tracking-[0.15em] px-2 py-1 border ${STATUS_COLORS[ticket.status]}`}>
+                <span className={`font-mono text-[9px] uppercase tracking-[0.12em] px-3 py-1 rounded-full border ${STATUS_COLORS[ticket.status]}`}>
                   {STATUS_LABELS[ticket.status]}
                 </span>
               </td>
@@ -89,14 +89,14 @@ export default function TicketsInbox({ tickets }: { tickets: Ticket[] }) {
                   defaultValue={ticket.status}
                   disabled={isPending && updatingId === ticket.id}
                   onChange={e => handleStatusChange(ticket.id, e.target.value)}
-                  className="bg-background border border-border text-muted font-mono text-[9px] uppercase tracking-widest px-2 py-1.5 focus:outline-none focus:border-accent disabled:opacity-50"
+                  className="bg-background border border-border text-muted font-mono text-[9px] uppercase tracking-widest px-2 py-1.5 focus:outline-none focus:border-accent focus:text-primary transition-colors disabled:opacity-50"
                 >
                   {Object.entries(STATUS_LABELS).map(([val, label]) => (
                     <option key={val} value={val}>{label}</option>
                   ))}
                 </select>
               </td>
-              <td className="px-6 py-4 text-right font-mono text-[13px] text-secondary">
+              <td className="px-6 py-4 text-right font-mono text-[13px] text-secondary tabular-nums">
                 {ticket._count.ticketMessages}
               </td>
             </tr>

@@ -3,87 +3,87 @@ import { createBlogPost } from '../actions';
 
 export default function NewBlogPostPage() {
   return (
-    <div className="max-w-4xl mx-auto space-y-8 py-8">
-      <div className="flex items-center justify-between">
+    <form action={createBlogPost} className="space-y-6">
+      {/* Sticky Header Actions */}
+      <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border/80 py-4 mb-6 flex justify-between items-center">
         <div>
-          <Link href="/blog" className="font-mono text-[10px] uppercase tracking-widest text-muted hover:text-primary transition-colors flex items-center gap-2 mb-4">
-            ← Back to Blog
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Create New Post</h1>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">Publish a new article to the store blog</p>
+        </div>
+        <div className="flex gap-4">
+          <Link href="/blog" className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background flex items-center">
+            Cancel
           </Link>
-          <h1 className="font-serif text-[32px] font-light text-primary tracking-wide">Create New Post</h1>
+          <button type="submit" className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold shadow-lg shadow-accent/15">
+            Publish Post
+          </button>
         </div>
       </div>
 
-      <div className="bg-surface border border-border p-8">
-        <form action={createBlogPost} className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label htmlFor="title" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Title</label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                required
-                className="w-full bg-[#16161a] border border-border px-4 py-3 font-body text-[14px] text-primary focus:outline-none focus:border-accent transition-colors"
-                placeholder="Enter post title..."
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="slug" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Slug (Optional)</label>
-              <input
-                type="text"
-                id="slug"
-                name="slug"
-                className="w-full bg-[#16161a] border border-border px-4 py-3 font-body text-[14px] text-primary focus:outline-none focus:border-accent transition-colors"
-                placeholder="my-post-slug"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="excerpt" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Excerpt</label>
-            <textarea
-              id="excerpt"
-              name="excerpt"
-              rows={3}
-              className="w-full bg-[#16161a] border border-border px-4 py-3 font-body text-[14px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
-              placeholder="A short summary of the post..."
-            ></textarea>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="content" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Content</label>
-            <textarea
-              id="content"
-              name="content"
+      <div className="premium-card p-8 space-y-6 bg-surface/90 backdrop-blur">
+        <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">Article Content</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label htmlFor="title" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Title *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
               required
-              rows={15}
-              className="w-full bg-[#16161a] border border-border px-4 py-3 font-body text-[14px] text-primary focus:outline-none focus:border-accent transition-colors font-mono"
-              placeholder="Write your content here..."
-            ></textarea>
+              className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors"
+              placeholder="Enter post title..."
+            />
           </div>
+          <div className="space-y-1">
+            <label htmlFor="slug" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Slug (Optional)</label>
+            <input
+              type="text"
+              id="slug"
+              name="slug"
+              className="w-full bg-background border border-border px-4 py-3 font-mono text-[12px] text-primary focus:outline-none focus:border-accent transition-colors"
+              placeholder="my-post-slug"
+            />
+          </div>
+        </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isDraft"
-                name="isDraft"
-                value="true"
-                className="w-4 h-4 accent-accent bg-[#16161a] border-border"
-              />
-              <label htmlFor="isDraft" className="font-body text-[13px] text-secondary cursor-pointer">Save as Draft</label>
-            </div>
-            <div className="flex gap-4">
-              <Link href="/blog" className="px-6 py-3 font-mono text-[11px] uppercase tracking-widest text-muted hover:text-primary transition-colors">
-                Cancel
-              </Link>
-              <button type="submit" className="btn-primary px-8">
-                Publish Post
-              </button>
-            </div>
-          </div>
-        </form>
+        <div className="space-y-1">
+          <label htmlFor="excerpt" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Excerpt</label>
+          <textarea
+            id="excerpt"
+            name="excerpt"
+            rows={3}
+            className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
+            placeholder="A short summary of the post..."
+          ></textarea>
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="content" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Content *</label>
+          <textarea
+            id="content"
+            name="content"
+            required
+            rows={18}
+            className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] leading-relaxed"
+            placeholder="Write your content here..."
+          ></textarea>
+        </div>
       </div>
-    </div>
+
+      <div className="premium-card p-8 space-y-6 bg-surface/90 backdrop-blur">
+        <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">Publishing Settings</h3>
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="isDraft"
+            name="isDraft"
+            value="true"
+            defaultChecked={true}
+            className="w-4 h-4 accent-accent bg-background border-border"
+          />
+          <label htmlFor="isDraft" className="font-body text-[13px] text-secondary cursor-pointer select-none">Save as Draft</label>
+        </div>
+      </div>
+    </form>
   );
 }

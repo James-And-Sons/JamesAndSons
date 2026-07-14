@@ -17,10 +17,10 @@ export default async function TicketsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-surface p-6 border border-border">
+      <div className="flex justify-between items-center premium-card p-6">
         <div>
           <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Support Tickets</h1>
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted mt-2">
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">
             {openCount} open · {tickets.length} total
           </p>
         </div>
