@@ -1,7 +1,18 @@
 import aws4 from 'aws4';
 import fs from 'fs';
 import * as pathModule from 'path';
-import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation } from './mapping';
+import {
+  getBrowseNode,
+  getFixtureForm,
+  getStyle,
+  getMaterial,
+  generateKeywords,
+  getInstallationLocation,
+  getMountingType,
+  getFinishType,
+  getLightingMethod,
+  getWaterResistanceLevel
+} from './mapping';
 
 async function getLwaAccessToken() {
   const clientId = process.env.AMAZON_LWA_CLIENT_ID;
@@ -223,16 +234,55 @@ export async function syncToAmazon(product: any) {
           value: generateKeywords({ ...product, name })
         }
       ],
-      room_type: [
+      room_type: (product.spaces && product.spaces.length > 0)
+        ? product.spaces.slice(0, 5).map((sp: any) => ({
+            marketplace_id: marketplaceId,
+            language_tag: 'en_IN',
+            value: sp.name
+          }))
+        : [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: 'Dining Room'
+            },
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: 'Living Room'
+            }
+          ],
+      mounting_type: [
+        {
+          marketplace_id: marketplaceId,
+          value: getMountingType({ ...product, name }).toLowerCase().replace(/\s+/g, '_')
+        }
+      ],
+      finish_type: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'Dining Room'
-        },
+          value: getFinishType({ ...product, materialAndFinish: (v ? v.material : null) || product.materialAndFinish })
+        }
+      ],
+      water_resistance_level: [
+        {
+          marketplace_id: marketplaceId,
+          value: getWaterResistanceLevel({ ...product, amazonWaterResistance: product.amazonWaterResistance }).toLowerCase().replace(/\s+/g, '_')
+        }
+      ],
+      theme: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'Living Room'
+          value: product.amazonTheme || getStyle({ ...product, style: product.style })
+        }
+      ],
+      lighting_method: [
+        {
+          marketplace_id: marketplaceId,
+          language_tag: 'en_IN',
+          value: getLightingMethod({ ...product, amazonLightingMethod: product.amazonLightingMethod })
         }
       ],
       power_source_type: [
@@ -245,26 +295,26 @@ export async function syncToAmazon(product: any) {
       supplier_declared_dg_hz_regulation: [
         {
           marketplace_id: marketplaceId,
-          value: 'not_applicable' // Fix: lowercase snake_case 'not_applicable'
+          value: 'not_applicable'
         }
       ],
       rtip_manufacturer_contact_information: [
         {
-          value: 'James & Sons, 123 Luxury Light Way, Mumbai, India'
+          value: 'James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India'
         }
       ],
       importer_contact_information: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'James & Sons, 123 Luxury Light Way, Mumbai, India'
+          value: 'James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India'
         }
       ],
       packer_contact_information: [
         {
           marketplace_id: marketplaceId,
           language_tag: 'en_IN',
-          value: 'James & Sons, 123 Luxury Light Way, Mumbai, India'
+          value: 'James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India'
         }
       ],
       external_product_information: [
