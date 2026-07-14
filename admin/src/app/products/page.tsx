@@ -4,6 +4,7 @@ import SearchInput from '@/components/SearchInput';
 import SelectFilter from '@/components/SelectFilter';
 import ClickableRow from '@/components/ClickableRow';
 import SyncButton from '@/components/SyncButton';
+import ActionDropdown from '@/components/ActionDropdown';
 
 export const dynamic = 'force-dynamic';
 
@@ -146,7 +147,7 @@ export default async function ProductsPage({
                     </td>
                     <td className="px-8 py-5 text-right flex justify-end gap-3 items-center">
                       <SyncButton productId={product.id} label="Sync" className="btn-ghost text-gold hover:text-gold-hover hover:bg-gold/10 px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider border border-gold/30 cursor-pointer disabled:opacity-50 flex items-center" />
-                      <Link prefetch={false} href={`/products/${product.id}/edit`} className="btn-ghost">Edit</Link>
+                      <ActionDropdown productId={product.id} sku={product.sku} />
                     </td>
                   </ClickableRow>
                 );

@@ -592,3 +592,50 @@ ${responseBody}
 
   return { success: true, results };
 }
+
+export async function deleteFromAmazon(sku: string) {
+  console.log(`[Amazon Sync] Deleting SKU ${sku} from Amazon Listings Items API...`);
+  const sellerId = process.env.AMAZON_SELLER_ID;
+  const awsAccessKey = process.env.AMAZON_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+  const awsSecretKey = process.env.AMAZON_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+  const spApiEndpoint = process.env.AMAZON_SP_API_ENDPOINT || 'https://sellingpartnerapi-eu.amazon.com';
+
+  if (!sellerId || !awsAccessKey || !awsSecretKey) {
+    console.warn('[Amazon Sync] Missing AWS credentials for deletion.');
+    throw new Error('Credentials missing');
+  }
+
+  const accessToken = await getLwaAccessToken();
+  const marketplaceId = process.env.AMAZON_MARKETPLACE_ID || 'A21TJRUUN4KGV';
+  const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
+  const url = `${spApiEndpoint}${path}`;
+
+  const requestOptions = {
+    host: new URL(spApiEndpoint).hostname,
+    path: path,
+    method: 'DELETE',
+    service: 'execute-api',
+    region: process.env.AWS_REGION || 'eu-west-1',
+    headers: {
+      'x-amz-access-token': accessToken
+    }
+  };
+
+  aws4.sign(requestOptions, {
+    accessKeyId: awsAccessKey,
+    secretAccessKey: awsSecretKey
+  });
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: requestOptions.headers as any
+  });
+
+  const responseBody = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Amazon SP-API Listings Items DELETE error for ${sku}: ${response.status} - ${responseBody}`);
+  }
+
+  return JSON.parse(responseBody);
+}
