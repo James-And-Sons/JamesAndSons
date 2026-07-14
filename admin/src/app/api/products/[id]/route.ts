@@ -6,7 +6,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
   const params = await props.params;
   try {
     const body = await req.json();
-    const { id, variants, specs, images, spaceIds, ...productData } = body;
+    const { id, variants, specs, images, whiteBackgroundImages, spaceIds, ...productData } = body;
 
     // Validate SKU uniqueness
     if (!productData.sku) {
@@ -72,6 +72,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         ...productData,
         dimensionUnit: body.dimensionUnit || 'INCH',
         images: images || [],
+        whiteBackgroundImages: whiteBackgroundImages || [],
         specs: specs && Object.keys(specs).length > 0 ? specs : undefined,
         spaces: {
           set: spaceIds?.map((id: string) => ({ id })) || []
@@ -88,6 +89,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
                 b2bPrice: v.b2bPrice || null,
                 stockQuantity: v.stockQuantity || 0,
                 images: v.images || [],
+                whiteBackgroundImages: v.whiteBackgroundImages || [],
                 weight: v.weight || null,
                 length: v.length || null,
                 breadth: v.breadth || null,

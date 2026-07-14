@@ -9,7 +9,7 @@ function generateSlug(name: string) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { variants, specs, images, spaceIds, ...productData } = body;
+    const { variants, specs, images, whiteBackgroundImages, spaceIds, ...productData } = body;
 
     // Validate SKU uniqueness
     if (!productData.sku) {
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
         dimensionUnit: body.dimensionUnit || 'INCH',
         description: productData.description || '',
         images: images || [],
+        whiteBackgroundImages: whiteBackgroundImages || [],
         specs: specs && Object.keys(specs).length > 0 ? specs : undefined,
         spaces: spaceIds?.length > 0 
           ? { connect: spaceIds.map((id: string) => ({ id })) }
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
                 b2bPrice: v.b2bPrice || null,
                 stockQuantity: v.stockQuantity || 0,
                 images: v.images || [],
+                whiteBackgroundImages: v.whiteBackgroundImages || [],
                 weight: v.weight || null,
                 length: v.length || null,
                 breadth: v.breadth || null,

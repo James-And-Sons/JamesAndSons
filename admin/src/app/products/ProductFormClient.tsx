@@ -6,7 +6,6 @@ import SyncButton from '@/components/SyncButton';
 
 type Category = { id: string; name: string };
 type Space = { id: string; name: string };
-
 type Spec = { key: string; value: string };
 
 const GOOGLE_PRODUCT_CATEGORIES = [
@@ -29,6 +28,7 @@ type Variant = {
   b2bPrice: string;
   stockQuantity: string;
   images: string;
+  whiteBackgroundImages: string;
   weight: string;
   length: string;
   breadth: string;
@@ -36,8 +36,6 @@ type Variant = {
   actualHeight: string;
   actualWidth: string;
   actualDepth: string;
-  
-  // Platform & specifications overrides
   power: string;
   voltage: string;
   googleProductCategory: string;
@@ -63,8 +61,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
 
-  // activeTab can be 'parent' (editing main product info) or a number (editing specific variant)
+  // activeTab: 'parent' or number (index of active variant)
   const [activeTab, setActiveTab] = useState<'parent' | number>('parent');
 
   // Dimension Unit ('INCH' or 'CM')
@@ -106,7 +105,6 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     brand: defaultValues?.brand || 'James and Sons',
     warranty: defaultValues?.warranty || '',
     bulletPoints: defaultValues?.bulletPoints?.join('\n') || '',
-    // Amazon overrides
     amazonFixtureForm: defaultValues?.amazonFixtureForm || '',
     amazonMountingType: defaultValues?.amazonMountingType || '',
     amazonLightingMethod: defaultValues?.amazonLightingMethod || '',
@@ -122,8 +120,11 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     defaultValues?.spaces?.map((s: any) => s.id) || []
   );
 
-  // Main Product Images
+  // Images states
   const [images, setImages] = useState<string[]>(defaultValues?.images || []);
+  const [whiteBackgroundImages, setWhiteBackgroundImages] = useState<string[]>(
+    defaultValues?.whiteBackgroundImages || []
+  );
 
   // Main Product Specs
   const [specs, setSpecs] = useState<Spec[]>(
@@ -143,6 +144,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       b2bPrice: v.b2bPrice ? String(v.b2bPrice) : '',
       stockQuantity: String(v.stockQuantity || '0'),
       images: (v.images || []).join(', '),
+      whiteBackgroundImages: (v.whiteBackgroundImages || []).join(', '),
       weight: v.weight ? String(v.weight) : '',
       length: v.length ? String(v.length) : '',
       breadth: v.breadth ? String(v.breadth) : '',
@@ -169,11 +171,52 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     })) || []
   );
 
+  // Warning check states
+  const [openSections, setOpenSections] = useState({
+    basic: true,
+    pricing: true,
+    specs: false,
+    seo: false,
+    images: true
+  });
+
+  // Warn if B2B Price equals MRP
+  const showB2BWarning = !!(parentValues.b2bPrice && parentValues.mrp && Number(parentValues.b2bPrice) === Number(parentValues.mrp));
+
+  // Completion dot logic helper
+  const isBasicComplete = !!(parentValues.name && parentValues.sku && parentValues.categoryId);
+  const isPricingComplete = !!(parentValues.mrp && parentValues.d2cPrice && parentValues.b2bPrice && parentValues.stockQuantity);
+  const isSpecsComplete = !!(parentValues.power && parentValues.voltage);
+  const isSeoComplete = !!(parentValues.brand);
+  const isImagesComplete = images.length > 0;
+
+  const totalSections = 5;
+  const completedSections = 
+    (isBasicComplete ? 1 : 0) + 
+    (isPricingComplete ? 1 : 0) + 
+    (isSpecsComplete ? 1 : 0) + 
+    (isSeoComplete ? 1 : 0) + 
+    (isImagesComplete ? 1 : 0);
+
+  // Unsaved changes confirmation dialog
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const handleParentFieldChange = (field: keyof typeof parentValues, val: any) => {
+    setIsDirty(true);
     setParentValues(prev => ({ ...prev, [field]: val }));
   };
 
   const addVariant = () => {
+    setIsDirty(true);
     const nextIdx = variants.length + 1;
     const defaultSkuSuffix = `-VAR${nextIdx}`;
     const autoSku = parentValues.sku ? `${parentValues.sku}${defaultSkuSuffix}`.toUpperCase() : '';
@@ -186,6 +229,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       b2bPrice: '',
       stockQuantity: '0',
       images: '',
+      whiteBackgroundImages: '',
       weight: '',
       length: '',
       breadth: '',
@@ -211,19 +255,23 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   };
 
   const updateVariantField = (idx: number, field: keyof Variant, val: any) => {
+    setIsDirty(true);
     setVariants(prev => prev.map((v, i) => i === idx ? { ...v, [field]: val } : v));
   };
 
   const removeVariant = (idx: number) => {
+    setIsDirty(true);
     setVariants(prev => prev.filter((_, i) => i !== idx));
   };
 
   // Variant Specs functions
   const addVariantSpec = (vIdx: number) => {
+    setIsDirty(true);
     setVariants(prev => prev.map((v, i) => i === vIdx ? { ...v, specs: [...v.specs, { key: '', value: '' }] } : v));
   };
 
   const updateVariantSpec = (vIdx: number, sIdx: number, field: 'key' | 'value', val: string) => {
+    setIsDirty(true);
     setVariants(prev => prev.map((v, i) => {
       if (i === vIdx) {
         const newSpecs = v.specs.map((s, idx) => idx === sIdx ? { ...s, [field]: val } : s);
@@ -234,6 +282,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   };
 
   const removeVariantSpec = (vIdx: number, sIdx: number) => {
+    setIsDirty(true);
     setVariants(prev => prev.map((v, i) => {
       if (i === vIdx) {
         const newSpecs = v.specs.filter((_, idx) => idx !== sIdx);
@@ -244,9 +293,61 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   };
 
   // Parent specs functions
-  const addSpec = () => setSpecs(prev => [...prev, { key: '', value: '' }]);
-  const updateSpec = (i: number, field: 'key' | 'value', val: string) => setSpecs(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s));
-  const removeSpec = (i: number) => setSpecs(prev => prev.filter((_, idx) => idx !== i));
+  const addSpec = () => {
+    setIsDirty(true);
+    setSpecs(prev => [...prev, { key: '', value: '' }]);
+  };
+  
+  const updateSpec = (i: number, field: 'key' | 'value', val: string) => {
+    setIsDirty(true);
+    setSpecs(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s));
+  };
+  
+  const removeSpec = (i: number) => {
+    setIsDirty(true);
+    setSpecs(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  // Image re-ordering helper
+  const moveImage = (index: number, direction: 'left' | 'right', isWhiteBg: boolean) => {
+    setIsDirty(true);
+    const targetList = isWhiteBg ? whiteBackgroundImages : images;
+    const setTargetList = isWhiteBg ? setWhiteBackgroundImages : setImages;
+
+    if (direction === 'left' && index > 0) {
+      const newList = [...targetList];
+      const temp = newList[index];
+      newList[index] = newList[index - 1];
+      newList[index - 1] = temp;
+      setTargetList(newList);
+    } else if (direction === 'right' && index < targetList.length - 1) {
+      const newList = [...targetList];
+      const temp = newList[index];
+      newList[index] = newList[index + 1];
+      newList[index + 1] = temp;
+      setTargetList(newList);
+    }
+  };
+
+  // Variant Image re-ordering helper
+  const moveVariantImage = (vIdx: number, index: number, direction: 'left' | 'right', isWhiteBg: boolean) => {
+    setIsDirty(true);
+    const fieldKey = isWhiteBg ? 'whiteBackgroundImages' : 'images';
+    const rawVal = variants[vIdx][fieldKey] || '';
+    const items = rawVal.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (direction === 'left' && index > 0) {
+      const temp = items[index];
+      items[index] = items[index - 1];
+      items[index - 1] = temp;
+      updateVariantField(vIdx, fieldKey, items.join(', '));
+    } else if (direction === 'right' && index < items.length - 1) {
+      const temp = items[index];
+      items[index] = items[index + 1];
+      items[index + 1] = temp;
+      updateVariantField(vIdx, fieldKey, items.join(', '));
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -295,6 +396,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       warranty: parentValues.warranty || null,
       bulletPoints: parentValues.bulletPoints ? parentValues.bulletPoints.split('\n').map((s: string) => s.trim()).filter(Boolean) : [],
       images: images.filter((img: string) => img.trim()),
+      whiteBackgroundImages: whiteBackgroundImages.filter((img: string) => img.trim()),
       dimensionUnit,
       amazonFixtureForm: parentValues.amazonFixtureForm || null,
       amazonMountingType: parentValues.amazonMountingType || null,
@@ -312,6 +414,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
         b2bPrice: v.b2bPrice ? parseFloat(v.b2bPrice) : null,
         stockQuantity: parseInt(v.stockQuantity, 10) || 0,
         images: v.images ? v.images.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+        whiteBackgroundImages: v.whiteBackgroundImages ? v.whiteBackgroundImages.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
         weight: v.weight ? parseFloat(v.weight) : null,
         length: v.length ? parseFloat(v.length) : null,
         breadth: v.breadth ? parseFloat(v.breadth) : null,
@@ -350,6 +453,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
           throw new Error(text);
         }
       }
+      setIsDirty(false);
       router.push('/products');
       router.refresh();
     } catch (e: any) {
@@ -358,1058 +462,1273 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     }
   }
 
-  const inputCls = "w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
+  const inputCls = "w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
   const labelCls = "font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1";
-  const sectionTitle = "font-serif text-[20px] text-primary mb-4";
+
+  // Collapsible Section Card Helper
+  const CollapsibleCard = ({ 
+    id, 
+    title, 
+    sub, 
+    number, 
+    done, 
+    warn, 
+    sectionKey,
+    children 
+  }: {
+    id: string;
+    title: string;
+    sub: string;
+    number: string | number;
+    done: boolean;
+    warn?: boolean;
+    sectionKey: keyof typeof openSections;
+    children: React.ReactNode;
+  }) => {
+    const isOpen = openSections[sectionKey];
+    const toggle = () => setOpenSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+
+    return (
+      <section id={id} className="premium-card flex flex-col overflow-hidden mb-6">
+        <div 
+          onClick={toggle}
+          className="px-6 py-5 border-b border-border flex justify-between items-center cursor-pointer select-none bg-surface-muted/30 hover:bg-surface-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-4">
+            {done ? (
+              <span className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500 text-emerald-400 flex items-center justify-center text-[10px] font-semibold">✓</span>
+            ) : warn ? (
+              <span className="w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500 text-amber-400 flex items-center justify-center text-[10px] font-semibold">!</span>
+            ) : (
+              <span className="w-6 h-6 rounded-full border border-border-strong text-muted flex items-center justify-center text-[10px] font-mono">{number}</span>
+            )}
+            <div>
+              <h3 className="font-serif text-[18px] text-primary font-medium tracking-wide">{title}</h3>
+              <p className="font-mono text-[9px] text-muted uppercase tracking-widest mt-0.5">{sub}</p>
+            </div>
+          </div>
+          <span className={`text-[18px] text-muted transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>›</span>
+        </div>
+        {isOpen && (
+          <div className="p-6 space-y-6 bg-surface/30">
+            {children}
+          </div>
+        )}
+      </section>
+    );
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="p-4 border border-red-900 bg-red-900/10 text-red-400 font-mono text-[12px]">{error}</div>
       )}
 
-      {/* === VARIANT SELECTOR TABS === */}
-      <div className="border-b border-border pb-4">
-        <div className="flex justify-between items-center mb-2">
-          <label className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">Active Form View</label>
-          <p className="text-[11px] text-muted italic">Prefill is enabled automatically for all variant fields.</p>
+      {/* === STICKY TOP BAR REDESIGN === */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border py-4 px-6 -mx-6 flex items-center justify-between gap-4">
+        <div>
+          <div className="font-mono text-[9px] uppercase tracking-widest text-muted">
+            Products / {parentValues.categoryId ? categories.find(c => c.id === parentValues.categoryId)?.name || 'Catalog' : 'Catalog'}
+          </div>
+          <div className="flex items-baseline gap-3 mt-1">
+            <h1 className="font-serif text-[24px] text-primary font-light tracking-wide">
+              {parentValues.name || 'New Product'}
+            </h1>
+            {parentValues.sku && (
+              <span className="font-mono text-[10px] text-muted border border-border px-2 py-0.5 rounded-full uppercase">
+                {parentValues.sku}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('parent')}
-            className={`px-5 py-2.5 font-mono text-[10px] uppercase tracking-widest border transition-all ${
-              activeTab === 'parent'
-                ? 'bg-accent border-accent text-black font-semibold'
-                : 'border-border text-muted hover:border-accent/40 hover:text-primary bg-background'
-            }`}
-          >
-            Main Product Details
-          </button>
-          
-          {variants.map((v, i) => (
-            <div key={i} className={`flex items-center border transition-all ${activeTab === i ? 'border-accent bg-accent/5' : 'border-border bg-background'}`}>
-              <button
-                type="button"
-                onClick={() => setActiveTab(i)}
-                className={`pl-4 pr-2 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-all ${
-                  activeTab === i ? 'text-accent font-semibold' : 'text-muted hover:text-primary'
-                }`}
-              >
-                {v.name || `Var ${i + 1}`}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  removeVariant(i);
-                  if (activeTab === i) setActiveTab('parent');
-                  else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
-                }}
-                className="pr-3 pl-1 text-[16px] text-red-400 hover:text-red-600 transition-colors"
-                title="Delete variant"
-              >
-                ×
-              </button>
-            </div>
-          ))}
 
-          <button
-            type="button"
-            onClick={() => {
-              const newIdx = variants.length;
-              addVariant();
-              setActiveTab(newIdx);
-            }}
-            className="px-5 py-2.5 font-mono text-[10px] uppercase tracking-widest text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background"
-          >
-            + Add Variant Option
-          </button>
+        <div className="flex items-center gap-6">
+          {/* Dirty changes status indicator */}
+          <div className={`flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider ${isDirty ? 'text-amber-500' : 'text-emerald-500'}`}>
+            <span className={`w-2 h-2 rounded-full ${isDirty ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+            {isDirty ? 'Unsaved Changes' : 'All Changes Saved'}
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button 
+              type="button" 
+              onClick={() => router.back()} 
+              className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-5 py-2.5 hover:text-primary transition-colors bg-background"
+            >
+              Cancel
+            </button>
+            {mode === 'edit' && defaultValues?.id && (
+              <SyncButton productId={defaultValues.id} label="Sync" />
+            )}
+            <button 
+              type="submit" 
+              disabled={saving} 
+              className="px-5 py-2.5 font-mono text-[9px] uppercase tracking-[0.15em] bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : mode === 'add' ? 'Save Product' : 'Update Product'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {activeTab === 'parent' ? (
-        /* ========================================================================= */
-        /* ========================== PARENT PRODUCT FORM ========================== */
-        /* ========================================================================= */
-        <div className="space-y-10 animate-in fade-in duration-200">
-          {/* === BASIC INFO === */}
+      {/* === TWO-COLUMN RAIL LAYOUT === */}
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
+        
+        {/* === LEFT STICKY RAIL SIDE NAV === */}
+        <nav className="sticky top-[86px] flex flex-col gap-6 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
           <div>
-            <h3 className={sectionTitle}>Basic Information (Main Product)</h3>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="productName" className={labelCls}>Product Name *</label>
-                <input
-                  id="productName"
-                  required
-                  value={parentValues.name}
-                  onChange={e => handleParentFieldChange('name', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. James Chandelier"
-                />
-              </div>
-              <div>
-                <label htmlFor="skuCode" className={labelCls}>SKU Code *</label>
-                <input
-                  id="skuCode"
-                  required
-                  value={parentValues.sku}
-                  onChange={e => handleParentFieldChange('sku', e.target.value)}
-                  className={`${inputCls} uppercase`}
-                  placeholder="e.g. JS-CHAND-102"
-                />
-              </div>
-              <div className="col-span-2">
-                <label htmlFor="description" className={labelCls}>Description</label>
-                <textarea
-                  id="description"
-                  value={parentValues.description}
-                  onChange={e => handleParentFieldChange('description', e.target.value)}
-                  rows={4}
-                  className={inputCls}
-                  placeholder="Enter detailed catalog description..."
-                />
-              </div>
-              <div>
-                <label htmlFor="categoryId" className={labelCls}>Category *</label>
-                <select
-                  id="categoryId"
-                  required
-                  value={parentValues.categoryId}
-                  onChange={e => handleParentFieldChange('categoryId', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Select Category</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Suited Spaces (Optional)</label>
-                <div className="flex flex-wrap gap-2 p-2 border border-border bg-background min-h-[46px]">
-                  {spaces.map(s => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setSelectedSpaces(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id])}
-                      className={`px-3 py-1 font-mono text-[9px] uppercase tracking-widest border transition-all ${
-                        selectedSpaces.includes(s.id)
-                          ? 'bg-accent border-accent text-black font-semibold'
-                          : 'border-border text-muted hover:border-accent/50'
-                      }`}
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-3">Variant View</p>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('parent')}
+                className={`text-left font-mono text-[11px] p-3 border transition-all rounded ${
+                  activeTab === 'parent'
+                    ? 'border-accent text-accent bg-accent/5 font-semibold'
+                    : 'border-border text-muted hover:text-primary hover:border-accent/40 bg-background/50'
+                }`}
+              >
+                Main Product Details
+              </button>
+              {variants.map((v, i) => (
+                <div key={i} className="group relative flex items-center w-full">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(i)}
+                    className={`flex-1 text-left font-mono text-[11px] p-3 border transition-all rounded-l ${
+                      activeTab === i
+                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-semibold'
+                        : 'border-border border-r-transparent text-muted hover:text-primary hover:border-accent/40 bg-background/50'
+                    }`}
+                  >
+                    {v.name || `Variant ${i + 1}`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDirty(true);
+                      removeVariant(i);
+                      if (activeTab === i) setActiveTab('parent');
+                      else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
+                    }}
+                    className={`px-3 py-[13px] text-[14px] border border-l-transparent text-muted hover:text-red-400 bg-background/50 hover:bg-red-950/20 transition-all rounded-r ${
+                      activeTab === i ? 'border-accent' : 'border-border'
+                    }`}
+                    title="Delete variant"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDirty(true);
+                  const newIdx = variants.length;
+                  addVariant();
+                  setActiveTab(newIdx);
+                }}
+                className="p-3 font-mono text-[11px] text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background text-center rounded"
+              >
+                + Add Variant Option
+              </button>
+            </div>
+          </div>
+
+          {activeTab === 'parent' && (
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-3">
+                Sections · {completedSections}/{totalSections} done
+              </p>
+              <ul className="border-l border-border pl-0 list-none space-y-3 font-mono text-[11px]">
+                <li className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isBasicComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
+                  <a href="#basic" className={`${activeTab === 'parent' ? 'text-primary hover:text-accent' : 'text-muted'}`}>Basic info</a>
+                </li>
+                <li className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isPricingComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
+                  <a href="#pricing" className="text-muted hover:text-accent">Pricing & inventory</a>
+                </li>
+                <li className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isSpecsComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
+                  <a href="#specs" className="text-muted hover:text-accent">Technical specs</a>
+                </li>
+                <li className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isSeoComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
+                  <a href="#seo" className="text-muted hover:text-accent">Marketplace SEO</a>
+                </li>
+                <li className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isImagesComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
+                  <a href="#images" className="text-muted hover:text-accent">Product images</a>
+                </li>
+              </ul>
+            </div>
+          )}
+        </nav>
+
+        {/* === RIGHT FORM VIEW === */}
+        <main className="min-w-0 flex-1">
+          {activeTab === 'parent' ? (
+            /* ========================================================================= */
+            /* ========================== PARENT PRODUCT FORM ========================== */
+            /* ========================================================================= */
+            <div className="space-y-6">
+              
+              {/* === BASIC INFO CARD === */}
+              <CollapsibleCard 
+                id="basic" 
+                title="Basic Information" 
+                sub="Name, description, catalog category" 
+                number="1" 
+                done={isBasicComplete}
+                sectionKey="basic"
+              >
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="productName" className={labelCls}>Product Name *</label>
+                    <input
+                      id="productName"
+                      required
+                      value={parentValues.name}
+                      onChange={e => handleParentFieldChange('name', e.target.value)}
+                      className={inputCls}
+                      placeholder="e.g. James Chandelier"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="skuCode" className={labelCls}>SKU Code *</label>
+                    <input
+                      id="skuCode"
+                      required
+                      value={parentValues.sku}
+                      onChange={e => handleParentFieldChange('sku', e.target.value)}
+                      className={`${inputCls} uppercase`}
+                      placeholder="e.g. JS-CHAND-102"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <label htmlFor="description" className={labelCls}>Description</label>
+                      <span className="font-mono text-[9px] text-muted">{(parentValues.description || '').length} / 2000</span>
+                    </div>
+                    <textarea
+                      id="description"
+                      value={parentValues.description}
+                      onChange={e => handleParentFieldChange('description', e.target.value)}
+                      rows={4}
+                      className={inputCls}
+                      placeholder="Enter detailed catalog description..."
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="categoryId" className={labelCls}>Category *</label>
+                    <select
+                      id="categoryId"
+                      required
+                      value={parentValues.categoryId}
+                      onChange={e => handleParentFieldChange('categoryId', e.target.value)}
+                      className={inputCls}
                     >
-                      {s.name}
+                      <option value="">Select Category</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Suited Spaces (Toggle chips)</label>
+                    <div className="flex flex-wrap gap-2">
+                      {spaces.map(s => {
+                        const isSelected = selectedSpaces.includes(s.id);
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setIsDirty(true);
+                              setSelectedSpaces(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]);
+                            }}
+                            className={`px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider border transition-all ${
+                              isSelected 
+                                ? 'bg-accent/15 border-accent text-accent font-semibold' 
+                                : 'border-border text-muted hover:border-accent/40 hover:text-primary'
+                            }`}
+                          >
+                            {isSelected ? '✓ ' : ''}{s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleCard>
+
+              {/* === PRICING & INVENTORY CARD === */}
+              <CollapsibleCard
+                id="pricing"
+                title="Pricing & Inventory"
+                sub="Channel pricing, stock, shipping dimensions"
+                number="2"
+                done={isPricingComplete}
+                warn={showB2BWarning}
+                sectionKey="pricing"
+              >
+                <div className="grid grid-cols-4 gap-6">
+                  <div>
+                    <label htmlFor="mrp" className={labelCls}>MRP (₹) *</label>
+                    <div className="flex items-center">
+                      <span className="bg-surface-muted border border-r-0 border-border px-3 py-3 font-mono text-[13px] text-muted">₹</span>
+                      <input
+                        id="mrp"
+                        required
+                        type="number"
+                        step="0.01"
+                        value={parentValues.mrp}
+                        onChange={e => handleParentFieldChange('mrp', e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="d2cPrice" className={labelCls}>D2C Price (₹) *</label>
+                    <div className="flex items-center">
+                      <span className="bg-surface-muted border border-r-0 border-border px-3 py-3 font-mono text-[13px] text-muted">₹</span>
+                      <input
+                        id="d2cPrice"
+                        required
+                        type="number"
+                        step="0.01"
+                        value={parentValues.d2cPrice}
+                        onChange={e => handleParentFieldChange('d2cPrice', e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="b2bPrice" className={labelCls}>B2B Price (₹) *</label>
+                    <div className="flex items-center">
+                      <span className="bg-surface-muted border border-r-0 border-border px-3 py-3 font-mono text-[13px] text-muted">₹</span>
+                      <input
+                        id="b2bPrice"
+                        required
+                        type="number"
+                        step="0.01"
+                        value={parentValues.b2bPrice}
+                        onChange={e => handleParentFieldChange('b2bPrice', e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                    {showB2BWarning && (
+                      <p className="text-[10px] text-amber-400 font-mono mt-1">⚠ Equal to MRP — check if intended</p>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="stockQuantity" className={labelCls}>Stock Qty *</label>
+                    <input
+                      id="stockQuantity"
+                      required
+                      type="number"
+                      value={parentValues.stockQuantity}
+                      onChange={e => handleParentFieldChange('stockQuantity', e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-4">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted mb-3">Shipping Package Dimensions</div>
+                  <div className="grid grid-cols-4 gap-6">
+                    <div>
+                      <label htmlFor="weight" className={labelCls}>Weight (kg)</label>
+                      <input
+                        id="weight"
+                        type="number"
+                        step="0.01"
+                        value={parentValues.weight}
+                        onChange={e => handleParentFieldChange('weight', e.target.value)}
+                        className={inputCls}
+                        placeholder="0.5"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="length" className={labelCls}>Length (cm)</label>
+                      <input
+                        id="length"
+                        type="number"
+                        step="0.1"
+                        value={parentValues.length}
+                        onChange={e => handleParentFieldChange('length', e.target.value)}
+                        className={inputCls}
+                        placeholder="10"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="breadth" className={labelCls}>Breadth (cm)</label>
+                      <input
+                        id="breadth"
+                        type="number"
+                        step="0.1"
+                        value={parentValues.breadth}
+                        onChange={e => handleParentFieldChange('breadth', e.target.value)}
+                        className={inputCls}
+                        placeholder="10"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="height" className={labelCls}>Height (cm)</label>
+                      <input
+                        id="height"
+                        type="number"
+                        step="0.1"
+                        value={parentValues.height}
+                        onChange={e => handleParentFieldChange('height', e.target.value)}
+                        className={inputCls}
+                        placeholder="10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-muted">Display Size</div>
+                    <div className="flex gap-1 bg-background p-0.5 border border-border rounded-full">
+                      <button
+                        type="button"
+                        onClick={() => setDimensionUnit('CM')}
+                        className={`px-3 py-1 rounded-full font-mono text-[9px] transition-all ${
+                          dimensionUnit === 'CM' ? 'bg-accent text-black font-semibold' : 'text-muted hover:text-primary'
+                        }`}
+                      >
+                        CM
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDimensionUnit('INCH')}
+                        className={`px-3 py-1 rounded-full font-mono text-[9px] transition-all ${
+                          dimensionUnit === 'INCH' ? 'bg-accent text-black font-semibold' : 'text-muted hover:text-primary'
+                        }`}
+                      >
+                        IN
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <label className={labelCls}>Height ({dimensionUnit === 'CM' ? 'cm' : 'in'})</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parentValues.actualHeight}
+                        onChange={e => handleParentFieldChange('actualHeight', e.target.value)}
+                        className={inputCls}
+                        placeholder="—"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Width ({dimensionUnit === 'CM' ? 'cm' : 'in'})</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parentValues.actualWidth}
+                        onChange={e => handleParentFieldChange('actualWidth', e.target.value)}
+                        className={inputCls}
+                        placeholder="—"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Depth ({dimensionUnit === 'CM' ? 'cm' : 'in'}) (Optional)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={parentValues.actualDepth}
+                        onChange={e => handleParentFieldChange('actualDepth', e.target.value)}
+                        className={inputCls}
+                        placeholder="—"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleCard>
+
+              {/* === TECHNICAL SPECS CARD === */}
+              <CollapsibleCard
+                id="specs"
+                title="Technical Specifications"
+                sub="GST, certification, materials, power overrides"
+                number="3"
+                done={isSpecsComplete}
+                sectionKey="specs"
+              >
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className={labelCls}>GST Rate (%)</label>
+                    <select
+                      value={parentValues.gstRate}
+                      onChange={e => handleParentFieldChange('gstRate', parseInt(e.target.value, 10))}
+                      className={inputCls}
+                    >
+                      <option value={5}>5% (LED)</option>
+                      <option value={18}>18% (Traditional)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>HSN Code</label>
+                    <input
+                      value={parentValues.hsnCode}
+                      onChange={e => handleParentFieldChange('hsnCode', e.target.value)}
+                      className={inputCls}
+                      placeholder="94054090"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>BIS Certification</label>
+                    <input
+                      value={parentValues.bisCertification}
+                      onChange={e => handleParentFieldChange('bisCertification', e.target.value)}
+                      className={inputCls}
+                      placeholder="IS 10322"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6 pt-4 border-t border-border/40">
+                  <div>
+                    <label className={labelCls}>Material &amp; Finish</label>
+                    <input
+                      value={parentValues.materialAndFinish}
+                      onChange={e => handleParentFieldChange('materialAndFinish', e.target.value)}
+                      className={inputCls}
+                      placeholder="e.g. Brass, Glass"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Bulb Type</label>
+                    <input
+                      value={parentValues.bulbType}
+                      onChange={e => handleParentFieldChange('bulbType', e.target.value)}
+                      className={inputCls}
+                      placeholder="e.g. E27, E14"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Bulb Design Style</label>
+                    <input
+                      value={parentValues.style}
+                      onChange={e => handleParentFieldChange('style', e.target.value)}
+                      className={inputCls}
+                      placeholder="e.g. Contemporary, Art Deco"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border/40">
+                  <div>
+                    <label className={labelCls}>Power specification *</label>
+                    <input
+                      required
+                      value={parentValues.power}
+                      onChange={e => handleParentFieldChange('power', e.target.value)}
+                      className={inputCls}
+                      placeholder="e.g. Max. 60W"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Voltage specification *</label>
+                    <input
+                      required
+                      value={parentValues.voltage}
+                      onChange={e => handleParentFieldChange('voltage', e.target.value)}
+                      className={inputCls}
+                      placeholder="e.g. 110V-240V AC"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border/40 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <label className={labelCls}>Filterable specs overrides</label>
+                    <button type="button" onClick={addSpec} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors">
+                      + Add Spec
                     </button>
+                  </div>
+                  {specs.map((spec, i) => (
+                    <div key={i} className="flex gap-3 items-center">
+                      <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Bulb Qty)" className={`${inputCls} w-1/3 !py-2`} />
+                      <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. 6)" className={`${inputCls} flex-1 !py-2`} />
+                      <button type="button" onClick={() => removeSpec(i)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors">
+                        ×
+                      </button>
+                    </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
+              </CollapsibleCard>
 
-          {/* === PRICING & INVENTORY === */}
-          <div className="pt-6 border-t border-border">
-            <h3 className={sectionTitle}>Pricing &amp; Inventory</h3>
-            <div className="grid grid-cols-4 gap-6">
-              <div>
-                <label htmlFor="mrp" className={labelCls}>MRP (₹) *</label>
-                <input
-                  id="mrp"
-                  required
-                  type="number"
-                  step="0.01"
-                  value={parentValues.mrp}
-                  onChange={e => handleParentFieldChange('mrp', e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label htmlFor="d2cPrice" className={labelCls}>D2C Price (₹) *</label>
-                <input
-                  id="d2cPrice"
-                  required
-                  type="number"
-                  step="0.01"
-                  value={parentValues.d2cPrice}
-                  onChange={e => handleParentFieldChange('d2cPrice', e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label htmlFor="b2bPrice" className={labelCls}>B2B Price (₹) *</label>
-                <input
-                  id="b2bPrice"
-                  required
-                  type="number"
-                  step="0.01"
-                  value={parentValues.b2bPrice}
-                  onChange={e => handleParentFieldChange('b2bPrice', e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label htmlFor="stockQuantity" className={labelCls}>Stock Qty *</label>
-                <input
-                  id="stockQuantity"
-                  required
-                  type="number"
-                  value={parentValues.stockQuantity}
-                  onChange={e => handleParentFieldChange('stockQuantity', e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-6 mt-6">
-              <div>
-                <label htmlFor="weight" className={labelCls}>Weight (kg)</label>
-                <input
-                  id="weight"
-                  type="number"
-                  step="0.01"
-                  value={parentValues.weight}
-                  onChange={e => handleParentFieldChange('weight', e.target.value)}
-                  className={inputCls}
-                  placeholder="0.5"
-                />
-              </div>
-              <div>
-                <label htmlFor="length" className={labelCls}>Length (cm)</label>
-                <input
-                  id="length"
-                  type="number"
-                  step="0.1"
-                  value={parentValues.length}
-                  onChange={e => handleParentFieldChange('length', e.target.value)}
-                  className={inputCls}
-                  placeholder="10"
-                />
-              </div>
-              <div>
-                <label htmlFor="breadth" className={labelCls}>Breadth (cm)</label>
-                <input
-                  id="breadth"
-                  type="number"
-                  step="0.1"
-                  value={parentValues.breadth}
-                  onChange={e => handleParentFieldChange('breadth', e.target.value)}
-                  className={inputCls}
-                  placeholder="10"
-                />
-              </div>
-              <div>
-                <label htmlFor="height" className={labelCls}>Height (cm)</label>
-                <input
-                  id="height"
-                  type="number"
-                  step="0.1"
-                  value={parentValues.height}
-                  onChange={e => handleParentFieldChange('height', e.target.value)}
-                  className={inputCls}
-                  placeholder="10"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* === TECHNICAL SPECS === */}
-          <div className="pt-6 border-t border-border">
-            <h3 className={sectionTitle}>Technical Specifications</h3>
-            <div className="grid grid-cols-4 gap-6 mb-6">
-              <div>
-                <label className={labelCls}>GST Rate (%)</label>
-                <select
-                  value={parentValues.gstRate}
-                  onChange={e => handleParentFieldChange('gstRate', parseInt(e.target.value, 10))}
-                  className={inputCls}
-                >
-                  <option value={5}>5% (LED)</option>
-                  <option value={18}>18% (Traditional)</option>
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>HSN Code</label>
-                <input
-                  value={parentValues.hsnCode}
-                  onChange={e => handleParentFieldChange('hsnCode', e.target.value)}
-                  className={inputCls}
-                  placeholder="94054090"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>BIS Certification</label>
-                <input
-                  value={parentValues.bisCertification}
-                  onChange={e => handleParentFieldChange('bisCertification', e.target.value)}
-                  className={inputCls}
-                  placeholder="IS 10322"
-                />
-              </div>
-              <div className="flex items-center gap-3 mt-6">
-                <input
-                  type="checkbox"
-                  checked={parentValues.isLed}
-                  onChange={e => handleParentFieldChange('isLed', e.target.checked)}
-                  id="isLed"
-                  className="w-4 h-4 accent-[#c4a05a]"
-                />
-                <label htmlFor="isLed" className="font-mono text-[11px] uppercase tracking-widest text-muted cursor-pointer">LED Product</label>
-              </div>
-            </div>
-
-            <div className="bg-surface-muted/20 p-6 border border-border space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Core Attributes */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1 h-4 bg-accent"></div>
-                    <h4 className="font-mono text-[10px] uppercase tracking-widest text-primary">Core Attributes</h4>
+              {/* === MARKETPLACE SEO CARD === */}
+              <CollapsibleCard
+                id="seo"
+                title="Marketplace SEO"
+                sub="Amazon and Flipkart sync attributes"
+                number="4"
+                done={isSeoComplete}
+                sectionKey="seo"
+              >
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className={labelCls}>Brand Name</label>
+                    <input
+                      value={parentValues.brand}
+                      onChange={e => handleParentFieldChange('brand', e.target.value)}
+                      className={inputCls}
+                    />
                   </div>
-                  <div className="space-y-3">
+                  <div>
+                    <label className={labelCls}>Warranty Terms</label>
+                    <input
+                      value={parentValues.warranty}
+                      onChange={e => handleParentFieldChange('warranty', e.target.value)}
+                      className={inputCls}
+                      placeholder="2 Years Warranty"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Country of Origin</label>
+                    <input
+                      value={parentValues.countryOfOrigin}
+                      onChange={e => handleParentFieldChange('countryOfOrigin', e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-4">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted mb-3">Auto-detected on sync — edit to override</div>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="relative">
+                      <label className={labelCls}>Light Fixture Form</label>
+                      <input
+                        value={parentValues.amazonFixtureForm}
+                        onChange={e => handleParentFieldChange('amazonFixtureForm', e.target.value)}
+                        placeholder="Not yet synced"
+                        className={inputCls}
+                      />
+                      <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-surface-muted text-muted px-2 py-0.5 border border-border">auto · pending</span>
+                    </div>
+                    <div className="relative">
+                      <label className={labelCls}>Mounting Type</label>
+                      <input
+                        value={parentValues.amazonMountingType}
+                        onChange={e => handleParentFieldChange('amazonMountingType', e.target.value)}
+                        placeholder="Not yet synced"
+                        className={inputCls}
+                      />
+                      <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-surface-muted text-muted px-2 py-0.5 border border-border">auto · pending</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-4">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <label htmlFor="amazonKeywords" className={labelCls}>Generic search keywords</label>
+                    <span className="font-mono text-[9px] text-muted">{(parentValues.amazonKeywords || '').length} / 250</span>
+                  </div>
+                  <input
+                    id="amazonKeywords"
+                    value={parentValues.amazonKeywords}
+                    onChange={e => handleParentFieldChange('amazonKeywords', e.target.value)}
+                    placeholder="Leave empty for auto-generated keywords"
+                    className={inputCls}
+                  />
+                </div>
+
+                <div className="border-t border-border/40 pt-4">
+                  <label className={labelCls}>Special features (Toggle chips)</label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {["Adjustable Height", "Dimmable", "Energy Efficient", "Color Changing", "Rust Resistant"].map(feature => {
+                      const isChecked = parentValues.amazonSpecialFeatures?.includes(feature);
+                      return (
+                        <button
+                          key={feature}
+                          type="button"
+                          onClick={() => {
+                            setIsDirty(true);
+                            const newFeatures = isChecked
+                              ? (parentValues.amazonSpecialFeatures || []).filter((f: string) => f !== feature)
+                              : [...(parentValues.amazonSpecialFeatures || []), feature];
+                            handleParentFieldChange('amazonSpecialFeatures', newFeatures);
+                          }}
+                          className={`px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-wider border transition-all ${
+                            isChecked 
+                              ? 'bg-accent/15 border-accent text-accent font-semibold' 
+                              : 'border-border text-muted hover:border-accent/40 hover:text-primary'
+                          }`}
+                        >
+                          {isChecked ? '✓ ' : ''}{feature}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CollapsibleCard>
+
+              {/* === IMAGES MANAGEMENT CARD === */}
+              <CollapsibleCard
+                id="images"
+                title="Product Images"
+                sub="Separate storefront and white background listing media"
+                number="5"
+                done={isImagesComplete}
+                sectionKey="images"
+              >
+                {/* 1. STOREFRONT IMAGES */}
+                <div className="space-y-4">
+                  <h4 className="font-serif text-[16px] text-accent tracking-wide">Remastered Images (Storefront &amp; Socials)</h4>
+                  <p className="font-mono text-[10px] text-muted">The first image is the cover photo shown on storefront catalogs.</p>
+                  
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {images.map((url, idx) => (
+                        <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
+                          {idx === 0 && (
+                            <span className="absolute top-2 left-2 bg-accent text-black font-semibold px-2 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider">Primary</span>
+                          )}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setIsDirty(true);
+                              setImages(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                          >
+                            ×
+                          </button>
+                          
+                          {/* Reordering Controls */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
+                            {idx > 0 && (
+                              <button 
+                                type="button" 
+                                onClick={() => moveImage(idx, 'left', false)}
+                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                              >
+                                ←
+                              </button>
+                            )}
+                            {idx < images.length - 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => moveImage(idx, 'right', false)}
+                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                              >
+                                →
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <CloudinaryUpload
+                    onUpload={(urls) => {
+                      setIsDirty(true);
+                      setImages(prev => [...prev, ...urls]);
+                    }}
+                    defaultImages={[]}
+                    multiple={true}
+                    label="Upload Remastered Images"
+                  />
+                </div>
+
+                {/* 2. AMAZON COMPLIANCE WHITE BACKGROUND IMAGES */}
+                <div className="space-y-4 pt-6 border-t border-border/40 mt-6">
+                  <h4 className="font-serif text-[16px] text-accent tracking-wide">White Background Images (Amazon Listing Compliance)</h4>
+                  <p className="font-mono text-[10px] text-muted">Amazon requires the first listing photo to be on a pure white background.</p>
+
+                  {whiteBackgroundImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {whiteBackgroundImages.map((url, idx) => (
+                        <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
+                          {idx === 0 && (
+                            <span className="absolute top-2 left-2 bg-accent text-black font-semibold px-2 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider">Amazon Main</span>
+                          )}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setIsDirty(true);
+                              setWhiteBackgroundImages(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                          >
+                            ×
+                          </button>
+
+                          {/* Reordering Controls */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
+                            {idx > 0 && (
+                              <button 
+                                type="button" 
+                                onClick={() => moveImage(idx, 'left', true)}
+                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                              >
+                                ←
+                              </button>
+                            )}
+                            {idx < whiteBackgroundImages.length - 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => moveImage(idx, 'right', true)}
+                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                              >
+                                →
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <CloudinaryUpload
+                    onUpload={(urls) => {
+                      setIsDirty(true);
+                      setWhiteBackgroundImages(prev => [...prev, ...urls]);
+                    }}
+                    defaultImages={[]}
+                    multiple={true}
+                    label="Upload White Background Images"
+                  />
+                </div>
+              </CollapsibleCard>
+
+            </div>
+          ) : (
+            /* ========================================================================= */
+            /* ========================== ACTIVE VARIANT FORM ========================== */
+            /* ========================================================================= */
+            <div className="space-y-6 animate-in fade-in duration-200">
+              
+              <div className="premium-card p-6 space-y-6">
+                <div className="flex justify-between items-center border-b border-border pb-4">
+                  <h3 className="font-serif text-[20px] text-primary font-medium tracking-wide">
+                    Variant specifications override
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDirty(true);
+                      removeVariant(activeTab);
+                      setActiveTab('parent');
+                    }}
+                    className="font-mono text-[9px] uppercase tracking-[0.15em] text-rose-400 border border-rose-900/30 px-4 py-2 hover:bg-rose-950/20 transition-colors"
+                  >
+                    Delete Variant option
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className={labelCls}>Variant Name *</label>
+                    <input
+                      required
+                      value={variants[activeTab].name}
+                      onChange={e => updateVariantField(activeTab, 'name', e.target.value)}
+                      placeholder="e.g. Gold - 48 inch"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Variant SKU *</label>
+                    <input
+                      required
+                      value={variants[activeTab].sku}
+                      onChange={e => updateVariantField(activeTab, 'sku', e.target.value)}
+                      placeholder="SKU Code"
+                      className={`${inputCls} uppercase`}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Stock Qty *</label>
+                    <input
+                      required
+                      type="number"
+                      value={variants[activeTab].stockQuantity}
+                      onChange={e => updateVariantField(activeTab, 'stockQuantity', e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-6">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Pricing (Leave blank to inherit parent)</div>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <label className={labelCls}>MRP Override (₹)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variants[activeTab].mrp}
+                        onChange={e => updateVariantField(activeTab, 'mrp', e.target.value)}
+                        placeholder={parentValues.mrp ? `Inherit (₹${parentValues.mrp})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>D2C Price Override (₹)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variants[activeTab].d2cPrice}
+                        onChange={e => updateVariantField(activeTab, 'd2cPrice', e.target.value)}
+                        placeholder={parentValues.d2cPrice ? `Inherit (₹${parentValues.d2cPrice})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>B2B Price Override (₹)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variants[activeTab].b2bPrice}
+                        onChange={e => updateVariantField(activeTab, 'b2bPrice', e.target.value)}
+                        placeholder={parentValues.b2bPrice ? `Inherit (₹${parentValues.b2bPrice})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-6">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Shipping dimensions</div>
+                  <div className="grid grid-cols-4 gap-6">
+                    <div>
+                      <label className={labelCls}>Weight (kg)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={variants[activeTab].weight}
+                        onChange={e => updateVariantField(activeTab, 'weight', e.target.value)}
+                        placeholder={parentValues.weight ? `Inherit (${parentValues.weight} kg)` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Length (cm)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={variants[activeTab].length}
+                        onChange={e => updateVariantField(activeTab, 'length', e.target.value)}
+                        placeholder={parentValues.length ? `Inherit (${parentValues.length} cm)` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Breadth (cm)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={variants[activeTab].breadth}
+                        onChange={e => updateVariantField(activeTab, 'breadth', e.target.value)}
+                        placeholder={parentValues.breadth ? `Inherit (${parentValues.breadth} cm)` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Height (cm)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={variants[activeTab].height}
+                        onChange={e => updateVariantField(activeTab, 'height', e.target.value)}
+                        placeholder={parentValues.height ? `Inherit (${parentValues.height} cm)` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-6">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Display Dimensions ({dimensionUnit === 'CM' ? 'cm' : 'in'})</div>
+                  <div className="grid grid-cols-3 gap-6">
+                    <div>
+                      <label className={labelCls}>Height</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={variants[activeTab].actualHeight}
+                        onChange={e => updateVariantField(activeTab, 'actualHeight', e.target.value)}
+                        placeholder={parentValues.actualHeight ? `Inherit (${parentValues.actualHeight})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Width</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={variants[activeTab].actualWidth}
+                        onChange={e => updateVariantField(activeTab, 'actualWidth', e.target.value)}
+                        placeholder={parentValues.actualWidth ? `Inherit (${parentValues.actualWidth})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Depth</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={variants[activeTab].actualDepth}
+                        onChange={e => updateVariantField(activeTab, 'actualDepth', e.target.value)}
+                        placeholder={parentValues.actualDepth ? `Inherit (${parentValues.actualDepth})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/40 pt-6">
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Technical specs</div>
+                  <div className="grid grid-cols-3 gap-6">
                     <div>
                       <label className={labelCls}>Material &amp; Finish</label>
                       <input
-                        value={parentValues.materialAndFinish}
-                        onChange={e => handleParentFieldChange('materialAndFinish', e.target.value)}
+                        value={variants[activeTab].materialAndFinish}
+                        onChange={e => updateVariantField(activeTab, 'materialAndFinish', e.target.value)}
+                        placeholder={parentValues.materialAndFinish || 'Inherit'}
                         className={inputCls}
-                        placeholder="e.g. Brass, Matte Black"
                       />
                     </div>
                     <div>
                       <label className={labelCls}>Bulb Type</label>
                       <input
-                        value={parentValues.bulbType}
-                        onChange={e => handleParentFieldChange('bulbType', e.target.value)}
+                        value={variants[activeTab].bulbType}
+                        onChange={e => updateVariantField(activeTab, 'bulbType', e.target.value)}
+                        placeholder={parentValues.bulbType || 'Inherit'}
                         className={inputCls}
-                        placeholder="e.g. E14, Integrated LED"
                       />
                     </div>
                     <div>
                       <label className={labelCls}>Design Style</label>
                       <input
-                        value={parentValues.style}
-                        onChange={e => handleParentFieldChange('style', e.target.value)}
+                        value={variants[activeTab].style}
+                        onChange={e => updateVariantField(activeTab, 'style', e.target.value)}
+                        placeholder={parentValues.style || 'Inherit'}
                         className={inputCls}
-                        placeholder="e.g. Contemporary, Art Deco"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Display Dimensions */}
-                <div className="md:col-span-2 space-y-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-4 bg-accent"></div>
-                      <h4 className="font-mono text-[10px] uppercase tracking-widest text-primary">Physical Dimensions (Display)</h4>
-                    </div>
-                    <div className="flex gap-1 bg-background p-1 border border-border">
-                      <button
-                        type="button"
-                        onClick={() => setDimensionUnit('INCH')}
-                        className={`px-3 py-1 font-mono text-[9px] uppercase tracking-widest border transition-all ${
-                          dimensionUnit === 'INCH'
-                            ? 'bg-accent border-accent text-black font-semibold'
-                            : 'border-transparent text-muted hover:text-primary'
-                        }`}
-                      >
-                        Inches (")
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDimensionUnit('CM')}
-                        className={`px-3 py-1 font-mono text-[9px] uppercase tracking-widest border transition-all ${
-                          dimensionUnit === 'CM'
-                            ? 'bg-accent border-accent text-black font-semibold'
-                            : 'border-transparent text-muted hover:text-primary'
-                        }`}
-                      >
-                        CM (cm)
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-6 bg-background/50 p-4 border border-border">
-                    <div>
-                      <label className={labelCls}>Height ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={parentValues.actualHeight}
-                          onChange={e => handleParentFieldChange('actualHeight', e.target.value)}
-                          className={`${inputCls} !pr-8`}
-                          placeholder="0.0"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">
-                          {dimensionUnit === 'INCH' ? '"' : 'cm'}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Width ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={parentValues.actualWidth}
-                          onChange={e => handleParentFieldChange('actualWidth', e.target.value)}
-                          className={`${inputCls} !pr-8`}
-                          placeholder="0.0"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">
-                          {dimensionUnit === 'INCH' ? '"' : 'cm'}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className={labelCls}>Depth ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={parentValues.actualDepth}
-                          onChange={e => handleParentFieldChange('actualDepth', e.target.value)}
-                          className={`${inputCls} !pr-8`}
-                          placeholder="Optional"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted">
-                          {dimensionUnit === 'INCH' ? '"' : 'cm'}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="col-span-3 font-mono text-[8px] text-muted uppercase tracking-widest">Note: Depth is optional. If left blank, it will be hidden on the storefront.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Power & Voltage SPECIFIC inputs */}
-            <div className="grid grid-cols-2 gap-6 mt-6 bg-accent/5 p-4 border border-accent/10">
-              <div>
-                <label className={labelCls}>Power specification *</label>
-                <input
-                  required
-                  value={parentValues.power}
-                  onChange={e => handleParentFieldChange('power', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. 15W, 24W"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Voltage specification *</label>
-                <input
-                  required
-                  value={parentValues.voltage}
-                  onChange={e => handleParentFieldChange('voltage', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. 220V, 12V-24V"
-                />
-              </div>
-            </div>
-
-            {/* Additional Listing Fields */}
-            <div className="grid grid-cols-3 gap-6 mt-6 p-4 border border-border bg-surface-muted/10">
-              <div className="col-span-3 font-mono text-[10px] uppercase tracking-widest text-accent mb-2">Platform Listings &amp; Feeds Compatibility</div>
-              <div>
-                <label className={labelCls}>Brand name</label>
-                <input
-                  value={parentValues.brand}
-                  onChange={e => handleParentFieldChange('brand', e.target.value)}
-                  className={inputCls}
-                  placeholder="James and Sons"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Warranty terms</label>
-                <input
-                  value={parentValues.warranty}
-                  onChange={e => handleParentFieldChange('warranty', e.target.value)}
-                  className={inputCls}
-                  placeholder="2 Years Warranty"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Country of origin</label>
-                <input
-                  value={parentValues.countryOfOrigin}
-                  onChange={e => handleParentFieldChange('countryOfOrigin', e.target.value)}
-                  className={inputCls}
-                  placeholder="India"
-                />
-              </div>
-              <div className="col-span-3">
-                <label className={labelCls}>Google Product Category Taxonomy</label>
-                <select
-                  value={parentValues.googleProductCategory}
-                  onChange={e => handleParentFieldChange('googleProductCategory', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Select Google Product Category</option>
-                  {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Dominant Color tag</label>
-                <input
-                  value={parentValues.color}
-                  onChange={e => handleParentFieldChange('color', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. Gold, Brass, Matte Black"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Size tag</label>
-                <input
-                  value={parentValues.size}
-                  onChange={e => handleParentFieldChange('size', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. 48-inch, Medium"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Material tag</label>
-                <input
-                  value={parentValues.material}
-                  onChange={e => handleParentFieldChange('material', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. Brass, Glass"
-                />
-              </div>
-              <div className="col-span-3">
-                <label className={labelCls}>Marketplace Bullet Points (one per line, max 5)</label>
-                <textarea
-                  value={parentValues.bulletPoints}
-                  onChange={e => handleParentFieldChange('bulletPoints', e.target.value)}
-                  rows={4}
-                  className={inputCls}
-                  placeholder="Enter highlight features for Amazon/Flipkart listings..."
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 mt-6">
-              <div className="flex justify-between items-center">
-                <label className={labelCls}>Additional specs (for filtering)</label>
-                <button type="button" onClick={addSpec} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors">
-                  + Add Spec
-                </button>
-              </div>
-              {specs.map((spec, i) => (
-                <div key={i} className="flex gap-3 items-center animate-in fade-in slide-in-from-left-2 duration-200">
-                  <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Bulb Qty)" className={`${inputCls.replace(/\bw-full\b/, '')} w-1/3 !py-2 !text-[12px]`} />
-                  <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. 6 Bulbs)" className={`${inputCls.replace(/\bw-full\b/, '')} flex-1 !py-2 !text-[12px]`} />
-                  <button type="button" onClick={() => removeSpec(i)} className="btn-ghost !text-red-400 hover:!bg-red-400/10 !p-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              ))}
-              {specs.length === 0 && <p className="text-muted font-mono text-[11px]">No specs yet — click "Add Spec" to add filterable attributes.</p>}
-            </div>
-          </div>
-
-          {/* === AMAZON & MARKETPLACE SEO === */}
-          <div className="pt-6 border-t border-border">
-            <h3 className={sectionTitle}>Amazon & Marketplace SEO</h3>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className={labelCls}>Light Fixture Form</label>
-                <select
-                  value={parentValues.amazonFixtureForm}
-                  onChange={e => handleParentFieldChange('amazonFixtureForm', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Auto-detected (Dynamic)</option>
-                  <option value="Chandelier">Chandelier</option>
-                  <option value="Pendant">Pendant</option>
-                  <option value="Ceiling">Ceiling</option>
-                  <option value="Sconce">Sconce</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Mounting Type</label>
-                <select
-                  value={parentValues.amazonMountingType}
-                  onChange={e => handleParentFieldChange('amazonMountingType', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Auto-detected (Dynamic)</option>
-                  <option value="Ceiling Mount">Ceiling Mount</option>
-                  <option value="Wall Mount">Wall Mount</option>
-                  <option value="Post Mount">Post Mount</option>
-                  <option value="Floor Mount">Floor Mount</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Lighting Method</label>
-                <select
-                  value={parentValues.amazonLightingMethod}
-                  onChange={e => handleParentFieldChange('amazonLightingMethod', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Auto-detected (Dynamic)</option>
-                  <option value="Downlight">Downlight</option>
-                  <option value="Uplight">Uplight</option>
-                  <option value="Adjustable">Adjustable</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Water Resistance Level</label>
-                <select
-                  value={parentValues.amazonWaterResistance}
-                  onChange={e => handleParentFieldChange('amazonWaterResistance', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Auto-detected (Dynamic)</option>
-                  <option value="Not Water Resistant">Not Water Resistant</option>
-                  <option value="Moisture Resistant">Moisture Resistant</option>
-                  <option value="Waterproof">Waterproof</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Design Theme</label>
-                <select
-                  value={parentValues.amazonTheme}
-                  onChange={e => handleParentFieldChange('amazonTheme', e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Auto-detected (Dynamic)</option>
-                  <option value="Modern">Modern</option>
-                  <option value="Vintage">Vintage</option>
-                  <option value="Retro">Retro</option>
-                  <option value="Art Deco">Art Deco</option>
-                </select>
-              </div>
-
-              <div>
-                <label className={labelCls}>Included Components Override</label>
-                <input
-                  type="text"
-                  value={parentValues.amazonIncludedComponents}
-                  onChange={e => handleParentFieldChange('amazonIncludedComponents', e.target.value)}
-                  className={inputCls}
-                  placeholder="e.g. 1 Pendant Light, Hanging Wire, Canopy"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className={labelCls}>Special Features</label>
-                <div className="grid grid-cols-3 gap-3 mt-2 border border-border p-4 bg-black/10">
-                  {["Adjustable Height", "Dimmable", "Energy Efficient", "Color Changing", "Rust Resistant"].map(feature => {
-                    const isChecked = parentValues.amazonSpecialFeatures?.includes(feature);
-                    return (
-                      <label key={feature} className="flex items-center gap-2 text-[13px] font-body text-primary cursor-pointer hover:text-accent transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={e => {
-                            const newFeatures = e.target.checked
-                              ? [...(parentValues.amazonSpecialFeatures || []), feature]
-                              : (parentValues.amazonSpecialFeatures || []).filter((f: string) => f !== feature);
-                            handleParentFieldChange('amazonSpecialFeatures', newFeatures);
-                          }}
-                          className="w-4 h-4 rounded border-border bg-background text-accent focus:ring-accent accent-accent"
-                        />
-                        {feature}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="col-span-2">
-                <label className={labelCls}>Generic Search Keywords Override (Space-separated)</label>
-                <textarea
-                  value={parentValues.amazonKeywords}
-                  onChange={e => handleParentFieldChange('amazonKeywords', e.target.value)}
-                  rows={2}
-                  className={inputCls}
-                  placeholder="Leave empty for auto-generated SEO keywords. Enter space-separated keywords under 250 characters."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* === IMAGES === */}
-          <div className="pt-6 border-t border-border">
-            <h3 className={sectionTitle}>Product Images</h3>
-            <CloudinaryUpload
-              onUpload={(urls) => setImages(urls)}
-              defaultImages={images}
-              multiple={true}
-              label="Add Product Image"
-            />
-          </div>
-        </div>
-      ) : (
-        /* ========================================================================= */
-        /* ========================== ACTIVE VARIANT FORM ========================== */
-        /* ========================================================================= */
-        <div className="space-y-10 animate-in fade-in duration-200">
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className={sectionTitle}>Variant #{activeTab + 1} Specifications</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  removeVariant(activeTab);
-                  setActiveTab('parent');
-                }}
-                className="font-mono text-[9px] uppercase tracking-[0.15em] text-red-400 border border-red-900/30 px-3 py-1.5 hover:bg-red-950/20 transition-colors"
-              >
-                Delete Variant
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-6 bg-surface-muted/10 p-6 border border-border">
-              <div className="col-span-2 font-mono text-[10px] uppercase tracking-widest text-accent mb-2">Basic Info &amp; SKU</div>
-              <div>
-                <label className={labelCls}>Variant Name *</label>
-                <input
-                  required
-                  value={variants[activeTab].name}
-                  onChange={e => updateVariantField(activeTab, 'name', e.target.value)}
-                  placeholder="e.g. Gold - 48 inch"
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Variant SKU *</label>
-                <input
-                  required
-                  value={variants[activeTab].sku}
-                  onChange={e => updateVariantField(activeTab, 'sku', e.target.value)}
-                  placeholder="SKU Code"
-                  className={`${inputCls} uppercase`}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Stock Qty *</label>
-                <input
-                  required
-                  type="number"
-                  value={variants[activeTab].stockQuantity}
-                  onChange={e => updateVariantField(activeTab, 'stockQuantity', e.target.value)}
-                  className={inputCls}
-                />
-              </div>
-            </div>
-
-            {/* Overrides */}
-            <div className="pt-6 border-t border-border mt-8">
-              <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent mb-4">Attribute Overrides (Leave blank to inherit parent)</h4>
-              
-              {/* Overrides: Pricing */}
-              <div className="grid grid-cols-3 gap-6 bg-background p-4 border border-border">
-                <div>
-                  <label className={labelCls}>MRP Override (₹)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={variants[activeTab].mrp}
-                    onChange={e => updateVariantField(activeTab, 'mrp', e.target.value)}
-                    placeholder={parentValues.mrp ? `Inherit (₹${parentValues.mrp})` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>D2C Price Override (₹)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={variants[activeTab].d2cPrice}
-                    onChange={e => updateVariantField(activeTab, 'd2cPrice', e.target.value)}
-                    placeholder={parentValues.d2cPrice ? `Inherit (₹${parentValues.d2cPrice})` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>B2B Price Override (₹)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={variants[activeTab].b2bPrice}
-                    onChange={e => updateVariantField(activeTab, 'b2bPrice', e.target.value)}
-                    placeholder={parentValues.b2bPrice ? `Inherit (₹${parentValues.b2bPrice})` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              {/* Overrides: Shipping dimensions */}
-              <div className="grid grid-cols-4 gap-6 bg-background p-4 border border-border border-t-0">
-                <div className="col-span-4 font-mono text-[8px] uppercase tracking-widest text-muted">Shipping Package (cm)</div>
-                <div>
-                  <label className={labelCls}>Weight (kg)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={variants[activeTab].weight}
-                    onChange={e => updateVariantField(activeTab, 'weight', e.target.value)}
-                    placeholder={parentValues.weight ? `Inherit (${parentValues.weight} kg)` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Length (cm)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={variants[activeTab].length}
-                    onChange={e => updateVariantField(activeTab, 'length', e.target.value)}
-                    placeholder={parentValues.length ? `Inherit (${parentValues.length} cm)` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Breadth (cm)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={variants[activeTab].breadth}
-                    onChange={e => updateVariantField(activeTab, 'breadth', e.target.value)}
-                    placeholder={parentValues.breadth ? `Inherit (${parentValues.breadth} cm)` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Height (cm)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={variants[activeTab].height}
-                    onChange={e => updateVariantField(activeTab, 'height', e.target.value)}
-                    placeholder={parentValues.height ? `Inherit (${parentValues.height} cm)` : 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              {/* Overrides: Core Attributes & Specs */}
-              <div className="grid grid-cols-3 gap-6 mt-6 bg-background p-4 border border-border">
-                <div className="col-span-3 font-mono text-[8px] uppercase tracking-widest text-muted">Core Attributes Overrides</div>
-                <div>
-                  <label className={labelCls}>Material &amp; Finish</label>
-                  <input
-                    value={variants[activeTab].materialAndFinish}
-                    onChange={e => updateVariantField(activeTab, 'materialAndFinish', e.target.value)}
-                    placeholder={parentValues.materialAndFinish || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Bulb Type</label>
-                  <input
-                    value={variants[activeTab].bulbType}
-                    onChange={e => updateVariantField(activeTab, 'bulbType', e.target.value)}
-                    placeholder={parentValues.bulbType || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Design Style</label>
-                  <input
-                    value={variants[activeTab].style}
-                    onChange={e => updateVariantField(activeTab, 'style', e.target.value)}
-                    placeholder={parentValues.style || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              {/* Overrides: Power, Voltage, and actual Dimensions */}
-              <div className="grid grid-cols-2 gap-6 mt-6 bg-background p-4 border border-border">
-                <div className="col-span-2 font-mono text-[8px] uppercase tracking-widest text-muted">Technical Specs &amp; Actual Dimensions Overrides</div>
-                <div>
-                  <label className={labelCls}>Power Override</label>
-                  <input
-                    value={variants[activeTab].power}
-                    onChange={e => updateVariantField(activeTab, 'power', e.target.value)}
-                    placeholder={parentValues.power || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Voltage Override</label>
-                  <input
-                    value={variants[activeTab].voltage}
-                    onChange={e => updateVariantField(activeTab, 'voltage', e.target.value)}
-                    placeholder={parentValues.voltage || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div className="col-span-2 grid grid-cols-3 gap-4 bg-surface-muted/20 p-3 border border-border">
-                  <div className="col-span-3 font-mono text-[8px] uppercase tracking-widest text-muted">Actual Product Size ({dimensionUnit === 'INCH' ? 'in' : 'cm'})</div>
-                  <div>
-                    <label className={labelCls}>Height</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={variants[activeTab].actualHeight}
-                      onChange={e => updateVariantField(activeTab, 'actualHeight', e.target.value)}
-                      placeholder={parentValues.actualHeight ? `Inherit (${parentValues.actualHeight})` : 'Inherit'}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Width</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={variants[activeTab].actualWidth}
-                      onChange={e => updateVariantField(activeTab, 'actualWidth', e.target.value)}
-                      placeholder={parentValues.actualWidth ? `Inherit (${parentValues.actualWidth})` : 'Inherit'}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Depth</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={variants[activeTab].actualDepth}
-                      onChange={e => updateVariantField(activeTab, 'actualDepth', e.target.value)}
-                      placeholder={parentValues.actualDepth ? `Inherit (${parentValues.actualDepth})` : 'Inherit'}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Overrides: Platforms integration */}
-              <div className="grid grid-cols-3 gap-6 mt-6 bg-background p-4 border border-border">
-                <div className="col-span-3 font-mono text-[8px] uppercase tracking-widest text-muted">Platform Listing Overrides</div>
-                <div>
-                  <label className={labelCls}>Brand Override</label>
-                  <input
-                    value={variants[activeTab].brand}
-                    onChange={e => updateVariantField(activeTab, 'brand', e.target.value)}
-                    placeholder={parentValues.brand || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Warranty Override</label>
-                  <input
-                    value={variants[activeTab].warranty}
-                    onChange={e => updateVariantField(activeTab, 'warranty', e.target.value)}
-                    placeholder={parentValues.warranty || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Country of Origin Override</label>
-                  <input
-                    value={variants[activeTab].countryOfOrigin}
-                    onChange={e => updateVariantField(activeTab, 'countryOfOrigin', e.target.value)}
-                    placeholder={parentValues.countryOfOrigin || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                 <div className="col-span-3">
-                  <label className={labelCls}>Google Product Category Override</label>
-                  <select
-                    value={variants[activeTab].googleProductCategory}
-                    onChange={e => updateVariantField(activeTab, 'googleProductCategory', e.target.value)}
-                    className={inputCls}
-                  >
-                    <option value="">Inherit Parent ({parentValues.googleProductCategory || 'None'})</option>
-                    {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Color Override</label>
-                  <input
-                    value={variants[activeTab].color}
-                    onChange={e => updateVariantField(activeTab, 'color', e.target.value)}
-                    placeholder={parentValues.color || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Size Override</label>
-                  <input
-                    value={variants[activeTab].size}
-                    onChange={e => updateVariantField(activeTab, 'size', e.target.value)}
-                    placeholder={parentValues.size || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Material Override</label>
-                  <input
-                    value={variants[activeTab].material}
-                    onChange={e => updateVariantField(activeTab, 'material', e.target.value)}
-                    placeholder={parentValues.material || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-                <div className="col-span-3">
-                  <label className={labelCls}>Marketplace Bullet Points Override (one per line, max 5)</label>
-                  <textarea
-                    value={variants[activeTab].bulletPoints}
-                    onChange={e => updateVariantField(activeTab, 'bulletPoints', e.target.value)}
-                    rows={4}
-                    placeholder={parentValues.bulletPoints || 'Inherit'}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              {/* Overrides: custom specs */}
-              <div className="space-y-2 mt-6">
-                <div className="flex justify-between items-center">
-                  <label className={labelCls}>Variant-specific specs overrides</label>
-                  <button type="button" onClick={() => addVariantSpec(activeTab)} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors">
-                    + Add Variant Spec
-                  </button>
-                </div>
-                {variants[activeTab].specs.map((spec, sIdx) => (
-                  <div key={sIdx} className="flex gap-3 items-center animate-in fade-in slide-in-from-left-2 duration-200">
-                    <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls.replace(/\bw-full\b/, '')} w-1/3 !py-2 !text-[12px]`} />
-                    <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls.replace(/\bw-full\b/, '')} flex-1 !py-2 !text-[12px]`} />
-                    <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="btn-ghost !text-red-400 hover:!bg-red-400/10 !p-2">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                {/* Overrides: custom specs */}
+                <div className="pt-6 border-t border-border/40 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <label className={labelCls}>Variant-specific specs overrides</label>
+                    <button type="button" onClick={() => addVariantSpec(activeTab)} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors">
+                      + Add Variant Spec
                     </button>
                   </div>
-                ))}
-                {variants[activeTab].specs.length === 0 && <p className="text-muted font-mono text-[11px] italic">No variant-specific overrides. Variant inherits parent custom specs.</p>}
+                  {variants[activeTab].specs.map((spec, sIdx) => (
+                    <div key={sIdx} className="flex gap-3 items-center">
+                      <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} w-1/3 !py-2`} />
+                      <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2`} />
+                      <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors">
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Overrides: Amazon SEO & keywords */}
+                <div className="pt-6 border-t border-border/40 grid grid-cols-2 gap-6">
+                  <div className="col-span-2 font-mono text-[9px] uppercase tracking-widest text-accent mb-1">Platform listing overrides</div>
+                  <div>
+                    <label className={labelCls}>Brand Override</label>
+                    <input
+                      value={variants[activeTab].brand}
+                      onChange={e => updateVariantField(activeTab, 'brand', e.target.value)}
+                      placeholder={parentValues.brand || 'Inherit'}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Warranty Override</label>
+                    <input
+                      value={variants[activeTab].warranty}
+                      onChange={e => updateVariantField(activeTab, 'warranty', e.target.value)}
+                      placeholder={parentValues.warranty || 'Inherit'}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Google Product Category Override</label>
+                    <select
+                      value={variants[activeTab].googleProductCategory}
+                      onChange={e => updateVariantField(activeTab, 'googleProductCategory', e.target.value)}
+                      className={inputCls}
+                    >
+                      <option value="">Inherit Parent ({parentValues.googleProductCategory || 'None'})</option>
+                      {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Variant Images upload */}
+                <div className="pt-6 border-t border-border/40 space-y-6">
+                  {/* Variant Standard Images */}
+                  <div className="space-y-4">
+                    <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant Remastered Images</h4>
+                    <p className="font-mono text-[10px] text-muted">Variant-specific marketing images (inherits parent if left blank).</p>
+                    
+                    {variants[activeTab].images ? (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        {variants[activeTab].images.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => (
+                          <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setIsDirty(true);
+                                const updated = variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean).filter((_, i) => i !== idx);
+                                updateVariantField(activeTab, 'images', updated.join(', '));
+                              }}
+                              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                            >
+                              ×
+                            </button>
+
+                            {/* Reordering Controls */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
+                              {idx > 0 && (
+                                <button 
+                                  type="button" 
+                                  onClick={() => moveVariantImage(activeTab, idx, 'left', false)}
+                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                                >
+                                  ←
+                                </button>
+                              )}
+                              {idx < variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean).length - 1 && (
+                                <button 
+                                  type="button" 
+                                  onClick={() => moveVariantImage(activeTab, idx, 'right', false)}
+                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                                >
+                                  →
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <CloudinaryUpload
+                      onUpload={(urls) => {
+                        setIsDirty(true);
+                        const existing = variants[activeTab].images ? variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean) : [];
+                        updateVariantField(activeTab, 'images', [...existing, ...urls].join(', '));
+                      }}
+                      defaultImages={[]}
+                      multiple={true}
+                      label="Add Variant Images"
+                    />
+                  </div>
+
+                  {/* Variant White Background Images */}
+                  <div className="space-y-4 pt-6 border-t border-border/40">
+                    <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant White Background Images (Amazon)</h4>
+                    <p className="font-mono text-[10px] text-muted">Variant-specific white background images (inherits parent if left blank).</p>
+
+                    {variants[activeTab].whiteBackgroundImages ? (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        {variants[activeTab].whiteBackgroundImages.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => (
+                          <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setIsDirty(true);
+                                const updated = variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean).filter((_, i) => i !== idx);
+                                updateVariantField(activeTab, 'whiteBackgroundImages', updated.join(', '));
+                              }}
+                              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                            >
+                              ×
+                            </button>
+
+                            {/* Reordering Controls */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
+                              {idx > 0 && (
+                                <button 
+                                  type="button" 
+                                  onClick={() => moveVariantImage(activeTab, idx, 'left', true)}
+                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                                >
+                                  ←
+                                </button>
+                              )}
+                              {idx < variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean).length - 1 && (
+                                <button 
+                                  type="button" 
+                                  onClick={() => moveVariantImage(activeTab, idx, 'right', true)}
+                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
+                                >
+                                  →
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <CloudinaryUpload
+                      onUpload={(urls) => {
+                        setIsDirty(true);
+                        const existing = variants[activeTab].whiteBackgroundImages ? variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean) : [];
+                        updateVariantField(activeTab, 'whiteBackgroundImages', [...existing, ...urls].join(', '));
+                      }}
+                      defaultImages={[]}
+                      multiple={true}
+                      label="Add Variant White Background Images"
+                    />
+                  </div>
+                </div>
+
               </div>
             </div>
+          )}
 
-            {/* Variant Images */}
-            <div className="pt-6 border-t border-border mt-8">
-              <h3 className={sectionTitle}>Variant Images (Will inherit parent images if left blank)</h3>
-              <CloudinaryUpload
-                onUpload={(urls) => updateVariantField(activeTab, 'images', urls.join(', '))}
-                defaultImages={variants[activeTab].images ? variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean) : []}
-                multiple={true}
-                label="Add Variant Image"
-              />
+          {/* === FOOTER ACTIONS === */}
+          <div className="pt-6 border-t border-border flex justify-between items-center mt-6">
+            <span className="font-mono text-[10px] text-muted uppercase tracking-widest">
+              Catalogue and inventory sync automatically with Shiprocket on save.
+            </span>
+            <div className="flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => router.back()} 
+                className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-3 hover:text-primary transition-colors bg-background"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={saving} 
+                className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : mode === 'add' ? 'Save Product' : 'Update Product'}
+              </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* === SUBMIT === */}
-      <div className="pt-6 border-t border-border flex flex-col items-end gap-4">
-        <div className="flex gap-4">
-          {mode === 'edit' && defaultValues?.id && (
-            <SyncButton productId={defaultValues.id} label="Sync Marketplaces" />
-          )}
-          <button type="button" onClick={() => router.back()} className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-3 hover:text-primary transition-colors bg-background">
-            Cancel
-          </button>
-          <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">
-            {saving ? 'Saving...' : mode === 'add' ? 'Save Product' : 'Update Product'}
-          </button>
-        </div>
-        <p className="font-mono text-[8px] uppercase tracking-widest text-accent/60">
-          * Product catalogue and inventory will be automatically synced with Shiprocket
-        </p>
+        </main>
       </div>
     </form>
   );

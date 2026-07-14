@@ -105,7 +105,13 @@ export async function syncToAmazon(product: any) {
     const materialVal = (v ? v.material : null) || product.material || (product.materialAndFinish && product.materialAndFinish.length > 0 ? product.materialAndFinish[0] : null);
     const originVal = (v ? v.countryOfOrigin : null) || product.countryOfOrigin || 'India';
 
-    const vImages = (v && v.images && v.images.length > 0) ? v.images : (product.images || []);
+    const vImages = (v && v.whiteBackgroundImages && v.whiteBackgroundImages.length > 0)
+      ? v.whiteBackgroundImages
+      : (product.whiteBackgroundImages && product.whiteBackgroundImages.length > 0)
+        ? product.whiteBackgroundImages
+        : (v && v.images && v.images.length > 0)
+          ? v.images
+          : (product.images || []);
 
     const vWeight = (v ? v.weight : null) || product.weight || 0.5;
     const vLength = (v ? v.length : null) || product.length || 10;

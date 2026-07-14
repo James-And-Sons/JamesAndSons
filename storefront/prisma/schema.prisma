@@ -142,9 +142,9 @@ model Product {
   style             String[] // Style
   
   specs            Json?    // Dynamic key-value technical specs for filtering
-  
-  // Media
+   // Media
   images           String[]
+  whiteBackgroundImages String[]
   glbModelUrl      String?
   
   // Inventory
@@ -159,7 +159,7 @@ model Product {
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
+ 
   // Actual Product Dimensions (for display/filtering)
   actualHeight     Float?   // in inches
   actualWidth      Float?   // in inches
@@ -204,6 +204,7 @@ model ProductVariant {
   b2bPrice      Float?
   stockQuantity Int      @default(0)
   images        String[]
+  whiteBackgroundImages String[]
   weight        Float?   // in kg
   length        Float?   // in cm
   breadth       Float?   // in cm

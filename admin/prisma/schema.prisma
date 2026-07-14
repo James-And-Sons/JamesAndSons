@@ -145,6 +145,7 @@ model Product {
   
   // Media
   images           String[]
+  whiteBackgroundImages String[]
   glbModelUrl      String?
   
   // Inventory
@@ -204,6 +205,7 @@ model ProductVariant {
   b2bPrice      Float?
   stockQuantity Int      @default(0)
   images        String[]
+  whiteBackgroundImages String[]
   weight        Float?   // in kg
   length        Float?   // in cm
   breadth       Float?   // in cm
