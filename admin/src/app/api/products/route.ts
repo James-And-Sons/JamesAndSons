@@ -121,6 +121,22 @@ export async function POST(req: NextRequest) {
       console.error('Shiprocket Sync Error:', syncError);
       // We don't fail the whole request if sync fails, but we log it
     }
+
+    // Omnichannel integration sync (Amazon, Meta, Pinterest, Flipkart, Pepperfry)
+    try {
+      const { orchestrateSync } = await import('@/lib/sync/orchestrator');
+      const fullProduct = await prisma.product.findUnique({
+        where: { id: product.id },
+        include: { variants: true, category: true, spaces: true }
+      });
+      if (fullProduct) {
+        orchestrateSync(fullProduct).catch(err => {
+          console.error('[Sync Orchestrator] Background sync failed:', err);
+        });
+      }
+    } catch (syncError) {
+      console.error('Sync Orchestration Import/Trigger Error:', syncError);
+    }
     
     return NextResponse.json(product);
   } catch (e: any) {

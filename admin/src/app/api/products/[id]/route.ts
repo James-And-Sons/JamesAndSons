@@ -128,6 +128,22 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       console.error('Shiprocket Sync Error:', syncError);
     }
 
+    // Omnichannel integration sync (Amazon, Meta, Pinterest, Flipkart, Pepperfry)
+    try {
+      const { orchestrateSync } = await import('@/lib/sync/orchestrator');
+      const fullProduct = await prisma.product.findUnique({
+        where: { id: params.id },
+        include: { variants: true, category: true, spaces: true }
+      });
+      if (fullProduct) {
+        orchestrateSync(fullProduct).catch(err => {
+          console.error('[Sync Orchestrator] Background sync failed:', err);
+        });
+      }
+    } catch (syncError) {
+      console.error('Sync Orchestration Import/Trigger Error:', syncError);
+    }
+
     return NextResponse.json(product);
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
