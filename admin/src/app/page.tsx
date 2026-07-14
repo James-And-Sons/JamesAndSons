@@ -34,23 +34,23 @@ export default async function Dashboard() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-surface p-6 border border-border">
+        <div className="premium-card p-6">
           <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">Total Revenue (All Time)</h3>
           <p className="font-serif text-[36px] text-gold mt-4 mb-2">₹{totalRevenue.toLocaleString('en-IN')}</p>
-          <span className="font-mono text-[10px] tracking-wider text-[#4ade80]">+ Live Data Connected</span>
+          <span className="font-mono text-[10px] tracking-wider text-emerald-400">+ Live Data Connected</span>
         </div>
-        <div className="bg-surface p-6 border border-border">
+        <div className="premium-card p-6">
           <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">Recent Orders</h3>
           <p className="font-serif text-[36px] text-primary mt-4 mb-2">{activeOrders}</p>
           <span className="font-mono text-[10px] tracking-wider text-muted">D2C &amp; B2B Flow Active</span>
         </div>
-        <div className="bg-surface p-6 border border-accent/30 relative overflow-hidden">
+        <div className="premium-card p-6 border-accent/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[40px] h-[40px] bg-accent/10 rounded-bl-full" />
           <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-accent">Total tracked RFQs</h3>
           <p className="font-serif text-[36px] text-primary mt-4 mb-2">{rfqs.length}</p>
           <span className="font-mono text-[10px] tracking-wider text-accent">{pendingRfqs} pending review</span>
         </div>
-        <div className="bg-surface p-6 border border-border">
+        <div className="premium-card p-6">
           <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B Registrations</h3>
           <p className="font-serif text-[36px] text-primary mt-4 mb-2">{b2bRegistrations}</p>
           <span className="font-mono text-[10px] tracking-wider text-muted">{pendingB2B} Pending Approval</span>
@@ -59,7 +59,7 @@ export default async function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Recent Orders Table */}
-        <div className="bg-surface border border-border flex flex-col">
+        <div className="premium-card flex flex-col">
           <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-surface-muted/30">
             <h3 className="font-serif text-[22px] text-primary font-light">Recent Orders</h3>
             <Link href="/orders" className="font-mono text-[10px] uppercase tracking-[0.15em] text-accent hover:text-accent-hover transition-colors">View All</Link>
@@ -96,7 +96,7 @@ export default async function Dashboard() {
         </div>
 
         {/* Action Required: RFQs */}
-        <div className="bg-surface border border-border flex flex-col">
+        <div className="premium-card flex flex-col">
           <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-surface-muted/30">
             <h3 className="font-serif text-[22px] text-primary font-light flex items-center gap-3">
               Action Required: RFQs <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span></span>

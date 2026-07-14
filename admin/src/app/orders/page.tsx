@@ -50,7 +50,7 @@ export default async function OrdersPage() {
         <OrderActionsClient data={combinedRecords} />
       </div>
 
-      <div className="bg-surface border border-border shadow-sm flex flex-col">
+      <div className="premium-card flex flex-col">
         <div className="p-6 border-b border-border flex gap-4 bg-surface-muted/30">
           <input 
             type="text" 
