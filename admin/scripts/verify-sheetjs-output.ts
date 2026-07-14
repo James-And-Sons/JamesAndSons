@@ -16,6 +16,7 @@ function getVal(colIdx: number) {
 
 console.log('Col 1 (SKU):', getVal(1));
 console.log('Col 7 (Item Name):', getVal(7));
+console.log('Col 9 (Brand Name):', getVal(9));
 console.log('Col 12 (Browse Node ID):', getVal(12));
 console.log('Col 17 (Model Number):', getVal(17));
 console.log('Col 18 (Model Name):', getVal(18));

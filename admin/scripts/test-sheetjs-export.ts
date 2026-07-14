@@ -59,7 +59,7 @@ function writeRowAttributes(
   v: any = null       // variant if exists
 ) {
   // Brand Name (Col 9)
-  writeCell(sheet, rowIdx, 9, "James & Sons");
+  writeCell(sheet, rowIdx, 9, "James & Sons, Aligarh");
   
   // Model Number (Col 17)
   writeCell(sheet, rowIdx, 17, sku);

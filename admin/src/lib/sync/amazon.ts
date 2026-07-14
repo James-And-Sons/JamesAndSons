@@ -96,7 +96,10 @@ export async function syncToAmazon(product: any) {
     const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
     const url = `${spApiEndpoint}${path}`;
 
-    const brandVal = (v ? v.brand : null) || product.brand || 'Generic';
+    let brandVal = (v ? v.brand : null) || product.brand || 'James & Sons, Aligarh';
+    if (brandVal === 'Generic' || !brandVal || brandVal.toLowerCase().includes('james & sons') || brandVal.toLowerCase().includes('james and sons')) {
+      brandVal = 'James & Sons, Aligarh';
+    }
     const descVal = product.description || name;
     const bulletsVal = (v ? v.bulletPoints : null) || product.bulletPoints || [];
     const materialVal = (v ? v.material : null) || product.material || (product.materialAndFinish && product.materialAndFinish.length > 0 ? product.materialAndFinish[0] : null);
