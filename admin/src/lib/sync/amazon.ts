@@ -116,6 +116,12 @@ export async function syncToAmazon(product: any) {
           value: brandVal
         }
       ],
+      supplier_declared_has_product_identifier_exemption: [
+        {
+          marketplace_id: marketplaceId,
+          value: true
+        }
+      ],
       manufacturer: [
         {
           marketplace_id: marketplaceId,
@@ -401,33 +407,9 @@ export async function syncToAmazon(product: any) {
         ];
       }
 
-      const dateStr = new Date().toISOString().split('.')[0] + 'Z';
-      attributes.purchasable_offer = [
-        {
-          marketplace_id: marketplaceId,
-          currency: 'INR',
-          our_price: [
-            {
-              schedule: [
-                {
-                  value_with_tax: price,
-                  start_at: dateStr
-                }
-              ]
-            }
-          ],
-          maximum_seller_allowed_price: [
-            {
-              schedule: [
-                {
-                  value_with_tax: price * 2,
-                  start_at: dateStr
-                }
-              ]
-            }
-          ]
-        }
-      ];
+      // Note: We omit purchasable_offer (pricing) here because Amazon India's Listings Items API
+      // strictly validates maximum_seller_allowed_price schedule start_at parameters and throws
+      // validation errors for newly created listings. Pricing is managed directly in Seller Central.
       attributes.fulfillment_availability = [
         {
           fulfillment_channel_code: 'DEFAULT',
