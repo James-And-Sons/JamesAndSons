@@ -301,7 +301,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                               <select 
                                 value={selectedProductId} 
                                 onChange={e => setSelectedProductId(e.target.value)}
-                                className="w-full bg-background border border-border px-4 py-2 text-[13px] font-body text-primary focus:outline-none focus:border-accent"
+                                className="w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent cursor-pointer"
                               >
                                 <option value="">Select a product...</option>
                                 {allProducts

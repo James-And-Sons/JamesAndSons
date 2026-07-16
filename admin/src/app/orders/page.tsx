@@ -60,14 +60,14 @@ export default async function OrdersPage() {
             placeholder="Search by Order ID, Customer, or Email..." 
             className="w-1/3 px-4 py-2.5 border border-border bg-background text-primary font-body text-[13px] focus:outline-none focus:border-accent transition-colors placeholder:text-muted/50"
           />
-          <select className="px-4 py-2.5 border border-border bg-background text-secondary font-mono text-[9px] uppercase tracking-widest focus:outline-none focus:border-accent transition-colors">
+          <select className="px-5 py-3 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-widest focus:outline-none focus:border-accent transition-colors cursor-pointer">
             <option>All Statuses</option>
             <option>Pending</option>
             <option>Processing</option>
             <option>Shipped</option>
             <option>Delivered</option>
           </select>
-          <select className="px-4 py-2.5 border border-border bg-background text-secondary font-mono text-[9px] uppercase tracking-widest focus:outline-none focus:border-accent transition-colors">
+          <select className="px-5 py-3 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-widest focus:outline-none focus:border-accent transition-colors cursor-pointer">
             <option>All Types</option>
             <option>B2B Orders</option>
             <option>D2C Orders</option>

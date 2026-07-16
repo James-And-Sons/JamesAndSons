@@ -89,7 +89,7 @@ export default function TicketsInbox({ tickets }: { tickets: Ticket[] }) {
                   defaultValue={ticket.status}
                   disabled={isPending && updatingId === ticket.id}
                   onChange={e => handleStatusChange(ticket.id, e.target.value)}
-                  className="bg-background border border-border text-muted font-mono text-[9px] uppercase tracking-widest px-2 py-1.5 focus:outline-none focus:border-accent focus:text-primary transition-colors disabled:opacity-50"
+                  className="bg-background border border-border text-muted font-mono text-[11px] uppercase tracking-widest px-3 py-2 focus:outline-none focus:border-accent focus:text-primary transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   {Object.entries(STATUS_LABELS).map(([val, label]) => (
                     <option key={val} value={val}>{label}</option>

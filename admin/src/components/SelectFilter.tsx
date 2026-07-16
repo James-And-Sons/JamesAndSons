@@ -36,7 +36,7 @@ function SelectFilterInner({
     <select 
       value={currentValue}
       onChange={handleChange}
-      className="px-4 py-2 border border-border bg-background text-secondary font-mono text-[10px] uppercase tracking-[0.1em] focus:outline-none focus:border-accent transition-colors cursor-pointer"
+      className="px-5 py-2.5 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-[0.1em] focus:outline-none focus:border-accent transition-colors cursor-pointer"
     >
       <option value="">{placeholder}</option>
       {options.map((opt) => (
@@ -55,7 +55,7 @@ export default function SelectFilter(props: {
 }) {
   return (
     <Suspense fallback={
-      <select disabled className="px-4 py-2 border border-border bg-background text-secondary font-mono text-[10px] uppercase tracking-[0.1em] focus:outline-none focus:border-accent transition-colors opacity-50">
+      <select disabled className="px-5 py-2.5 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-[0.1em] focus:outline-none focus:border-accent transition-colors opacity-50">
         <option>{props.placeholder || 'Loading...'}</option>
       </select>
     }>

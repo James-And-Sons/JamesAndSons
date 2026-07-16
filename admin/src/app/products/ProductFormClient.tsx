@@ -554,7 +554,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     }
   }
 
-  const inputCls = "w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
+  const inputCls = "w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
   const labelCls = "font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1";
 
 

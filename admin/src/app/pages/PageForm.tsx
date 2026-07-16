@@ -108,7 +108,7 @@ export default function PageForm({ page, isNew, action }: PageFormProps) {
         <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">Settings</h3>
         <div className="space-y-1 max-w-md">
           <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Visibility</label>
-          <select name="isPublished" defaultValue={page ? String(page.isPublished) : 'true'} className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[11px] uppercase">
+          <select name="isPublished" defaultValue={page ? String(page.isPublished) : 'true'} className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] uppercase cursor-pointer">
             <option value="true">Published (Public)</option>
             <option value="false">Draft (Hidden)</option>
           </select>
