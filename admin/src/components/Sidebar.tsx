@@ -7,6 +7,14 @@ import { useEffect, useState } from 'react';
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const [openTickets, setOpenTickets] = useState<number | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
+  const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
+    collections: false,
+    spaces: false,
+  });
+  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(null);
+  const [currentManageId, setCurrentManageId] = useState<string | null>(null);
 
   if (pathname === '/login') return null;
 
@@ -15,25 +23,151 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       .then(r => r.json())
       .then(d => setOpenTickets(d.count))
       .catch(() => {});
+
+    // Fetch collections (categories)
+    fetch('/api/collections')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
+        }
+      })
+      .catch(() => {});
+
+    // Fetch spaces
+    fetch('/api/spaces')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setSpaces(data.sort((a, b) => a.name.localeCompare(b.name)));
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  const links = [
-    { name: 'Dashboard', href: '/' },
-    { name: 'Orders', href: '/orders' },
-    { name: 'RFQ Inbox', href: '/rfqs' },
-    { name: 'Catalog & Pricing', href: '/products' },
-    { name: 'Collections', href: '/collections' },
-    { name: 'Spaces', href: '/spaces' },
-    { name: 'B2B Workspace', href: '/b2b' },
-    { name: 'Pages / CMS', href: '/pages' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Coupons', href: '/promotions' },
-    { name: 'Affiliates', href: '/affiliates' },
-    { name: 'Tickets', href: '/tickets', badge: openTickets },
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const catId = params.get('categoryId');
+      const mgId = params.get('manage');
+      setCurrentCategoryId(catId);
+      setCurrentManageId(mgId);
 
-    { name: 'Customers', href: '/customers' },
-    { name: 'Admin Settings', href: '/account' },
-  ];
+      // Auto-expand active groups
+      if (pathname.startsWith('/collections') || catId) {
+        setOpenDropdowns(prev => ({ ...prev, collections: true }));
+      }
+      if (pathname.startsWith('/spaces') || mgId) {
+        setOpenDropdowns(prev => ({ ...prev, spaces: true }));
+      }
+    }
+  }, [pathname]);
+
+  const renderLink = (name: string, href: string, badge?: number | null) => {
+    const isActive = href === '/' 
+      ? pathname === '/' 
+      : pathname.startsWith(href) && 
+        !(href === '/products' && currentCategoryId) && 
+        !(href === '/spaces' && currentManageId) &&
+        !(href === '/collections' && currentCategoryId);
+
+    return (
+      <Link
+        href={href}
+        onClick={onClose}
+        className={`
+          group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border relative overflow-hidden rounded-sm
+          ${isActive 
+            ? 'text-white border-accent/40 bg-surface-muted font-medium' 
+            : 'text-muted hover:text-accent border-transparent hover:border-border hover:bg-surface-muted'
+          }
+        `}
+      >
+        <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-2">
+          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>}
+          {name}
+        </span>
+        {badge !== null && badge !== undefined && badge > 0 && (
+          <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  const renderDropdown = (
+    name: string, 
+    dropdownKey: 'collections' | 'spaces', 
+    manageHref: string,
+    subItems: { name: string; href: string; active: boolean }[]
+  ) => {
+    const isOpen = openDropdowns[dropdownKey];
+    const toggle = () => setOpenDropdowns(prev => ({ ...prev, [dropdownKey]: !prev[dropdownKey] }));
+    const isGroupActive = pathname.startsWith(manageHref) || subItems.some(item => item.active);
+
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={toggle}
+          className={`
+            group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border w-full text-left cursor-pointer rounded-sm
+            ${isGroupActive 
+              ? 'text-white border-accent/30 bg-surface-muted/40' 
+              : 'text-muted hover:text-accent border-transparent hover:border-border hover:bg-surface-muted'
+            }
+          `}
+        >
+          <span className="flex items-center gap-2">
+            {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
+            {name}
+          </span>
+          <span className={`text-[12px] font-semibold text-muted transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
+            ›
+          </span>
+        </button>
+
+        <div 
+          className="overflow-hidden transition-all duration-300 ease-in-out pl-3 space-y-1 border-l border-border/50 ml-4"
+          style={{
+            maxHeight: isOpen ? `${(subItems.length + 1) * 38}px` : '0px',
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none'
+          }}
+        >
+          <Link
+            href={manageHref}
+            onClick={onClose}
+            className={`
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.1em] uppercase transition-all duration-200 border-l border-transparent hover:border-accent/40 text-muted hover:text-accent relative rounded-sm
+              ${(pathname === manageHref && !subItems.some(i => i.active)) ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold' : ''}
+            `}
+          >
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              View All {name}
+            </span>
+          </Link>
+
+          {subItems.map((item, idx) => (
+            <Link
+              key={idx}
+              href={item.href}
+              onClick={onClose}
+              className={`
+                group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.1em] uppercase transition-all duration-200 border-l border-transparent hover:border-accent/40 text-muted hover:text-accent relative rounded-sm
+                ${item.active ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold' : ''}
+              `}
+            >
+              <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-1.5">
+                {item.active && <span className="w-1 h-1 rounded-full bg-accent animate-pulse"></span>}
+                {item.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const handleLogout = async () => {
     await logoutAction();
@@ -73,34 +207,33 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
-          {links.map((link) => {
-            const isActive = link.href === '/' 
-              ? pathname === '/' 
-              : pathname.startsWith(link.href);
-              
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={onClose}
-                className={`
-                  flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border
-                  ${isActive 
-                    ? 'text-white border-accent/40 bg-surface-muted' 
-                    : 'text-muted hover:text-accent border-transparent hover:border-border hover:bg-surface-muted'
-                  }
-                `}
-              >
-                <span>{link.name}</span>
-                {link.badge !== null && link.badge !== undefined && link.badge > 0 && (
-                  <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center">
-                    {link.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+          {renderLink('Dashboard', '/')}
+          {renderLink('Orders', '/orders')}
+          {renderLink('RFQ Inbox', '/rfqs')}
+          {renderLink('Catalog & Pricing', '/products')}
+
+          {renderDropdown('Collections', 'collections', '/collections', categories.map(c => ({
+            name: `${c.name} (${c._count?.products || 0})`,
+            href: `/products?categoryId=${c.id}`,
+            active: currentCategoryId === c.id
+          })))}
+
+          {renderDropdown('Spaces', 'spaces', '/spaces', spaces.map(s => ({
+            name: `${s.name} (${s._count?.products || 0})`,
+            href: `/spaces?manage=${s.id}`,
+            active: currentManageId === s.id
+          })))}
+
+          {renderLink('B2B Workspace', '/b2b')}
+          {renderLink('Pages / CMS', '/pages')}
+          {renderLink('Blog', '/blog')}
+          {renderLink('Coupons', '/promotions')}
+          {renderLink('Affiliates', '/affiliates')}
+          {renderLink('Tickets', '/tickets', openTickets)}
+
+          {renderLink('Customers', '/customers')}
+          {renderLink('Admin Settings', '/account')}
         </nav>
 
         <div className="p-6 border-t border-border bg-background">

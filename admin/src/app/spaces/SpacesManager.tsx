@@ -27,6 +27,33 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
   const [selectedProductId, setSelectedProductId] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const manageId = params.get('manage');
+      const editId = params.get('edit');
+      
+      if (manageId) {
+        const sp = spaces.find(s => s.id === manageId);
+        if (sp) {
+          setManagingProducts(sp);
+          setShowForm(false);
+          setEditing(null);
+        }
+      } else if (editId) {
+        const sp = spaces.find(s => s.id === editId);
+        if (sp) {
+          setEditing(sp);
+          setName(sp.name);
+          setDescription(sp.description || '');
+          setImage(sp.image || '');
+          setShowForm(true);
+          setManagingProducts(null);
+        }
+      }
+    }
+  }, [spaces]);
+
   const openAdd = () => { setEditing(null); setName(''); setDescription(''); setImage(''); setShowForm(true); setManagingProducts(null); };
   const openEdit = (s: Space) => { setEditing(s); setName(s.name); setDescription(s.description || ''); setImage(s.image || ''); setShowForm(true); setManagingProducts(null); };
   const openManage = (s: Space) => { setManagingProducts(s); setShowForm(false); setEditing(null); };

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { addProductToCollection, removeProductFromCollection } from './actions';
 
@@ -22,6 +22,32 @@ export default function CategoryManager({ categories, allProducts }: { categorie
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const manageId = params.get('manage');
+      const editId = params.get('edit');
+      
+      if (manageId) {
+        const cat = categories.find(c => c.id === manageId);
+        if (cat) {
+          setManagingProducts(cat);
+          setShowForm(false);
+          setEditing(null);
+        }
+      } else if (editId) {
+        const cat = categories.find(c => c.id === editId);
+        if (cat) {
+          setEditing(cat);
+          setName(cat.name);
+          setDescription(cat.description || '');
+          setShowForm(true);
+          setManagingProducts(null);
+        }
+      }
+    }
+  }, [categories]);
 
   const openAdd = () => { setEditing(null); setName(''); setDescription(''); setShowForm(true); setManagingProducts(null); };
   const openEdit = (cat: Category) => { setEditing(cat); setName(cat.name); setDescription(cat.description || ''); setShowForm(true); setManagingProducts(null); };
