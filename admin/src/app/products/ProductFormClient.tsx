@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
 import SyncButton from '@/components/SyncButton';
+import { useSidebar } from '@/lib/context/SidebarContext';
 
 type Category = { id: string; name: string };
 type Space = { id: string; name: string };
@@ -59,6 +60,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   mode: 'add' | 'edit';
 }) {
   const router = useRouter();
+  const { setProductFormState } = useSidebar();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -349,6 +351,52 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     }
   };
 
+  // Sync form state to contextual sidebar outline
+  useEffect(() => {
+    setProductFormState({
+      mode,
+      productName: parentValues.name,
+      sku: parentValues.sku,
+      isDirty,
+      activeTab,
+      setActiveTab,
+      variants: variants.map(v => ({ name: v.name, sku: v.sku })),
+      addVariant: () => {
+        setIsDirty(true);
+        addVariant();
+      },
+      removeVariant: (idx) => {
+        setIsDirty(true);
+        removeVariant(idx);
+      },
+      isBasicComplete,
+      isPricingComplete,
+      isSpecsComplete,
+      isSeoComplete,
+      isImagesComplete,
+      openSections,
+      setOpenSections
+    });
+
+    return () => {
+      setProductFormState(null);
+    };
+  }, [
+    mode,
+    parentValues.name,
+    parentValues.sku,
+    isDirty,
+    activeTab,
+    variants,
+    isBasicComplete,
+    isPricingComplete,
+    isSpecsComplete,
+    isSeoComplete,
+    isImagesComplete,
+    openSections,
+    setProductFormState
+  ]);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
@@ -519,103 +567,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
         </div>
       </div>
 
-      {/* === TWO-COLUMN RAIL LAYOUT === */}
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
-        
-        {/* === LEFT STICKY RAIL SIDE NAV === */}
-        <nav className="sticky top-[86px] flex flex-col gap-6 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
-          <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-3">Variant View</p>
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('parent')}
-                className={`text-left font-mono text-[11px] p-3 border transition-all rounded ${
-                  activeTab === 'parent'
-                    ? 'border-accent text-accent bg-accent/5 font-semibold'
-                    : 'border-border text-muted hover:text-primary hover:border-accent/40 bg-background/50'
-                }`}
-              >
-                Main Product Details
-              </button>
-              {variants.map((v, i) => (
-                <div key={i} className="group relative flex items-center w-full">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab(i)}
-                    className={`flex-1 text-left font-mono text-[11px] p-3 border transition-all rounded-l ${
-                      activeTab === i
-                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-semibold'
-                        : 'border-border border-r-transparent text-muted hover:text-primary hover:border-accent/40 bg-background/50'
-                    }`}
-                  >
-                    {v.name || `Variant ${i + 1}`}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDirty(true);
-                      removeVariant(i);
-                      if (activeTab === i) setActiveTab('parent');
-                      else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
-                    }}
-                    className={`px-3 py-[13px] text-[14px] border border-l-transparent text-muted hover:text-red-400 bg-background/50 hover:bg-red-950/20 transition-all rounded-r ${
-                      activeTab === i ? 'border-accent' : 'border-border'
-                    }`}
-                    title="Delete variant"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsDirty(true);
-                  const newIdx = variants.length;
-                  addVariant();
-                  setActiveTab(newIdx);
-                }}
-                className="p-3 font-mono text-[11px] text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background text-center rounded"
-              >
-                + Add Variant Option
-              </button>
-            </div>
-          </div>
-
-          {activeTab === 'parent' && (
-            <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-3">
-                Sections · {completedSections}/{totalSections} done
-              </p>
-              <ul className="border-l border-border pl-0 list-none space-y-3 font-mono text-[11px]">
-                <li className="relative pl-4">
-                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isBasicComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
-                  <a href="#basic" className={`${activeTab === 'parent' ? 'text-primary hover:text-accent' : 'text-muted'}`}>Basic info</a>
-                </li>
-                <li className="relative pl-4">
-                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isPricingComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
-                  <a href="#pricing" className="text-muted hover:text-accent">Pricing & inventory</a>
-                </li>
-                <li className="relative pl-4">
-                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isSpecsComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
-                  <a href="#specs" className="text-muted hover:text-accent">Technical specs</a>
-                </li>
-                <li className="relative pl-4">
-                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isSeoComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
-                  <a href="#seo" className="text-muted hover:text-accent">Marketplace SEO</a>
-                </li>
-                <li className="relative pl-4">
-                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${isImagesComplete ? 'bg-emerald-500' : 'bg-transparent border border-muted'}`}></span>
-                  <a href="#images" className="text-muted hover:text-accent">Product images</a>
-                </li>
-              </ul>
-            </div>
-          )}
-        </nav>
-
-        {/* === RIGHT FORM VIEW === */}
-        <main className="min-w-0 flex-1">
+      {/* === FULL WIDTH FORM LAYOUT === */}
+      <div className="w-full">
           {activeTab === 'parent' ? (
             /* ========================================================================= */
             /* ========================== PARENT PRODUCT FORM ========================== */
@@ -1681,10 +1634,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
               </button>
             </div>
           </div>
-        </main>
-      </div>
-    </form>
-  );
+        </div>
+      </form>
+    );
 }
 
 interface CollapsibleCardProps {

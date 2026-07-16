@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
+import { useSidebar } from '@/lib/context/SidebarContext';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { productFormState } = useSidebar();
   const [openTickets, setOpenTickets] = useState<number | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
@@ -102,39 +104,39 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
     return (
       <div className="space-y-1">
-      <div className={`
-        flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
-        ${isGroupActive 
-          ? 'text-white border-accent/30 bg-surface-muted/40' 
-          : 'text-muted border-transparent hover:border-border hover:bg-surface-muted'
-        }
-      `}>
-        {/* Left Link Area: Clicking navigates to default view */}
-        <Link
-          href={manageHref}
-          onClick={onClose}
-          className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
-        >
-          {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
-          <span>{name}</span>
-        </Link>
+        <div className={`
+          flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
+          ${isGroupActive 
+            ? 'text-white border-accent/30 bg-surface-muted/40' 
+            : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
+          }
+        `}>
+          {/* Left Link Area: Clicking navigates to default view */}
+          <Link
+            href={manageHref}
+            onClick={onClose}
+            className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
+          >
+            {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
+            <span>{name}</span>
+          </Link>
 
-        {/* Right Toggle Button: Clicking expands/collapses the dropdown */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggle();
-          }}
-          className="px-4 py-3 flex items-center justify-center border-l border-border/10 hover:text-accent transition-colors cursor-pointer"
-          aria-label={`Toggle ${name} dropdown`}
-        >
-          <span className={`text-[12px] font-semibold transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
-            ›
-          </span>
-        </button>
-      </div>
+          {/* Right Toggle Button: Clicking expands/collapses the dropdown */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle();
+            }}
+            className="px-4 py-3 flex items-center justify-center border-l border-border/10 hover:text-accent transition-colors cursor-pointer"
+            aria-label={`Toggle ${name} dropdown`}
+          >
+            <span className={`text-[12px] font-semibold transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
+              ›
+            </span>
+          </button>
+        </div>
 
         <div 
           className="overflow-hidden transition-all duration-300 ease-in-out pl-3 space-y-1 border-l border-border/50 ml-4"
@@ -184,6 +186,163 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     );
   };
 
+  const renderProductFormOutline = () => {
+    if (!productFormState) return null;
+    const {
+      mode,
+      productName,
+      sku,
+      isDirty,
+      activeTab,
+      setActiveTab,
+      variants,
+      addVariant,
+      removeVariant,
+      isBasicComplete,
+      isPricingComplete,
+      isSpecsComplete,
+      isSeoComplete,
+      isImagesComplete,
+      openSections,
+      setOpenSections
+    } = productFormState;
+
+    const sections = [
+      { id: 'basic', name: 'Basic Information', done: isBasicComplete },
+      { id: 'pricing', name: 'Pricing & Inventory', done: isPricingComplete },
+      { id: 'specs', name: 'Technical Specs', done: isSpecsComplete },
+      { id: 'seo', name: 'Marketplace SEO', done: isSeoComplete },
+      { id: 'images', name: 'Product Images', done: isImagesComplete }
+    ];
+
+    const scrollToSection = (id: string, sectionKey: string) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+      setOpenSections((prev: any) => ({ ...prev, [sectionKey]: true }));
+    };
+
+    return (
+      <div className="flex-1 flex flex-col justify-between min-h-[350px]">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="pb-4 border-b border-border">
+            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider text-muted mb-2">
+              <span className={`w-1.5 h-1.5 rounded-full ${isDirty ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+              {mode === 'add' ? 'Adding Product' : 'Editing Product'}
+            </div>
+            <h2 className="font-serif text-[18px] text-primary font-medium tracking-wide truncate max-w-[200px]" title={productName}>
+              {productName || 'New Product'}
+            </h2>
+            {sku && (
+              <span className="font-mono text-[9px] text-muted border border-border px-1.5 py-0.5 rounded uppercase mt-1 inline-block">
+                {sku}
+              </span>
+            )}
+          </div>
+
+          {/* Variant View Section */}
+          <div className="space-y-2">
+            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted">Variant View</p>
+            <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab('parent')}
+                className={`text-left font-mono text-[10px] uppercase p-2 border transition-all rounded-sm cursor-pointer ${
+                  activeTab === 'parent'
+                    ? 'border-accent text-accent bg-accent/5 font-semibold'
+                    : 'border-border/50 text-muted hover:text-primary hover:border-accent/40 bg-background/30'
+                }`}
+              >
+                Main Details
+              </button>
+              {variants.map((v, i) => (
+                <div key={i} className="group relative flex items-center w-full">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(i)}
+                    className={`flex-1 text-left font-mono text-[10px] uppercase p-2 border transition-all rounded-l-sm cursor-pointer ${
+                      activeTab === i
+                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-semibold'
+                        : 'border-border/50 border-r-transparent text-muted hover:text-primary hover:border-accent/40 bg-background/30'
+                    }`}
+                  >
+                    <span className="truncate max-w-[140px] block">{v.name || `Variant ${i + 1}`}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeVariant(i);
+                      if (activeTab === i) setActiveTab('parent');
+                      else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
+                    }}
+                    className={`px-2 py-[7px] text-[12px] border border-l-transparent text-muted hover:text-red-400 bg-background/30 hover:bg-red-950/20 transition-all rounded-r-sm cursor-pointer ${
+                      activeTab === i ? 'border-accent' : 'border-border/50'
+                    }`}
+                    title="Delete variant"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newIdx = variants.length;
+                  addVariant();
+                  setActiveTab(newIdx);
+                }}
+                className="p-2 font-mono text-[9px] uppercase tracking-wider text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background/20 text-center rounded-sm cursor-pointer"
+              >
+                + Add Variant
+              </button>
+            </div>
+          </div>
+
+          {/* Form Sections */}
+          {activeTab === 'parent' && (
+            <div className="space-y-3 pt-2">
+              <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted">
+                Form Sections
+              </p>
+              <ul className="border-l border-border/50 pl-0 list-none space-y-2.5 font-mono text-[10px]">
+                {sections.map((sec) => (
+                  <li key={sec.id} className="relative pl-4">
+                    <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${
+                      sec.done 
+                        ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' 
+                        : 'bg-transparent border border-muted'
+                    }`}></span>
+                    <button
+                      type="button"
+                      onClick={() => scrollToSection(sec.id, sec.id)}
+                      className={`text-left uppercase tracking-wider hover:text-accent transition-colors cursor-pointer bg-transparent border-0 p-0 font-mono text-[10px] ${
+                        sec.done ? 'text-secondary/80' : 'text-muted'
+                      }`}
+                    >
+                      {sec.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Link */}
+        <div className="pt-4 border-t border-border mt-auto">
+          <Link
+            href="/products"
+            className="w-full text-center block px-4 py-3 text-[9px] font-mono tracking-[0.15em] uppercase text-muted hover:text-primary transition-colors border border-border hover:bg-surface-muted bg-background/50 rounded-sm"
+          >
+            ← Exit Editor
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
   const handleLogout = async () => {
     await logoutAction();
   };
@@ -223,32 +382,38 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-          {renderLink('Dashboard', '/')}
-          {renderLink('Orders', '/orders')}
-          {renderLink('RFQ Inbox', '/rfqs')}
-          {renderLink('Catalog & Pricing', '/products')}
+          {productFormState ? (
+            renderProductFormOutline()
+          ) : (
+            <>
+              {renderLink('Dashboard', '/')}
+              {renderLink('Orders', '/orders')}
+              {renderLink('RFQ Inbox', '/rfqs')}
+              {renderLink('Catalog & Pricing', '/products')}
 
-          {renderDropdown('Collections', 'collections', '/collections', categories.map(c => ({
-            name: `${c.name} (${c._count?.products || 0})`,
-            href: `/products?categoryId=${c.id}`,
-            active: currentCategoryId === c.id
-          })))}
+              {renderDropdown('Collections', 'collections', '/collections', categories.map(c => ({
+                name: `${c.name} (${c._count?.products || 0})`,
+                href: `/products?categoryId=${c.id}`,
+                active: currentCategoryId === c.id
+              })))}
 
-          {renderDropdown('Spaces', 'spaces', '/spaces', spaces.map(s => ({
-            name: `${s.name} (${s._count?.products || 0})`,
-            href: `/spaces?manage=${s.id}`,
-            active: currentManageId === s.id
-          })))}
+              {renderDropdown('Spaces', 'spaces', '/spaces', spaces.map(s => ({
+                name: `${s.name} (${s._count?.products || 0})`,
+                href: `/spaces?manage=${s.id}`,
+                active: currentManageId === s.id
+              })))}
 
-          {renderLink('B2B Workspace', '/b2b')}
-          {renderLink('Pages / CMS', '/pages')}
-          {renderLink('Blog', '/blog')}
-          {renderLink('Coupons', '/promotions')}
-          {renderLink('Affiliates', '/affiliates')}
-          {renderLink('Tickets', '/tickets', openTickets)}
+              {renderLink('B2B Workspace', '/b2b')}
+              {renderLink('Pages / CMS', '/pages')}
+              {renderLink('Blog', '/blog')}
+              {renderLink('Coupons', '/promotions')}
+              {renderLink('Affiliates', '/affiliates')}
+              {renderLink('Tickets', '/tickets', openTickets)}
 
-          {renderLink('Customers', '/customers')}
-          {renderLink('Admin Settings', '/account')}
+              {renderLink('Customers', '/customers')}
+              {renderLink('Admin Settings', '/account')}
+            </>
+          )}
         </nav>
 
         <div className="p-6 border-t border-border bg-background">
