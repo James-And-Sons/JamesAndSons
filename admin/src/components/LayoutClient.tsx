@@ -1,16 +1,92 @@
 'use client';
 import { useState, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { SidebarProvider } from '@/lib/context/SidebarContext';
+import { SidebarProvider, useSidebar } from '@/lib/context/SidebarContext';
+
+function HeaderTitle() {
+  const pathname = usePathname();
+  const sidebar = useSidebar();
+  
+  const getBreadcrumbs = () => {
+    // If product form state is active:
+    if (sidebar?.productFormState) {
+      const { mode, productName } = sidebar.productFormState;
+      const action = mode === 'add' ? 'Add Product' : 'Edit Product';
+      const nameSuffix = productName ? `: ${productName}` : '';
+      return [
+        { label: 'Catalog & Pricing', href: '/products' },
+        { label: `${action}${nameSuffix}` }
+      ];
+    }
+
+    if (pathname === '/') return [{ label: 'Dashboard', href: '/' }];
+    if (pathname === '/orders') return [{ label: 'Orders', href: '/orders' }];
+    if (pathname === '/rfqs') return [{ label: 'RFQ Inbox', href: '/rfqs' }];
+    if (pathname === '/products') return [{ label: 'Catalog & Pricing', href: '/products' }];
+    if (pathname === '/products/add') {
+      return [
+        { label: 'Catalog & Pricing', href: '/products' },
+        { label: 'Add Product' }
+      ];
+    }
+    if (pathname === '/collections') return [{ label: 'Collections', href: '/collections' }];
+    if (pathname === '/spaces') return [{ label: 'Spaces', href: '/spaces' }];
+    if (pathname === '/b2b') return [{ label: 'B2B Workspace', href: '/b2b' }];
+    if (pathname === '/pages') return [{ label: 'CMS Pages', href: '/pages' }];
+    if (pathname === '/blog') return [{ label: 'Blog', href: '/blog' }];
+    if (pathname === '/promotions') return [{ label: 'Coupons & Promotions', href: '/promotions' }];
+    if (pathname === '/affiliates') return [{ label: 'Affiliates', href: '/affiliates' }];
+    if (pathname === '/tickets') return [{ label: 'Support Tickets', href: '/tickets' }];
+    if (pathname === '/customers') return [{ label: 'Customers', href: '/customers' }];
+    if (pathname === '/account') return [{ label: 'Admin Settings', href: '/account' }];
+
+    // Dynamic builder for arbitrary paths
+    const segments = pathname.split('/').filter(Boolean);
+    let accumPath = '';
+    return segments.map((seg, idx) => {
+      accumPath += `/${seg}`;
+      const isLast = idx === segments.length - 1;
+      return {
+        label: seg.charAt(0).toUpperCase() + seg.slice(1).replace(/-/g, ' '),
+        href: isLast ? undefined : accumPath
+      };
+    });
+  };
+
+  const breadcrumbs = getBreadcrumbs();
+
+  return (
+    <div className="flex items-center gap-1.5 font-mono text-[9px] sm:text-[10px] tracking-[0.2em] uppercase text-accent font-medium select-none">
+      {breadcrumbs.map((crumb, idx) => {
+        const isLast = idx === breadcrumbs.length - 1;
+        return (
+          <div key={idx} className="flex items-center gap-1.5">
+            {idx > 0 && <span className="text-muted/40 font-normal">/</span>}
+            {isLast || !crumb.href ? (
+              <span className="text-primary/95 font-semibold">{crumb.label}</span>
+            ) : (
+              <Link 
+                href={crumb.href} 
+                className="hover:text-accent-hover transition-colors text-accent"
+              >
+                {crumb.label}
+              </Link>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isLoginPage = pathname?.startsWith('/login');
-
 
   return (
     <ThemeProvider>
@@ -34,7 +110,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
-                <h2 className="section-label m-0 font-medium text-accent tracking-[0.2em] font-mono text-[10px]">Overview</h2>
+                <HeaderTitle />
               </div>
               <div className="flex items-center gap-4">
                 <ThemeToggle />
