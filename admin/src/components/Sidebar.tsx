@@ -247,7 +247,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           }}
         >
           {/* Search bar inside dropdown */}
-          <div className="px-2 py-1.5">
+          <div className="px-2 py-2">
             <div className="relative w-full">
               <input
                 type="text"
@@ -261,7 +261,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                     if (onClose) onClose();
                   }
                 }}
-                className="w-full bg-background/50 border border-border/60 hover:border-border px-3 py-1.5 text-[9px] font-mono text-primary focus:outline-none focus:border-accent transition-colors placeholder:text-muted/40 rounded-sm"
+                className="w-full bg-background border border-border/80 hover:border-border/100 focus:border-accent px-3 py-2 text-[11px] font-mono text-primary focus:outline-none transition-colors placeholder:text-muted/50 rounded-sm"
               />
               {searchVal && (
                 <button
@@ -270,7 +270,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                     setSearchVal('');
                     router.push('/products');
                   }}
-                  className="absolute right-2 top-1.5 text-muted hover:text-accent font-mono text-[10px] cursor-pointer"
+                  className="absolute right-2.5 top-2 text-muted hover:text-accent font-mono text-[12px] cursor-pointer"
                 >
                   ×
                 </button>
@@ -347,7 +347,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       { id: 'basic', name: 'Basic Information', done: isBasicComplete },
       { id: 'pricing', name: 'Pricing & Inventory', done: isPricingComplete },
       { id: 'specs', name: 'Technical Specs', done: isSpecsComplete },
-      { id: 'seo', name: 'Marketplace SEO', done: isSeoComplete },
+      { id: 'seo', name: 'Marketplace & SEO', done: isSeoComplete },
       { id: 'images', name: 'Product Images', done: isImagesComplete }
     ];
 
@@ -356,7 +356,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       { id: 'v_pricing', name: 'Pricing Overrides', done: isVarPricingComplete },
       { id: 'v_dimensions', name: 'Dimensions Overrides', done: isVarDimensionsComplete },
       { id: 'v_specs', name: 'Technical Specs', done: isVarSpecsComplete },
-      { id: 'v_platform', name: 'Platform Overrides', done: isVarPlatformComplete },
+      { id: 'v_platform', name: 'Marketplace & SEO', done: isVarPlatformComplete },
       { id: 'v_images', name: 'Variant Images', done: isVarImagesComplete }
     ];
 
@@ -396,9 +396,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               <button
                 type="button"
                 onClick={() => setActiveTab('parent')}
-                className={`text-left font-mono text-[11px] uppercase p-2.5 border transition-all rounded-sm cursor-pointer ${
+                className={`text-left font-mono text-[12px] uppercase p-3 border transition-all rounded-sm cursor-pointer ${
                   activeTab === 'parent'
-                    ? 'border-accent text-accent bg-accent/5 font-bold'
+                    ? 'border-accent text-accent bg-accent/5 font-semibold'
                     : 'border-border/50 text-muted hover:text-primary hover:border-accent/40 bg-background/30'
                 }`}
               >
@@ -409,9 +409,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   <button
                     type="button"
                     onClick={() => setActiveTab(i)}
-                    className={`flex-1 text-left font-mono text-[11px] uppercase p-2.5 border transition-all rounded-l-sm cursor-pointer ${
+                    className={`flex-1 text-left font-mono text-[12px] uppercase p-3 border transition-all rounded-l-sm cursor-pointer ${
                       activeTab === i
-                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-bold'
+                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-semibold'
                         : 'border-border/50 border-r-transparent text-muted hover:text-primary hover:border-accent/40 bg-background/30'
                     }`}
                   >
@@ -424,7 +424,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                       if (activeTab === i) setActiveTab('parent');
                       else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
                     }}
-                    className={`px-2.5 py-[8.5px] text-[12px] border border-l-transparent text-muted hover:text-red-400 bg-background/30 hover:bg-red-950/20 transition-all rounded-r-sm cursor-pointer ${
+                    className={`px-3 py-3 text-[13px] border border-l-transparent text-muted hover:text-red-400 bg-background/30 hover:bg-red-950/20 transition-all rounded-r-sm cursor-pointer ${
                       activeTab === i ? 'border-accent' : 'border-border/50'
                     }`}
                     title="Delete variant"
@@ -440,7 +440,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   addVariant();
                   setActiveTab(newIdx);
                 }}
-                className="p-2.5 font-mono text-[10px] uppercase tracking-wider text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background/20 text-center rounded-sm cursor-pointer font-medium"
+                className="p-3 font-mono text-[11px] uppercase tracking-wider text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background/20 text-center rounded-sm cursor-pointer font-medium"
               >
                 + Add Variant
               </button>

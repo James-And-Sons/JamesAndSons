@@ -982,15 +982,15 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 <div className="pt-4 border-t border-border/40 space-y-4">
                   <div className="flex justify-between items-center">
                     <label className={labelCls}>Filterable specs overrides</label>
-                    <button type="button" onClick={addSpec} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors">
+                    <button type="button" onClick={addSpec} className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent border border-accent/20 px-3 py-1.5 hover:border-accent hover:bg-accent/5 transition-all rounded-sm">
                       + Add Spec
                     </button>
                   </div>
                   {specs.map((spec, i) => (
-                    <div key={i} className="flex gap-3 items-center">
-                      <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Bulb Qty)" className={`${inputCls} w-1/3 !py-2`} />
-                      <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. 6)" className={`${inputCls} flex-1 !py-2`} />
-                      <button type="button" onClick={() => removeSpec(i)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors">
+                    <div key={i} className="flex gap-4 items-center w-full">
+                      <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Bulb Qty)" className={`${inputCls} flex-1 !py-2.5`} />
+                      <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. 6)" className={`${inputCls} flex-1 !py-2.5`} />
+                      <button type="button" onClick={() => removeSpec(i)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded-sm">
                         ×
                       </button>
                     </div>
@@ -998,10 +998,10 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 </div>
               </CollapsibleCard>
 
-              {/* === MARKETPLACE SEO CARD === */}
+              {/* === MARKETPLACE & SEO CARD === */}
               <CollapsibleCard
                 id="seo"
-                title="Marketplace SEO"
+                title="Marketplace &amp; SEO"
                 sub="Amazon and Flipkart sync attributes"
                 number="4"
                 done={isSeoComplete}
@@ -1502,19 +1502,40 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border/40">
+                    <div>
+                      <label className={labelCls}>Power specification override</label>
+                      <input
+                        value={variants[activeTab].power}
+                        onChange={e => updateVariantField(activeTab, 'power', e.target.value)}
+                        placeholder={parentValues.power ? `Inherit (${parentValues.power})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Voltage specification override</label>
+                      <input
+                        value={variants[activeTab].voltage}
+                        onChange={e => updateVariantField(activeTab, 'voltage', e.target.value)}
+                        placeholder={parentValues.voltage ? `Inherit (${parentValues.voltage})` : 'Inherit'}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+
                   {/* Overrides: custom specs */}
                   <div className="pt-6 border-t border-border/40 space-y-4">
                     <div className="flex justify-between items-center">
                       <label className={labelCls}>Variant-specific specs overrides</label>
-                      <button type="button" onClick={() => addVariantSpec(activeTab)} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors rounded">
+                      <button type="button" onClick={() => addVariantSpec(activeTab)} className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent border border-accent/20 px-3 py-1.5 hover:border-accent hover:bg-accent/5 transition-all rounded-sm">
                         + Add Variant Spec
                       </button>
                     </div>
                     {variants[activeTab].specs.map((spec, sIdx) => (
-                      <div key={sIdx} className="flex gap-3 items-center">
-                        <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} w-1/3 !py-2`} />
-                        <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2`} />
-                        <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded">
+                      <div key={sIdx} className="flex gap-4 items-center w-full">
+                        <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} flex-1 !py-2.5`} />
+                        <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2.5`} />
+                        <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded-sm">
                           ×
                         </button>
                       </div>
@@ -1523,10 +1544,10 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 </div>
               </CollapsibleCard>
 
-              {/* === CARD 5: Platform Overrides === */}
+              {/* === CARD 5: Marketplace & SEO Overrides === */}
               <CollapsibleCard
                 id="v_platform"
-                title="Platform Overrides"
+                title="Marketplace &amp; SEO overrides"
                 sub="Brand, warranty, and marketplace category overrides"
                 number="5"
                 done={isVarPlatformComplete}
