@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
 import SyncButton from '@/components/SyncButton';
 import { useSidebar } from '@/lib/context/SidebarContext';
@@ -546,6 +547,20 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   const labelCls = "font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1";
 
 
+  const handleCancelClick = (e: React.MouseEvent) => {
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    }
+    // If it's the cancel button click, redirect back to catalog
+    if (e.currentTarget.tagName === 'BUTTON') {
+      router.push('/products');
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
@@ -554,19 +569,29 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 
       {/* === STICKY TOP BAR REDESIGN === */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border py-4 px-6 -mx-6 flex items-center justify-between gap-4">
-        <div>
-          <div className="font-mono text-[9px] uppercase tracking-widest text-muted">
-            Products / {parentValues.categoryId ? categories.find(c => c.id === parentValues.categoryId)?.name || 'Catalog' : 'Catalog'}
-          </div>
-          <div className="flex items-baseline gap-3 mt-1">
-            <h1 className="font-serif text-[24px] text-primary font-light tracking-wide">
-              {parentValues.name || 'New Product'}
-            </h1>
-            {parentValues.sku && (
-              <span className="font-mono text-[10px] text-muted border border-border px-2 py-0.5 rounded-full uppercase">
-                {parentValues.sku}
-              </span>
-            )}
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/products" 
+            onClick={handleCancelClick}
+            className="p-2 text-muted hover:text-accent border border-border bg-background transition-colors rounded-sm"
+            title="Back to Catalog"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 12H5M5 12L12 19M5 12L12 5" /></svg>
+          </Link>
+          <div>
+            <div className="font-mono text-[9px] uppercase tracking-widest text-muted">
+              Products / {parentValues.categoryId ? categories.find(c => c.id === parentValues.categoryId)?.name || 'Catalog' : 'Catalog'}
+            </div>
+            <div className="flex items-baseline gap-3 mt-1">
+              <h1 className="font-serif text-[20px] text-primary font-light tracking-wide">
+                {parentValues.name || 'New Product'}
+              </h1>
+              {parentValues.sku && (
+                <span className="font-mono text-[9px] text-muted border border-border px-1.5 py-0.5 rounded uppercase">
+                  {parentValues.sku}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -580,7 +605,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
           <div className="flex items-center gap-2.5">
             <button 
               type="button" 
-              onClick={() => router.back()} 
+              onClick={handleCancelClick} 
               className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-5 py-2.5 hover:text-primary transition-colors bg-background"
             >
               Cancel
