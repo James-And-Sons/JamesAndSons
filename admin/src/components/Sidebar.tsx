@@ -48,14 +48,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   }, []);
 
   useEffect(() => {
-    // Auto-expand active groups
-    if (pathname.startsWith('/collections') || currentCategoryId) {
+    // Auto-expand active groups ONLY if a sub-item query parameter is active, NOT on root pages
+    if (currentCategoryId) {
       setOpenDropdowns(prev => ({ ...prev, collections: true }));
     }
-    if (pathname.startsWith('/spaces') || currentManageId) {
+    if (currentManageId) {
       setOpenDropdowns(prev => ({ ...prev, spaces: true }));
     }
-  }, [pathname, currentCategoryId, currentManageId]);
+  }, [currentCategoryId, currentManageId]);
 
   const renderLink = (name: string, href: string, badge?: number | null) => {
     const isActive = href === '/' 
@@ -102,24 +102,39 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
     return (
       <div className="space-y-1">
-        <button
-          onClick={toggle}
-          className={`
-            group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border w-full text-left cursor-pointer rounded-sm
-            ${isGroupActive 
-              ? 'text-white border-accent/30 bg-surface-muted/40' 
-              : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
-            }
-          `}
+      <div className={`
+        flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
+        ${isGroupActive 
+          ? 'text-white border-accent/30 bg-surface-muted/40' 
+          : 'text-muted border-transparent hover:border-border hover:bg-surface-muted'
+        }
+      `}>
+        {/* Left Link Area: Clicking navigates to default view */}
+        <Link
+          href={manageHref}
+          onClick={onClose}
+          className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
         >
-          <span className="flex items-center gap-2">
-            {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
-            {name}
-          </span>
-          <span className={`text-[12px] font-semibold text-muted transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
+          {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
+          <span>{name}</span>
+        </Link>
+
+        {/* Right Toggle Button: Clicking expands/collapses the dropdown */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle();
+          }}
+          className="px-4 py-3 flex items-center justify-center border-l border-border/10 hover:text-accent transition-colors cursor-pointer"
+          aria-label={`Toggle ${name} dropdown`}
+        >
+          <span className={`text-[12px] font-semibold transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
             ›
           </span>
         </button>
+      </div>
 
         <div 
           className="overflow-hidden transition-all duration-300 ease-in-out pl-3 space-y-1 border-l border-border/50 ml-4"
