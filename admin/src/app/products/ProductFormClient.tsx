@@ -564,6 +564,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   }
 
   const inputCls = "w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
+  const selectCls = "w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent transition-colors appearance-none pr-10 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M7%209l3%203%203-3%22%20stroke%3D%22%23a1a1aa%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_16px_center] bg-[size:20px_20px] bg-no-repeat cursor-pointer";
   const labelCls = "font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1";
 
 
@@ -711,7 +712,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                       required
                       value={parentValues.categoryId}
                       onChange={e => handleParentFieldChange('categoryId', e.target.value)}
-                      className={inputCls}
+                      className={selectCls}
                     >
                       <option value="">Select Category</option>
                       {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -950,7 +951,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     <select
                       value={parentValues.gstRate}
                       onChange={e => handleParentFieldChange('gstRate', parseInt(e.target.value, 10))}
-                      className={inputCls}
+                      className={selectCls}
                     >
                       <option value={5}>5% (LED)</option>
                       <option value={18}>18% (Traditional)</option>
@@ -1628,7 +1629,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     <select
                       value={variants[activeTab].googleProductCategory}
                       onChange={e => updateVariantField(activeTab, 'googleProductCategory', e.target.value)}
-                      className={inputCls}
+                      className={selectCls}
                     >
                       <option value="">Inherit Parent ({parentValues.googleProductCategory || 'None'})</option>
                       {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
