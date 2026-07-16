@@ -179,7 +179,13 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     pricing: true,
     specs: false,
     seo: false,
-    images: true
+    images: true,
+    v_basic: true,
+    v_pricing: true,
+    v_dimensions: false,
+    v_specs: false,
+    v_platform: false,
+    v_images: true
   });
 
   // Warn if B2B Price equals MRP
@@ -191,6 +197,20 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   const isSpecsComplete = !!(parentValues.power && parentValues.voltage);
   const isSeoComplete = !!(parentValues.brand);
   const isImagesComplete = images.length > 0;
+
+  // Active variant checklist overrides indicators
+  const isVarBasicComplete = activeTab !== 'parent' && typeof activeTab === 'number' && !!(
+    variants[activeTab]?.name &&
+    variants[activeTab]?.sku &&
+    variants[activeTab]?.stockQuantity
+  );
+  const isVarPricingComplete = activeTab !== 'parent' && typeof activeTab === 'number';
+  const isVarDimensionsComplete = activeTab !== 'parent' && typeof activeTab === 'number';
+  const isVarSpecsComplete = activeTab !== 'parent' && typeof activeTab === 'number';
+  const isVarPlatformComplete = activeTab !== 'parent' && typeof activeTab === 'number';
+  const isVarImagesComplete = activeTab !== 'parent' && typeof activeTab === 'number' && !!(
+    variants[activeTab]?.images || variants[activeTab]?.whiteBackgroundImages
+  );
 
   const totalSections = 5;
   const completedSections = 
@@ -374,6 +394,12 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       isSpecsComplete,
       isSeoComplete,
       isImagesComplete,
+      isVarBasicComplete,
+      isVarPricingComplete,
+      isVarDimensionsComplete,
+      isVarSpecsComplete,
+      isVarPlatformComplete,
+      isVarImagesComplete,
       openSections,
       setOpenSections
     });
@@ -393,6 +419,12 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     isSpecsComplete,
     isSeoComplete,
     isImagesComplete,
+    isVarBasicComplete,
+    isVarPricingComplete,
+    isVarDimensionsComplete,
+    isVarSpecsComplete,
+    isVarPlatformComplete,
+    isVarImagesComplete,
     openSections,
     setProductFormState
   ]);
@@ -1215,25 +1247,37 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             /* ========================== ACTIVE VARIANT FORM ========================== */
             /* ========================================================================= */
             <div className="space-y-6 animate-in fade-in duration-200">
-              
-              <div className="premium-card p-6 space-y-6">
-                <div className="flex justify-between items-center border-b border-border pb-4">
+              {/* Header card for delete trigger / info */}
+              <div className="premium-card p-6 flex justify-between items-center border border-border bg-surface/10 rounded">
+                <div>
                   <h3 className="font-serif text-[20px] text-primary font-medium tracking-wide">
-                    Variant specifications override
+                    Variant overrides: {variants[activeTab].name || `Variant ${activeTab + 1}`}
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDirty(true);
-                      removeVariant(activeTab);
-                      setActiveTab('parent');
-                    }}
-                    className="font-mono text-[9px] uppercase tracking-[0.15em] text-rose-400 border border-rose-900/30 px-4 py-2 hover:bg-rose-950/20 transition-colors"
-                  >
-                    Delete Variant option
-                  </button>
+                  <p className="font-mono text-[9px] text-muted uppercase tracking-widest mt-1">Specify override values for this specific variant option</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDirty(true);
+                    removeVariant(activeTab);
+                    setActiveTab('parent');
+                  }}
+                  className="font-mono text-[9px] uppercase tracking-[0.15em] text-rose-400 border border-rose-900/30 px-4 py-2 hover:bg-rose-950/20 transition-colors rounded"
+                >
+                  Delete Variant option
+                </button>
+              </div>
 
+              {/* === CARD 1: Variant Basic Info === */}
+              <CollapsibleCard
+                id="v_basic"
+                title="Variant Details"
+                sub="Variant identifier name, override SKU and stock"
+                number="1"
+                done={isVarBasicComplete}
+                isOpen={openSections.v_basic}
+                onToggle={() => setOpenSections(prev => ({ ...prev, v_basic: !prev.v_basic }))}
+              >
                 <div className="grid grid-cols-3 gap-6">
                   <div>
                     <label className={labelCls}>Variant Name *</label>
@@ -1266,137 +1310,168 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     />
                   </div>
                 </div>
+              </CollapsibleCard>
 
-                <div className="border-t border-border/40 pt-6">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Pricing (Leave blank to inherit parent)</div>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div>
-                      <label className={labelCls}>MRP Override (₹)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={variants[activeTab].mrp}
-                        onChange={e => updateVariantField(activeTab, 'mrp', e.target.value)}
-                        placeholder={parentValues.mrp ? `Inherit (₹${parentValues.mrp})` : 'Inherit'}
-                        className={inputCls}
-                      />
+              {/* === CARD 2: Pricing Overrides === */}
+              <CollapsibleCard
+                id="v_pricing"
+                title="Pricing Overrides"
+                sub="MRP, D2C, and B2B pricing overrides"
+                number="2"
+                done={isVarPricingComplete}
+                isOpen={openSections.v_pricing}
+                onToggle={() => setOpenSections(prev => ({ ...prev, v_pricing: !prev.v_pricing }))}
+              >
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <label className={labelCls}>MRP Override (₹)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={variants[activeTab].mrp}
+                      onChange={e => updateVariantField(activeTab, 'mrp', e.target.value)}
+                      placeholder={parentValues.mrp ? `Inherit (₹${parentValues.mrp})` : 'Inherit'}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>D2C Price Override (₹)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={variants[activeTab].d2cPrice}
+                      onChange={e => updateVariantField(activeTab, 'd2cPrice', e.target.value)}
+                      placeholder={parentValues.d2cPrice ? `Inherit (₹${parentValues.d2cPrice})` : 'Inherit'}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>B2B Price Override (₹)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={variants[activeTab].b2bPrice}
+                      onChange={e => updateVariantField(activeTab, 'b2bPrice', e.target.value)}
+                      placeholder={parentValues.b2bPrice ? `Inherit (₹${parentValues.b2bPrice})` : 'Inherit'}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+              </CollapsibleCard>
+
+              {/* === CARD 3: Dimensions Overrides === */}
+              <CollapsibleCard
+                id="v_dimensions"
+                title="Dimensions Overrides"
+                sub="Shipping and actual display dimensions overrides"
+                number="3"
+                done={isVarDimensionsComplete}
+                isOpen={openSections.v_dimensions}
+                onToggle={() => setOpenSections(prev => ({ ...prev, v_dimensions: !prev.v_dimensions }))}
+              >
+                <div className="space-y-6">
+                  <div>
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Shipping dimensions overrides</div>
+                    <div className="grid grid-cols-4 gap-6">
+                      <div>
+                        <label className={labelCls}>Weight (kg)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={variants[activeTab].weight}
+                          onChange={e => updateVariantField(activeTab, 'weight', e.target.value)}
+                          placeholder={parentValues.weight ? `Inherit (${parentValues.weight} kg)` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Length (cm)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variants[activeTab].length}
+                          onChange={e => updateVariantField(activeTab, 'length', e.target.value)}
+                          placeholder={parentValues.length ? `Inherit (${parentValues.length} cm)` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Breadth (cm)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variants[activeTab].breadth}
+                          onChange={e => updateVariantField(activeTab, 'breadth', e.target.value)}
+                          placeholder={parentValues.breadth ? `Inherit (${parentValues.breadth} cm)` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Height (cm)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variants[activeTab].height}
+                          onChange={e => updateVariantField(activeTab, 'height', e.target.value)}
+                          placeholder={parentValues.height ? `Inherit (${parentValues.height} cm)` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className={labelCls}>D2C Price Override (₹)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={variants[activeTab].d2cPrice}
-                        onChange={e => updateVariantField(activeTab, 'd2cPrice', e.target.value)}
-                        placeholder={parentValues.d2cPrice ? `Inherit (₹${parentValues.d2cPrice})` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>B2B Price Override (₹)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={variants[activeTab].b2bPrice}
-                        onChange={e => updateVariantField(activeTab, 'b2bPrice', e.target.value)}
-                        placeholder={parentValues.b2bPrice ? `Inherit (₹${parentValues.b2bPrice})` : 'Inherit'}
-                        className={inputCls}
-                      />
+                  </div>
+
+                  <div className="border-t border-border/40 pt-6">
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Display Dimensions ({dimensionUnit === 'CM' ? 'cm' : 'in'}) overrides</div>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div>
+                        <label className={labelCls}>Height</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variants[activeTab].actualHeight}
+                          onChange={e => updateVariantField(activeTab, 'actualHeight', e.target.value)}
+                          placeholder={parentValues.actualHeight ? `Inherit (${parentValues.actualHeight})` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Width</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variants[activeTab].actualWidth}
+                          onChange={e => updateVariantField(activeTab, 'actualWidth', e.target.value)}
+                          placeholder={parentValues.actualWidth ? `Inherit (${parentValues.actualWidth})` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Depth</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variants[activeTab].actualDepth}
+                          onChange={e => updateVariantField(activeTab, 'actualDepth', e.target.value)}
+                          placeholder={parentValues.actualDepth ? `Inherit (${parentValues.actualDepth})` : 'Inherit'}
+                          className={inputCls}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
+              </CollapsibleCard>
 
-                <div className="border-t border-border/40 pt-6">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Shipping dimensions</div>
-                  <div className="grid grid-cols-4 gap-6">
-                    <div>
-                      <label className={labelCls}>Weight (kg)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={variants[activeTab].weight}
-                        onChange={e => updateVariantField(activeTab, 'weight', e.target.value)}
-                        placeholder={parentValues.weight ? `Inherit (${parentValues.weight} kg)` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Length (cm)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={variants[activeTab].length}
-                        onChange={e => updateVariantField(activeTab, 'length', e.target.value)}
-                        placeholder={parentValues.length ? `Inherit (${parentValues.length} cm)` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Breadth (cm)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={variants[activeTab].breadth}
-                        onChange={e => updateVariantField(activeTab, 'breadth', e.target.value)}
-                        placeholder={parentValues.breadth ? `Inherit (${parentValues.breadth} cm)` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Height (cm)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={variants[activeTab].height}
-                        onChange={e => updateVariantField(activeTab, 'height', e.target.value)}
-                        placeholder={parentValues.height ? `Inherit (${parentValues.height} cm)` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-border/40 pt-6">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Display Dimensions ({dimensionUnit === 'CM' ? 'cm' : 'in'})</div>
-                  <div className="grid grid-cols-3 gap-6">
-                    <div>
-                      <label className={labelCls}>Height</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={variants[activeTab].actualHeight}
-                        onChange={e => updateVariantField(activeTab, 'actualHeight', e.target.value)}
-                        placeholder={parentValues.actualHeight ? `Inherit (${parentValues.actualHeight})` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Width</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={variants[activeTab].actualWidth}
-                        onChange={e => updateVariantField(activeTab, 'actualWidth', e.target.value)}
-                        placeholder={parentValues.actualWidth ? `Inherit (${parentValues.actualWidth})` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Depth</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={variants[activeTab].actualDepth}
-                        onChange={e => updateVariantField(activeTab, 'actualDepth', e.target.value)}
-                        placeholder={parentValues.actualDepth ? `Inherit (${parentValues.actualDepth})` : 'Inherit'}
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-border/40 pt-6">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-accent mb-3">Overrides: Technical specs</div>
+              {/* === CARD 4: Technical Specs === */}
+              <CollapsibleCard
+                id="v_specs"
+                title="Technical Specifications"
+                sub="Bulb type, material, style, and custom specification overrides"
+                number="4"
+                done={isVarSpecsComplete}
+                isOpen={openSections.v_specs}
+                onToggle={() => setOpenSections(prev => ({ ...prev, v_specs: !prev.v_specs }))}
+              >
+                <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-6">
                     <div>
                       <label className={labelCls}>Material &amp; Finish</label>
@@ -1426,30 +1501,39 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* Overrides: custom specs */}
-                <div className="pt-6 border-t border-border/40 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <label className={labelCls}>Variant-specific specs overrides</label>
-                    <button type="button" onClick={() => addVariantSpec(activeTab)} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors">
-                      + Add Variant Spec
-                    </button>
-                  </div>
-                  {variants[activeTab].specs.map((spec, sIdx) => (
-                    <div key={sIdx} className="flex gap-3 items-center">
-                      <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} w-1/3 !py-2`} />
-                      <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2`} />
-                      <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors">
-                        ×
+                  {/* Overrides: custom specs */}
+                  <div className="pt-6 border-t border-border/40 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <label className={labelCls}>Variant-specific specs overrides</label>
+                      <button type="button" onClick={() => addVariantSpec(activeTab)} className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent border border-accent/30 px-3 py-1 hover:border-accent transition-colors rounded">
+                        + Add Variant Spec
                       </button>
                     </div>
-                  ))}
+                    {variants[activeTab].specs.map((spec, sIdx) => (
+                      <div key={sIdx} className="flex gap-3 items-center">
+                        <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} w-1/3 !py-2`} />
+                        <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2`} />
+                        <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded">
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              </CollapsibleCard>
 
-                {/* Overrides: Amazon SEO & keywords */}
-                <div className="pt-6 border-t border-border/40 grid grid-cols-2 gap-6">
-                  <div className="col-span-2 font-mono text-[9px] uppercase tracking-widest text-accent mb-1">Platform listing overrides</div>
+              {/* === CARD 5: Platform Overrides === */}
+              <CollapsibleCard
+                id="v_platform"
+                title="Platform Overrides"
+                sub="Brand, warranty, and marketplace category overrides"
+                number="5"
+                done={isVarPlatformComplete}
+                isOpen={openSections.v_platform}
+                onToggle={() => setOpenSections(prev => ({ ...prev, v_platform: !prev.v_platform }))}
+              >
+                <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className={labelCls}>Brand Override</label>
                     <input
@@ -1482,9 +1566,19 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                     </select>
                   </div>
                 </div>
+              </CollapsibleCard>
 
-                {/* Variant Images upload */}
-                <div className="pt-6 border-t border-border/40 space-y-6">
+              {/* === CARD 6: Variant Images === */}
+              <CollapsibleCard
+                id="v_images"
+                title="Variant Images"
+                sub="Upload custom standard and white-background images for this variant"
+                number="6"
+                done={isVarImagesComplete}
+                isOpen={openSections.v_images}
+                onToggle={() => setOpenSections(prev => ({ ...prev, v_images: !prev.v_images }))}
+              >
+                <div className="space-y-6">
                   {/* Variant Standard Images */}
                   <div className="space-y-4">
                     <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant Remastered Images</h4>
@@ -1500,57 +1594,59 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                               type="button"
                               onClick={() => {
                                 setIsDirty(true);
-                                const updated = variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean).filter((_, i) => i !== idx);
-                                updateVariantField(activeTab, 'images', updated.join(', '));
+                                const currentList = variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean);
+                                const filtered = currentList.filter((_, i) => i !== idx);
+                                updateVariantField(activeTab, 'images', filtered.join(', '));
                               }}
-                              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                              className="absolute top-2 right-2 bg-red-600/90 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Remove image"
                             >
-                              ×
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
-
-                            {/* Reordering Controls */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
-                              {idx > 0 && (
-                                <button 
-                                  type="button" 
-                                  onClick={() => moveVariantImage(activeTab, idx, 'left', false)}
-                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                                >
-                                  ←
-                                </button>
-                              )}
-                              {idx < variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean).length - 1 && (
-                                <button 
-                                  type="button" 
-                                  onClick={() => moveVariantImage(activeTab, idx, 'right', false)}
-                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                                >
-                                  →
-                                </button>
-                              )}
+                            <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => moveVariantImage(activeTab, idx, 'left', false)}
+                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
+                                title="Move Left"
+                              >
+                                ◀
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveVariantImage(activeTab, idx, 'right', false)}
+                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
+                                title="Move Right"
+                              >
+                                ▶
+                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
-                    ) : null}
+                    ) : (
+                      <p className="font-mono text-[10px] text-muted italic">No custom remastered images uploaded. (Inheriting from parent)</p>
+                    )}
 
-                    <CloudinaryUpload
-                      onUpload={(urls) => {
-                        setIsDirty(true);
-                        const existing = variants[activeTab].images ? variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean) : [];
-                        updateVariantField(activeTab, 'images', [...existing, ...urls].join(', '));
-                      }}
-                      defaultImages={[]}
-                      multiple={true}
-                      label="Add Variant Images"
-                    />
+                    <div className="max-w-[400px]">
+                      <CloudinaryUpload 
+                        onUpload={(urls) => {
+                          setIsDirty(true);
+                          const existing = variants[activeTab].images ? variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean) : [];
+                          updateVariantField(activeTab, 'images', [...existing, ...urls].join(', '));
+                        }}
+                        defaultImages={[]}
+                        multiple={true}
+                        label="Upload Variant Remastered Images"
+                      />
+                    </div>
                   </div>
 
                   {/* Variant White Background Images */}
-                  <div className="space-y-4 pt-6 border-t border-border/40">
-                    <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant White Background Images (Amazon)</h4>
-                    <p className="font-mono text-[10px] text-muted">Variant-specific white background images (inherits parent if left blank).</p>
-
+                  <div className="pt-6 border-t border-border/40 space-y-4">
+                    <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant White Background Images</h4>
+                    <p className="font-mono text-[10px] text-muted">Variant-specific white background catalog images (inherits parent if left blank).</p>
+                    
                     {variants[activeTab].whiteBackgroundImages ? (
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         {variants[activeTab].whiteBackgroundImages.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => (
@@ -1561,54 +1657,55 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                               type="button"
                               onClick={() => {
                                 setIsDirty(true);
-                                const updated = variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean).filter((_, i) => i !== idx);
-                                updateVariantField(activeTab, 'whiteBackgroundImages', updated.join(', '));
+                                const currentList = variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean);
+                                const filtered = currentList.filter((_, i) => i !== idx);
+                                updateVariantField(activeTab, 'whiteBackgroundImages', filtered.join(', '));
                               }}
-                              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                              className="absolute top-2 right-2 bg-red-600/90 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Remove image"
                             >
-                              ×
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
-
-                            {/* Reordering Controls */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
-                              {idx > 0 && (
-                                <button 
-                                  type="button" 
-                                  onClick={() => moveVariantImage(activeTab, idx, 'left', true)}
-                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                                >
-                                  ←
-                                </button>
-                              )}
-                              {idx < variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean).length - 1 && (
-                                <button 
-                                  type="button" 
-                                  onClick={() => moveVariantImage(activeTab, idx, 'right', true)}
-                                  className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                                >
-                                  →
-                                </button>
-                              )}
+                            <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => moveVariantImage(activeTab, idx, 'left', true)}
+                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
+                                title="Move Left"
+                              >
+                                ◀
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveVariantImage(activeTab, idx, 'right', true)}
+                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
+                                title="Move Right"
+                              >
+                                ▶
+                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
-                    ) : null}
+                    ) : (
+                      <p className="font-mono text-[10px] text-muted italic">No custom white-background images uploaded. (Inheriting from parent)</p>
+                    )}
 
-                    <CloudinaryUpload
-                      onUpload={(urls) => {
-                        setIsDirty(true);
-                        const existing = variants[activeTab].whiteBackgroundImages ? variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean) : [];
-                        updateVariantField(activeTab, 'whiteBackgroundImages', [...existing, ...urls].join(', '));
-                      }}
-                      defaultImages={[]}
-                      multiple={true}
-                      label="Add Variant White Background Images"
-                    />
+                    <div className="max-w-[400px]">
+                      <CloudinaryUpload
+                        onUpload={(urls) => {
+                          setIsDirty(true);
+                          const existing = variants[activeTab].whiteBackgroundImages ? variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean) : [];
+                          updateVariantField(activeTab, 'whiteBackgroundImages', [...existing, ...urls].join(', '));
+                        }}
+                        defaultImages={[]}
+                        multiple={true}
+                        label="Upload Variant White Background Images"
+                      />
+                    </div>
                   </div>
                 </div>
-
-              </div>
+              </CollapsibleCard>
             </div>
           )}
 

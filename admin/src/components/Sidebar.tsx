@@ -203,17 +203,36 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       isSpecsComplete,
       isSeoComplete,
       isImagesComplete,
+      isVarBasicComplete,
+      isVarPricingComplete,
+      isVarDimensionsComplete,
+      isVarSpecsComplete,
+      isVarPlatformComplete,
+      isVarImagesComplete,
       openSections,
       setOpenSections
     } = productFormState;
 
-    const sections = [
+    const isParentMode = activeTab === 'parent';
+
+    const parentSections = [
       { id: 'basic', name: 'Basic Information', done: isBasicComplete },
       { id: 'pricing', name: 'Pricing & Inventory', done: isPricingComplete },
       { id: 'specs', name: 'Technical Specs', done: isSpecsComplete },
       { id: 'seo', name: 'Marketplace SEO', done: isSeoComplete },
       { id: 'images', name: 'Product Images', done: isImagesComplete }
     ];
+
+    const variantSections = [
+      { id: 'v_basic', name: 'Variant Details', done: isVarBasicComplete },
+      { id: 'v_pricing', name: 'Pricing Overrides', done: isVarPricingComplete },
+      { id: 'v_dimensions', name: 'Dimensions Overrides', done: isVarDimensionsComplete },
+      { id: 'v_specs', name: 'Technical Specs', done: isVarSpecsComplete },
+      { id: 'v_platform', name: 'Platform Overrides', done: isVarPlatformComplete },
+      { id: 'v_images', name: 'Variant Images', done: isVarImagesComplete }
+    ];
+
+    const sections = isParentMode ? parentSections : variantSections;
 
     const scrollToSection = (id: string, sectionKey: string) => {
       const element = document.getElementById(id);
@@ -244,14 +263,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
           {/* Variant View Section */}
           <div className="space-y-2">
-            <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted">Variant View</p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted font-semibold">Variant View</p>
             <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1">
               <button
                 type="button"
                 onClick={() => setActiveTab('parent')}
-                className={`text-left font-mono text-[10px] uppercase p-2 border transition-all rounded-sm cursor-pointer ${
+                className={`text-left font-mono text-[11px] uppercase p-2.5 border transition-all rounded-sm cursor-pointer ${
                   activeTab === 'parent'
-                    ? 'border-accent text-accent bg-accent/5 font-semibold'
+                    ? 'border-accent text-accent bg-accent/5 font-bold'
                     : 'border-border/50 text-muted hover:text-primary hover:border-accent/40 bg-background/30'
                 }`}
               >
@@ -262,9 +281,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   <button
                     type="button"
                     onClick={() => setActiveTab(i)}
-                    className={`flex-1 text-left font-mono text-[10px] uppercase p-2 border transition-all rounded-l-sm cursor-pointer ${
+                    className={`flex-1 text-left font-mono text-[11px] uppercase p-2.5 border transition-all rounded-l-sm cursor-pointer ${
                       activeTab === i
-                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-semibold'
+                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-bold'
                         : 'border-border/50 border-r-transparent text-muted hover:text-primary hover:border-accent/40 bg-background/30'
                     }`}
                   >
@@ -277,7 +296,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                       if (activeTab === i) setActiveTab('parent');
                       else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
                     }}
-                    className={`px-2 py-[7px] text-[12px] border border-l-transparent text-muted hover:text-red-400 bg-background/30 hover:bg-red-950/20 transition-all rounded-r-sm cursor-pointer ${
+                    className={`px-2.5 py-[8.5px] text-[12px] border border-l-transparent text-muted hover:text-red-400 bg-background/30 hover:bg-red-950/20 transition-all rounded-r-sm cursor-pointer ${
                       activeTab === i ? 'border-accent' : 'border-border/50'
                     }`}
                     title="Delete variant"
@@ -293,7 +312,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                   addVariant();
                   setActiveTab(newIdx);
                 }}
-                className="p-2 font-mono text-[9px] uppercase tracking-wider text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background/20 text-center rounded-sm cursor-pointer"
+                className="p-2.5 font-mono text-[10px] uppercase tracking-wider text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background/20 text-center rounded-sm cursor-pointer font-medium"
               >
                 + Add Variant
               </button>
@@ -301,40 +320,38 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           </div>
 
           {/* Form Sections */}
-          {activeTab === 'parent' && (
-            <div className="space-y-3 pt-2">
-              <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted">
-                Form Sections
-              </p>
-              <ul className="border-l border-border/50 pl-0 list-none space-y-2.5 font-mono text-[10px]">
-                {sections.map((sec) => (
-                  <li key={sec.id} className="relative pl-4">
-                    <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${
-                      sec.done 
-                        ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' 
-                        : 'bg-transparent border border-muted'
-                    }`}></span>
-                    <button
-                      type="button"
-                      onClick={() => scrollToSection(sec.id, sec.id)}
-                      className={`text-left uppercase tracking-wider hover:text-accent transition-colors cursor-pointer bg-transparent border-0 p-0 font-mono text-[10px] ${
-                        sec.done ? 'text-secondary/80' : 'text-muted'
-                      }`}
-                    >
-                      {sec.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="space-y-3 pt-2">
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted font-semibold">
+              {isParentMode ? 'Product Sections' : 'Variant Overrides'}
+            </p>
+            <ul className="border-l border-border/50 pl-0 list-none space-y-3 font-mono text-[11px]">
+              {sections.map((sec) => (
+                <li key={sec.id} className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${
+                    sec.done 
+                      ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' 
+                      : 'bg-transparent border border-muted'
+                  }`}></span>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(sec.id, sec.id)}
+                    className={`text-left uppercase tracking-wider hover:text-accent transition-colors cursor-pointer bg-transparent border-0 p-0 font-mono text-[11px] ${
+                      sec.done ? 'text-secondary/90 font-medium' : 'text-muted'
+                    }`}
+                  >
+                    {sec.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* Footer Link */}
         <div className="pt-4 border-t border-border mt-auto">
           <Link
             href="/products"
-            className="w-full text-center block px-4 py-3 text-[9px] font-mono tracking-[0.15em] uppercase text-muted hover:text-primary transition-colors border border-border hover:bg-surface-muted bg-background/50 rounded-sm"
+            className="w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-primary transition-colors border border-border hover:bg-surface-muted bg-background/50 rounded-sm"
           >
             ← Exit Editor
           </Link>

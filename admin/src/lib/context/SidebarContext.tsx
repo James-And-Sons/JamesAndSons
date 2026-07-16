@@ -16,12 +16,24 @@ export interface ProductFormSidebarState {
   isSpecsComplete: boolean;
   isSeoComplete: boolean;
   isImagesComplete: boolean;
+  isVarBasicComplete?: boolean;
+  isVarPricingComplete?: boolean;
+  isVarDimensionsComplete?: boolean;
+  isVarSpecsComplete?: boolean;
+  isVarPlatformComplete?: boolean;
+  isVarImagesComplete?: boolean;
   openSections: {
     basic: boolean;
     pricing: boolean;
     specs: boolean;
     seo: boolean;
     images: boolean;
+    v_basic: boolean;
+    v_pricing: boolean;
+    v_dimensions: boolean;
+    v_specs: boolean;
+    v_platform: boolean;
+    v_images: boolean;
   };
   setOpenSections: (updater: (prev: any) => any) => void;
 }
