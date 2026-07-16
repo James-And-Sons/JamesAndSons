@@ -465,58 +465,6 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   const inputCls = "w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
   const labelCls = "font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1";
 
-  // Collapsible Section Card Helper
-  const CollapsibleCard = ({ 
-    id, 
-    title, 
-    sub, 
-    number, 
-    done, 
-    warn, 
-    sectionKey,
-    children 
-  }: {
-    id: string;
-    title: string;
-    sub: string;
-    number: string | number;
-    done: boolean;
-    warn?: boolean;
-    sectionKey: keyof typeof openSections;
-    children: React.ReactNode;
-  }) => {
-    const isOpen = openSections[sectionKey];
-    const toggle = () => setOpenSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
-
-    return (
-      <section id={id} className="premium-card flex flex-col overflow-hidden mb-6">
-        <div 
-          onClick={toggle}
-          className="px-6 py-5 border-b border-border flex justify-between items-center cursor-pointer select-none bg-surface-muted/30 hover:bg-surface-muted/50 transition-colors"
-        >
-          <div className="flex items-center gap-4">
-            {done ? (
-              <span className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500 text-emerald-400 flex items-center justify-center text-[10px] font-semibold">✓</span>
-            ) : warn ? (
-              <span className="w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500 text-amber-400 flex items-center justify-center text-[10px] font-semibold">!</span>
-            ) : (
-              <span className="w-6 h-6 rounded-full border border-border-strong text-muted flex items-center justify-center text-[10px] font-mono">{number}</span>
-            )}
-            <div>
-              <h3 className="font-serif text-[18px] text-primary font-medium tracking-wide">{title}</h3>
-              <p className="font-mono text-[9px] text-muted uppercase tracking-widest mt-0.5">{sub}</p>
-            </div>
-          </div>
-          <span className={`text-[18px] text-muted transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>›</span>
-        </div>
-        {isOpen && (
-          <div className="p-6 space-y-6 bg-surface/30">
-            {children}
-          </div>
-        )}
-      </section>
-    );
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -681,7 +629,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 sub="Name, description, catalog category" 
                 number="1" 
                 done={isBasicComplete}
-                sectionKey="basic"
+                isOpen={openSections.basic}
+                onToggle={() => setOpenSections(prev => ({ ...prev, basic: !prev.basic }))}
               >
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -769,7 +718,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 number="2"
                 done={isPricingComplete}
                 warn={showB2BWarning}
-                sectionKey="pricing"
+                isOpen={openSections.pricing}
+                onToggle={() => setOpenSections(prev => ({ ...prev, pricing: !prev.pricing }))}
               >
                 <div className="grid grid-cols-4 gap-6">
                   <div>
@@ -956,7 +906,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 sub="GST, certification, materials, power overrides"
                 number="3"
                 done={isSpecsComplete}
-                sectionKey="specs"
+                isOpen={openSections.specs}
+                onToggle={() => setOpenSections(prev => ({ ...prev, specs: !prev.specs }))}
               >
                 <div className="grid grid-cols-3 gap-6">
                   <div>
@@ -1069,7 +1020,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 sub="Amazon and Flipkart sync attributes"
                 number="4"
                 done={isSeoComplete}
-                sectionKey="seo"
+                isOpen={openSections.seo}
+                onToggle={() => setOpenSections(prev => ({ ...prev, seo: !prev.seo }))}
               >
                 <div className="grid grid-cols-3 gap-6">
                   <div>
@@ -1176,7 +1128,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 sub="Separate storefront and white background listing media"
                 number="5"
                 done={isImagesComplete}
-                sectionKey="images"
+                isOpen={openSections.images}
+                onToggle={() => setOpenSections(prev => ({ ...prev, images: !prev.images }))}
               >
                 {/* 1. STOREFRONT IMAGES */}
                 <div className="space-y-4">
@@ -1731,5 +1684,58 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
         </main>
       </div>
     </form>
+  );
+}
+
+interface CollapsibleCardProps {
+  id: string;
+  title: string;
+  sub: string;
+  number: string | number;
+  done: boolean;
+  warn?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}
+
+function CollapsibleCard({
+  id,
+  title,
+  sub,
+  number,
+  done,
+  warn,
+  isOpen,
+  onToggle,
+  children
+}: CollapsibleCardProps) {
+  return (
+    <section id={id} className="premium-card flex flex-col overflow-hidden mb-6">
+      <div 
+        onClick={onToggle}
+        className="px-6 py-5 border-b border-border flex justify-between items-center cursor-pointer select-none bg-surface-muted/30 hover:bg-surface-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          {done ? (
+            <span className="w-6 h-6 rounded-full bg-emerald-500/10 border border-emerald-500 text-emerald-400 flex items-center justify-center text-[10px] font-semibold">✓</span>
+          ) : warn ? (
+            <span className="w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500 text-amber-400 flex items-center justify-center text-[10px] font-semibold">!</span>
+          ) : (
+            <span className="w-6 h-6 rounded-full border border-border-strong text-muted flex items-center justify-center text-[10px] font-mono">{number}</span>
+          )}
+          <div>
+            <h3 className="font-serif text-[18px] text-primary font-medium tracking-wide">{title}</h3>
+            <p className="font-mono text-[9px] text-muted uppercase tracking-widest mt-0.5">{sub}</p>
+          </div>
+        </div>
+        <span className={`text-[18px] text-muted transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>›</span>
+      </div>
+      {isOpen && (
+        <div className="p-6 space-y-6 bg-surface/30">
+          {children}
+        </div>
+      )}
+    </section>
   );
 }
