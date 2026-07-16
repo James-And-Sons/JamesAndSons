@@ -384,7 +384,7 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           value: wattVal,
-          unit: 'Watts'
+          unit: 'watts'
         }
       ];
     }
@@ -393,7 +393,7 @@ export async function syncToAmazon(product: any) {
         {
           marketplace_id: marketplaceId,
           value: voltVal,
-          unit: 'Volts'
+          unit: 'volts'
         }
       ];
     }

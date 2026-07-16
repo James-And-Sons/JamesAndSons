@@ -636,7 +636,12 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             <button 
               type="submit" 
               disabled={saving} 
-              className="px-5 py-2.5 font-mono text-[9px] uppercase tracking-[0.15em] bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50"
+              className={`px-5 py-2.5 font-mono text-[9px] uppercase tracking-[0.15em] transition-all duration-200 rounded-sm
+                ${(mode === 'add' || isDirty) 
+                  ? 'bg-accent text-black hover:bg-accent-hover font-bold shadow-md shadow-accent/15' 
+                  : 'border border-border text-muted bg-transparent hover:text-primary hover:border-muted font-normal'
+                }
+                disabled:opacity-50`}
             >
               {saving ? 'Saving...' : mode === 'add' ? 'Save Product' : 'Update Product'}
             </button>

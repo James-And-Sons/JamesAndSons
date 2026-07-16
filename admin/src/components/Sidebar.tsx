@@ -512,7 +512,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               type="button"
               disabled={productFormState.saving}
               onClick={productFormState.submitForm}
-              className="w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 rounded-sm shadow-md cursor-pointer"
+              className={`w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase transition-all duration-200 rounded-sm cursor-pointer
+                ${(productFormState.mode === 'add' || productFormState.isDirty)
+                  ? 'bg-accent text-black hover:bg-accent-hover font-bold shadow-md shadow-accent/15'
+                  : 'border border-border text-muted bg-background/50 hover:text-primary hover:border-muted font-normal'
+                }
+                disabled:opacity-50`}
             >
               {productFormState.saving ? 'Saving...' : productFormState.mode === 'add' ? '✓ Save Product' : '✓ Update Product'}
             </button>
