@@ -123,6 +123,12 @@ export async function DELETE(req: NextRequest) {
         logs.push(`Successfully deleted product ${product.sku} from website platform database.`);
       } catch (err: any) {
         console.error('[Manual Delete] Local database deletion error:', err);
+        if (err.code === 'P2003' || err.message?.includes('Foreign key constraint')) {
+          return NextResponse.json({
+            error: `This product cannot be deleted because it is associated with existing Orders or RFQs. You can set its stock to 0 or archive it instead.`,
+            logs
+          }, { status: 400 });
+        }
         return NextResponse.json({ error: `Database deletion failed: ${err.message}`, logs }, { status: 500 });
       }
     }

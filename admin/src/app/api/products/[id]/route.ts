@@ -158,6 +158,11 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
     await prisma.product.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch (e: any) {
+    if (e.code === 'P2003' || e.message?.includes('Foreign key constraint')) {
+      return NextResponse.json({
+        error: "This product cannot be deleted because it is associated with existing Orders or RFQs. You can set its stock to 0 or archive it instead."
+      }, { status: 400 });
+    }
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
