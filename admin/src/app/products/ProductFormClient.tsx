@@ -8,7 +8,7 @@ import { useSidebar } from '@/lib/context/SidebarContext';
 
 type Category = { id: string; name: string };
 type Space = { id: string; name: string };
-type Spec = { key: string; value: string };
+type Spec = { id: string; key: string; value: string };
 
 const GOOGLE_PRODUCT_CATEGORIES = [
   "Home & Garden > Lighting > Light Fixtures",
@@ -132,7 +132,11 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   // Main Product Specs
   const [specs, setSpecs] = useState<Spec[]>(
     defaultValues?.specs
-      ? Object.entries(defaultValues.specs).map(([key, value]) => ({ key, value: String(value) }))
+      ? Object.entries(defaultValues.specs).map(([key, value]) => ({ 
+          id: `parent-${key}`, 
+          key, 
+          value: String(value) 
+        }))
       : []
   );
 
@@ -169,7 +173,11 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       bulbType: (v.bulbType || []).join(', '),
       style: (v.style || []).join(', '),
       specs: v.specs
-        ? Object.entries(v.specs).map(([key, value]) => ({ key, value: String(value) }))
+        ? Object.entries(v.specs).map(([key, value]) => ({ 
+            id: `var-${v.id || v.sku || Math.random().toString(36).substring(2, 9)}-${key}`, 
+            key, 
+            value: String(value) 
+          }))
         : [],
     })) || []
   );
@@ -290,25 +298,28 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   // Variant Specs functions
   const addVariantSpec = (vIdx: number) => {
     setIsDirty(true);
-    setVariants(prev => prev.map((v, i) => i === vIdx ? { ...v, specs: [...v.specs, { key: '', value: '' }] } : v));
+    setVariants(prev => prev.map((v, i) => i === vIdx ? { 
+      ...v, 
+      specs: [...v.specs, { id: Math.random().toString(36).substring(2, 9), key: '', value: '' }] 
+    } : v));
   };
 
-  const updateVariantSpec = (vIdx: number, sIdx: number, field: 'key' | 'value', val: string) => {
+  const updateVariantSpec = (vIdx: number, specId: string, field: 'key' | 'value', val: string) => {
     setIsDirty(true);
     setVariants(prev => prev.map((v, i) => {
       if (i === vIdx) {
-        const newSpecs = v.specs.map((s, idx) => idx === sIdx ? { ...s, [field]: val } : s);
+        const newSpecs = v.specs.map(s => s.id === specId ? { ...s, [field]: val } : s);
         return { ...v, specs: newSpecs };
       }
       return v;
     }));
   };
 
-  const removeVariantSpec = (vIdx: number, sIdx: number) => {
+  const removeVariantSpec = (vIdx: number, specId: string) => {
     setIsDirty(true);
     setVariants(prev => prev.map((v, i) => {
       if (i === vIdx) {
-        const newSpecs = v.specs.filter((_, idx) => idx !== sIdx);
+        const newSpecs = v.specs.filter(s => s.id !== specId);
         return { ...v, specs: newSpecs };
       }
       return v;
@@ -318,17 +329,17 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   // Parent specs functions
   const addSpec = () => {
     setIsDirty(true);
-    setSpecs(prev => [...prev, { key: '', value: '' }]);
+    setSpecs(prev => [...prev, { id: Math.random().toString(36).substring(2, 9), key: '', value: '' }]);
   };
   
-  const updateSpec = (i: number, field: 'key' | 'value', val: string) => {
+  const updateSpec = (specId: string, field: 'key' | 'value', val: string) => {
     setIsDirty(true);
-    setSpecs(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s));
+    setSpecs(prev => prev.map(s => s.id === specId ? { ...s, [field]: val } : s));
   };
   
-  const removeSpec = (i: number) => {
+  const removeSpec = (specId: string) => {
     setIsDirty(true);
-    setSpecs(prev => prev.filter((_, idx) => idx !== i));
+    setSpecs(prev => prev.filter(s => s.id !== specId));
   };
 
   // Image re-ordering helper
@@ -1011,11 +1022,11 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                       + Add Spec
                     </button>
                   </div>
-                  {specs.map((spec, i) => (
-                    <div key={i} className="flex gap-4 items-center w-full">
-                      <input value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Key (e.g. Bulb Qty)" className={`${inputCls} flex-1 !py-2.5`} />
-                      <input value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Value (e.g. 6)" className={`${inputCls} flex-1 !py-2.5`} />
-                      <button type="button" onClick={() => removeSpec(i)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded-sm">
+                  {specs.map((spec) => (
+                    <div key={spec.id} className="flex gap-4 items-center w-full">
+                      <input value={spec.key} onChange={e => updateSpec(spec.id, 'key', e.target.value)} placeholder="Key (e.g. Bulb Qty)" className={`${inputCls} flex-1 !py-2.5`} />
+                      <input value={spec.value} onChange={e => updateSpec(spec.id, 'value', e.target.value)} placeholder="Value (e.g. 6)" className={`${inputCls} flex-1 !py-2.5`} />
+                      <button type="button" onClick={() => removeSpec(spec.id)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded-sm" title="Remove spec">
                         ×
                       </button>
                     </div>
@@ -1556,11 +1567,11 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                         + Add Variant Spec
                       </button>
                     </div>
-                    {variants[activeTab].specs.map((spec, sIdx) => (
-                      <div key={sIdx} className="flex gap-4 items-center w-full">
-                        <input value={spec.key} onChange={e => updateVariantSpec(activeTab, sIdx, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} flex-1 !py-2.5`} />
-                        <input value={spec.value} onChange={e => updateVariantSpec(activeTab, sIdx, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2.5`} />
-                        <button type="button" onClick={() => removeVariantSpec(activeTab, sIdx)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded-sm">
+                    {variants[activeTab].specs.map((spec) => (
+                      <div key={spec.id} className="flex gap-4 items-center w-full">
+                        <input value={spec.key} onChange={e => updateVariantSpec(activeTab, spec.id, 'key', e.target.value)} placeholder="Key (e.g. Frame Color)" className={`${inputCls} flex-1 !py-2.5`} />
+                        <input value={spec.value} onChange={e => updateVariantSpec(activeTab, spec.id, 'value', e.target.value)} placeholder="Value (e.g. Polished Chrome)" className={`${inputCls} flex-1 !py-2.5`} />
+                        <button type="button" onClick={() => removeVariantSpec(activeTab, spec.id)} className="text-red-400 p-2 hover:bg-red-950/20 transition-colors rounded-sm" title="Remove spec">
                           ×
                         </button>
                       </div>
