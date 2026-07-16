@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [openTickets, setOpenTickets] = useState<number | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
@@ -13,8 +14,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     collections: false,
     spaces: false,
   });
-  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(null);
-  const [currentManageId, setCurrentManageId] = useState<string | null>(null);
+
+  const currentCategoryId = searchParams.get('categoryId');
+  const currentManageId = searchParams.get('manage');
 
   if (pathname === '/login') return null;
 
@@ -46,22 +48,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const catId = params.get('categoryId');
-      const mgId = params.get('manage');
-      setCurrentCategoryId(catId);
-      setCurrentManageId(mgId);
-
-      // Auto-expand active groups
-      if (pathname.startsWith('/collections') || catId) {
-        setOpenDropdowns(prev => ({ ...prev, collections: true }));
-      }
-      if (pathname.startsWith('/spaces') || mgId) {
-        setOpenDropdowns(prev => ({ ...prev, spaces: true }));
-      }
+    // Auto-expand active groups
+    if (pathname.startsWith('/collections') || currentCategoryId) {
+      setOpenDropdowns(prev => ({ ...prev, collections: true }));
     }
-  }, [pathname]);
+    if (pathname.startsWith('/spaces') || currentManageId) {
+      setOpenDropdowns(prev => ({ ...prev, spaces: true }));
+    }
+  }, [pathname, currentCategoryId, currentManageId]);
 
   const renderLink = (name: string, href: string, badge?: number | null) => {
     const isActive = href === '/' 
@@ -79,7 +73,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border relative overflow-hidden rounded-sm
           ${isActive 
             ? 'text-white border-accent/40 bg-surface-muted font-medium' 
-            : 'text-muted hover:text-accent border-transparent hover:border-border hover:bg-surface-muted'
+            : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
           }
         `}
       >
@@ -114,7 +108,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border w-full text-left cursor-pointer rounded-sm
             ${isGroupActive 
               ? 'text-white border-accent/30 bg-surface-muted/40' 
-              : 'text-muted hover:text-accent border-transparent hover:border-border hover:bg-surface-muted'
+              : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
             }
           `}
         >
@@ -139,8 +133,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             href={manageHref}
             onClick={onClose}
             className={`
-              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.1em] uppercase transition-all duration-200 border-l border-transparent hover:border-accent/40 text-muted hover:text-accent relative rounded-sm
-              ${(pathname === manageHref && !subItems.some(i => i.active)) ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold' : ''}
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+              ${(pathname === manageHref && !subItems.some(i => i.active)) 
+                ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+              }
             `}
           >
             <span className="group-hover:translate-x-1 transition-transform duration-200">
@@ -154,8 +151,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               href={item.href}
               onClick={onClose}
               className={`
-                group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.1em] uppercase transition-all duration-200 border-l border-transparent hover:border-accent/40 text-muted hover:text-accent relative rounded-sm
-                ${item.active ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold' : ''}
+                group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+                ${item.active 
+                  ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                  : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+                }
               `}
             >
               <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-1.5">

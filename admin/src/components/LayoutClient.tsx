@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -14,10 +14,12 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   return (
     <ThemeProvider>
       {!isLoginPage && (
-        <Sidebar 
-          isOpen={isSidebarOpen} 
-          onClose={() => setIsSidebarOpen(false)} 
-        />
+        <Suspense fallback={<div className="w-[260px] fixed inset-y-0 left-0 bg-surface border-r border-border" />}>
+          <Sidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)} 
+          />
+        </Suspense>
       )}
       <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
         {!isLoginPage && (
