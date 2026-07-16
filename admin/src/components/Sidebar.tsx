@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/lib/context/SidebarContext';
@@ -8,13 +8,16 @@ import { useSidebar } from '@/lib/context/SidebarContext';
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { productFormState } = useSidebar();
   const [openTickets, setOpenTickets] = useState<number | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
+  const [searchVal, setSearchVal] = useState(searchParams.get('q') || '');
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
     collections: false,
     spaces: false,
+    catalog: false,
   });
 
   const currentCategoryId = searchParams.get('categoryId');
@@ -50,6 +53,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   }, []);
 
   useEffect(() => {
+    setSearchVal(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  useEffect(() => {
     // Auto-expand active groups ONLY if a sub-item query parameter is active, NOT on root pages
     if (currentCategoryId) {
       setOpenDropdowns(prev => ({ ...prev, collections: true }));
@@ -57,7 +64,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     if (currentManageId) {
       setOpenDropdowns(prev => ({ ...prev, spaces: true }));
     }
-  }, [currentCategoryId, currentManageId]);
+    if (pathname === '/products/add' || searchParams.get('q')) {
+      setOpenDropdowns(prev => ({ ...prev, catalog: true }));
+    }
+  }, [currentCategoryId, currentManageId, pathname, searchParams]);
 
   const renderLink = (name: string, href: string, badge?: number | null) => {
     const isActive = href === '/' 
@@ -181,6 +191,124 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               </span>
             </Link>
           ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCatalogDropdown = () => {
+    const dropdownKey = 'catalog';
+    const isOpen = openDropdowns[dropdownKey];
+    const toggle = () => setOpenDropdowns(prev => ({ ...prev, [dropdownKey]: !prev[dropdownKey] }));
+    const isGroupActive = pathname.startsWith('/products') || pathname === '/products/add';
+
+    return (
+      <div className="space-y-1">
+        <div className={`
+          flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
+          ${isGroupActive 
+            ? 'text-white border-accent/30 bg-surface-muted/40' 
+            : 'text-muted border-transparent hover:border-border hover:bg-surface-muted'
+          }
+        `}>
+          {/* Left Link Area: Clicking navigates to default view */}
+          <Link
+            href="/products"
+            onClick={onClose}
+            className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
+          >
+            {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
+            <span>Catalog & Pricing</span>
+          </Link>
+
+          {/* Right Toggle Button: Clicking expands/collapses the dropdown */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle();
+            }}
+            className="px-4 py-3 flex items-center justify-center border-l border-border/10 hover:text-accent transition-colors cursor-pointer"
+            aria-label="Toggle Catalog dropdown"
+          >
+            <span className={`text-[12px] font-semibold transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
+              ›
+            </span>
+          </button>
+        </div>
+
+        <div 
+          className="overflow-hidden transition-all duration-300 ease-in-out pl-3 space-y-1 border-l border-border/50 ml-4"
+          style={{
+            maxHeight: isOpen ? '160px' : '0px',
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none'
+          }}
+        >
+          {/* Search bar inside dropdown */}
+          <div className="px-2 py-1.5">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Search catalog..."
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    router.push(`/products?q=${encodeURIComponent(searchVal)}`);
+                    if (onClose) onClose();
+                  }
+                }}
+                className="w-full bg-background/50 border border-border/60 hover:border-border px-3 py-1.5 text-[9px] font-mono text-primary focus:outline-none focus:border-accent transition-colors placeholder:text-muted/40 rounded-sm"
+              />
+              {searchVal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchVal('');
+                    router.push('/products');
+                  }}
+                  className="absolute right-2 top-1.5 text-muted hover:text-accent font-mono text-[10px] cursor-pointer"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          <Link
+            href="/products"
+            onClick={onClose}
+            className={`
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+              ${(pathname === '/products' && !searchParams.get('q')) 
+                ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+              }
+            `}
+          >
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              View All
+            </span>
+          </Link>
+
+          <Link
+            href="/products/add"
+            onClick={onClose}
+            className={`
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+              ${pathname === '/products/add' 
+                ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+              }
+            `}
+          >
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              Add Product
+            </span>
+          </Link>
         </div>
       </div>
     );
@@ -406,7 +534,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {renderLink('Dashboard', '/')}
               {renderLink('Orders', '/orders')}
               {renderLink('RFQ Inbox', '/rfqs')}
-              {renderLink('Catalog & Pricing', '/products')}
+              {renderCatalogDropdown()}
 
               {renderDropdown('Collections', 'collections', '/collections', categories.map(c => ({
                 name: `${c.name} (${c._count?.products || 0})`,
