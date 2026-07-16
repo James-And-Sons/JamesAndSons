@@ -36,6 +36,8 @@ export interface ProductFormSidebarState {
     v_images: boolean;
   };
   setOpenSections: (updater: (prev: any) => any) => void;
+  submitForm?: () => void;
+  saving?: boolean;
 }
 
 interface SidebarContextType {

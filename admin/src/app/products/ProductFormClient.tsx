@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
@@ -62,6 +62,12 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 }) {
   const router = useRouter();
   const { setProductFormState } = useSidebar();
+  const formRef = useRef<HTMLFormElement>(null);
+  const triggerSubmit = () => {
+    if (formRef.current) {
+      formRef.current.requestSubmit();
+    }
+  };
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -413,7 +419,9 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       isVarPlatformComplete,
       isVarImagesComplete,
       openSections,
-      setOpenSections
+      setOpenSections,
+      submitForm: triggerSubmit,
+      saving
     });
 
     return () => {
@@ -438,7 +446,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     isVarPlatformComplete,
     isVarImagesComplete,
     openSections,
-    setProductFormState
+    setProductFormState,
+    saving
   ]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -573,7 +582,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="p-4 border border-red-900 bg-red-900/10 text-red-400 font-mono text-[12px]">{error}</div>
       )}

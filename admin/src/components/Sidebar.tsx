@@ -506,7 +506,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         </div>
 
         {/* Footer Link */}
-        <div className="pt-4 border-t border-border mt-auto">
+        <div className="pt-4 border-t border-border mt-auto space-y-2">
+          {productFormState.submitForm && (
+            <button
+              type="button"
+              disabled={productFormState.saving}
+              onClick={productFormState.submitForm}
+              className="w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 rounded-sm shadow-md cursor-pointer"
+            >
+              {productFormState.saving ? 'Saving...' : productFormState.mode === 'add' ? '✓ Save Product' : '✓ Update Product'}
+            </button>
+          )}
           <Link
             href="/products"
             onClick={handleNavClick}
