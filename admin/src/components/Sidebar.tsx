@@ -9,7 +9,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { productFormState } = useSidebar();
+  const { productFormState, isPageDirty } = useSidebar();
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isDirty = productFormState?.isDirty || isPageDirty;
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  };
   const [openTickets, setOpenTickets] = useState<number | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
@@ -80,7 +89,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     return (
       <Link
         href={href}
-        onClick={onClose}
+        onClick={(e) => {
+          handleNavClick(e);
+          if (onClose) onClose();
+        }}
         className={`
           group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border relative overflow-hidden rounded-sm
           ${isActive 
@@ -124,7 +136,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           {/* Left Link Area: Clicking navigates to default view */}
           <Link
             href={manageHref}
-            onClick={onClose}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
             className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
           >
             {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
@@ -158,7 +173,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         >
           <Link
             href={manageHref}
-            onClick={onClose}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
             className={`
               group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
               ${(pathname === manageHref && !subItems.some(i => i.active)) 
@@ -176,7 +194,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             <Link
               key={idx}
               href={item.href}
-              onClick={onClose}
+              onClick={(e) => {
+                handleNavClick(e);
+                if (onClose) onClose();
+              }}
               className={`
                 group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
                 ${item.active 
@@ -214,7 +235,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           {/* Left Link Area: Clicking navigates to default view */}
           <Link
             href="/products"
-            onClick={onClose}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
             className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
           >
             {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
@@ -280,7 +304,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
           <Link
             href="/products"
-            onClick={onClose}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
             className={`
               group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
               ${(pathname === '/products' && !searchParams.get('q')) 
@@ -296,7 +323,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
           <Link
             href="/products/add"
-            onClick={onClose}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
             className={`
               group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
               ${pathname === '/products/add' 
@@ -479,6 +509,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         <div className="pt-4 border-t border-border mt-auto">
           <Link
             href="/products"
+            onClick={handleNavClick}
             className="w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-primary transition-colors border border-border hover:bg-surface-muted bg-background/50 rounded-sm"
           >
             ← Exit Editor

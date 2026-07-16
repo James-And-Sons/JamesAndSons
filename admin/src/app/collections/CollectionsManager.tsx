@@ -2,6 +2,7 @@
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { addProductToCollection, removeProductFromCollection } from './actions';
+import { useSidebar } from '@/lib/context/SidebarContext';
 
 type Category = { 
   id: string; 
@@ -22,6 +23,27 @@ export default function CategoryManager({ categories, allProducts }: { categorie
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
+
+  const { setIsPageDirty } = useSidebar();
+
+  const isDirty = showForm && (
+    editing === null 
+      ? (name !== '' || description !== '')
+      : (name !== editing.name || description !== (editing.description || ''))
+  );
+
+  useEffect(() => {
+    setIsPageDirty(isDirty);
+    return () => setIsPageDirty(false);
+  }, [isDirty, setIsPageDirty]);
+
+  const handleDiscard = () => {
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Discard them?')) return;
+    }
+    setShowForm(false);
+    setError('');
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -124,7 +146,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
             </div>
           </div>
           <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-            <button onClick={() => setShowForm(false)} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
+            <button onClick={handleDiscard} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
             <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
               {isPending ? 'Processing...' : 'Save Collection'}
             </button>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
@@ -57,6 +57,16 @@ function HeaderTitle() {
     });
   };
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isDirty = sidebar?.productFormState?.isDirty || sidebar?.isPageDirty;
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  };
+
   const breadcrumbs = getBreadcrumbs();
 
   return (
@@ -71,6 +81,7 @@ function HeaderTitle() {
             ) : (
               <Link 
                 href={crumb.href} 
+                onClick={handleNavClick}
                 className="hover:text-accent-hover transition-colors text-accent"
               >
                 {crumb.label}
@@ -83,6 +94,30 @@ function HeaderTitle() {
   );
 }
 
+function UnsavedChangesListener() {
+  const sidebar = useSidebar();
+  const pathname = usePathname();
+
+  // Reset page dirtiness on page transitions
+  useEffect(() => {
+    sidebar.setIsPageDirty(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isDirty = sidebar?.productFormState?.isDirty || sidebar?.isPageDirty;
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [sidebar?.productFormState?.isDirty, sidebar?.isPageDirty]);
+
+  return null;
+}
+
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -91,6 +126,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   return (
     <ThemeProvider>
       <SidebarProvider>
+        <UnsavedChangesListener />
         {!isLoginPage && (
           <Suspense fallback={<div className="w-[260px] fixed inset-y-0 left-0 bg-surface border-r border-border" />}>
             <Sidebar 

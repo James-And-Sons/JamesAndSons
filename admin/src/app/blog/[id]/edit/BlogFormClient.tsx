@@ -1,19 +1,37 @@
 'use client';
 import Link from 'next/link';
-import { createBlogPost } from '../actions';
 import { useState, useEffect } from 'react';
 import { useSidebar } from '@/lib/context/SidebarContext';
 
-export default function NewBlogPostPage() {
-  const { setIsPageDirty } = useSidebar();
-  
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [excerpt, setExcerpt] = useState('');
-  const [content, setContent] = useState('');
-  const [isDraft, setIsDraft] = useState(true);
+interface PostType {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  isDraft: boolean;
+}
 
-  const isDirty = title !== '' || slug !== '' || excerpt !== '' || content !== '';
+export default function BlogFormClient({ 
+  post, 
+  action 
+}: { 
+  post: PostType; 
+  action: (formData: FormData) => Promise<void>; 
+}) {
+  const { setIsPageDirty } = useSidebar();
+
+  const [title, setTitle] = useState(post.title);
+  const [slug, setSlug] = useState(post.slug);
+  const [excerpt, setExcerpt] = useState(post.excerpt || '');
+  const [content, setContent] = useState(post.content);
+  const [isDraft, setIsDraft] = useState(post.isDraft);
+
+  const isDirty = title !== post.title ||
+    slug !== post.slug ||
+    excerpt !== (post.excerpt || '') ||
+    content !== post.content ||
+    isDraft !== post.isDraft;
 
   useEffect(() => {
     setIsPageDirty(isDirty);
@@ -33,15 +51,15 @@ export default function NewBlogPostPage() {
     <form 
       action={async (formData) => {
         setIsPageDirty(false);
-        await createBlogPost(formData);
+        await action(formData);
       }} 
       className="space-y-6"
     >
       {/* Sticky Header Actions */}
       <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border/80 py-4 mb-6 flex justify-between items-center">
         <div>
-          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Create New Post</h1>
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">Publish a new article to the store blog</p>
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Edit Blog Post</h1>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">Editing: {post.title}</p>
         </div>
         <div className="flex gap-4">
           <Link 
@@ -52,7 +70,7 @@ export default function NewBlogPostPage() {
             Cancel
           </Link>
           <button type="submit" className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold shadow-lg shadow-accent/15">
-            Publish Post
+            Update Post
           </button>
         </div>
       </div>
@@ -70,19 +88,18 @@ export default function NewBlogPostPage() {
               value={title}
               onChange={e => setTitle(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors"
-              placeholder="Enter post title..."
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="slug" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Slug (Optional)</label>
+            <label htmlFor="slug" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Slug *</label>
             <input
               type="text"
               id="slug"
               name="slug"
+              required
               value={slug}
               onChange={e => setSlug(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-mono text-[12px] text-primary focus:outline-none focus:border-accent transition-colors"
-              placeholder="my-post-slug"
             />
           </div>
         </div>
@@ -96,7 +113,7 @@ export default function NewBlogPostPage() {
             value={excerpt}
             onChange={e => setExcerpt(e.target.value)}
             className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
-            placeholder="A short summary of the post..."
+            placeholder="A brief summary..."
           ></textarea>
         </div>
 
@@ -110,7 +127,6 @@ export default function NewBlogPostPage() {
             value={content}
             onChange={e => setContent(e.target.value)}
             className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] leading-relaxed"
-            placeholder="Write your content here..."
           ></textarea>
         </div>
       </div>

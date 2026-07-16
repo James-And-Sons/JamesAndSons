@@ -41,15 +41,18 @@ export interface ProductFormSidebarState {
 interface SidebarContextType {
   productFormState: ProductFormSidebarState | null;
   setProductFormState: (state: ProductFormSidebarState | null) => void;
+  isPageDirty: boolean;
+  setIsPageDirty: (dirty: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [productFormState, setProductFormState] = useState<ProductFormSidebarState | null>(null);
+  const [isPageDirty, setIsPageDirty] = useState(false);
 
   return (
-    <SidebarContext.Provider value={{ productFormState, setProductFormState }}>
+    <SidebarContext.Provider value={{ productFormState, setProductFormState, isPageDirty, setIsPageDirty }}>
       {children}
     </SidebarContext.Provider>
   );

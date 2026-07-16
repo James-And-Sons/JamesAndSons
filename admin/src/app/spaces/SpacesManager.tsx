@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { addProductToSpace, removeProductFromSpace } from './actions';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
+import { useSidebar } from '@/lib/context/SidebarContext';
 
 type Space = { 
   id: string; 
@@ -26,6 +27,34 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { setIsPageDirty } = useSidebar();
+
+  const isDirty = !!(
+    (showForm && !editing && (name !== '' || description !== '' || image !== '')) ||
+    (editing !== null && (name !== editing.name || description !== (editing.description || '') || image !== (editing.image || '')))
+  );
+
+  useEffect(() => {
+    setIsPageDirty(isDirty);
+    return () => setIsPageDirty(false);
+  }, [isDirty, setIsPageDirty]);
+
+  const handleDiscardCreate = () => {
+    if (showForm && !editing && isDirty) {
+      if (!confirm('You have unsaved changes. Discard them?')) return;
+    }
+    setShowForm(false);
+    setError('');
+  };
+
+  const handleCancelEdit = () => {
+    if (editing !== null && isDirty) {
+      if (!confirm('You have unsaved changes. Discard them?')) return;
+    }
+    setEditing(null);
+    setError('');
+  };
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -142,7 +171,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
             </div>
           </div>
           <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-            <button onClick={() => setShowForm(false)} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
+            <button onClick={handleDiscardCreate} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
             <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
               {isPending ? 'Processing...' : 'Save Space'}
             </button>
@@ -223,7 +252,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                       <div className="bg-surface/90 backdrop-blur border-b border-border/60 p-8 space-y-6 shadow-inner animate-in fade-in zoom-in-95 duration-300">
                         <div className="flex justify-between items-center border-b border-border/40 pb-4">
                           <h3 className="font-serif text-[20px] text-primary font-light">Edit Space: {s.name}</h3>
-                          <button onClick={() => setEditing(null)} className="font-mono text-[9px] uppercase text-muted hover:text-primary border border-border px-4 py-2 hover:bg-surface-muted">Close</button>
+                          <button onClick={handleCancelEdit} className="font-mono text-[9px] uppercase text-muted hover:text-primary border border-border px-4 py-2 hover:bg-surface-muted">Close</button>
                         </div>
                         {error && <p className="text-red-400 font-mono text-[11px]">{error}</p>}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -246,7 +275,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                           </div>
                         </div>
                         <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-                          <button onClick={() => setEditing(null)} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Cancel</button>
+                          <button onClick={handleCancelEdit} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Cancel</button>
                           <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
                             {isPending ? 'Processing...' : 'Update Space'}
                           </button>
