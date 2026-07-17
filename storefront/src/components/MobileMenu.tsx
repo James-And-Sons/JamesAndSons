@@ -31,7 +31,7 @@ export default function MobileMenu({ user }: { user: { id: string; email?: strin
     { href: '/collections', label: 'Collections' },
     { href: '/spaces', label: 'Spaces' },
     { href: '/blog', label: 'Blog' },
-    { href: '/b2b', label: 'B2B Portal' },
+    { href: 'https://indiamart.jamesandsons.in', label: 'B2B Portal' },
   ];
 
   return (

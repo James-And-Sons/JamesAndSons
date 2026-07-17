@@ -31,7 +31,7 @@ export default async function Navigation() {
           <li><Link href="/collections">Collections</Link></li>
           <li><Link href="/blog">Blog</Link></li>
           <li><Link href="/spaces">Spaces</Link></li>
-          <li><Link href="/b2b">B2B Portal</Link></li>
+          <li><Link href="https://indiamart.jamesandsons.in">B2B Portal</Link></li>
         </ul>
         <NavClient user={user} products={products} />
       </nav>

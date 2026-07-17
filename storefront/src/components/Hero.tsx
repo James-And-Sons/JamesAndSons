@@ -36,7 +36,7 @@ export default function Hero() {
 
         <div className="hero-ctas">
           <Link href="/collections" className="btn-primary" style={{ textDecoration: 'none' }}>Shop Collection</Link>
-          <Link href="/b2b" className="btn-outline" style={{ textDecoration: 'none' }}>B2B Portal Login</Link>
+          <Link href="https://indiamart.jamesandsons.in" className="btn-outline" style={{ textDecoration: 'none' }}>B2B Portal Login</Link>
         </div>
 
         <div className="hero-stats">
@@ -75,7 +75,7 @@ export default function Hero() {
           <div className="mobile-hero-sub">India's premier luxury lighting ecosystem — heritage craftsmanship for grand spaces.</div>
           <div className="mobile-hero-ctas">
             <Link href="/collections" className="mobile-btn-primary">Shop Collection</Link>
-            <Link href="/b2b" className="mobile-btn-ghost">B2B Portal</Link>
+            <Link href="https://indiamart.jamesandsons.in" className="mobile-btn-ghost">B2B Portal</Link>
           </div>
         </div>
 
