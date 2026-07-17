@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: 'Admin Portal | James & Sons',
   description: 'Management dashboard for James & Sons luxury e-commerce platform.',
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
   },
 };
 
