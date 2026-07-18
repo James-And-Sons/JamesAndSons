@@ -22,8 +22,8 @@ export default async function CollectionsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center premium-card p-6">
         <div>
-          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Collections</h1>
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">{categories.length} collections</p>
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Categories</h1>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">{categories.length} categories</p>
         </div>
       </div>
       <CategoryManager categories={categories as any} allProducts={allProducts} />

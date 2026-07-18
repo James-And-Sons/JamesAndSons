@@ -582,7 +582,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {renderLink('RFQ Inbox', '/rfqs')}
               {renderCatalogDropdown()}
 
-              {renderDropdown('Collections', 'collections', '/collections', categories.map(c => ({
+              {renderDropdown('Categories', 'collections', '/collections', categories.map(c => ({
                 name: `${c.name} (${c._count?.products || 0})`,
                 href: `/products?categoryId=${c.id}`,
                 active: currentCategoryId === c.id

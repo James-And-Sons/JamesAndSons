@@ -275,7 +275,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       { key: 'Dimensions', val: getDimensions() },
       { key: 'Weight', val: (selectedVariant?.weight !== null && selectedVariant?.weight !== undefined) ? `${selectedVariant.weight} kg` : (product.weight ? `${product.weight} kg` : 'Standard') },
       { key: 'Warranty', val: selectedVariant?.warranty || product.warranty || null },
-      { key: 'Compliance', val: `BIS Certified · GST ${product.gstRate}%` }
+      {
+        key: 'Compliance',
+        val: (() => {
+          const cert = product.bisCertification;
+          const isValidBis = cert && 
+            cert.trim() !== '' && 
+            !['pending', 'pending application', 'null', 'undefined', 'n/a', 'no', 'none'].includes(cert.trim().toLowerCase());
+          return isValidBis 
+            ? `BIS Certified (${cert}) · GST ${product.gstRate}%` 
+            : `GST ${product.gstRate}%`;
+        })()
+      }
     ];
 
     const finalSpecs: { key: string; val: string }[] = [];
@@ -380,12 +391,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               )}
             </div>
             <div style={{ textAlign: 'right' }}>
-              {product.bisCertification && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px', marginBottom: '4px' }}>
-                  <i className="ti ti-shield-check" style={{ fontSize: '13px', color: 'var(--gold)' }}></i>
-                  <span style={{ color: 'var(--gold)', fontSize: '10px', letterSpacing: '0.06em' }}>BIS Certified</span>
-                </div>
-              )}
+              {(() => {
+                const cert = product.bisCertification;
+                const isValidBis = cert && 
+                  cert.trim() !== '' && 
+                  !['pending', 'pending application', 'null', 'undefined', 'n/a', 'no', 'none'].includes(cert.trim().toLowerCase());
+                return isValidBis ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px', marginBottom: '4px' }}>
+                    <i className="ti ti-shield-check" style={{ fontSize: '13px', color: 'var(--gold)' }}></i>
+                    <span style={{ color: 'var(--gold)', fontSize: '10px', letterSpacing: '0.06em' }}>BIS Certified</span>
+                  </div>
+                ) : null;
+              })()}
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 Luxury Living<br />Estate Heritage
               </div>

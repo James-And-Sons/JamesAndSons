@@ -14,8 +14,19 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, slug, description } = await req.json();
-    const cat = await prisma.category.create({ data: { name, slug, description } });
+    const { name, slug, description, technicalSubheading, hsnCode, gstRate, bisStandard, bisStatus } = await req.json();
+    const cat = await prisma.category.create({ 
+      data: { 
+        name, 
+        slug, 
+        description,
+        technicalSubheading,
+        hsnCode,
+        gstRate: gstRate !== undefined && gstRate !== null ? parseFloat(String(gstRate)) : null,
+        bisStandard,
+        bisStatus
+      } 
+    });
     return NextResponse.json(cat);
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

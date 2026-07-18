@@ -104,12 +104,19 @@ model Company {
 }
 
 model Category {
-  id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
-  parentId    String?
+  id                  String     @id @default(uuid())
+  name                String
+  slug                String     @unique
+  description         String?
+  parentId            String?
   
+  // Compliance and tax details managed centrally
+  technicalSubheading String?
+  hsnCode             String?
+  gstRate             Float?     @default(18.0)
+  bisStandard         String?
+  bisStatus           String?
+
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
   products    Product[]

@@ -6,7 +6,15 @@ import CloudinaryUpload from '@/components/CloudinaryUpload';
 import SyncButton from '@/components/SyncButton';
 import { useSidebar } from '@/lib/context/SidebarContext';
 
-type Category = { id: string; name: string };
+type Category = { 
+  id: string; 
+  name: string; 
+  technicalSubheading?: string | null;
+  hsnCode?: string | null;
+  gstRate?: number | null;
+  bisStandard?: string | null;
+  bisStatus?: string | null;
+};
 type Space = { id: string; name: string };
 type Spec = { id: string; key: string; value: string };
 
@@ -249,7 +257,18 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 
   const handleParentFieldChange = (field: keyof typeof parentValues, val: any) => {
     setIsDirty(true);
-    setParentValues(prev => ({ ...prev, [field]: val }));
+    setParentValues(prev => {
+      const updated = { ...prev, [field]: val };
+      if (field === 'categoryId') {
+        const cat = categories.find(c => c.id === val);
+        if (cat) {
+          updated.hsnCode = cat.hsnCode || '';
+          updated.gstRate = cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18;
+          updated.bisCertification = cat.bisStandard || '';
+        }
+      }
+      return updated;
+    });
   };
 
   const addVariant = () => {
@@ -948,32 +967,32 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 <div className="grid grid-cols-3 gap-6">
                   <div>
                     <label className={labelCls}>GST Rate (%)</label>
-                    <select
-                      value={parentValues.gstRate}
-                      onChange={e => handleParentFieldChange('gstRate', parseInt(e.target.value, 10))}
-                      className={selectCls}
-                    >
-                      <option value={5}>5% (LED)</option>
-                      <option value={18}>18% (Traditional)</option>
-                    </select>
+                    <input
+                      value={parentValues.gstRate ? `${parentValues.gstRate}%` : '—'}
+                      readOnly
+                      className={`${inputCls} opacity-60 cursor-not-allowed`}
+                    />
+                    <p className="font-mono text-[9px] text-muted mt-1">Managed by Category</p>
                   </div>
                   <div>
                     <label className={labelCls}>HSN Code</label>
                     <input
-                      value={parentValues.hsnCode}
-                      onChange={e => handleParentFieldChange('hsnCode', e.target.value)}
-                      className={inputCls}
-                      placeholder="94054090"
+                      value={parentValues.hsnCode || '—'}
+                      readOnly
+                      className={`${inputCls} opacity-60 cursor-not-allowed`}
+                      placeholder="Managed by Category"
                     />
+                    <p className="font-mono text-[9px] text-muted mt-1">Managed by Category</p>
                   </div>
                   <div>
                     <label className={labelCls}>BIS Certification</label>
                     <input
-                      value={parentValues.bisCertification}
-                      onChange={e => handleParentFieldChange('bisCertification', e.target.value)}
-                      className={inputCls}
-                      placeholder="IS 10322"
+                      value={parentValues.bisCertification || '—'}
+                      readOnly
+                      className={`${inputCls} opacity-60 cursor-not-allowed`}
+                      placeholder="Managed by Category"
                     />
+                    <p className="font-mono text-[9px] text-muted mt-1">Managed by Category</p>
                   </div>
                 </div>
 
@@ -1187,7 +1206,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                               setIsDirty(true);
                               setImages(prev => prev.filter((_, i) => i !== idx));
                             }}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10"
                           >
                             ×
                           </button>
@@ -1249,7 +1268,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                               setIsDirty(true);
                               setWhiteBackgroundImages(prev => prev.filter((_, i) => i !== idx));
                             }}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors"
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10"
                           >
                             ×
                           </button>

@@ -59,6 +59,18 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.product.findUnique({ where: { slug } });
     if (existing) slug = `${slug}-${Date.now()}`;
 
+    // Fetch Category to get centrally managed HSN code, GST rate, and BIS standard
+    if (productData.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: productData.categoryId }
+      });
+      if (category) {
+        productData.hsnCode = category.hsnCode || null;
+        productData.gstRate = category.gstRate !== null && category.gstRate !== undefined ? category.gstRate : 18.0;
+        productData.bisCertification = category.bisStandard || null;
+      }
+    }
+
     const product = await prisma.product.create({
       data: {
         ...productData,

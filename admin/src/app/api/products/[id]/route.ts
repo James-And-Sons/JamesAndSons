@@ -63,6 +63,18 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: `Variant SKU "${conflictingVariant.sku}" is already in use by another product variant.` }, { status: 400 });
     }
 
+    // Fetch Category to get centrally managed HSN code, GST rate, and BIS standard
+    if (productData.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: productData.categoryId }
+      });
+      if (category) {
+        productData.hsnCode = category.hsnCode || null;
+        productData.gstRate = category.gstRate !== null && category.gstRate !== undefined ? category.gstRate : 18.0;
+        productData.bisCertification = category.bisStandard || null;
+      }
+    }
+
     // Delete old variants and recreate
     await prisma.productVariant.deleteMany({ where: { productId: params.id } });
 
