@@ -607,10 +607,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           )}
         </nav>
 
-        <div className="p-6 border-t border-border bg-background">
+        <div className="p-3 border-t border-border bg-background">
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-3 text-[10px] font-mono tracking-[0.12em] uppercase text-muted hover:text-red-500 transition-colors border border-transparent hover:border-border"
+            className="w-full text-left px-3 py-2 text-[9px] font-mono tracking-[0.12em] uppercase text-muted hover:text-red-500 transition-colors border border-transparent hover:border-border"
           >
             Sign Out
           </button>
