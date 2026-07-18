@@ -894,7 +894,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 
                 <div className="border-t border-border/40 pt-4">
                   <div className="flex justify-between items-center mb-3">
-                    <div className="font-mono text-[9px] uppercase tracking-widest text-muted">Display Size</div>
+                    <div className="font-mono text-[9px] uppercase tracking-widest text-muted">Product Dimensions</div>
                     <div className="flex gap-1 bg-background p-0.5 border border-border rounded-full">
                       <button
                         type="button"
