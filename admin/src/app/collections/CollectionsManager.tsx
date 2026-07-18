@@ -30,7 +30,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
   const [hsnCode, setHsnCode] = useState('');
   const [gstRate, setGstRate] = useState<number>(18);
   const [bisStandard, setBisStandard] = useState('');
-  const [bisStatus, setBisStatus] = useState('');
+  const [bisStatus, setBisStatus] = useState('Pending Application');
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
 
@@ -100,7 +100,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setHsnCode('');
     setGstRate(18);
     setBisStandard('');
-    setBisStatus('');
+    setBisStatus('Pending Application');
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -217,7 +217,11 @@ export default function CategoryManager({ categories, allProducts }: { categorie
             </div>
             <div className="space-y-1">
               <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">BIS Status</label>
-              <input value={bisStatus} onChange={e => setBisStatus(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Pending Application" />
+              <select value={bisStatus} onChange={e => setBisStatus(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
+                <option value="Pending Application">Pending Application</option>
+                <option value="Approved">Approved</option>
+                <option value="Not Available">Not Available</option>
+              </select>
             </div>
             <div className="space-y-1 md:col-span-2">
               <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>
@@ -339,9 +343,9 @@ export default function CategoryManager({ categories, allProducts }: { categorie
                   <span className={`font-mono text-[10px] uppercase px-2 py-1 rounded-sm border ${
                     cat.bisStatus?.toLowerCase().includes('pending')
                       ? 'border-amber-500/30 text-amber-400 bg-amber-500/5'
-                      : cat.bisStatus
+                      : cat.bisStatus?.toLowerCase().includes('approved')
                         ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
-                        : 'border-border text-muted'
+                        : 'border-border text-muted bg-surface-muted/20'
                   }`}>
                     {cat.bisStatus || '—'}
                   </span>
