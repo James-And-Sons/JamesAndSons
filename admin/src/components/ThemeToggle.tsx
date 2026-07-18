@@ -19,7 +19,7 @@ export default function ThemeToggle() {
       className="flex items-center justify-center w-[32px] h-[32px] rounded-sm border border-border text-muted hover:text-accent hover:border-accent/30 transition-colors bg-surface"
       aria-label="Toggle theme"
     >
-      {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+      {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
     </button>
   );
 }
