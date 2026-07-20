@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 interface ActionDropdownProps {
   productId: string;
   sku: string;
+  slug: string;
 }
 
-export default function ActionDropdown({ productId, sku }: ActionDropdownProps) {
+export default function ActionDropdown({ productId, sku, slug }: ActionDropdownProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -89,7 +90,7 @@ export default function ActionDropdown({ productId, sku }: ActionDropdownProps) 
               }}
               className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-4 py-1.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background cursor-pointer flex items-center gap-1"
             >
-              Action ▾
+              Actions ▾
             </button>
           </>
         )}
@@ -101,12 +102,48 @@ export default function ActionDropdown({ productId, sku }: ActionDropdownProps) 
           className="absolute right-0 mt-1 w-48 bg-background border border-border shadow-lg z-50 py-1"
         >
           <a
+            href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3001'}/products/${slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsOpen(false)}
+            className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-emerald-400 hover:bg-surface-muted hover:text-emerald-300 transition-colors flex items-center gap-1.5"
+          >
+            View Listing ↗
+          </a>
+          <a
             href={`/products/${productId}/edit`}
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary transition-colors"
+            className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-muted hover:bg-surface-muted hover:text-primary transition-colors border-t border-border/30"
           >
             Edit Product
           </a>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              // Sync action similar to SyncButton
+              (async () => {
+                const confirmMsg = 'Sync this product to all marketplaces (Amazon, Meta, Pinterest, etc.)?';
+                if (!window.confirm(confirmMsg)) return;
+                try {
+                  const res = await fetch('/api/admin/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: productId }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error || 'Sync failed');
+                  alert(data.message || 'Sync completed successfully!');
+                } catch (err: any) {
+                  console.error('Sync error:', err);
+                  alert(`Sync Failed: ${err.message}`);
+                }
+              })();
+            }}
+            className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-[#eab308] hover:bg-surface-muted hover:text-[#eab308] border-t border-border/30 transition-colors"
+          >
+            Sync to Marketplaces
+          </button>
           <button
             onClick={(e) => handleAction(e, 'amazon')}
             className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-[#eab308] hover:bg-surface-muted hover:text-[#eab308] border-t border-border/30 transition-colors"

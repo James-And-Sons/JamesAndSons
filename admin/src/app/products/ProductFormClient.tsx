@@ -663,6 +663,16 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             >
               {saving ? 'Saving...' : mode === 'add' ? 'Save Product' : 'Update Product'}
             </button>
+            {mode === 'edit' && defaultValues?.slug && (
+              <a
+                href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3001'}/products/${defaultValues.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 font-mono text-[9px] uppercase tracking-[0.15em] text-emerald-400 border border-emerald-400/30 bg-transparent hover:bg-emerald-400/10 hover:border-emerald-400 transition-colors rounded-sm flex items-center gap-1"
+              >
+                View Listing ↗
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -1818,6 +1828,16 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
               >
                 {saving ? 'Saving...' : mode === 'add' ? 'Save Product' : 'Update Product'}
               </button>
+              {mode === 'edit' && defaultValues?.slug && (
+                <a
+                  href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3001'}/products/${defaultValues.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-emerald-400 border border-emerald-400/30 bg-transparent hover:bg-emerald-400/10 hover:border-emerald-400 transition-colors flex items-center gap-1"
+                >
+                  View Listing ↗
+                </a>
+              )}
             </div>
           </div>
         </div>

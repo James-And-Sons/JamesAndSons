@@ -10,35 +10,22 @@
   --color-surface-muted: #16161a;
   --color-border: rgba(255, 255, 255, 0.07);
   --color-muted: #6b6860;
-  
+
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-mono: 'DM Mono', monospace;
   --font-body: 'Libre Baskerville', Georgia, serif;
 }
 
-:root {
-  --bg: #15130F;
-  --surface-1: #1C1A15;
-  --surface-2: #221F19;
-  --surface-3: #2A261F;
-  --border-color: #38332A;
-  --border-strong: #4A4436;
-  --gold: #C9A961;
-  --gold-dim: #8C7847;
-  --gold-bg: rgba(201,169,97,0.12);
-  --cream: #EDE8DC;
-  --text-secondary: #A79F8C;
-  --text-muted-color: #7A7364;
-  --success: #8CAE7E;
-  --success-bg: rgba(140,174,126,0.12);
-  --success-border: rgba(140,174,126,0.35);
-  --warning: #D6A24A;
-  --warning-bg: rgba(214,162,74,0.14);
-  --warning-border: rgba(214,162,74,0.4);
-  --danger: #C97E6A;
-  --danger-bg: rgba(201,126,106,0.12);
-  --danger-border: rgba(201,126,106,0.35);
-  --radius: 8px;
+.light {
+  --color-primary: #1a1a1a;
+  --color-secondary: #4a4844;
+  --color-accent: #b08940;
+  --color-accent-hover: #8a6b32;
+  --color-background: #faf8f5;
+  --color-surface: #f4f0ea;
+  --color-surface-muted: #ebe5dc;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-muted: #8a8880;
 }
 
 body {
@@ -63,9 +50,7 @@ body {
   letter-spacing: 0.1em;
   font-weight: bold;
 }
-.skip-link:focus {
-  left: 0;
-}
+.skip-link:focus { left: 0; }
 
 /* Accessibility Focus Ring */
 :focus-visible {
@@ -150,16 +135,13 @@ body {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 2px;
   min-width: 140px;
-  
+
   &:hover {
     background: var(--color-accent-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 20px rgba(196, 160, 90, 0.2);
   }
-
-  &:active {
-    transform: translateY(0);
-  }
+  &:active { transform: translateY(0); }
 }
 
 @utility btn-secondary {
@@ -224,17 +206,7 @@ body {
 }
 
 /* Logo dark/light mode switching */
-.logo-light-img {
-  display: none;
-}
-.logo-dark-img {
-  display: block;
-}
-
-.light .logo-light-img {
-  display: block !important;
-}
-.light .logo-dark-img {
-  display: none !important;
-}
-
+.logo-light-img { display: none; }
+.logo-dark-img { display: block; }
+.light .logo-light-img { display: block !important; }
+.light .logo-dark-img { display: none !important; }

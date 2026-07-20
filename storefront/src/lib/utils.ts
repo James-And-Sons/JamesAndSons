@@ -26,6 +26,7 @@ export type Product = {
   badge?: 'new' | 'bis' | 'sale' | 'b2b';
   specs: { label: string; value: string }[];
   images: string[];
+  whiteBackgroundImages?: string[];
   category?: { name: string; slug: string };
 };
 

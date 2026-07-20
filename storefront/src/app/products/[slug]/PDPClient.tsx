@@ -142,11 +142,16 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     setCheckingPincode(false);
   };
 
+  // Merge remastered images + amazon white-background images (remastered first, amazon after)
+  const mergeImages = (primary: string[] | undefined, secondary: string[] | undefined) => {
+    const p = primary || [];
+    const s = (secondary || []).filter(url => !p.includes(url)); // avoid duplicates
+    return [...p, ...s];
+  };
+
   const activeImages = selectedVariant?.images?.length
-    ? selectedVariant.images
-    : product.images?.length
-      ? product.images
-      : [];
+    ? mergeImages(selectedVariant.images, (product as any).whiteBackgroundImages)
+    : mergeImages(product.images, (product as any).whiteBackgroundImages);
 
   const items = useWishlistStore(state => state.items);
   const isWishlisted = items.some(i => i.id === product.id);

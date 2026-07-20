@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
+import GlobalSearch from '@/components/GlobalSearch';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SidebarProvider, useSidebar } from '@/lib/context/SidebarContext';
 
@@ -152,16 +153,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
                 <HeaderTitle />
               </div>
               <div className="flex items-center gap-4">
-                <div className="hidden sm:flex items-center gap-2 border border-border/80 bg-surface-muted/50 px-3 py-1.5 rounded-sm text-xs font-mono min-w-[240px] focus-within:border-accent">
-                  <span className="text-muted" aria-hidden="true">🔍</span>
-                  <input
-                    id="globalSearch"
-                    type="text"
-                    placeholder="Search orders, RFQs, customers..."
-                    className="bg-transparent text-primary font-mono text-[11px] focus:outline-none w-full placeholder:text-muted/60"
-                  />
-                  <span className="text-[9px] text-muted/60 bg-surface px-1.5 py-0.5 rounded border border-border">⌘K</span>
-                </div>
+                <GlobalSearch />
                 <ThemeToggle />
                 <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-accent bg-accent/5 px-3 py-1.5 border border-accent/30 rounded-sm">
                   Super Admin
