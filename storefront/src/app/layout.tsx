@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Mono, Libre_Baskerville } from "next/font/google";
+import { Cormorant_Garamond, DM_Mono, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react"
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
@@ -19,11 +19,10 @@ const dmMono = DM_Mono({
   variable: "--font-dm-mono",
 });
 
-const libreBaskerville = Libre_Baskerville({
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-libre",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-outfit",
 });
 
 export const metadata: Metadata = {
@@ -67,7 +66,7 @@ export default function RootLayout({
         <meta name="p:domain_verify" content="05e17f9bd7917ad9a8dd38bdc291baf3"/>
       </head>
       <body
-        className={`${cormorant.variable} ${dmMono.variable} ${libreBaskerville.variable} antialiased`}
+        className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable} antialiased`}
         suppressHydrationWarning
       >
         <Providers>

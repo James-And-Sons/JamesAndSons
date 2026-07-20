@@ -18,7 +18,7 @@
     --teal: #5ab4c4;
     --font-serif: 'Cormorant Garamond', Georgia, serif;
     --font-mono: 'DM Mono', monospace;
-    --font-body: 'Libre Baskerville', Georgia, serif;
+    --font-body: var(--font-outfit), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     /* Transition for smooth theme switching */
     color-scheme: dark;
   }
