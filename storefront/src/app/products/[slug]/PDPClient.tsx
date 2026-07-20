@@ -568,8 +568,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <i className="ti ti-shopping-bag-plus" style={{ fontSize: '18px' }}></i>
               {availableStock === 0 ? 'Made to Order' : added ? '✓ Added to Cart' : 'Add to Cart'}
             </button>
-            <button onClick={() => toggleItem(product)} className="btn-outline" style={{ width: '54px', height: '54px', borderRadius: '16px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '20px', color: isWishlisted ? 'var(--gold)' : 'var(--text-dim)' }}></i>
+            <button onClick={() => toggleItem(product)} style={{ background: 'transparent', border: 'none', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '28px', color: isWishlisted ? 'var(--gold)' : 'var(--text)' }}></i>
             </button>
           </div>
 
@@ -1174,9 +1174,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
                   <button
                     onClick={() => toggleItem(product)}
-                    style={{ width: '54px', height: '54px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--surface2)', color: isWishlisted ? 'var(--gold)' : 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                    style={{ background: 'transparent', border: 'none', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: isWishlisted ? 'var(--gold)' : 'var(--text)', transition: 'all 0.3s' }}
                   >
-                    <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '22px' }}></i>
+                    <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '28px' }}></i>
                   </button>
                 </div>
               </div>
