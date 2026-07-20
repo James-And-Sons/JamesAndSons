@@ -182,6 +182,100 @@ type Variant = {
   specs: Spec[];
 };
 
+function getLogicalDefaultsForCategory(catName: string) {
+  const name = catName ? catName.toLowerCase() : '';
+  
+  if (name.includes('chandelier')) {
+    return {
+      amazonFixtureForm: 'Chandelier',
+      amazonMountingType: 'Ceiling Mount',
+      amazonLightingMethod: 'Ambient',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Luxury',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Chandeliers',
+    };
+  }
+  if (name.includes('pendant')) {
+    return {
+      amazonFixtureForm: 'Pendant',
+      amazonMountingType: 'Ceiling Mount',
+      amazonLightingMethod: 'Downlight & Ambient',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Luxury',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Ceiling Light Fixtures',
+    };
+  }
+  if (name.includes('wall') || name.includes('sconce')) {
+    return {
+      amazonFixtureForm: 'Sconce',
+      amazonMountingType: 'Wall Mount',
+      amazonLightingMethod: 'Up/Down Light',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Luxury',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Wall Light Fixtures',
+    };
+  }
+  if (name.includes('table') || name.includes('desk')) {
+    return {
+      amazonFixtureForm: 'Table Lamp',
+      amazonMountingType: 'Tabletop',
+      amazonLightingMethod: 'Task & Accent',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Luxury',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Lamps',
+    };
+  }
+  if (name.includes('floor')) {
+    return {
+      amazonFixtureForm: 'Floor Lamp',
+      amazonMountingType: 'Freestanding',
+      amazonLightingMethod: 'Ambient & Accent',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Luxury',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Lamps',
+    };
+  }
+  if (name.includes('ceiling') || name.includes('flush')) {
+    return {
+      amazonFixtureForm: 'Close to Ceiling',
+      amazonMountingType: 'Flush Mount',
+      amazonLightingMethod: 'General Downlight',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Luxury',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Ceiling Light Fixtures',
+    };
+  }
+  if (name.includes('track')) {
+    return {
+      amazonFixtureForm: 'Track Light',
+      amazonMountingType: 'Track Mount',
+      amazonLightingMethod: 'Spotlight',
+      amazonWaterResistance: 'IP20 Indoor Use Only',
+      amazonTheme: 'Modern Architectural',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures > Track Lighting',
+    };
+  }
+  if (name.includes('outdoor')) {
+    return {
+      amazonFixtureForm: 'Outdoor Wall Light',
+      amazonMountingType: 'Wall Mount',
+      amazonLightingMethod: 'Outdoor Ambient',
+      amazonWaterResistance: 'IP65 Weatherproof',
+      amazonTheme: 'Modern Architectural',
+      googleProductCategory: 'Home & Garden > Lighting > Light Fixtures',
+    };
+  }
+
+  return {
+    amazonFixtureForm: 'Light Fixture',
+    amazonMountingType: 'Ceiling / Wall Mount',
+    amazonLightingMethod: 'Ambient',
+    amazonWaterResistance: 'IP20 Indoor Use Only',
+    amazonTheme: 'Modern Luxury',
+    googleProductCategory: 'Home & Garden > Lighting > Light Fixtures',
+  };
+}
+
 export default function ProductFormClient({ categories, spaces, defaultValues, mode }: {
   categories: Category[];
   spaces: Space[];
@@ -233,20 +327,17 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     bulbType: defaultValues?.bulbType?.join(', ') || '',
     style: defaultValues?.style?.join(', ') || '',
     power: defaultValues?.power || '',
-    voltage: defaultValues?.voltage || '',
-    googleProductCategory: defaultValues?.googleProductCategory || '',
-    color: defaultValues?.color || '',
-    size: defaultValues?.size || '',
     material: defaultValues?.material || '',
     countryOfOrigin: defaultValues?.countryOfOrigin || 'India',
     brand: defaultValues?.brand || 'James and Sons',
     warranty: defaultValues?.warranty || '',
     bulletPoints: defaultValues?.bulletPoints?.join('\n') || '',
-    amazonFixtureForm: defaultValues?.amazonFixtureForm || '',
-    amazonMountingType: defaultValues?.amazonMountingType || '',
-    amazonLightingMethod: defaultValues?.amazonLightingMethod || '',
-    amazonWaterResistance: defaultValues?.amazonWaterResistance || '',
-    amazonTheme: defaultValues?.amazonTheme || '',
+    googleProductCategory: defaultValues?.googleProductCategory || getLogicalDefaultsForCategory(categories.find(c => c.id === defaultValues?.categoryId)?.name || '').googleProductCategory,
+    amazonFixtureForm: defaultValues?.amazonFixtureForm || getLogicalDefaultsForCategory(categories.find(c => c.id === defaultValues?.categoryId)?.name || '').amazonFixtureForm,
+    amazonMountingType: defaultValues?.amazonMountingType || getLogicalDefaultsForCategory(categories.find(c => c.id === defaultValues?.categoryId)?.name || '').amazonMountingType,
+    amazonLightingMethod: defaultValues?.amazonLightingMethod || getLogicalDefaultsForCategory(categories.find(c => c.id === defaultValues?.categoryId)?.name || '').amazonLightingMethod,
+    amazonWaterResistance: defaultValues?.amazonWaterResistance || getLogicalDefaultsForCategory(categories.find(c => c.id === defaultValues?.categoryId)?.name || '').amazonWaterResistance,
+    amazonTheme: defaultValues?.amazonTheme || getLogicalDefaultsForCategory(categories.find(c => c.id === defaultValues?.categoryId)?.name || '').amazonTheme,
     amazonSpecialFeatures: defaultValues?.amazonSpecialFeatures || [] as string[],
     amazonIncludedComponents: defaultValues?.amazonIncludedComponents || '',
     amazonKeywords: defaultValues?.amazonKeywords || '',
@@ -454,9 +545,17 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       if (field === 'categoryId') {
         const cat = categories.find(c => c.id === val);
         if (cat) {
-          updated.hsnCode = cat.hsnCode || '';
+          updated.hsnCode = cat.hsnCode || updated.hsnCode || '';
           updated.gstRate = cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18;
-          updated.bisCertification = cat.bisStandard || '';
+          updated.bisCertification = cat.bisStandard || updated.bisCertification || '';
+
+          const inferred = getLogicalDefaultsForCategory(cat.name);
+          if (!updated.amazonFixtureForm || updated.amazonFixtureForm === 'Light Fixture') updated.amazonFixtureForm = inferred.amazonFixtureForm;
+          if (!updated.amazonMountingType || updated.amazonMountingType === 'Ceiling / Wall Mount') updated.amazonMountingType = inferred.amazonMountingType;
+          if (!updated.amazonLightingMethod) updated.amazonLightingMethod = inferred.amazonLightingMethod;
+          if (!updated.amazonWaterResistance) updated.amazonWaterResistance = inferred.amazonWaterResistance;
+          if (!updated.amazonTheme) updated.amazonTheme = inferred.amazonTheme;
+          if (!updated.googleProductCategory) updated.googleProductCategory = inferred.googleProductCategory;
         }
       }
       return updated;
