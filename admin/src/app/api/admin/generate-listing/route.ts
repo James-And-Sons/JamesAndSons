@@ -67,26 +67,37 @@ Product category context: ${type || 'Lighting Fixture'}.
 
 Do not include markdown wrappers like \`\`\`json or trailing/leading text. Output raw JSON only.`;
 
-    let result;
-    try {
-      const model = ai.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        systemInstruction: systemPrompt,
-      });
-      result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
-      });
-    } catch (modelErr) {
-      console.warn('Fallback to gemini-flash-latest model alias:', modelErr);
-      const model = ai.getGenerativeModel({
-        model: 'gemini-flash-latest',
-        systemInstruction: systemPrompt,
-      });
-      result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
-      });
+    const candidateModels = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-flash-latest',
+    ];
+
+    let lastError: any = null;
+    let result = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const model = ai.getGenerativeModel({
+          model: modelName,
+          systemInstruction: systemPrompt,
+        });
+        result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }],
+          generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
+        });
+        if (result) break;
+      } catch (err: any) {
+        console.warn(`Model ${modelName} failed, trying next candidate. Error:`, err.message || err);
+        lastError = err;
+        // Brief pause before trying next model endpoint
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    if (!result) {
+      throw lastError || new Error('All Gemini AI model endpoints are currently experiencing high demand. Please try again in a moment.');
     }
 
     const responseText = result.response.text().trim();
