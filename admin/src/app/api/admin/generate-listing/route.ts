@@ -67,21 +67,27 @@ Product category context: ${type || 'Lighting Fixture'}.
 
 Do not include markdown wrappers like \`\`\`json or trailing/leading text. Output raw JSON only.`;
 
-    // We target gemini-1.5-flash for fast text generation
-    const model = ai.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: systemPrompt,
-    });
-
-    const result = await model.generateContent({
-      contents: [
-        { role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.7,
-      }
-    });
+    let result;
+    try {
+      const model = ai.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        systemInstruction: systemPrompt,
+      });
+      result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
+      });
+    } catch (modelErr) {
+      console.warn('Fallback to gemini-flash-latest model alias:', modelErr);
+      const model = ai.getGenerativeModel({
+        model: 'gemini-flash-latest',
+        systemInstruction: systemPrompt,
+      });
+      result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
+      });
+    }
 
     const responseText = result.response.text().trim();
     const parsedData = JSON.parse(responseText);
