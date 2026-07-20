@@ -310,7 +310,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
   return (
     <>
-      <div className="pdp-wrapper" style={{ background: 'var(--obsidian)', minHeight: '100vh' }}>
+      <div className="pdp-wrapper" style={{ background: 'var(--obsidian)', minHeight: '100vh', overflowX: 'hidden', boxSizing: 'border-box' }}>
 
         {/* ── MOBILE LAYOUT (md:hidden) ── */}
         <div className="md:hidden" style={{ paddingBottom: '40px' }}>
@@ -624,7 +624,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
         </div>
 
         {/* ── DESKTOP LAYOUT (hidden md:grid) ── */}
-        <div className="hidden md:grid" style={{ maxWidth: '1440px', margin: '0 auto', padding: '60px 60px 80px 60px', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr)', gap: '80px', minHeight: '100vh' }}>
+        <div className="hidden md:grid" style={{ maxWidth: '1440px', margin: '0 auto', padding: '60px 4% 80px 4%', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr)', gap: '6%', minHeight: '100vh', boxSizing: 'border-box' }}>
 
           {/* LEFT COLUMN: Gallery */}
           <div className="pdp-gallery" style={{ display: 'flex', flexDirection: 'column', gap: '32px', position: 'static', height: 'auto', overflow: 'visible', background: 'transparent' }}>
