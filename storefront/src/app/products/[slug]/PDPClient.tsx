@@ -100,6 +100,42 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [userReviews, setUserReviews] = useState<any[]>([]);
 
+  // Parse description dynamically into narrative text and bullet highlight pointers
+  const parseDescription = (desc: string) => {
+    if (!desc) return { narrative: '', bullets: [] as string[] };
+    const lines = desc.split('\n');
+    const narrativeLines: string[] = [];
+    const bullets: string[] = [];
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      
+      // Matches list bullet indicators: •, -, *, 1., 2., a., b.
+      const isBullet = /^[•\-\*\d+\.\)]\s*(.*)/.test(trimmed);
+      if (isBullet) {
+        const cleanText = trimmed.replace(/^[•\-\*\d+\.\)]\s*/, '');
+        if (cleanText) {
+          bullets.push(cleanText);
+        }
+      } else {
+        narrativeLines.push(trimmed);
+      }
+    }
+    
+    return {
+      narrative: narrativeLines.join('\n\n'),
+      bullets
+    };
+  };
+
+  const parsedDesc = parseDescription(product.description || '');
+  // Merge bullets parsed from description text and the explicit product.bulletPoints
+  const mergedBullets = [
+    ...(parsedDesc.bullets || []),
+    ...(product.bulletPoints || [])
+  ].filter(Boolean);
+
   // Onsitego warranty states
   const [warranties, setWarranties] = useState<any[]>([]);
   const [selectedWarranty, setSelectedWarranty] = useState<any | null>(null);
@@ -616,22 +652,25 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
 
           {/* Description Card */}
-          {(product.description || (product.bulletPoints && product.bulletPoints.length > 0)) && (
+          {(parsedDesc.narrative || mergedBullets.length > 0) && (
             <div style={{ margin: '16px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '20px' }}>
               <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance &amp; Craftsmanship</div>
-              {product.description && (
+              {parsedDesc.narrative && (
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                  {product.description}
+                  {parsedDesc.narrative}
                 </div>
               )}
-              {product.bulletPoints && product.bulletPoints.length > 0 && (
-                <div style={{ marginTop: product.description ? '16px' : '0' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--gold-light)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Key Feature Highlights</div>
-                  <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '12.5px', color: 'var(--cream)', lineHeight: 1.6 }}>
-                    {product.bulletPoints.map((bp: string, idx: number) => (
-                      <li key={idx} style={{ marginBottom: '4px' }}>{bp}</li>
+              {mergedBullets.length > 0 && (
+                <div style={{ marginTop: parsedDesc.narrative ? '20px' : '0' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--gold-light)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>Artisan Highlights</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {mergedBullets.map((bp: string, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', border: '0.5px solid var(--border)', borderRadius: '10px', padding: '10px 12px' }}>
+                        <i className="ti ti-circle-check" style={{ color: 'var(--gold)', fontSize: '14px', marginTop: '2px', flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', color: 'var(--cream)', lineHeight: 1.4, fontFamily: 'var(--font-body)' }}>{bp}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
@@ -888,17 +927,27 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '20px' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>The Masterpiece</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                  {product.description || 'Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.'}
-                </div>
-                {product.bulletPoints && product.bulletPoints.length > 0 && (
-                  <div style={{ marginTop: '20px', padding: '16px 20px', background: 'var(--surface2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: '10px' }}>Key Feature Highlights</div>
-                    <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '13.5px', color: 'var(--cream)', lineHeight: 1.7 }}>
-                      {product.bulletPoints.map((bp: string, idx: number) => (
-                        <li key={idx} style={{ marginBottom: '6px' }}>{bp}</li>
+                {parsedDesc.narrative && (
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: '24px' }}>
+                    {parsedDesc.narrative}
+                  </div>
+                )}
+                {!parsedDesc.narrative && !product.description && (
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '16px', color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: '24px' }}>
+                    Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.
+                  </div>
+                )}
+                {mergedBullets.length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: '16px' }}>Artisan Highlights</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                      {mergedBullets.map((bp: string, idx: number) => (
+                        <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: '14px', padding: '14px 18px' }}>
+                          <i className="ti ti-circle-check" style={{ color: 'var(--gold)', fontSize: '16px', marginTop: '2px', flexShrink: 0 }} />
+                          <span style={{ fontSize: '13.5px', color: 'var(--cream)', lineHeight: 1.5, fontFamily: 'var(--font-body)' }}>{bp}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
               </div>
