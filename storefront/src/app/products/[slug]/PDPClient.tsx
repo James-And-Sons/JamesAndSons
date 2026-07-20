@@ -107,6 +107,10 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     const narrativeLines: string[] = [];
     const bullets: string[] = [];
     
+    const cleanBulletText = (str: string) => {
+      return str.trim().replace(/^[.,:;\-\s]+/, '').replace(/[.,:;\-\s]+$/, '');
+    };
+
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) continue;
@@ -115,8 +119,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       const isBullet = /^[•\-\*\d+\.\)]\s*(.*)/.test(trimmed);
       if (isBullet) {
         const cleanText = trimmed.replace(/^[•\-\*\d+\.\)]\s*/, '');
-        if (cleanText) {
-          bullets.push(cleanText);
+        const finalCleanText = cleanBulletText(cleanText);
+        if (finalCleanText) {
+          bullets.push(finalCleanText);
         }
       } else {
         narrativeLines.push(trimmed);
@@ -133,7 +138,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   // Merge bullets parsed from description text and the explicit product.bulletPoints
   const mergedBullets = [
     ...(parsedDesc.bullets || []),
-    ...(product.bulletPoints || [])
+    ...(product.bulletPoints || []).map(b => b.trim().replace(/^[.,:;\-\s]+/, '').replace(/[.,:;\-\s]+$/, ''))
   ].filter(Boolean);
 
   // Onsitego warranty states
@@ -665,9 +670,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   <div style={{ fontSize: '10px', color: 'var(--gold-light)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>Artisan Highlights</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {mergedBullets.map((bp: string, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', border: '0.5px solid var(--border)', borderRadius: '10px', padding: '10px 12px' }}>
-                        <i className="ti ti-circle-check" style={{ color: 'var(--gold)', fontSize: '14px', marginTop: '2px', flexShrink: 0 }} />
-                        <span style={{ fontSize: '13px', color: 'var(--cream)', lineHeight: 1.4, fontFamily: 'var(--font-body)' }}>{bp}</span>
+                      <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', border: '0.5px solid var(--border)', borderRadius: '10px', padding: '12px 14px' }}>
+                        <i className="ti ti-circle-check" style={{ color: 'var(--gold)', fontSize: '15px', marginTop: '2px', flexShrink: 0 }} />
+                        <span style={{ fontSize: '14.5px', color: 'var(--cream)', lineHeight: 1.5, fontFamily: 'var(--font-body)' }}>{bp}</span>
                       </div>
                     ))}
                   </div>
@@ -943,8 +948,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                       {mergedBullets.map((bp: string, idx: number) => (
                         <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: '14px', padding: '14px 18px' }}>
-                          <i className="ti ti-circle-check" style={{ color: 'var(--gold)', fontSize: '16px', marginTop: '2px', flexShrink: 0 }} />
-                          <span style={{ fontSize: '13.5px', color: 'var(--cream)', lineHeight: 1.5, fontFamily: 'var(--font-body)' }}>{bp}</span>
+                          <i className="ti ti-circle-check" style={{ color: 'var(--gold)', fontSize: '18px', marginTop: '2px', flexShrink: 0 }} />
+                          <span style={{ fontSize: '15.5px', color: 'var(--cream)', lineHeight: 1.5, fontFamily: 'var(--font-body)' }}>{bp}</span>
                         </div>
                       ))}
                     </div>
