@@ -1527,27 +1527,35 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 </div>
 
                 <div className="border-t border-border/40 pt-4">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted mb-3">Auto-detected on sync — edit to override</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted mb-3">Auto-detected on category or AI generation — edit to override</div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="relative">
                       <label className={labelCls}>Light Fixture Form</label>
                       <input
                         value={parentValues.amazonFixtureForm}
                         onChange={e => handleParentFieldChange('amazonFixtureForm', e.target.value)}
-                        placeholder="Not yet synced"
+                        placeholder="e.g. Chandelier, Pendant"
                         className={inputCls}
                       />
-                      <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-surface-muted text-muted px-2 py-0.5 border border-border">auto · pending</span>
+                      {parentValues.amazonFixtureForm ? (
+                        <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-emerald-950/40 text-emerald-400 px-2 py-0.5 border border-emerald-500/30 rounded-sm">auto · set</span>
+                      ) : (
+                        <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-surface-muted text-muted px-2 py-0.5 border border-border rounded-sm">auto · pending</span>
+                      )}
                     </div>
                     <div className="relative">
                       <label className={labelCls}>Mounting Type</label>
                       <input
                         value={parentValues.amazonMountingType}
                         onChange={e => handleParentFieldChange('amazonMountingType', e.target.value)}
-                        placeholder="Not yet synced"
+                        placeholder="e.g. Ceiling Mount, Wall Mount"
                         className={inputCls}
                       />
-                      <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-surface-muted text-muted px-2 py-0.5 border border-border">auto · pending</span>
+                      {parentValues.amazonMountingType ? (
+                        <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-emerald-950/40 text-emerald-400 px-2 py-0.5 border border-emerald-500/30 rounded-sm">auto · set</span>
+                      ) : (
+                        <span className="absolute right-3 top-[32px] font-mono text-[8px] uppercase tracking-widest bg-surface-muted text-muted px-2 py-0.5 border border-border rounded-sm">auto · pending</span>
+                      )}
                     </div>
                   </div>
                 </div>
