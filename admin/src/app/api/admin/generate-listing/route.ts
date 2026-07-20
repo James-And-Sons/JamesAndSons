@@ -67,9 +67,9 @@ Product category context: ${type || 'Lighting Fixture'}.
 
 Do not include markdown wrappers like \`\`\`json or trailing/leading text. Output raw JSON only.`;
 
-    // We target gemini-2.5-flash for fast text generation
+    // We target gemini-1.5-flash for fast text generation
     const model = ai.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: systemPrompt,
     });
 
