@@ -872,9 +872,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       {/* === FULL WIDTH FORM LAYOUT === */}
       <div className="w-full">
           {activeTab === 'parent' ? (
-            /* ========================================================================= */
-            /* ========================== PARENT PRODUCT FORM ========================== */
-            /* ========================================================================= */
+            <div className="space-y-6">
               {/* === AI LISTING ASSISTANT BANNER / TRIGGER === */}
               <div className="premium-card p-4 rounded-lg bg-surface border border-accent/30 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
