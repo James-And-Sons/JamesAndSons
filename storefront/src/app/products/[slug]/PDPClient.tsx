@@ -1226,131 +1226,156 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
         </div>
 
-        {/* Customer Reviews & Ratings Section (Collapsible) */}
-        <section style={{ borderTop: '0.5px solid var(--border)', maxWidth: '1440px', margin: '0 auto' }}>
-          <button
-            type="button"
-            onClick={() => setReviewsExpanded(!reviewsExpanded)}
-            style={{
-              width: '100%',
-              padding: '24px 4%',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--cream)',
-              display: 'flex',
-              alignItems: 'center',
-              justify: 'space-between',
-              cursor: 'pointer',
-              textAlign: 'left'
-            }}
-          >
+        {/* Customer Reviews & Ratings Section */}
+        <section style={{ borderTop: '0.5px solid var(--border)', padding: '60px 4% 40px', maxWidth: '1440px', margin: '0 auto' }}>
+          {/* Header Row — ALWAYS VISIBLE */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '4px' }}>Client Feedback</div>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(22px, 3.5vw, 30px)', color: 'var(--cream)', fontWeight: 300, margin: 0 }}>
-                Client <em>Reviews</em> &amp; Rating {userReviews.length > 0 ? `(${userReviews.length})` : ''}
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '6px' }}>Verified Client Testimonials</div>
+              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(26px, 4vw, 36px)', color: 'var(--cream)', fontWeight: 300, margin: 0 }}>
+                Estate <em>Reviews</em> &amp; Rating {userReviews.length > 0 ? `(${userReviews.length})` : ''}
               </h2>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>
-                {reviewsExpanded ? 'Hide Reviews ▲' : 'View Reviews ▼'}
-              </span>
-            </div>
-          </button>
+            {/* "+ Write a Review" Button — ALWAYS VISIBLE */}
+            <button
+              onClick={() => setReviewModalOpen(true)}
+              style={{
+                padding: '12px 24px',
+                background: 'rgba(196,160,90,0.1)',
+                border: '1px solid rgba(196,160,90,0.4)',
+                borderRadius: '30px',
+                color: 'var(--gold)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>+ Write a Review</span>
+            </button>
+          </div>
 
-          {reviewsExpanded && (
-            <div style={{ padding: '0 4% 40px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  {userReviews.length === 0 ? 'No published reviews yet for this fixture.' : `${userReviews.length} verified client reviews.`}
-                </div>
-                <button
-                  onClick={() => setReviewModalOpen(true)}
-                  style={{ padding: '12px 24px', background: 'rgba(196,160,90,0.1)', border: '1px solid rgba(196,160,90,0.4)', borderRadius: '30px', color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
-                >
-                  ★ Write a Client Review
-                </button>
-              </div>
-
-              {userReviews.length > 0 ? (
-                <>
-                  {/* Overall Score Summary */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
-                    <div style={{ background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: '48px', color: 'var(--gold-light)', lineHeight: 1 }}>5.0</div>
-                        <div style={{ color: '#F59E0B', fontSize: '14px', marginTop: '4px' }}>★★★★★</div>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>{userReviews.length} Verified Rating{userReviews.length > 1 ? 's' : ''}</div>
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-                        {[
-                          { stars: '5 ★', pct: 100 },
-                          { stars: '4 ★', pct: 0 },
-                          { stars: '3 ★', pct: 0 },
-                          { stars: '2 ★', pct: 0 },
-                          { stars: '1 ★', pct: 0 },
-                        ].map(r => (
-                          <div key={r.stars} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ width: '24px', color: 'var(--text-muted)' }}>{r.stars}</span>
-                            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${r.pct}%`, height: '100%', background: 'var(--gold)' }} />
-                            </div>
-                            <span style={{ width: '28px', color: 'var(--text-dim)', textAlign: 'right' }}>{r.pct}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Trust guarantees badge block */}
-                    <div style={{ background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', justify: 'center', gap: '12px' }}>
-                      <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>100% Satisfaction Standard</div>
-                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
-                        Every James and Sons fixture undergoes 48-hour burn testing and artisan quality inspection before dispatch to luxury residences across India.
-                      </p>
-                    </div>
+          {/* Section Body */}
+          {userReviews.length > 0 ? (
+            <>
+              {/* Overall Score Summary */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                <div style={{ background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', alignItems: 'center', gap: '24px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: '48px', color: 'var(--gold-light)', lineHeight: 1 }}>5.0</div>
+                    <div style={{ color: '#F59E0B', fontSize: '14px', marginTop: '4px' }}>★★★★★</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>{userReviews.length} Verified Rating{userReviews.length > 1 ? 's' : ''}</div>
                   </div>
-
-                  {/* Reviews Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-                    {userReviews.map(rev => (
-                      <div key={rev.id} style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ color: '#F59E0B', fontSize: '13px' }}>
-                            {'★'.repeat(rev.rating)}
-                          </div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{rev.date}</div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                    {[
+                      { stars: '5 ★', pct: 100 },
+                      { stars: '4 ★', pct: 0 },
+                      { stars: '3 ★', pct: 0 },
+                      { stars: '2 ★', pct: 0 },
+                      { stars: '1 ★', pct: 0 },
+                    ].map(r => (
+                      <div key={r.stars} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ width: '24px', color: 'var(--text-muted)' }}>{r.stars}</span>
+                        <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ width: `${r.pct}%`, height: '100%', background: 'var(--gold)' }} />
                         </div>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--cream)', fontWeight: 400 }}>{rev.title}</div>
-                        <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0, flex: 1 }}>"{rev.comment}"</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: '0.5px dashed rgba(255,255,255,0.08)' }}>
-                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(196,160,90,0.15)', border: '1px solid rgba(196,160,90,0.3)', color: 'var(--gold)', fontSize: '11px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
-                            {rev.author[0]}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '12px', color: 'var(--cream)', fontWeight: 500 }}>{rev.author}</div>
-                            <div style={{ fontSize: '10px', color: 'var(--gold)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <i className="ti ti-circle-check-filled" style={{ fontSize: '11px' }}></i> Verified Estate Buyer · {rev.location}
-                            </div>
-                          </div>
-                        </div>
+                        <span style={{ width: '28px', color: 'var(--text-dim)', textAlign: 'right' }}>{r.pct}%</span>
                       </div>
                     ))}
                   </div>
-                </>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface2)', borderRadius: '20px', border: '0.5px solid var(--border)' }}>
-                  <i className="ti ti-message-dots" style={{ fontSize: '36px', color: 'var(--gold)', marginBottom: '12px', display: 'block' }}></i>
-                  <div style={{ fontSize: '16px', color: 'var(--cream)', fontFamily: 'var(--font-serif)', marginBottom: '6px' }}>Be the First to Review</div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto 20px', lineHeight: 1.6 }}>
-                    Have you purchased or specified this fixture? Share your feedback regarding craftsmanship and illumination.
-                  </p>
-                  <button
-                    onClick={() => setReviewModalOpen(true)}
-                    style={{ padding: '12px 24px', background: 'var(--gold)', border: 'none', borderRadius: '12px', color: 'var(--obsidian)', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, cursor: 'pointer' }}
-                  >
-                    Write First Review
-                  </button>
                 </div>
-              )}
+
+                <div style={{ background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', justify: 'center', gap: '12px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>100% Satisfaction Standard</div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                    Every James and Sons fixture undergoes 48-hour burn testing and artisan quality inspection before dispatch to luxury residences across India.
+                  </p>
+                </div>
+              </div>
+
+              {/* Reviews Grid */}
+              {(() => {
+                const visibleReviews = (userReviews.length > 4 && !reviewsExpanded)
+                  ? userReviews.slice(0, 4)
+                  : userReviews;
+
+                return (
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                      {visibleReviews.map(rev => (
+                        <div key={rev.id} style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ color: '#F59E0B', fontSize: '13px' }}>
+                              {'★'.repeat(rev.rating)}
+                            </div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{rev.date}</div>
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--cream)', fontWeight: 400 }}>{rev.title}</div>
+                          <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0, flex: 1 }}>"{rev.comment}"</p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: '0.5px dashed rgba(255,255,255,0.08)' }}>
+                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(196,160,90,0.15)', border: '1px solid rgba(196,160,90,0.3)', color: 'var(--gold)', fontSize: '11px', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
+                              {rev.author[0]}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', color: 'var(--cream)', fontWeight: 500 }}>{rev.author}</div>
+                              <div style={{ fontSize: '10px', color: 'var(--gold)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <i className="ti ti-circle-check-filled" style={{ fontSize: '11px' }}></i> Verified Estate Buyer · {rev.location}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* View More Reviews Button — ONLY shown if userReviews.length > 4 */}
+                    {userReviews.length > 4 && (
+                      <div style={{ marginTop: '28px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => setReviewsExpanded(!reviewsExpanded)}
+                          style={{
+                            padding: '14px 32px',
+                            background: 'rgba(196,160,90,0.08)',
+                            border: '1px solid rgba(196,160,90,0.3)',
+                            borderRadius: '30px',
+                            color: 'var(--gold)',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '11px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.15em',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {reviewsExpanded ? 'Show Fewer Reviews ▲' : `View More Reviews (${userReviews.length - 4} More) ▼`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          ) : (
+            /* Empty State if 0 reviews */
+            <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--surface2)', borderRadius: '20px', border: '0.5px solid var(--border)' }}>
+              <i className="ti ti-message-dots" style={{ fontSize: '36px', color: 'var(--gold)', marginBottom: '12px', display: 'block' }}></i>
+              <div style={{ fontSize: '16px', color: 'var(--cream)', fontFamily: 'var(--font-serif)', marginBottom: '6px' }}>Be the First to Review</div>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto 20px', lineHeight: 1.6 }}>
+                Have you purchased or specified this fixture? Share your feedback regarding craftsmanship and illumination.
+              </p>
+              <button
+                onClick={() => setReviewModalOpen(true)}
+                style={{ padding: '12px 24px', background: 'var(--gold)', border: 'none', borderRadius: '12px', color: 'var(--obsidian)', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, cursor: 'pointer' }}
+              >
+                + Write First Review
+              </button>
             </div>
           )}
         </section>
