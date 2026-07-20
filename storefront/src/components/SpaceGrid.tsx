@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 type Space = {
   id: string;
@@ -8,13 +9,21 @@ type Space = {
   _count: { products: number };
 };
 
-export default function SpaceGrid({ spaces }: { spaces: Space[] }) {
-  // If no spaces are passed (fallback), show nothing or a message
-  if (!spaces || spaces.length === 0) return null;
-
+export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
+  // If no spaces are passed (fallback), we will show a placeholder or mock data
+  // instead of returning null, so the section is visible on the home screen.
+  
   // We take up to 5 spaces for the homepage grid
-  const mainSpace = spaces[0];
-  const otherSpaces = spaces.slice(1, 5);
+  const displaySpaces = spaces.length > 0 ? spaces : [
+    { id: '1', name: 'Living Room', slug: 'living-room', image: null, _count: { products: 0 } },
+    { id: '2', name: 'Dining Room', slug: 'dining-room', image: null, _count: { products: 0 } },
+    { id: '3', name: 'Bedroom', slug: 'bedroom', image: null, _count: { products: 0 } },
+    { id: '4', name: 'Office', slug: 'office', image: null, _count: { products: 0 } },
+    { id: '5', name: 'Foyer', slug: 'foyer', image: null, _count: { products: 0 } },
+  ];
+
+  const mainSpace = displaySpaces[0];
+  const otherSpaces = displaySpaces.slice(1, 5);
 
   return (
     <section className="section" id="spaces">
@@ -23,14 +32,21 @@ export default function SpaceGrid({ spaces }: { spaces: Space[] }) {
           <div className="section-label">Curated Environs</div>
           <h2 className="section-title">Shop by <em>Space</em></h2>
         </div>
-        <Link href="/collections" className="link-all">View All Spaces</Link>
+        <Link href="/spaces" className="link-all">View All Spaces</Link>
       </div>
       
-      <div className="space-grid">
+      <div className="space-grid hidden md:grid">
         {/* Main large space */}
         <Link href={`/collections?space=${encodeURIComponent(mainSpace.name)}`} className="space-card block">
           {mainSpace.image ? (
-            <div className="space-card-bg" style={{ backgroundImage: `url(${mainSpace.image})`, backgroundSize: 'cover', opacity: 1 }}></div>
+            <Image
+              src={mainSpace.image}
+              alt={mainSpace.name}
+              fill
+              priority
+              className="space-card-bg object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           ) : (
             <div className="space-card-bg"></div>
           )}
@@ -60,7 +76,13 @@ export default function SpaceGrid({ spaces }: { spaces: Space[] }) {
           {otherSpaces.map((space) => (
             <Link key={space.id} href={`/collections?space=${encodeURIComponent(space.name)}`} className="space-card block">
               {space.image ? (
-                <div className="space-card-bg" style={{ backgroundImage: `url(${space.image})`, backgroundSize: 'cover', opacity: 1 }}></div>
+                <Image
+                  src={space.image}
+                  alt={space.name}
+                  fill
+                  className="space-card-bg object-cover"
+                  sizes="(max-width: 768px) 100vw, 25vw"
+                />
               ) : (
                 <div className="space-card-bg"></div>
               )}
@@ -87,6 +109,39 @@ export default function SpaceGrid({ spaces }: { spaces: Space[] }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Mobile Spaces Scroll */}
+      <div className="mobile-spaces-scroll md:hidden">
+        {displaySpaces.map((space, index) => {
+          const bgClass = `mobile-sc-${(index % 4) + 1}`;
+          const iconClass = index === 0 ? "ti-home" : index === 1 ? "ti-glass" : index === 2 ? "ti-bed" : index === 3 ? "ti-briefcase" : "ti-door";
+          
+          return (
+            <Link
+              key={space.id}
+              href={`/collections?space=${encodeURIComponent(space.name)}`}
+              className={`mobile-space-card ${space.image ? 'has-image' : bgClass}`}
+            >
+              {space.image && (
+                <Image
+                  src={space.image}
+                  alt={space.name}
+                  fill
+                  className="absolute inset-0 object-cover"
+                  sizes="(max-width: 768px) 140px, 100vw"
+                  priority={index < 2}
+                />
+              )}
+              {!space.image && <i className={`ti ${iconClass} mobile-space-icon`} aria-hidden="true"></i>}
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div className="mobile-space-name">{space.name}</div>
+                <div className="mobile-space-count">{space._count.products} Designs</div>
+              </div>
+              <div className="mobile-space-arrow" style={{ zIndex: 2 }}><i className="ti ti-arrow-up-right"></i></div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

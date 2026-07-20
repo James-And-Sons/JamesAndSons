@@ -10,7 +10,7 @@
   --color-surface-muted: #16161a;
   --color-border: rgba(255, 255, 255, 0.07);
   --color-muted: #6b6860;
-  
+
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-mono: 'DM Mono', monospace;
   --font-body: 'Libre Baskerville', Georgia, serif;
@@ -34,6 +34,67 @@ body {
   font-family: var(--font-body);
 }
 
+/* Accessibility Skip Link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--color-accent);
+  color: #100f0d;
+  padding: 10px 16px;
+  z-index: 100;
+  border-radius: 0 0 6px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+}
+.skip-link:focus { left: 0; }
+
+/* Accessibility Focus Ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Status Pills & Indicators */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+.status-paid, .status-delivered, .status-approved, .status-active {
+  background: rgba(140, 174, 126, 0.12);
+  color: #8cae7e;
+  border: 1px solid rgba(140, 174, 126, 0.35);
+}
+.status-processing, .status-submitted, .status-reviewing {
+  background: rgba(214, 162, 74, 0.14);
+  color: #d6a24a;
+  border: 1px solid rgba(214, 162, 74, 0.4);
+}
+.status-pending, .status-draft, .status-rejected {
+  background: rgba(201, 126, 106, 0.12);
+  color: #c97e6a;
+  border: 1px solid rgba(201, 126, 106, 0.35);
+}
+.status-pill .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
 /* Custom Utilities mimicking storefront */
 @utility section-label {
   font-family: var(--font-mono);
@@ -43,22 +104,90 @@ body {
   text-transform: uppercase;
 }
 
+@utility premium-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: rgba(196, 160, 90, 0.25);
+    box-shadow: 0 10px 30px rgba(196, 160, 90, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+    transform: translateY(-1px);
+  }
+}
+
 @utility btn-primary {
-  padding: 14px 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 40px;
   background: var(--color-accent);
   color: var(--color-background);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   border: none;
   cursor: pointer;
-  transition: all 0.25s;
-  border-radius: 1px;
-  
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+  min-width: 140px;
+
   &:hover {
     background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(196, 160, 90, 0.2);
+  }
+  &:active { transform: translateY(0); }
+}
+
+@utility btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 28px;
+  background: transparent;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
+
+  &:hover {
+    background: var(--color-surface-muted);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+}
+
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: rgba(196, 160, 90, 0.1);
+    border-color: rgba(196, 160, 90, 0.2);
+    color: var(--color-accent-hover);
   }
 }
 
@@ -75,3 +204,9 @@ body {
   .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
   .p-10 { padding: 1.5rem !important; }
 }
+
+/* Logo dark/light mode switching */
+.logo-light-img { display: none; }
+.logo-dark-img { display: block; }
+.light .logo-light-img { display: block !important; }
+.light .logo-dark-img { display: none !important; }

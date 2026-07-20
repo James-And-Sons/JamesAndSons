@@ -59,7 +59,7 @@ export default function CMSControls({ categories, products }: { categories: Cate
           <select
             value={featuredCategory}
             onChange={e => setFeaturedCategory(e.target.value)}
-            className="bg-background border border-border text-primary font-mono text-[12px] px-4 py-2 focus:outline-none focus:border-accent w-64"
+            className="bg-background border border-border text-primary font-mono text-[12px] px-4 py-3 focus:outline-none focus:border-accent w-64 cursor-pointer"
           >
             {categories.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>

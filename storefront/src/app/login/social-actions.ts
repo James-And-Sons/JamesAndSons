@@ -3,14 +3,17 @@
 import { createClient } from '@/utils/supabase/client'
 import { Provider } from '@supabase/supabase-js'
 
-export async function signInWithSocial(provider: Provider) {
+export async function signInWithSocial(provider: Provider, next: string = '/') {
   const supabase = createClient()
   const origin = window.location.origin
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      queryParams: {
+        prompt: 'select_account',
+      },
     },
   })
 

@@ -1,12 +1,37 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
+import { useSidebar } from '@/lib/context/SidebarContext';
+import SyncButton from '@/components/SyncButton';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { productFormState, isPageDirty } = useSidebar();
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const isDirty = productFormState?.isDirty || isPageDirty;
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+  };
   const [openTickets, setOpenTickets] = useState<number | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
+  const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
+  const [searchVal, setSearchVal] = useState(searchParams.get('q') || '');
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
+    collections: false,
+    spaces: false,
+    catalog: false,
+  });
+
+  const currentCategoryId = searchParams.get('categoryId');
+  const currentManageId = searchParams.get('manage');
 
   if (pathname === '/login') return null;
 
@@ -15,22 +40,513 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       .then(r => r.json())
       .then(d => setOpenTickets(d.count))
       .catch(() => {});
+
+    // Fetch collections (categories)
+    fetch('/api/collections')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
+        }
+      })
+      .catch(() => {});
+
+    // Fetch spaces
+    fetch('/api/spaces')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setSpaces(data.sort((a, b) => a.name.localeCompare(b.name)));
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  const links = [
-    { name: 'Dashboard', href: '/' },
-    { name: 'Orders', href: '/orders' },
-    { name: 'RFQ Inbox', href: '/rfqs' },
-    { name: 'Catalog & Pricing', href: '/products' },
-    { name: 'Collections', href: '/collections' },
-    { name: 'Spaces', href: '/spaces' },
-    { name: 'B2B Workspace', href: '/b2b' },
-    { name: 'Pages / CMS', href: '/pages' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Tickets', href: '/tickets', badge: openTickets },
-    { name: 'Customers', href: '/customers' },
-    { name: 'Admin Settings', href: '/account' },
-  ];
+  useEffect(() => {
+    setSearchVal(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Auto-expand active groups ONLY if a sub-item query parameter is active, NOT on root pages
+    if (currentCategoryId) {
+      setOpenDropdowns(prev => ({ ...prev, collections: true }));
+    }
+    if (currentManageId) {
+      setOpenDropdowns(prev => ({ ...prev, spaces: true }));
+    }
+    if (pathname === '/products/add' || searchParams.get('q')) {
+      setOpenDropdowns(prev => ({ ...prev, catalog: true }));
+    }
+  }, [currentCategoryId, currentManageId, pathname, searchParams]);
+
+  const renderLink = (name: string, href: string, badge?: number | null, icon?: string) => {
+    const isActive = href === '/' 
+      ? pathname === '/' 
+      : pathname.startsWith(href) && 
+        !(href === '/products' && currentCategoryId) && 
+        !(href === '/spaces' && currentManageId) &&
+        !(href === '/collections' && currentCategoryId);
+
+    return (
+      <Link
+        href={href}
+        aria-current={isActive ? 'page' : undefined}
+        onClick={(e) => {
+          handleNavClick(e);
+          if (onClose) onClose();
+        }}
+        className={`
+          group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border relative overflow-hidden rounded-sm
+          ${isActive 
+            ? 'text-white border-accent/40 bg-surface-muted font-medium' 
+            : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
+          }
+        `}
+      >
+        <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-2.5">
+          {icon ? (
+            <span className={`text-[12px] ${isActive ? 'text-accent' : 'text-muted/70 group-hover:text-accent'}`} aria-hidden="true">{icon}</span>
+          ) : isActive ? (
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
+          ) : null}
+          <span>{name}</span>
+        </span>
+        {badge !== null && badge !== undefined && badge > 0 && (
+          <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  const renderDropdown = (
+    name: string, 
+    dropdownKey: 'collections' | 'spaces', 
+    manageHref: string,
+    subItems: { name: string; href: string; active: boolean }[]
+  ) => {
+    const isOpen = openDropdowns[dropdownKey];
+    const toggle = () => setOpenDropdowns(prev => ({ ...prev, [dropdownKey]: !prev[dropdownKey] }));
+    const isGroupActive = pathname.startsWith(manageHref) || subItems.some(item => item.active);
+
+    return (
+      <div className="space-y-1">
+        <div className={`
+          flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
+          ${isGroupActive 
+            ? 'text-white border-accent/30 bg-surface-muted/40' 
+            : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
+          }
+        `}>
+          {/* Left Link Area: Clicking navigates to default view */}
+          <Link
+            href={manageHref}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
+            className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
+          >
+            {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
+            <span>{name}</span>
+          </Link>
+
+          {/* Right Toggle Button: Clicking expands/collapses the dropdown */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle();
+            }}
+            className="px-4 py-3 flex items-center justify-center border-l border-border/10 hover:text-accent transition-colors cursor-pointer"
+            aria-label={`Toggle ${name} dropdown`}
+          >
+            <span className={`text-[12px] font-semibold transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
+              ›
+            </span>
+          </button>
+        </div>
+
+        <div 
+          className="overflow-hidden transition-all duration-300 ease-in-out pl-3 space-y-1 border-l border-border/50 ml-4"
+          style={{
+            maxHeight: isOpen ? `${(subItems.length + 1) * 38}px` : '0px',
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none'
+          }}
+        >
+          <Link
+            href={manageHref}
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
+            className={`
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+              ${(pathname === manageHref && !subItems.some(i => i.active)) 
+                ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+              }
+            `}
+          >
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              View All {name}
+            </span>
+          </Link>
+
+          {subItems.map((item, idx) => (
+            <Link
+              key={idx}
+              href={item.href}
+              onClick={(e) => {
+                handleNavClick(e);
+                if (onClose) onClose();
+              }}
+              className={`
+                group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+                ${item.active 
+                  ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                  : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+                }
+              `}
+            >
+              <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-1.5">
+                {item.active && <span className="w-1 h-1 rounded-full bg-accent animate-pulse"></span>}
+                {item.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCatalogDropdown = () => {
+    const dropdownKey = 'catalog';
+    const isOpen = openDropdowns[dropdownKey];
+    const toggle = () => setOpenDropdowns(prev => ({ ...prev, [dropdownKey]: !prev[dropdownKey] }));
+    const isGroupActive = pathname.startsWith('/products') || pathname === '/products/add';
+
+    return (
+      <div className="space-y-1">
+        <div className={`
+          flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
+          ${isGroupActive 
+            ? 'text-white border-accent/30 bg-surface-muted/40' 
+            : 'text-muted border-transparent hover:border-border hover:bg-surface-muted'
+          }
+        `}>
+          {/* Left Link Area: Clicking navigates to default view */}
+          <Link
+            href="/products"
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
+            className="flex-1 px-4 py-3 flex items-center gap-2 hover:text-accent transition-colors"
+          >
+            {isGroupActive && <span className="w-1.5 h-1.5 rounded-full bg-accent/70"></span>}
+            <span>Catalog & Pricing</span>
+          </Link>
+
+          {/* Right Toggle Button: Clicking expands/collapses the dropdown */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle();
+            }}
+            className="px-4 py-3 flex items-center justify-center border-l border-border/10 hover:text-accent transition-colors cursor-pointer"
+            aria-label="Toggle Catalog dropdown"
+          >
+            <span className={`text-[12px] font-semibold transition-transform duration-300 ${isOpen ? 'rotate-90 text-accent' : ''}`}>
+              ›
+            </span>
+          </button>
+        </div>
+
+        <div 
+          className="overflow-hidden transition-all duration-300 ease-in-out pl-3 space-y-1 border-l border-border/50 ml-4"
+          style={{
+            maxHeight: isOpen ? '160px' : '0px',
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? 'auto' : 'none'
+          }}
+        >
+          {/* Search bar inside dropdown */}
+          <div className="px-2 py-2">
+            <div className="relative w-full">
+              <input
+                type="text"
+                placeholder="Search catalog..."
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    router.push(`/products?q=${encodeURIComponent(searchVal)}`);
+                    if (onClose) onClose();
+                  }
+                }}
+                className="w-full bg-background border border-border/80 hover:border-border/100 focus:border-accent px-3 py-2 text-[11px] font-mono text-primary focus:outline-none transition-colors placeholder:text-muted/50 rounded-sm"
+              />
+              {searchVal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchVal('');
+                    router.push('/products');
+                  }}
+                  className="absolute right-2.5 top-2 text-muted hover:text-accent font-mono text-[12px] cursor-pointer"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          <Link
+            href="/products"
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
+            className={`
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+              ${(pathname === '/products' && !searchParams.get('q')) 
+                ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+              }
+            `}
+          >
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              View All
+            </span>
+          </Link>
+
+          <Link
+            href="/products/add"
+            onClick={(e) => {
+              handleNavClick(e);
+              if (onClose) onClose();
+            }}
+            className={`
+              group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
+              ${pathname === '/products/add' 
+                ? 'text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium' 
+                : 'text-muted border-l-transparent hover:text-accent hover:bg-surface-muted'
+              }
+            `}
+          >
+            <span className="group-hover:translate-x-1 transition-transform duration-200">
+              Add Product
+            </span>
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProductFormOutline = () => {
+    if (!productFormState) return null;
+    const {
+      mode,
+      productId,
+      productName,
+      sku,
+      isDirty,
+      activeTab,
+      setActiveTab,
+      variants,
+      addVariant,
+      removeVariant,
+      isBasicComplete,
+      isPricingComplete,
+      isSpecsComplete,
+      isSeoComplete,
+      isImagesComplete,
+      isVarBasicComplete,
+      isVarPricingComplete,
+      isVarDimensionsComplete,
+      isVarSpecsComplete,
+      isVarPlatformComplete,
+      isVarImagesComplete,
+      openSections,
+      setOpenSections
+    } = productFormState;
+
+    const isParentMode = activeTab === 'parent';
+
+    const parentSections = [
+      { id: 'basic', name: 'Basic Information', done: isBasicComplete },
+      { id: 'pricing', name: 'Pricing & Inventory', done: isPricingComplete },
+      { id: 'specs', name: 'Technical Specs', done: isSpecsComplete },
+      { id: 'seo', name: 'Marketplace & SEO', done: isSeoComplete },
+      { id: 'images', name: 'Product Images', done: isImagesComplete }
+    ];
+
+    const variantSections = [
+      { id: 'v_basic', name: 'Variant Details', done: isVarBasicComplete },
+      { id: 'v_pricing', name: 'Pricing Overrides', done: isVarPricingComplete },
+      { id: 'v_dimensions', name: 'Dimensions Overrides', done: isVarDimensionsComplete },
+      { id: 'v_specs', name: 'Technical Specs', done: isVarSpecsComplete },
+      { id: 'v_platform', name: 'Marketplace & SEO', done: isVarPlatformComplete },
+      { id: 'v_images', name: 'Variant Images', done: isVarImagesComplete }
+    ];
+
+    const sections = isParentMode ? parentSections : variantSections;
+
+    const scrollToSection = (id: string, sectionKey: string) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+      setOpenSections((prev: any) => ({ ...prev, [sectionKey]: true }));
+    };
+
+    return (
+      <div className="flex-1 flex flex-col justify-between min-h-[350px]">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="pb-4 border-b border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <Link
+                href="/products"
+                onClick={handleNavClick}
+                className="flex-1 text-center block px-4 py-2.5 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-red-400 hover:border-red-500/40 hover:bg-red-950/20 transition-colors border border-border bg-background/50 rounded-sm"
+              >
+                ← Exit
+              </Link>
+              <SyncButton
+                productId={productId}
+                label="Sync"
+                className="flex-1 text-center block px-4 py-2.5 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-accent hover:border-accent/40 transition-colors border border-border bg-background/50 rounded-sm cursor-pointer disabled:opacity-50"
+              />
+            </div>
+            <h2 className="font-serif text-[18px] text-primary font-medium tracking-wide truncate max-w-[200px]" title={productName}>
+              {productName || 'New Product'}
+            </h2>
+            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider text-muted flex-wrap">
+              <span className={`w-1.5 h-1.5 rounded-full ${isDirty ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+              <span>{mode === 'add' ? 'Adding' : 'Editing'}</span>
+              {sku && (
+                <span className="font-mono text-[9px] text-muted border border-border px-1.5 py-0.5 rounded uppercase">
+                  {sku}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Variant View Section */}
+          <div className="space-y-2">
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted font-semibold">Variant View</p>
+            <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab('parent')}
+                className={`text-left font-mono text-[12px] uppercase p-3 border transition-all rounded-sm cursor-pointer ${
+                  activeTab === 'parent'
+                    ? 'border-accent text-accent bg-accent/5 font-semibold'
+                    : 'border-border/50 text-muted hover:text-primary hover:border-accent/40 bg-background/30'
+                }`}
+              >
+                Main Details
+              </button>
+              {variants.map((v, i) => (
+                <div key={i} className="group relative flex items-center w-full">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(i)}
+                    className={`flex-1 text-left font-mono text-[12px] uppercase p-3 border transition-all rounded-l-sm cursor-pointer ${
+                      activeTab === i
+                        ? 'border-accent border-r-transparent text-accent bg-accent/5 font-semibold'
+                        : 'border-border/50 border-r-transparent text-muted hover:text-primary hover:border-accent/40 bg-background/30'
+                    }`}
+                  >
+                    <span className="truncate max-w-[140px] block">{v.name || `Variant ${i + 1}`}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeVariant(i);
+                      if (activeTab === i) setActiveTab('parent');
+                      else if (typeof activeTab === 'number' && activeTab > i) setActiveTab(activeTab - 1);
+                    }}
+                    className={`px-3 py-3 text-[13px] border border-l-transparent text-muted hover:text-red-400 bg-background/30 hover:bg-red-950/20 transition-all rounded-r-sm cursor-pointer ${
+                      activeTab === i ? 'border-accent' : 'border-border/50'
+                    }`}
+                    title="Delete variant"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newIdx = variants.length;
+                  addVariant();
+                  setActiveTab(newIdx);
+                }}
+                className="p-3 font-mono text-[11px] uppercase tracking-wider text-accent border border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 transition-all bg-background/20 text-center rounded-sm cursor-pointer font-medium"
+              >
+                + Add Variant
+              </button>
+            </div>
+          </div>
+
+          {/* Form Sections */}
+          <div className="space-y-3 pt-2">
+            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted font-semibold">
+              {isParentMode ? 'Product Sections' : 'Variant Overrides'}
+            </p>
+            <ul className="border-l border-border/50 pl-0 list-none space-y-3 font-mono text-[11px]">
+              {sections.map((sec) => (
+                <li key={sec.id} className="relative pl-4">
+                  <span className={`absolute left-[-3.5px] top-1.5 w-1.5 h-1.5 rounded-full ${
+                    sec.done 
+                      ? 'bg-emerald-500 shadow-sm shadow-emerald-500/30' 
+                      : 'bg-transparent border border-muted'
+                  }`}></span>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(sec.id, sec.id)}
+                    className={`text-left uppercase tracking-wider hover:text-accent transition-colors cursor-pointer bg-transparent border-0 p-0 font-mono text-[11px] ${
+                      sec.done ? 'text-secondary/90 font-medium' : 'text-muted'
+                    }`}
+                  >
+                    {sec.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Footer Link */}
+        <div className="pt-4 border-t border-border mt-auto">
+          {productFormState.submitForm && (
+            <button
+              type="button"
+              disabled={productFormState.saving}
+              onClick={productFormState.submitForm}
+              className={`w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase transition-all duration-200 rounded-sm cursor-pointer
+                ${(productFormState.mode === 'add' || productFormState.isDirty)
+                  ? 'bg-accent text-black hover:bg-accent-hover font-bold shadow-md shadow-accent/15'
+                  : 'border border-border text-muted bg-background/50 hover:text-primary hover:border-muted font-normal'
+                }
+                disabled:opacity-50`}
+            >
+              {productFormState.saving ? 'Saving...' : productFormState.mode === 'add' ? '✓ Save Product' : '✓ Update Product'}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const handleLogout = async () => {
     await logoutAction();
@@ -52,11 +568,15 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       `}>
         <div className="h-[64px] flex flex-col justify-center px-8 border-b border-border relative overflow-hidden bg-background">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-serif text-[18px] font-light tracking-[0.25em] text-accent-hover uppercase z-10">
-                James <span className="text-[#f5e9c8] italic font-light">&</span> Sons
-              </h1>
-              <p className="font-mono text-[8px] text-muted mt-1 uppercase tracking-[0.2em] z-10">Admin Portal</p>
+            <div className="flex items-center gap-3">
+              <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img h-14 w-auto z-10" />
+              <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img h-14 w-auto z-10" />
+              <div>
+                <h1 className="font-serif text-[16px] font-light tracking-[0.2em] text-accent-hover uppercase z-10 leading-none">
+                  James <span className="text-[#f5e9c8] italic font-light">&</span> Sons
+                </h1>
+                <p className="font-mono text-[8px] text-muted mt-1 uppercase tracking-[0.18em] z-10 leading-none">Admin Portal</p>
+              </div>
             </div>
             {onClose && (
               <button onClick={onClose} className="lg:hidden p-2 text-muted hover:text-accent">
@@ -66,30 +586,52 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
-          {links.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={onClose}
-              className="flex items-center justify-between px-4 py-3 text-muted hover:text-accent border border-transparent hover:border-border hover:bg-surface-muted transition-all duration-200 font-mono text-[10px] tracking-[0.12em] uppercase"
-            >
-              <span>{link.name}</span>
-              {link.badge !== null && link.badge !== undefined && link.badge > 0 && (
-                <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center">
-                  {link.badge}
-                </span>
-              )}
-            </Link>
-          ))}
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+          {productFormState ? (
+            renderProductFormOutline()
+          ) : (
+            <>
+              {renderLink('Dashboard', '/', null, '◈')}
+              {renderLink('Orders', '/orders', null, '📦')}
+              {renderLink('RFQ Inbox', '/rfqs', null, '✉')}
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Catalog</p>
+              {renderCatalogDropdown()}
+
+              {renderDropdown('Categories', 'collections', '/collections', categories.map(c => ({
+                name: `${c.name} (${c._count?.products || 0})`,
+                href: `/products?categoryId=${c.id}`,
+                active: currentCategoryId === c.id
+              })))}
+
+              {renderDropdown('Spaces', 'spaces', '/spaces', spaces.map(s => ({
+                name: `${s.name} (${s._count?.products || 0})`,
+                href: `/spaces?manage=${s.id}`,
+                active: currentManageId === s.id
+              })))}
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Business</p>
+              {renderLink('B2B Workspace', '/b2b', null, '🏢')}
+              {renderLink('Pages / CMS', '/pages', null, '📄')}
+              {renderLink('Blog', '/blog', null, '✎')}
+              {renderLink('Coupons', '/promotions', null, '🏷')}
+              {renderLink('Affiliates', '/affiliates', null, '👥')}
+              {renderLink('Tickets', '/tickets', openTickets, '🎫')}
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
+              {renderLink('Customers', '/customers', null, '👥')}
+              {renderLink('Admin Settings', '/account', null, '⚙')}
+            </>
+          )}
         </nav>
 
-        <div className="p-6 border-t border-border bg-background">
+        <div className="p-4 border-t border-border bg-background/50">
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-3 text-[10px] font-mono tracking-[0.12em] uppercase text-muted hover:text-red-500 transition-colors border border-transparent hover:border-border"
+            className="w-full px-4 py-2.5 text-[10px] font-mono tracking-[0.14em] uppercase text-[#C97E6A] bg-[#C97E6A]/10 border border-[#C97E6A]/30 hover:bg-[#C97E6A]/20 transition-all rounded-sm flex items-center justify-between cursor-pointer font-medium"
           >
-            Sign Out
+            <span>Sign Out</span>
+            <span aria-hidden="true">➔</span>
           </button>
         </div>
       </aside>

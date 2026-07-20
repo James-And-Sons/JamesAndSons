@@ -1,13 +1,37 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { formatPrice, Product } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
+import Image from 'next/image';
+import InquiryModal from './InquiryModal';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts }: { initialFilter?: string, initialProducts: Product[] }) {
-  const [activeFilters, setActiveFilters] = useState<string[]>(initialFilter && initialFilter !== 'All' ? [initialFilter] : []);
+  const router = useRouter();
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedQuoteProduct, setSelectedQuoteProduct] = useState<any | null>(null);
   const { addItem } = useCartStore();
+  const { uniqueCollections, uniqueStyles, uniqueMaterials, uniqueSpaces } = useMemo(() => ({
+    uniqueCollections: Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort(),
+    uniqueStyles: Array.from(new Set(initialProducts.flatMap(p => p.style || []))).filter(Boolean).sort(),
+    uniqueMaterials: Array.from(new Set(initialProducts.flatMap(p => p.materialAndFinish || []))).filter(Boolean).sort(),
+    uniqueSpaces: Array.from(new Set(initialProducts.flatMap(p => p.spaces || []))).filter(Boolean).sort(),
+  }), [initialProducts]);
+
+  useEffect(() => {
+    if (initialFilter && initialFilter !== 'All') {
+      const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+      const allPossibleFilters = [...uniqueCollections, ...uniqueSpaces, ...uniqueStyles, ...uniqueMaterials, 'LED Certified'];
+      const matchedFilter = allPossibleFilters.find(f => slugify(f) === initialFilter || f.toLowerCase() === initialFilter.toLowerCase());
+      if (matchedFilter) {
+        setActiveFilters([matchedFilter]);
+      } else if (initialFilter) {
+        setActiveFilters([initialFilter]);
+      }
+    }
+  }, [initialFilter, initialProducts]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -23,40 +47,192 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
   }, []);
 
   const toggleFilter = (filter: string) => {
-    setActiveFilters(prev => 
+    setActiveFilters(prev =>
       prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
     );
   };
 
-  const uniqueCollections = Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort();
-  const uniqueStyles = Array.from(new Set(initialProducts.flatMap(p => p.style || []))).filter(Boolean).sort();
-  const uniqueMaterials = Array.from(new Set(initialProducts.flatMap(p => p.materialAndFinish || []))).filter(Boolean).sort();
-  const uniqueSpaces = Array.from(new Set(initialProducts.flatMap(p => p.spaces || []))).filter(Boolean).sort();
-  
   const filters = ['All', ...uniqueCollections, ...uniqueSpaces, ...uniqueStyles, ...uniqueMaterials, 'LED Certified'];
-  
-  const products = activeFilters.length === 0 ? initialProducts : initialProducts.filter(p =>
-    activeFilters.some(filter => 
-      (p.collection === filter) ||
-      (p.spaces && p.spaces.includes(filter)) ||
-      (p.style && p.style.includes(filter)) ||
-      (p.materialAndFinish && p.materialAndFinish.includes(filter)) ||
-      (filter === 'LED Certified' && p.isLed)
-    )
-  );
+
+  const filteredProducts = useMemo(() => {
+    if (activeFilters.length === 0) return initialProducts;
+    return initialProducts.filter(p =>
+      activeFilters.some(filter => {
+        const lowerFilter = filter.toLowerCase();
+        const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+        const filterSlug = slugify(filter);
+
+        return (p.collection && (p.collection.toLowerCase() === lowerFilter || slugify(p.collection) === filterSlug)) ||
+               (p.spaces && p.spaces.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+               (p.style && p.style.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+               (p.materialAndFinish && p.materialAndFinish.some(m => m.toLowerCase() === lowerFilter || slugify(m) === filterSlug)) ||
+               (lowerFilter === 'led certified' && p.isLed);
+      })
+    );
+  }, [activeFilters, initialProducts]);
 
   return (
-    <section className="section" id="collections">
-      <div className="section-header">
+    <section className="section" id="collections" style={{ padding: 0 }}>
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        <div className="mobile-section-intro">
+          <div>
+            <div className="section-label" style={{ marginBottom: '2px' }}>{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
+            <div className="section-title" style={{ fontSize: '22px' }}>
+              {activeFilters.length === 0 ? <>All <em>Collections</em></> : 
+               activeFilters.length === 1 ? <>The <em>{activeFilters[0]}</em></> :
+               <>Filtered <em>Collections</em></>}
+            </div>
+          </div>
+          <div className="mobile-count-badge">{filteredProducts.length} products</div>
+        </div>
+
+        <div className="mobile-filter-bar" style={{ position: 'relative', margin: '16px 24px 0', zIndex: 50 }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button 
+              data-dropdown-area="true"
+              onClick={() => setShowFilters(!showFilters)}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', 
+                border: '1px solid var(--border)', background: showFilters ? 'var(--surface2)' : 'var(--surface)', 
+                color: 'var(--text)', cursor: 'pointer', fontFamily: 'var(--font-mono)', 
+                fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', transition: 'all 0.3s ease',
+                borderRadius: '16px'
+              }}
+            >
+              <i className="ti ti-adjustments-horizontal" style={{ fontSize: '14px' }}></i>
+              Filters {activeFilters.length > 0 && `(${activeFilters.length})`}
+            </button>
+            
+            {activeFilters.map(filter => (
+              <div key={filter} style={{ 
+                display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', 
+                background: 'rgba(201,168,76,0.1)', border: '0.5px solid rgba(201,168,76,0.3)', 
+                borderRadius: '16px', fontSize: '10px', fontFamily: 'var(--font-mono)', 
+                color: 'var(--gold-light)'
+              }}>
+                {filter}
+                <button 
+                  onClick={() => toggleFilter(filter)} 
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', fontSize: '12px' }}
+                >
+                  <i className="ti ti-x"></i>
+                </button>
+              </div>
+            ))}
+
+            {activeFilters.length > 0 && (
+               <button 
+                 onClick={() => { setActiveFilters([]); setShowFilters(false); }} 
+                 style={{ 
+                   background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', 
+                   fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', 
+                   letterSpacing: '0.1em', padding: '4px', marginLeft: '4px'
+                 }}
+               >
+                 Clear
+               </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div data-dropdown-area="true" style={{ 
+              position: 'absolute', top: '100%', left: 0, marginTop: '12px',
+              background: 'var(--surface)', border: '1px solid var(--border)', padding: '20px', width: '100%',
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+              borderRadius: '16px', maxHeight: '60vh', overflowY: 'auto'
+            }}>
+              {uniqueCollections.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uniqueCollections.map(c => (
+                      <button key={c} onClick={() => toggleFilter(c)} className={`filter-dropdown-btn ${activeFilters.includes(c) ? 'active' : ''}`}>{c}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {uniqueSpaces.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uniqueSpaces.map(s => (
+                      <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uniqueStyles.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uniqueStyles.map(s => (
+                      <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Features</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {uniqueMaterials.map(m => (
+                    <button key={m} onClick={() => toggleFilter(m)} className={`filter-dropdown-btn ${activeFilters.includes(m) ? 'active' : ''}`}>{m}</button>
+                  ))}
+                  <button onClick={() => toggleFilter('LED Certified')} className={`filter-dropdown-btn ${activeFilters.includes('LED Certified') ? 'active' : ''}`}>LED Certified</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mobile-products-grid" style={{ marginTop: '16px' }}>
+          {filteredProducts.map(product => (
+            <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
+              <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
+                {product.images && product.images[0] ? (
+                  <Image src={product.images[0]} alt={product.name} width={400} height={400} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28 }}></i>
+                )}
+              </div>
+              <div className="mobile-product-info" style={{ padding: '10px 12px 12px' }}>
+                <div className="mobile-product-cat">{product.collection}</div>
+                <div className="mobile-product-name" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</div>
+                <div className="mobile-product-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div className="mobile-price-block">
+                    <div className="mobile-product-price" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--gold-light)' }}>{formatPrice(product.d2cPrice)}</div>
+                    {product.mrp > product.d2cPrice && (
+                      <div className="mobile-price-old">{formatPrice(product.mrp)}</div>
+                    )}
+                  </div>
+                  <button className="mobile-add-btn" style={{ width: '30px', height: '30px', background: 'var(--gold)', borderRadius: '9px', color: '#0A0905' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>
+                    <i className="ti ti-plus" style={{ fontSize: '14px' }}></i>
+                  </button>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+        {filteredProducts.length > 0 && (
+          <div className="mobile-list-divider" style={{ height: '0.5px', background: 'var(--border)', margin: '20px 24px 0' }}></div>
+        )}
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block" style={{ padding: '0 40px' }}>
+        <div className="section-header">
         <div>
           <div className="section-label">{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
           <h2 className="section-title">
-            {activeFilters.length === 0 ? 'All Collections' : 
-             activeFilters.length === 1 ? `The ${activeFilters[0]} Collection` :
-             'Filtered Collections'}
+            {activeFilters.length === 0 ? 'All Collections' :
+              activeFilters.length === 1 ? `The ${activeFilters[0]} Collection` :
+                'Filtered Collections'}
           </h2>
         </div>
-        <Link href="/collections" className="link-all">View All {products.length} Products</Link>
+        <Link href="/collections" className="link-all">View All {filteredProducts.length} Products</Link>
       </div>
 
       <div className="filter-bar-container" style={{ position: 'relative', marginBottom: '32px' }}>
@@ -116,7 +292,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
           }}>
             {uniqueCollections.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {uniqueCollections.map(c => (
                     <button key={c} onClick={() => toggleFilter(c)} className={`filter-dropdown-btn ${activeFilters.includes(c) ? 'active' : ''}`}>{c}</button>
@@ -127,7 +303,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             
             {uniqueSpaces.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {uniqueSpaces.map(s => (
                     <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
@@ -138,7 +314,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
             {uniqueStyles.length > 0 && (
               <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {uniqueStyles.map(s => (
                     <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
@@ -148,7 +324,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
             )}
 
             <div>
-              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Materials & Features</h4>
+              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Materials & Features</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {uniqueMaterials.map(m => (
                   <button key={m} onClick={() => toggleFilter(m)} className={`filter-dropdown-btn ${activeFilters.includes(m) ? 'active' : ''}`}>{m}</button>
@@ -161,7 +337,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
       </div>
 
       <div className="product-grid">
-        {products.map(product => (
+        {filteredProducts.map(product => (
           <Link key={product.id} href={`/products/${product.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
             {product.badge && (
               <div className={`product-badge ${product.badge === 'new' ? 'badge-new' : product.badge === 'bis' ? 'badge-bis' : product.badge === 'b2b' ? 'badge-sale' : 'badge-sale'}`}>
@@ -171,24 +347,31 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
             <div className="product-actions" style={{ zIndex: 2 }}>
               <button className="prod-action-btn" title="Add to Cart" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>+</button>
-              <Link href={`/rfq?product=${product.slug}`} className="prod-action-btn" title="Request Quote" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>Q</Link>
+              <button 
+                className="prod-action-btn" 
+                title="Request Quote" 
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedQuoteProduct(product); }}
+              >
+                Q
+              </button>
             </div>
 
             <div className="product-img" style={{ position: 'relative' }}>
               <div className="product-img-bg" />
-              
+
               {/* Placeholder SVG (always in background if there's an image, or as main if not) */}
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 0 }}>
                 <svg className="prod-chandelier-svg" width="120" height="150" viewBox="0 0 100 120" stroke="#C4A05A" fill="none" style={{ opacity: 0.3 }}>
-                  <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3"/>
-                  <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7"/>
-                  <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none"/>
+                  <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
+                  <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
+                  <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none" />
                 </svg>
               </div>
 
               {product.images && product.images.length > 0 && (
-                <img 
-                  src={product.images[0]} 
+                <img
+                  src={product.images[0]}
                   alt={product.name}
                   className="prod-actual-img"
                   style={{
@@ -198,15 +381,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                     position: 'absolute',
                     inset: 0,
                     zIndex: 1,
-                    transition: 'opacity 0.5s ease',
-                    opacity: 0
                   }}
-                  onLoad={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    if (target) target.style.opacity = '1';
-                  }}
-                  // Start at opacity 0 to show the placeholder
-                  // Note: In some browsers/states this might flicker, but it's the standard way
                 />
               )}
             </div>
@@ -231,6 +406,21 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
           </Link>
         ))}
       </div>
+      </div>
+
+      {selectedQuoteProduct && (
+        <InquiryModal
+          isOpen={!!selectedQuoteProduct}
+          onClose={() => setSelectedQuoteProduct(null)}
+          product={{
+            id: selectedQuoteProduct.id,
+            name: selectedQuoteProduct.name,
+            sku: selectedQuoteProduct.sku,
+            d2cPrice: selectedQuoteProduct.d2cPrice,
+            image: selectedQuoteProduct.images?.[0]
+          }}
+        />
+      )}
     </section>
   );
 }

@@ -13,6 +13,24 @@ enum Role {
   B2B_APPROVER
 }
 
+enum CouponType {
+  PERCENTAGE    // e.g. 20% off
+  FIXED_AMOUNT  // e.g. ₹500 off
+  FREE_SHIPPING // waives shipping cost
+}
+
+enum CouponStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  EXHAUSTED     // usageLimit reached
+}
+
+enum AffiliateStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -54,16 +72,18 @@ model User {
   role      Role     @default(CUSTOMER)
   phone     String?
   companyId String?
+  lastPincode String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   company        Company?       @relation(fields: [companyId], references: [id])
   orders         Order[]
   rfqs           RFQ[]
   tickets        Ticket[]
+  addresses      UserAddress[]
   ticketMessages TicketMessage[]
-
+ 
   blogPosts   BlogPost[]
 }
 
@@ -77,19 +97,26 @@ model Company {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
+ 
   parent          Company?  @relation("CompanyHierarchy", fields: [parentId], references: [id])
   subsidiaries    Company[] @relation("CompanyHierarchy")
   users           User[]
 }
 
 model Category {
-  id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
-  parentId    String?
+  id                  String     @id @default(uuid())
+  name                String
+  slug                String     @unique
+  description         String?
+  parentId            String?
   
+  // Compliance and tax details managed centrally
+  technicalSubheading String?
+  hsnCode             String?
+  gstRate             Float?     @default(18.0)
+  bisStandard         String?
+  bisStatus           String?
+
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
   products    Product[]
@@ -125,6 +152,7 @@ model Product {
   
   // Media
   images           String[]
+  whiteBackgroundImages String[]
   glbModelUrl      String?
   
   // Inventory
@@ -139,6 +167,34 @@ model Product {
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+ 
+  // Actual Product Dimensions (for display/filtering)
+  actualHeight     Float?   // in inches
+  actualWidth      Float?   // in inches
+  actualDepth      Float?   // in inches
+  dimensionUnit    String   @default("INCH")
+
+  // Additional listing fields for platforms (Amazon, Flipkart, Indiamart, Meta, Pinterest)
+  power                 String?
+  voltage               String?
+  googleProductCategory String?
+  color                 String?
+  size                  String?
+  material              String?
+  countryOfOrigin       String?          @default("India")
+  brand                 String?          @default("James and Sons")
+  warranty              String?
+  bulletPoints          String[]
+ 
+  // Amazon SEO Overrides
+  amazonFixtureForm        String?
+  amazonMountingType       String?
+  amazonLightingMethod     String?
+  amazonWaterResistance    String?
+  amazonTheme              String?
+  amazonSpecialFeatures    String[]
+  amazonIncludedComponents String?
+  amazonKeywords           String?
 
   spaces           Space[]
   variants         ProductVariant[]
@@ -156,32 +212,61 @@ model ProductVariant {
   b2bPrice      Float?
   stockQuantity Int      @default(0)
   images        String[]
+  whiteBackgroundImages String[]
   weight        Float?   // in kg
   length        Float?   // in cm
   breadth       Float?   // in cm
   height        Float?   // in cm
   
+  actualHeight  Float?   // in inches
+  actualWidth   Float?   // in inches
+  actualDepth   Float?   // in inches
+  dimensionUnit String   @default("INCH")
+
+  // Additional listing and override fields
+  power                 String?
+  voltage               String?
+  googleProductCategory String?
+  color                 String?
+  size                  String?
+  material              String?
+  countryOfOrigin       String?
+  brand                 String?
+  warranty              String?
+  bulletPoints          String[]
+  materialAndFinish     String[]
+  bulbType              String[]
+  style                 String[]
+  specs                 Json?
+ 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
+ 
   product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Order {
   id             String      @id @default(uuid())
   orderNumber    String      @unique
+  invoiceNumber  String?     @unique
   userId         String
   status         OrderStatus @default(PENDING)
   
   totalAmount    Float
   taxAmount      Float
   shippingAmount Float
+  discountAmount Float       @default(0)   // Actual INR amount discounted
+  couponCode     String?                   // Denormalized for quick display
+  affiliateCode  String?                   // Denormalized for quick display
   
   shippingAddress String
+  shippingPhone   String?
   shippingCity    String?
   shippingState   String?
   shippingPincode String?
   billingAddress  String
+  gstin           String?
+  companyName     String?
   
   trackingNumber String?
   awbNumber      String?     // For logistics (Shiprocket/Delhivery)
@@ -193,13 +278,23 @@ model Order {
   
   fulfillmentError  String?  // Logs errors from Shiprocket/Logistics
   
+  b2bFlag             Boolean   @default(false)
+  zohoPricebookId     String?
+  zohoSalesOrderId    String?
+  onsitegoCertificateUrl String?
+  ucTicketId          String?
+  ucInstallationStatus String    @default("NONE")
+  ucInstallationSlot   String?
+
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-
-  user           User          @relation(fields: [userId], references: [id])
-  items          OrderItem[]
-  returnRequests ReturnRequest[]
-  tickets        Ticket[]
+ 
+  user                User                 @relation(fields: [userId], references: [id])
+  items               OrderItem[]
+  returnRequests      ReturnRequest[]
+  tickets             Ticket[]
+  couponUsage         CouponUsage?
+  affiliateConversion AffiliateConversion?
 }
 
 model OrderItem {
@@ -210,6 +305,11 @@ model OrderItem {
   quantity  Int
   unitPrice Float
   total     Float
+  
+  // Onsitego Warranty Selection
+  warrantyPlanSku  String?
+  warrantyPlanName String?
+  warrantyPrice    Float?
   
   order     Order    @relation(fields: [orderId], references: [id])
   product   Product  @relation(fields: [productId], references: [id])
@@ -224,32 +324,41 @@ model ReturnRequest {
   
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-
+ 
   order     Order        @relation(fields: [orderId], references: [id])
 }
 
 model RFQ {
-  id          String    @id @default(uuid())
-  rfqNumber   String    @unique
-  userId      String
-  status      RFQStatus @default(DRAFT)
+  id             String    @id @default(uuid())
+  rfqNumber      String    @unique
+  userId         String
+  status         RFQStatus @default(DRAFT)
   
-  notes       String?
-  validUntil  DateTime?
+  channel        String?   @default("STOREFRONT_RFQ")
+  projectName    String?
+  timeline       String?
+  notes          String?
+  validUntil     DateTime?
+  discountAmount Float?    @default(0)
+  taxAmount      Float?    @default(0)
+  shippingAmount Float?    @default(0)
+  totalAmount    Float?
   
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+ 
   user        User      @relation(fields: [userId], references: [id])
   items       RFQItem[]
 }
 
 model RFQItem {
-  id          String   @id @default(uuid())
-  rfqId       String
-  productId   String
-  quantity    Int
-  targetPrice Float?   // Optional target price requested by buyer
+  id            String   @id @default(uuid())
+  rfqId         String
+  productId     String
+  quantity      Int
+  targetPrice   Float?   // Optional target price requested by buyer
+  approvedPrice Float?   // Approved unit price offered by admin
+  customSpecs   Json?    // Finish, drop height, voltage requirements
   
   rfq         RFQ      @relation(fields: [rfqId], references: [id])
   product     Product  @relation(fields: [productId], references: [id])
@@ -263,14 +372,17 @@ model Ticket {
   subject      String
   description  String
   status       TicketStatus @default(OPEN)
+  category     String       @default("GENERAL")
+  attachments  String[]
+  orderItems   Json?
+  zohoId       String?      @unique
   
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-
+ 
   user         User         @relation(fields: [userId], references: [id])
   order        Order?       @relation(fields: [orderId], references: [id])
   ticketMessages TicketMessage[]
-
 }
 
 model TicketMessage {
@@ -279,9 +391,11 @@ model TicketMessage {
   authorId  String
   message   String
   isAdmin   Boolean  @default(false)
+  attachments String[]
+  zohoId    String?  @unique
   
   createdAt DateTime @default(now())
-
+ 
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id])
 }
@@ -297,6 +411,7 @@ model Page {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
 model BlogPost {
   id          Int      @id @default(autoincrement())
   slug        String   @unique
@@ -320,9 +435,152 @@ model Space {
   slug        String   @unique
   description String?
   image       String?
-
+ 
   products    Product[]
-
+ 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model InvoiceCounter {
+  id        Int      @id @default(1)
+  year      String   // e.g. "2026-27"
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model AbandonedCart {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  phone       String?
+  cartData    Json     // Items and amounts
+  step        Int      @default(1)
+  lastSeen    DateTime @default(now())
+  recovered   Boolean  @default(false)
+  nudgeSent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// PROMOTIONS ENGINE
+// ─────────────────────────────────────────────
+ 
+model Coupon {
+  id                String       @id @default(uuid())
+  code              String       @unique  // Human-readable e.g. "LUXE20"
+  description       String?               // Internal admin note
+  type              CouponType   @default(PERCENTAGE)
+  value             Float                 // 20 (percent) or 500 (INR)
+  status            CouponStatus @default(ACTIVE)
+ 
+  // Constraints
+  minOrderAmount    Float?                // Minimum cart subtotal to apply
+  maxDiscountCap    Float?                // Max discount INR (for % coupons)
+  usageLimit        Int?                  // Total uses across all users
+  usageLimitPerUser Int?    @default(1)   // Times one user can use this code
+  usedCount         Int     @default(0)
+ 
+  // Validity window
+  startsAt          DateTime?             // Optional future start date
+  expiresAt         DateTime?
+ 
+  // Attribution — link to external partner or affiliate
+  source            String?               // "internal" | "pauket" | "coupondunia"
+  affiliateId       String?
+  affiliate         Affiliate?   @relation(fields: [affiliateId], references: [id])
+ 
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+ 
+  usages            CouponUsage[]
+}
+ 
+model CouponUsage {
+  id             String   @id @default(uuid())
+  couponId       String
+  userId         String?           // null for guest checkouts
+  orderId        String   @unique
+  discountAmount Float             // Actual INR amount discounted on this order
+  createdAt      DateTime @default(now())
+ 
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  order          Order    @relation(fields: [orderId], references: [id])
+}
+ 
+model Affiliate {
+  id              String          @id @default(uuid())
+  name            String
+  email           String          @unique
+  phone           String?
+  affiliateCode   String          @unique  // URL param: ?ref=DESIGNERSTUDIO
+  commissionRate  Float           @default(5.0)  // % of order subtotal
+  status          AffiliateStatus @default(ACTIVE)
+  notes           String?
+ 
+  // Running lifetime totals (updated on each conversion)
+  totalRevenue    Float           @default(0)
+  totalCommission Float           @default(0)
+ 
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+ 
+  coupons         Coupon[]
+  conversions     AffiliateConversion[]
+}
+ 
+model AffiliateConversion {
+  id               String    @id @default(uuid())
+  affiliateId      String
+  orderId          String    @unique
+  orderRevenue     Float               // Subtotal of the attributed order
+  commissionAmount Float               // commission earned on this order
+  isPaid           Boolean   @default(false)
+  paidAt           DateTime?
+ 
+  createdAt        DateTime  @default(now())
+ 
+  affiliate        Affiliate @relation(fields: [affiliateId], references: [id])
+  order            Order     @relation(fields: [orderId], references: [id])
+}
+ 
+model UserAddress {
+  id              String   @id @default(uuid())
+  userId          String
+  name            String   // e.g. "Home", "Office"
+  street          String
+  city            String
+  state           String
+  pincode         String
+  phone           String?
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+ 
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model OnsitegoMapping {
+  id              String   @id @default(uuid())
+  minPrice        Float
+  maxPrice        Float
+  onsitegoPlanSku String   @unique
+  planName        String
+  coverageYears   Int      @default(1)
+  planPriceD2c    Float
+  createdAt       DateTime @default(now())
+
+  @@map("onsitego_mappings")
+}
+
+model UcServiceMapping {
+  id                  String   @id @default(uuid())
+  sku                 String   @unique
+  ucServiceId         String
+  technicianCount     Int      @default(1)
+  weightCategory      String
+  estimatedSetupHours Float    @default(2.0)
+  createdAt           DateTime @default(now())
+
+  @@map("uc_service_mappings")
 }

@@ -1,7 +1,8 @@
 import { prisma } from './prisma';
 import { Product } from './utils';
+import { unstable_cache } from 'next/cache';
 
-export async function getProducts(filter?: string): Promise<Product[]> {
+async function getProductsRaw(filter?: string): Promise<Product[]> {
   try {
     const dbProducts = await prisma.product.findMany({
       include: {
@@ -14,7 +15,7 @@ export async function getProducts(filter?: string): Promise<Product[]> {
       ...p,
       collection: p.category?.name || 'Uncategorized',
       longDescription: p.description,
-      finishes: ['Gold', 'Silver'], // Mock data for finishes (can be moved to DB later)
+      finishes: ['Gold', 'Silver'], 
       spaces: p.spaces.map(s => s.name),
       specs: (p.specs as any) || [],
       images: p.images,
@@ -32,15 +33,21 @@ export async function getProducts(filter?: string): Promise<Product[]> {
     );
   } catch (error) {
     console.error('Error fetching products:', error);
-    return [];
+    throw error;
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+export const getProducts = (filter?: string) => unstable_cache(
+  async () => getProductsRaw(filter),
+  ['products-list-v3', filter || 'all'],
+  { revalidate: 10, tags: ['products'] }
+)();
+
+async function getProductBySlugRaw(slug: string): Promise<Product | undefined> {
   try {
     const p = await prisma.product.findUnique({
       where: { slug },
-      include: { category: true, spaces: true }
+      include: { category: true, spaces: true, variants: true }
     });
     
     if (!p) return undefined;
@@ -56,11 +63,17 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     } as Product;
   } catch (error) {
     console.error(`Error fetching product with slug ${slug}:`, error);
-    return undefined;
+    throw error;
   }
 }
 
-export async function getSpaces() {
+export const getProductBySlug = (slug: string) => unstable_cache(
+  async () => getProductBySlugRaw(slug),
+  ['product-detail-v3', slug],
+  { revalidate: 10, tags: ['products'] }
+)();
+
+async function getSpacesRaw() {
   try {
     const spaces = await prisma.space.findMany({
       include: {
@@ -73,6 +86,13 @@ export async function getSpaces() {
     return spaces;
   } catch (error) {
     console.error('Error fetching spaces:', error);
-    return [];
+    throw error;
   }
 }
+
+export const getSpaces = unstable_cache(
+  async () => getSpacesRaw(),
+  ['spaces-list-v3'],
+  { revalidate: 10, tags: ['spaces'] }
+);
+

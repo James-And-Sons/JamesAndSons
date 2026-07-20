@@ -19,7 +19,7 @@ const createPrismaClient = () => {
     connectionString: url,
     max: 2, // Optimized for serverless
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 20000,
     ssl: {
       rejectUnauthorized: false
     }

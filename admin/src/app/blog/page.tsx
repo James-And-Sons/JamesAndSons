@@ -11,17 +11,17 @@ export default async function BlogAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-surface p-6 border border-border">
+      <div className="flex justify-between items-center premium-card p-6">
         <div>
           <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Blog Posts</h1>
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted mt-2">{posts.length} articles published</p>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">{posts.length} articles published</p>
         </div>
-        <Link href="/blog/new" className="btn-primary">+ New Post</Link>
+        <Link href="/blog/new" className="btn-primary font-mono text-[10px] uppercase tracking-[0.12em] px-8 py-3 shadow-lg shadow-accent/20">+ New Post</Link>
       </div>
 
-      <div className="table-responsive">
+      <div className="premium-card overflow-hidden">
         <table className="w-full text-left">
-          <thead className="bg-[#16161a] border-b border-border">
+          <thead className="border-b border-border bg-surface-muted/30">
             <tr>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Title</th>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Author</th>
@@ -30,23 +30,27 @@ export default async function BlogAdminPage() {
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/50">
             {posts.map(post => (
-              <tr key={post.id} className="border-b border-border hover:bg-[#1a1a1f]">
+              <tr key={post.id} className="hover:bg-surface-muted/50 transition-colors">
                 <td className="px-6 py-5">
-                  <div className="font-body text-[14px] text-primary font-medium">{post.title}</div>
+                  <div className="font-serif text-[17px] text-primary">{post.title}</div>
                   <div className="font-mono text-[11px] text-muted mt-1">/{post.slug}</div>
                 </td>
                 <td className="px-6 py-5 font-body text-[13px] text-secondary">{post.author.firstName}</td>
                 <td className="px-6 py-5">
-                  <span className={`font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 border ${post.isDraft ? 'text-muted border-border' : 'text-accent border-accent/30'}`}>
+                  <span className={`font-mono text-[9px] uppercase tracking-wider px-3 py-1 rounded-full border ${
+                    post.isDraft 
+                      ? 'text-amber-500 border-amber-500/30 bg-amber-500/10' 
+                      : 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10'
+                  }`}>
                     {post.isDraft ? 'Draft' : 'Published'}
                   </span>
                 </td>
                 <td className="px-6 py-5 font-mono text-[12px] text-muted">{new Date(post.createdAt).toLocaleDateString()}</td>
-                <td className="px-6 py-5 text-right flex gap-4 justify-end">
-                   <Link href={`/blog/${post.id}/edit`} className="font-mono text-[10px] text-accent hover:underline lowercase">Edit</Link>
-                   <DeleteBlogButton id={post.id} />
+                <td className="px-6 py-5 text-right flex gap-4 justify-end items-center">
+                  <Link href={`/blog/${post.id}/edit`} className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted hover:text-white transition-colors">Edit</Link>
+                  <DeleteBlogButton id={post.id} />
                 </td>
               </tr>
             ))}

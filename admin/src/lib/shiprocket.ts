@@ -170,7 +170,13 @@ export async function syncProductToShiprocket(product: any) {
 
       const data = await res.json();
       if (!res.ok) {
-        console.error(`Shiprocket Sync Failed for SKU ${item.sku}:`, data);
+        const isSkuTaken = data.errors?.sku?.some((msg: string) => msg.includes('already been taken')) || 
+                           (typeof data.message === 'string' && data.message.includes('already been taken'));
+        if (isSkuTaken) {
+          console.log(`[Shiprocket] SKU ${item.sku} is already registered in Shiprocket catalogue. Skipping sync.`);
+        } else {
+          console.error(`Shiprocket Sync Failed for SKU ${item.sku}:`, data);
+        }
       }
       results.push({ sku: item.sku, success: res.ok, data });
     } catch (err) {
@@ -271,4 +277,97 @@ export async function requestPickup(shipmentIds: number[]) {
     return null;
   }
 }
+
+/**
+ * Assign an AWB (Tracking Number) to a shipment
+ */
+export async function assignAWB(shipmentId: number) {
+  const token = await getShiprocketToken();
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/assign/awb', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ shipment_id: shipmentId }),
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (data.status === 200 || data.awb_assign_status === 1) {
+      return {
+        success: true,
+        awb_code: data.response.data.awb_code,
+        courier_name: data.response.data.courier_name
+      };
+    } else {
+      console.error('AWB Assignment Failed:', data);
+      return { success: false, message: data.message || 'AWB Assignment failed' };
+    }
+  } catch (err) {
+    console.error('assignAWB Error:', err);
+    return { success: false, message: 'API Call Failed' };
+  }
+}
+
+/**
+ * Cancels a Shiprocket Order by its sales channel order ID (storefront orderNumber)
+ */
+export async function cancelShiprocketOrder(channelOrderId: string) {
+  const token = await getShiprocketToken();
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    // 1. Fetch Shiprocket order details using channel_order_id to get the Shiprocket internal order ID
+    console.log(`[Shiprocket] Searching for order ${channelOrderId} to cancel...`);
+    const getRes = await fetch(`https://apiv2.shiprocket.in/v1/external/orders?channel_order_id=${channelOrderId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      cache: 'no-store'
+    });
+
+    if (!getRes.ok) {
+      const errorData = await getRes.json().catch(() => ({}));
+      console.error('Failed to get Shiprocket order details:', errorData);
+      return { success: false, message: 'Failed to retrieve order details from Shiprocket' };
+    }
+
+    const getData = await getRes.json();
+    const orderData = getData.data?.find((o: any) => o.order_id === channelOrderId);
+    if (!orderData || !orderData.id) {
+      console.warn(`[Shiprocket] Order ${channelOrderId} not found on Shiprocket. Skipping cancellation.`);
+      return { success: true, message: 'Order not found on Shiprocket, nothing to cancel.' };
+    }
+
+    // 2. Call Shiprocket cancel API using the retrieved internal ID
+    console.log(`[Shiprocket] Sending cancel request for Shiprocket Order ID ${orderData.id}...`);
+    const cancelRes = await fetch('https://apiv2.shiprocket.in/v1/external/orders/cancel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ ids: [orderData.id] }),
+      cache: 'no-store'
+    });
+
+    const cancelData = await cancelRes.json();
+    if (cancelRes.ok && (cancelData.status === 200 || cancelData.status_code === 200 || cancelData.success)) {
+      console.log(`[Shiprocket] Order ${channelOrderId} (ID: ${orderData.id}) cancelled successfully.`);
+      return { success: true };
+    } else {
+      console.error('Failed to cancel Shiprocket order:', cancelData);
+      return { success: false, message: cancelData.message || 'Shiprocket order cancellation failed' };
+    }
+  } catch (err: any) {
+    console.error('cancelShiprocketOrder Error:', err);
+    return { success: false, message: err.message || 'API Call Failed' };
+  }
+}
+
 

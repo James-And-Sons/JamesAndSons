@@ -13,6 +13,8 @@ function SearchInputInner({
   const [query, setQuery] = useState(searchParams.get('q') || '');
 
   useEffect(() => {
+    if (query === (searchParams.get('q') || '')) return;
+
     const delayDebounceFn = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
       if (query) {
@@ -20,11 +22,11 @@ function SearchInputInner({
       } else {
         params.delete('q');
       }
-      router.push(`?${params.toString()}`);
+      router.push(`?${params.toString()}`, { scroll: false });
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query, router, searchParams]);
+  }, [query, router]);
 
   return (
     <input 

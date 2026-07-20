@@ -13,11 +13,15 @@ interface BlogPostPageProps {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-
-  const post = await prisma.blogPost.findUnique({
-    where: { slug },
-    include: { author: true }
-  });
+  let post: any = null;
+  try {
+    post = await prisma.blogPost.findUnique({
+      where: { slug },
+      include: { author: true }
+    });
+  } catch (error) {
+    console.error(`Error fetching blog post ${slug}:`, error);
+  }
 
   if (!post || post.isDraft) {
     notFound();
@@ -26,8 +30,65 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   return (
     <>
       <Navigation />
-      <main style={{ paddingTop: '80px', minHeight: '100vh', background: 'var(--obsidian)' }}>
-        <article style={{ maxWidth: '800px', margin: '0 auto', padding: '60px 20px' }}>
+      <main style={{ minHeight: '100vh', background: 'var(--obsidian)' }}>
+        {/* Mobile Layout */}
+        <article className="md:hidden" style={{ paddingBottom: '60px' }}>
+          <div className="mobile-section-intro" style={{ paddingBottom: '0' }}>
+            <div style={{ width: '100%' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <Link href="/blog" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--gold)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  <i className="ti ti-arrow-left"></i> Archive
+                </Link>
+              </div>
+              <div className="section-label" style={{ marginBottom: '4px' }}>
+                {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+              <h1 className="section-title" style={{ fontSize: '24px', lineHeight: 1.2 }}>
+                {post.title}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid var(--border)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--gold)' }}>{post.author.firstName[0]}</span>
+                </div>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>{post.author.firstName} {post.author.lastName}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ margin: '24px 24px 32px', aspectRatio: '16/9', background: 'var(--surface2)', borderRadius: '16px', border: '0.5px solid var(--border)', overflow: 'hidden' }}>
+             <div style={{ width: '100%', height: '100%', background: 'linear-gradient(45deg, var(--void), var(--surface))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '48px', color: 'var(--border)', opacity: 0.3 }}>JS</span>
+             </div>
+          </div>
+
+          <div 
+            style={{ 
+              padding: '0 24px',
+              fontFamily: 'var(--font-body)', 
+              fontSize: '15px', 
+              color: 'var(--cream)', 
+              lineHeight: 1.7,
+              opacity: 0.9,
+              whiteSpace: 'pre-wrap'
+            }}
+          >
+            {post.content}
+          </div>
+
+          <footer style={{ marginTop: '60px', padding: '40px 24px 0', borderTop: '0.5px solid var(--border)' }}>
+             <div style={{ textAlign: 'center' }}>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--cream)', fontStyle: 'italic', marginBottom: '24px', lineHeight: 1.4 }}>
+                  "A curation of brilliance for grand spaces."
+                </p>
+                <Link href="/collections" className="btn-primary" style={{ display: 'block', textDecoration: 'none', padding: '16px', borderRadius: '12px' }}>
+                  Explore Collections
+                </Link>
+             </div>
+          </footer>
+        </article>
+
+        {/* Desktop Layout */}
+        <article className="hidden md:block" style={{ maxWidth: '800px', margin: '0 auto', padding: '100px 20px 60px' }}>
           <div style={{ marginBottom: '40px' }}>
             <Link href="/blog" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               ← Return to Archive

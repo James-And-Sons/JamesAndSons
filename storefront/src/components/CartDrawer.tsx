@@ -1,12 +1,17 @@
 'use client';
+
 import { useCartStore } from '@/store/cart';
-import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useWishlistStore } from '@/store/wishlist';
+import CouponInput from '@/components/CouponInput';
+import Image from 'next/image';
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, total, itemCount } = useCartStore();
+  const { items, isOpen, closeCart, removeItem, updateQty, total, itemCount, appliedCoupon, discountedTotal } = useCartStore();
+  const { toggleItem } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -20,108 +25,128 @@ export default function CartDrawer() {
     return () => window.removeEventListener('keydown', handler);
   }, [closeCart]);
 
-  // Prevent body scroll when open; CRITICAL: also prevent horizontal overflow
+  // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
+      document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => { 
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = ''; 
+    };
   }, [isOpen]);
-
-  const currentItems = mounted ? items : [];
-  const currentCount = mounted ? itemCount() : 0;
-  const cartTotal = mounted ? total() : 0;
 
   if (!mounted) return null;
 
+  const currentItems = items;
+  const currentCount = itemCount();
+  const cartTotal = total();
+  const finalSubtotal = discountedTotal();
+  const gst = finalSubtotal * 0.18;
+  const grandTotal = finalSubtotal + gst;
+
   return createPortal(
     <>
-      {/* Backdrop - only rendered when open */}
+      {/* Backdrop */}
       {isOpen && (
         <div
           onClick={closeCart}
           style={{
             position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.6)',
+            background: 'rgba(0,0,0,0.8)',
             zIndex: 9998,
             backdropFilter: 'blur(4px)',
+            transition: 'opacity 0.3s ease',
           }}
         />
       )}
 
-      {/* Drawer panel - visibility-toggled instead of translateX to avoid overflow issues */}
+      {/* Drawer panel */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Shopping cart"
+        aria-label="Shopping bag"
         style={{
           position: 'fixed',
           top: 0, right: 0, bottom: 0,
           width: '400px',
-          maxWidth: '92vw',
+          maxWidth: '100vw',
           background: 'var(--obsidian)',
           borderLeft: '1px solid var(--border)',
           zIndex: 10000,
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '-10px 0 40px rgba(0,0,0,0.6)',
-          // Using visibility + opacity instead of translateX to avoid horizontal scrollbar
           visibility: isOpen ? 'visible' : 'hidden',
           opacity: isOpen ? 1 : 0,
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, visibility 0.3s ease',
+          transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
           pointerEvents: isOpen ? 'auto' : 'none',
+          overscrollBehavior: 'contain',
         }}
+
       >
         {/* Header */}
-        <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 300, color: 'var(--cream)', margin: 0 }}>
-            Mini Bag {currentCount > 0 && <span style={{ color: 'var(--gold)' }}>({currentCount})</span>}
+        <div style={{ padding: '32px 32px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 300, color: 'var(--cream)', margin: 0 }}>
+            Bag <span style={{ fontSize: '14px', color: 'var(--gold)', marginLeft: '8px', opacity: 0.8 }}>({currentCount})</span>
           </h2>
           <button
             onClick={closeCart}
             aria-label="Close cart"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px', transition: 'color 0.2s', padding: '8px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            style={{ 
+              background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '8px'
+            }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <i className="ti ti-x" style={{ fontSize: '18px' }}></i>
           </button>
         </div>
 
-        {/* Items */}
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '24px 28px', background: 'var(--void)' }}>
+        {/* Scrollable Items Area */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 32px', background: 'var(--obsidian)' }}>
           {currentItems.length === 0 ? (
-            <div style={{ textAlign: 'center', paddingTop: '60px' }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: 'var(--text-muted)', marginBottom: '8px' }}>Your bag is empty</div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-dim)', marginBottom: '24px', lineHeight: 1.6 }}>Start exploring our curated collection.</p>
-              <Link href="/collections" onClick={closeCart} className="btn-outline" style={{ display: 'inline-block', padding: '10px 28px', textDecoration: 'none' }}>Explore</Link>
+            <div style={{ textAlign: 'center', paddingTop: '100px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '24px' }}>Your bag is currently empty.</p>
+              <button onClick={closeCart} style={{ background: 'none', border: 'none', color: 'var(--gold)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', borderBottom: '1px solid var(--gold)' }}>Continue Curating</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {currentItems.map((item, i) => (
-                <div key={`${item.product.id}-${i}`} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
-                  <Link href={`/products/${item.product.slug}`} onClick={closeCart} style={{ width: '64px', height: '80px', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, textDecoration: 'none' }}>
-                    <svg width="32" height="40" viewBox="0 0 100 120" stroke="var(--gold)" fill="none" style={{ opacity: 0.6 }}>
-                      <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
-                      <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
-                      <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
-                    </svg>
-                  </Link>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <Link href={`/products/${item.product.slug}`} onClick={closeCart} style={{ textDecoration: 'none', color: 'var(--cream)', flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', fontWeight: 300, lineHeight: 1.3, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.name}</div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Qty: {item.quantity}</div>
-                      </Link>
-                      <button onClick={() => removeItem(item.product.id)} aria-label="Remove item" style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '16px', padding: '4px', transition: 'color 0.2s', flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}>✕</button>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {currentItems.map((item) => (
+                <div key={`${item.product.id}-${item.warranty?.planSku || 'none'}`} style={{ borderBottom: '1px solid var(--border)', padding: '24px 0', display: 'flex', gap: '20px', position: 'relative' }}>
+                  <div style={{ width: '70px', height: '90px', background: 'var(--void)', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+                    <Image src={item.product.images?.[0] || '/images/brand-placeholder.png'} alt={item.product.name} width={70} height={90} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--cream)', margin: '0 0 2px', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.product.name}</h3>
+                      <div style={{ fontSize: '13px', color: 'var(--gold-light)', opacity: 0.9 }}>
+                        {formatPrice(item.product.d2cPrice)}
+                      </div>
+                      {item.warranty && (
+                        <div style={{ fontSize: '11px', color: 'var(--gold)', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <i className="ti ti-shield-check" style={{ fontSize: '13px' }}></i>
+                          <span>{item.warranty.planName} (+{formatPrice(item.warranty.price)})</span>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--gold-light)', marginTop: '10px' }}>
-                      {formatPrice(item.product.d2cPrice * item.quantity)}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                          <button onClick={() => updateQty(item.product.id, item.quantity - 1, item.warranty?.planSku)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>−</button>
+                          <span style={{ fontSize: '11px', color: 'var(--cream)', width: '16px', textAlign: 'center' }}>{item.quantity}</span>
+                          <button onClick={() => updateQty(item.product.id, item.quantity + 1, item.warranty?.planSku)} style={{ padding: '2px 8px', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}>+</button>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => { toggleItem(item.product); removeItem(item.product.id, item.warranty?.planSku); }}
+                        style={{ background: 'none', border: 'none', fontSize: '10px', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <i className="ti ti-heart"></i> Move to wishlist
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -130,19 +155,63 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* Footer CTA */}
+        {/* Footer */}
         {currentItems.length > 0 && (
-          <div style={{ borderTop: '1px solid var(--border)', padding: '20px 28px', background: 'var(--obsidian)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Subtotal</span>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)' }}>{formatPrice(cartTotal)}</span>
+          <div style={{ borderTop: '1px solid var(--border)', padding: '32px' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <CouponInput />
             </div>
-            <Link href="/cart" onClick={closeCart} className="btn-primary" style={{ display: 'block', textAlign: 'center', padding: '14px', textDecoration: 'none', letterSpacing: '0.15em', width: '100%', marginBottom: '10px' }}>
-              View Shopping Bag
-            </Link>
-            <Link href="/checkout" onClick={closeCart} style={{ display: 'block', textAlign: 'center', padding: '14px', textDecoration: 'none', letterSpacing: '0.15em', width: '100%', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', transition: 'color 0.2s' }}>
-              Checkout Directly
-            </Link>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
+                <span>Subtotal</span>
+                <span style={{ color: 'var(--cream)' }}>{formatPrice(cartTotal)}</span>
+              </div>
+              {appliedCoupon && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--gold)' }}>
+                  <span>Promo: {appliedCoupon.code}</span>
+                  <span>{appliedCoupon.freeShipping ? 'Free' : `- ${formatPrice(appliedCoupon.discountAmount)}`}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
+                <span>GST (18%)</span>
+                <span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--cream)', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                <span>Total</span>
+                <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{formatPrice(grandTotal)}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Link 
+                href="/cart" 
+                onClick={closeCart} 
+                className="hidden md:flex"
+                style={{ 
+                  flex: 1, alignItems: 'center', justifyContent: 'center', 
+                  border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
+                  height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
+                  letterSpacing: '0.12em', transition: 'all 0.2s' 
+                }}
+              >
+                VIEW CART
+              </Link>
+
+              <Link 
+                href="/checkout" 
+                onClick={closeCart} 
+                style={{ 
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  background: 'var(--gold)', color: '#0A0905', borderRadius: '8px', 
+                  height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
+                  letterSpacing: '0.12em', transition: 'all 0.2s' 
+                }}
+              >
+                CHECKOUT
+              </Link>
+            </div>
+
           </div>
         )}
       </div>

@@ -14,10 +14,21 @@ export default function NavClient({ user, products }: { user: { id: string; emai
   const router = useRouter();
   const pathname = usePathname();
   
-  const count = itemCount();
+  const items = useCartStore(state => state.items);
+  const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Listen for custom event from MobileBottomNav
+    const handleOpenSearch = () => setSearchOpen(true);
+    const handleOpenCart = () => openCart();
+    window.addEventListener('open-search', handleOpenSearch);
+    window.addEventListener('open-cart', handleOpenCart);
+    return () => {
+      window.removeEventListener('open-search', handleOpenSearch);
+      window.removeEventListener('open-cart', handleOpenCart);
+    };
   }, []);
 
   const isPDP = pathname.startsWith('/products/');
@@ -33,7 +44,7 @@ export default function NavClient({ user, products }: { user: { id: string; emai
   return (
     <>
       <div className="nav-right">
-        <button className="nav-icon" title="Search" onClick={() => setSearchOpen(true)}>
+        <button className="nav-icon hide-on-mobile" title="Search" onClick={() => setSearchOpen(true)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -46,7 +57,7 @@ export default function NavClient({ user, products }: { user: { id: string; emai
             </svg>
           </Link>
         ) : (
-          <Link href="/login" className="hide-on-mobile" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
+          <Link href="/login" className="hide-on-mobile" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-sm)', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
