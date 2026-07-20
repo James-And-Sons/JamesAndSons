@@ -11,6 +11,19 @@ export async function createBlogPost(formData: FormData) {
   const excerpt = formData.get('excerpt') as string;
   const isDraft = formData.get('isDraft') === 'true';
 
+  const metaTitle = formData.get('metaTitle') as string;
+  const metaDesc = formData.get('metaDesc') as string;
+  const geoTakeaway = formData.get('geoTakeaway') as string;
+  
+  const faqJson = formData.get('faqJson') as string;
+  const citationsJson = formData.get('citationsJson') as string;
+
+  const faq = faqJson ? JSON.parse(faqJson) : [];
+  const citations = citationsJson ? JSON.parse(citationsJson) : [];
+
+  const parsedMetaTitle = metaTitle || `${title} | James & Sons`;
+  const parsedMetaDesc = metaDesc || excerpt || (content ? content.substring(0, 155).replace(/\r?\n|\r/g, " ") + '...' : '');
+
   // Get first admin user for now as author
   const author = await prisma.user.findFirst({
     where: { role: 'ADMIN' }
@@ -27,7 +40,12 @@ export async function createBlogPost(formData: FormData) {
       content,
       excerpt: excerpt || content.substring(0, 150) + '...',
       isDraft,
-      authorId: author.id
+      authorId: author.id,
+      metaTitle: parsedMetaTitle,
+      metaDesc: parsedMetaDesc,
+      geoTakeaway: geoTakeaway || null,
+      faq,
+      citations
     }
   });
 
@@ -43,6 +61,19 @@ export async function updateBlogPost(id: number, formData: FormData) {
   const excerpt = formData.get('excerpt') as string;
   const isDraft = formData.get('isDraft') === 'true';
 
+  const metaTitle = formData.get('metaTitle') as string;
+  const metaDesc = formData.get('metaDesc') as string;
+  const geoTakeaway = formData.get('geoTakeaway') as string;
+  
+  const faqJson = formData.get('faqJson') as string;
+  const citationsJson = formData.get('citationsJson') as string;
+
+  const faq = faqJson ? JSON.parse(faqJson) : [];
+  const citations = citationsJson ? JSON.parse(citationsJson) : [];
+
+  const parsedMetaTitle = metaTitle || `${title} | James & Sons`;
+  const parsedMetaDesc = metaDesc || excerpt || (content ? content.substring(0, 155).replace(/\r?\n|\r/g, " ") + '...' : '');
+
   await prisma.blogPost.update({
     where: { id },
     data: {
@@ -50,7 +81,12 @@ export async function updateBlogPost(id: number, formData: FormData) {
       slug,
       content,
       excerpt,
-      isDraft
+      isDraft,
+      metaTitle: parsedMetaTitle,
+      metaDesc: parsedMetaDesc,
+      geoTakeaway: geoTakeaway || null,
+      faq,
+      citations
     }
   });
 

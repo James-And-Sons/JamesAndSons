@@ -108,7 +108,7 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by Order ID, Customer, or Email..."
-              className="bg-transparent text-primary font-mono text-[12px] focus:outline-none w-full placeholder:text-muted/60"
+              className="bg-transparent text-primary font-mono text-[12px] focus:outline-none focus-visible:outline-none w-full placeholder:text-muted/60"
             />
             {searchTerm && (
               <button

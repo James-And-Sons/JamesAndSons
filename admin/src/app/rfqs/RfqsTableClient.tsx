@@ -87,7 +87,7 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by RFQ ID, Customer, Company, or Project..."
-              className="bg-transparent text-primary font-mono text-[12px] focus:outline-none w-full placeholder:text-muted/60"
+              className="bg-transparent text-primary font-mono text-[12px] focus:outline-none focus-visible:outline-none w-full placeholder:text-muted/60"
             />
             {searchTerm && (
               <button

@@ -59,6 +59,13 @@ body {
   border-radius: 4px;
 }
 
+/* Disable focus ring on inputs, textareas and selects to prevent double outlines */
+input:focus-visible, 
+textarea:focus-visible, 
+select:focus-visible {
+  outline: none !important;
+}
+
 /* Status Pills & Indicators */
 .status-pill {
   display: inline-flex;

@@ -16,15 +16,28 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user && user.email) {
-        // Query our Prisma database to check if this email is a whitelisted ADMIN
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email }
+        // Query our Prisma database by ID first, then by email to handle ID syncing
+        let dbUser = await prisma.user.findUnique({
+          where: { id: user.id }
         })
+
+        if (!dbUser && user.email) {
+          const userByEmail = await prisma.user.findUnique({
+            where: { email: user.email }
+          })
+          if (userByEmail && userByEmail.role === 'ADMIN') {
+            dbUser = await prisma.user.update({
+              where: { email: user.email },
+              data: { id: user.id }
+            })
+            console.log('DEBUG: Synced user ID in callback for whitelisted admin:', user.email)
+          }
+        }
 
         if (!dbUser || dbUser.role !== 'ADMIN') {
           // REJECT: User is not in our whitelist or doesn't have Admin permissions
           await supabase.auth.signOut()
-          return NextResponse.redirect(`${origin}/login?message=Access Denied: You are not a whitelisted administrator.`)
+          return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent('Access Denied: You are not a whitelisted administrator.')}`)
         }
 
         // ALLOW: User is a verified Admin

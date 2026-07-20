@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         className={`
           group flex items-center justify-between px-4 py-3 font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border relative overflow-hidden rounded-sm
           ${isActive 
-            ? 'text-white border-accent/40 bg-surface-muted font-medium' 
+            ? 'text-primary border-accent/40 bg-surface-muted font-semibold' 
             : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
           }
         `}
@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         <div className={`
           flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
           ${isGroupActive 
-            ? 'text-white border-accent/30 bg-surface-muted/40' 
+            ? 'text-primary border-accent/30 bg-surface-muted/40 font-semibold' 
             : 'text-muted border-transparent hover:text-accent hover:border-border hover:bg-surface-muted'
           }
         `}>
@@ -234,7 +234,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         <div className={`
           flex items-center justify-between font-mono text-[10px] tracking-[0.12em] uppercase transition-all duration-200 border rounded-sm relative overflow-hidden group
           ${isGroupActive 
-            ? 'text-white border-accent/30 bg-surface-muted/40' 
+            ? 'text-primary border-accent/30 bg-surface-muted/40 font-semibold' 
             : 'text-muted border-transparent hover:border-border hover:bg-surface-muted'
           }
         `}>

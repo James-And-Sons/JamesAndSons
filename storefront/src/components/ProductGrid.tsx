@@ -189,32 +189,35 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
         </div>
 
         <div className="mobile-products-grid" style={{ marginTop: '16px' }}>
-          {filteredProducts.map(product => (
-            <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
-              <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
-                {product.images && product.images[0] ? (
-                  <Image src={product.images[0]} alt={product.name} width={400} height={400} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28 }}></i>
-                )}
-              </div>
-              <div className="mobile-product-info" style={{ padding: '10px 12px 12px' }}>
-                <div className="mobile-product-cat">{product.collection}</div>
-                <div className="mobile-product-name" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</div>
-                <div className="mobile-product-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                  <div className="mobile-price-block">
-                    <div className="mobile-product-price" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--gold-light)' }}>{formatPrice(product.d2cPrice)}</div>
-                    {product.mrp > product.d2cPrice && (
-                      <div className="mobile-price-old">{formatPrice(product.mrp)}</div>
-                    )}
-                  </div>
-                  <button className="mobile-add-btn" style={{ width: '30px', height: '30px', background: 'var(--gold)', borderRadius: '9px', color: '#0A0905' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>
-                    <i className="ti ti-plus" style={{ fontSize: '14px' }}></i>
-                  </button>
+          {filteredProducts.map(product => {
+            const thumbnail = product.images?.[0] || product.whiteBackgroundImages?.[0];
+            return (
+              <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
+                <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
+                  {thumbnail ? (
+                    <Image src={thumbnail} alt={product.name} width={400} height={400} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28 }}></i>
+                  )}
                 </div>
-              </div>
-            </Link>
-          ))}
+                <div className="mobile-product-info" style={{ padding: '10px 12px 12px' }}>
+                  <div className="mobile-product-cat">{product.collection}</div>
+                  <div className="mobile-product-name" style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</div>
+                  <div className="mobile-product-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div className="mobile-price-block">
+                      <div className="mobile-product-price" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--gold-light)' }}>{formatPrice(product.d2cPrice)}</div>
+                      {product.mrp > product.d2cPrice && (
+                        <div className="mobile-price-old">{formatPrice(product.mrp)}</div>
+                      )}
+                    </div>
+                    <button className="mobile-add-btn" style={{ width: '30px', height: '30px', background: 'var(--gold)', borderRadius: '9px', color: '#0A0905' }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>
+                      <i className="ti ti-plus" style={{ fontSize: '14px' }}></i>
+                    </button>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
         {filteredProducts.length > 0 && (
           <div className="mobile-list-divider" style={{ height: '0.5px', background: 'var(--border)', margin: '20px 24px 0' }}></div>
@@ -223,7 +226,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
 
       {/* Desktop Layout */}
       <div className="hidden md:block" style={{ padding: '0 40px' }}>
-        <div className="section-header">
+        <div className="section-header" style={{ marginBottom: '20px' }}>
         <div>
           <div className="section-label">{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
           <h2 className="section-title">
@@ -337,8 +340,10 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
       </div>
 
       <div className="product-grid">
-        {filteredProducts.map(product => (
-          <Link key={product.id} href={`/products/${product.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
+        {filteredProducts.map(product => {
+          const thumbnail = product.images?.[0] || product.whiteBackgroundImages?.[0];
+          return (
+            <Link key={product.id} href={`/products/${product.slug}`} className="product-card" style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
             {product.badge && (
               <div className={`product-badge ${product.badge === 'new' ? 'badge-new' : product.badge === 'bis' ? 'badge-bis' : product.badge === 'b2b' ? 'badge-sale' : 'badge-sale'}`}>
                 {product.badge === 'new' ? 'New Release' : product.badge === 'bis' ? 'BIS Appv.' : 'B2B Volume'}
@@ -369,9 +374,9 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                 </svg>
               </div>
 
-              {product.images && product.images.length > 0 && (
+              {thumbnail ? (
                 <img
-                  src={product.images[0]}
+                  src={thumbnail}
                   alt={product.name}
                   className="prod-actual-img"
                   style={{
@@ -383,7 +388,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                     zIndex: 1,
                   }}
                 />
-              )}
+              ) : null}
             </div>
 
             <div className="product-info" style={{ padding: '20px 20px 24px' }}>
@@ -404,7 +409,8 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
               </div>
             </div>
           </Link>
-        ))}
+        );
+      })}
       </div>
       </div>
 
