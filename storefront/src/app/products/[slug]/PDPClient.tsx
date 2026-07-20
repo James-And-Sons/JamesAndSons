@@ -274,6 +274,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
     const baseSpecs = [
       { key: 'Brand', val: selectedVariant?.brand || product.brand || 'James and Sons' },
+      { key: 'Fixture Form', val: product.amazonFixtureForm || null },
+      { key: 'Mounting Type', val: selectedVariant?.amazonMountingType || product.amazonMountingType || null },
+      { key: 'Lighting Method', val: product.amazonLightingMethod || null },
       { key: 'Material & Finish', val: (selectedVariant?.materialAndFinish && selectedVariant.materialAndFinish.length > 0) ? selectedVariant.materialAndFinish.join(', ') : (product.materialAndFinish?.join(', ') || 'Estate Metals') },
       { key: 'Bulb Type', val: (selectedVariant?.bulbType && selectedVariant.bulbType.length > 0) ? selectedVariant.bulbType.join(', ') : (product.bulbType?.join(', ') || 'LED Engine') },
       { key: 'Design Style', val: (selectedVariant?.style && selectedVariant.style.length > 0) ? selectedVariant.style.join(', ') : (product.style?.join(', ') || 'Modern Heritage') },
@@ -281,6 +284,9 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       { key: 'Voltage', val: selectedVariant?.voltage || product.voltage || null },
       { key: 'Dimensions', val: getDimensions() },
       { key: 'Weight', val: (selectedVariant?.weight !== null && selectedVariant?.weight !== undefined) ? `${selectedVariant.weight} kg` : (product.weight ? `${product.weight} kg` : 'Standard') },
+      { key: 'Suited Spaces', val: (product.spaces && product.spaces.length > 0) ? product.spaces.map((s: any) => s.name).join(', ') : null },
+      { key: 'Included Components', val: product.amazonIncludedComponents || null },
+      { key: 'HSN Code', val: product.hsnCode || null },
       { key: 'Warranty', val: selectedVariant?.warranty || product.warranty || null },
       {
         key: 'Compliance',
@@ -523,12 +529,24 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
 
           {/* Description Card */}
-          {product.description && (
+          {(product.description || (product.bulletPoints && product.bulletPoints.length > 0)) && (
             <div style={{ margin: '16px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '20px' }}>
               <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance & Craftsmanship</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                {product.description}
-              </div>
+              {product.description && (
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {product.description}
+                </div>
+              )}
+              {product.bulletPoints && product.bulletPoints.length > 0 && (
+                <div style={{ marginTop: product.description ? '16px' : '0' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--gold-light)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Key Feature Highlights</div>
+                  <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '12.5px', color: 'var(--cream)', lineHeight: 1.6 }}>
+                    {product.bulletPoints.map((bp: string, idx: number) => (
+                      <li key={idx} style={{ marginBottom: '4px' }}>{bp}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -719,6 +737,16 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                   {product.description || 'Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.'}
                 </div>
+                {product.bulletPoints && product.bulletPoints.length > 0 && (
+                  <div style={{ marginTop: '20px', padding: '16px 20px', background: 'var(--surface2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: '10px' }}>Key Feature Highlights</div>
+                    <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '13.5px', color: 'var(--cream)', lineHeight: 1.7 }}>
+                      {product.bulletPoints.map((bp: string, idx: number) => (
+                        <li key={idx} style={{ marginBottom: '6px' }}>{bp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>

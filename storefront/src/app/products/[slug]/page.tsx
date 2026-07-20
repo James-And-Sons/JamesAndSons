@@ -34,6 +34,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
       where: { slug: params.slug },
       include: {
         category: true,
+        spaces: true,
         variants: { orderBy: { createdAt: 'asc' } }
       }
     });
