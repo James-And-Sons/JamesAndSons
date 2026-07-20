@@ -252,6 +252,55 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     amazonKeywords: defaultValues?.amazonKeywords || '',
   });
 
+  // AI assistant states
+  const [showAiAssistant, setShowAiAssistant] = useState(false);
+  const [aiTone, setAiTone] = useState('Luxurious & Regal');
+  const [aiType, setAiType] = useState('');
+  const [aiKeywords, setAiKeywords] = useState('');
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiResult, setAiResult] = useState<{ name: string; description: string; bulletPoints: string[] } | null>(null);
+
+  const handleGenerateAiListing = async () => {
+    if (!aiKeywords.trim()) {
+      alert('Please enter some keywords or specifications.');
+      return;
+    }
+    setGeneratingAi(true);
+    try {
+      const res = await fetch('/api/admin/generate-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: aiKeywords,
+          type: aiType || undefined,
+          tone: aiTone,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate copy');
+      setAiResult(data.data);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error generating listing: ${err.message}`);
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
+
+  const handleApplyAiListing = () => {
+    if (!aiResult) return;
+    setIsDirty(true);
+    setParentValues(prev => ({
+      ...prev,
+      name: aiResult.name,
+      description: aiResult.description,
+      bulletPoints: aiResult.bulletPoints.join('\n'),
+    }));
+    setShowAiAssistant(false);
+    setAiResult(null);
+  };
+
+
   // Spaces (Product spaces)
   const [selectedSpaces, setSelectedSpaces] = useState<string[]>(
     defaultValues?.spaces?.map((s: any) => s.id) || []
@@ -840,9 +889,111 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                   </div>
                   <div className="col-span-2">
                     <div className="flex justify-between items-baseline mb-1">
-                      <label htmlFor="description" className={labelCls}>Description</label>
+                      <div className="flex items-center gap-2">
+                        <label htmlFor="description" className={labelCls}>Description</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAiAssistant(!showAiAssistant)}
+                          className="font-mono text-[9px] uppercase tracking-wider text-accent border border-accent/20 px-2 py-0.5 rounded-sm hover:bg-accent/10 hover:border-accent transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <span>✨ AI Assistant</span>
+                        </button>
+                      </div>
                       <span className="font-mono text-[9px] text-muted">{(parentValues.description || '').length} / 2000</span>
                     </div>
+
+                    {showAiAssistant && (
+                      <div className="mb-4 p-4 border border-accent/20 bg-surface rounded-sm space-y-4 font-sans">
+                        <div className="flex justify-between items-center border-b border-border/40 pb-2">
+                          <span className="font-serif text-[14px] text-accent">AI Listing Generator</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAiAssistant(false)}
+                            className="text-muted hover:text-primary font-mono text-[10px] uppercase cursor-pointer"
+                          >
+                            Close ×
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="font-mono text-[9px] uppercase tracking-widest text-muted block mb-1">Tone</label>
+                            <CustomDropdown
+                              value={aiTone}
+                              options={[
+                                { value: 'Luxurious & Regal', label: 'Luxurious & Regal' },
+                                { value: 'Minimalist & Modern', label: 'Minimalist & Modern' },
+                                { value: 'Bold & Dramatic', label: 'Bold & Dramatic' },
+                                { value: 'Technical & Detailed', label: 'Technical & Detailed' },
+                              ]}
+                              onChange={setAiTone}
+                              placeholder="Select Tone"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-mono text-[9px] uppercase tracking-widest text-muted block mb-1">Product Category Context</label>
+                            <input
+                              type="text"
+                              value={aiType}
+                              onChange={e => setAiType(e.target.value)}
+                              placeholder="e.g. Chandelier, Wall Lamp"
+                              className={inputCls}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="font-mono text-[9px] uppercase tracking-widest text-muted block mb-1">Keywords / Specs / Materials</label>
+                          <textarea
+                            value={aiKeywords}
+                            onChange={e => setAiKeywords(e.target.value)}
+                            placeholder="e.g. handmade, solid brass, clear glass rod shade, warm LED, adjustable suspension chain..."
+                            className={inputCls}
+                            rows={3}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                          <button
+                            type="button"
+                            disabled={generatingAi}
+                            onClick={handleGenerateAiListing}
+                            className="px-4 py-2 bg-accent text-black font-mono text-[10px] uppercase tracking-wider rounded-sm font-bold disabled:opacity-50 cursor-pointer"
+                          >
+                            {generatingAi ? 'Generating...' : '✨ Generate Listing Copy'}
+                          </button>
+                        </div>
+
+                        {aiResult && (
+                          <div className="mt-4 p-3 bg-surface-muted/50 border border-border/60 rounded-sm space-y-3">
+                            <div className="font-mono text-[9px] uppercase tracking-widest text-accent font-semibold">Generation Preview</div>
+                            <div>
+                              <div className="font-mono text-[9px] text-muted uppercase">Generated Name</div>
+                              <div className="font-serif text-[16px] text-primary">{aiResult.name}</div>
+                            </div>
+                            <div>
+                              <div className="font-mono text-[9px] text-muted uppercase">Generated Description</div>
+                              <div className="font-sans text-[12px] text-secondary whitespace-pre-wrap">{aiResult.description}</div>
+                            </div>
+                            <div>
+                              <div className="font-mono text-[9px] text-muted uppercase">Generated Bullet Points</div>
+                              <ul className="list-disc pl-4 font-sans text-[12px] text-secondary space-y-1">
+                                {aiResult.bulletPoints.map((bp, i) => (
+                                  <li key={i}>{bp}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
+                              <button
+                                type="button"
+                                onClick={handleApplyAiListing}
+                                className="px-4 py-2 border border-accent/40 text-accent hover:bg-accent/10 font-mono text-[10px] uppercase tracking-wider rounded-sm font-bold cursor-pointer"
+                              >
+                                Apply to Form Fields
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <textarea
                       id="description"
                       value={parentValues.description}
