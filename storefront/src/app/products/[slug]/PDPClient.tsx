@@ -619,7 +619,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ margin: '16px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '20px' }}>
               <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance &amp; Craftsmanship</div>
               {product.description && (
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                   {product.description}
                 </div>
               )}
@@ -643,8 +643,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <div style={{ padding: '0 20px' }}>
                 {visibleSpecs.map(spec => (
                   <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', flex: '0 0 110px', fontWeight: 500 }}>{spec.key}</div>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text)', textTransform: 'uppercase', flex: '0 0 110px', fontWeight: 600, letterSpacing: '0.05em' }}>{spec.key}</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
                   </div>
                 ))}
               </div>
@@ -887,7 +887,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '20px' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>The Masterpiece</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                   {product.description || 'Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.'}
                 </div>
                 {product.bulletPoints && product.bulletPoints.length > 0 && (
@@ -908,8 +908,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   <div style={{ padding: '8px 24px' }}>
                     {visibleSpecs.map((spec, sIdx, sArr) => (
                       <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: sIdx === sArr.length - 1 ? 'none' : '1px dashed var(--border)' }}>
-                        <div style={{ flex: '0 0 160px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>{spec.key}</div>
-                        <div style={{ flex: 1, fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-serif)' }}>{spec.val}</div>
+                        <div style={{ flex: '0 0 160px', fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{spec.key}</div>
+                        <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--cream)' }}>{spec.val}</div>
                       </div>
                     ))}
                   </div>
