@@ -687,7 +687,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <div style={{ padding: '16px 20px 12px', fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '0.5px solid var(--border)' }}>Technical Specifications</div>
               <div style={{ padding: '0 20px' }}>
                 {visibleSpecs.map(spec => (
-                  <div key={spec.key} style={{ display: 'flex', gap: '12px', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
+                  <div key={spec.key} style={{ display: 'flex', gap: '12px', alignItems: 'baseline', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text)', textTransform: 'uppercase', flex: '0 0 120px', fontWeight: 600, letterSpacing: '0.05em' }}>{spec.key}</div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
                   </div>
@@ -962,7 +962,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text)' }}>Specifications</div>
                   <div style={{ padding: '8px 24px' }}>
                     {visibleSpecs.map((spec, sIdx, sArr) => (
-                      <div key={spec.key} style={{ display: 'flex', padding: '16px 0', borderBottom: sIdx === sArr.length - 1 ? 'none' : '1px dashed var(--border)' }}>
+                      <div key={spec.key} style={{ display: 'flex', alignItems: 'baseline', padding: '16px 0', borderBottom: sIdx === sArr.length - 1 ? 'none' : '1px dashed var(--border)' }}>
                         <div style={{ flex: '0 0 160px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{spec.key}</div>
                         <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)' }}>{spec.val}</div>
                       </div>
