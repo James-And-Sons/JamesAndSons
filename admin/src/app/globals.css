@@ -16,22 +16,98 @@
   --font-body: 'Libre Baskerville', Georgia, serif;
 }
 
-.light {
-  --color-primary: #1a1a1a;
-  --color-secondary: #4a4844;
-  --color-accent: #b08940;
-  --color-accent-hover: #8a6b32;
-  --color-background: #faf8f5;
-  --color-surface: #f4f0ea;
-  --color-surface-muted: #ebe5dc;
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-muted: #8a8880;
+:root {
+  --bg: #15130F;
+  --surface-1: #1C1A15;
+  --surface-2: #221F19;
+  --surface-3: #2A261F;
+  --border-color: #38332A;
+  --border-strong: #4A4436;
+  --gold: #C9A961;
+  --gold-dim: #8C7847;
+  --gold-bg: rgba(201,169,97,0.12);
+  --cream: #EDE8DC;
+  --text-secondary: #A79F8C;
+  --text-muted-color: #7A7364;
+  --success: #8CAE7E;
+  --success-bg: rgba(140,174,126,0.12);
+  --success-border: rgba(140,174,126,0.35);
+  --warning: #D6A24A;
+  --warning-bg: rgba(214,162,74,0.14);
+  --warning-border: rgba(214,162,74,0.4);
+  --danger: #C97E6A;
+  --danger-bg: rgba(201,126,106,0.12);
+  --danger-border: rgba(201,126,106,0.35);
+  --radius: 8px;
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-secondary);
   font-family: var(--font-body);
+}
+
+/* Accessibility Skip Link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--color-accent);
+  color: #100f0d;
+  padding: 10px 16px;
+  z-index: 100;
+  border-radius: 0 0 6px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* Accessibility Focus Ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Status Pills & Indicators */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+.status-paid, .status-delivered, .status-approved, .status-active {
+  background: rgba(140, 174, 126, 0.12);
+  color: #8cae7e;
+  border: 1px solid rgba(140, 174, 126, 0.35);
+}
+.status-processing, .status-submitted, .status-reviewing {
+  background: rgba(214, 162, 74, 0.14);
+  color: #d6a24a;
+  border: 1px solid rgba(214, 162, 74, 0.4);
+}
+.status-pending, .status-draft, .status-rejected {
+  background: rgba(201, 126, 106, 0.12);
+  color: #c97e6a;
+  border: 1px solid rgba(201, 126, 106, 0.35);
+}
+.status-pill .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
 }
 
 /* Custom Utilities mimicking storefront */

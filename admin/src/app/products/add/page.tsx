@@ -9,9 +9,7 @@ export default async function AddProductPage() {
 
   return (
     <div className="max-w-5xl mx-auto pb-12">
-      <div className="bg-surface border border-border p-8">
-        <ProductFormClient categories={categories} spaces={spaces} mode="add" />
-      </div>
+      <ProductFormClient categories={categories} spaces={spaces} mode="add" />
     </div>
   );
 }

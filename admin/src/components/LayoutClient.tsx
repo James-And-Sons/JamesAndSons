@@ -126,6 +126,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   return (
     <ThemeProvider>
       <SidebarProvider>
+        <a className="skip-link" href="#main">Skip to content</a>
         <UnsavedChangesListener />
         {!isLoginPage && (
           <Suspense fallback={<div className="w-[260px] fixed inset-y-0 left-0 bg-surface border-r border-border" />}>
@@ -135,20 +136,32 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
             />
           </Suspense>
         )}
-        <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
+        <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
           {!isLoginPage && (
             <header className="h-[64px] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300">
               <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="lg:hidden p-2 text-muted hover:text-accent"
-                  aria-label="Open Sidebar"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="lg:hidden p-2 text-muted hover:text-accent cursor-pointer"
+                  aria-label="Open navigation"
+                  aria-expanded={isSidebarOpen}
+                  aria-controls="sidebar"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
                 <HeaderTitle />
               </div>
               <div className="flex items-center gap-4">
+                <div className="hidden sm:flex items-center gap-2 border border-border/80 bg-surface-muted/50 px-3 py-1.5 rounded-sm text-xs font-mono min-w-[240px] focus-within:border-accent">
+                  <span className="text-muted" aria-hidden="true">🔍</span>
+                  <input
+                    id="globalSearch"
+                    type="text"
+                    placeholder="Search orders, RFQs, customers..."
+                    className="bg-transparent text-primary font-mono text-[11px] focus:outline-none w-full placeholder:text-muted/60"
+                  />
+                  <span className="text-[9px] text-muted/60 bg-surface px-1.5 py-0.5 rounded border border-border">⌘K</span>
+                </div>
                 <ThemeToggle />
                 <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-accent bg-accent/5 px-3 py-1.5 border border-accent/30 rounded-sm">
                   Super Admin
@@ -156,12 +169,12 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
               </div>
             </header>
           )}
-          <div className={isLoginPage ? '' : 'p-4 lg:p-10 flex-1 overflow-auto bg-background selection:bg-accent/20 transition-colors duration-300'}>
+          <main id="main" className={isLoginPage ? '' : 'p-4 lg:p-10 flex-1 overflow-auto bg-background selection:bg-accent/20 transition-colors duration-300'}>
             <div className={isLoginPage ? '' : 'max-w-[1200px] mx-auto w-full'}>
               {children}
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </SidebarProvider>
     </ThemeProvider>
   );

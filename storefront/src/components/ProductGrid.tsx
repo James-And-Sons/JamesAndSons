@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
 import Image from 'next/image';
+import InquiryModal from './InquiryModal';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts }: { initialFilter?: string, initialProducts: Product[] }) {
   const router = useRouter();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedQuoteProduct, setSelectedQuoteProduct] = useState<any | null>(null);
   const { addItem } = useCartStore();
   const { uniqueCollections, uniqueStyles, uniqueMaterials, uniqueSpaces } = useMemo(() => ({
     uniqueCollections: Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort(),
@@ -349,7 +351,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
                 className="prod-action-btn" 
                 title="Request Quote" 
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} 
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/rfq?product=${product.slug}`); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedQuoteProduct(product); }}
               >
                 Q
               </button>
@@ -405,6 +407,20 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
         ))}
       </div>
       </div>
+
+      {selectedQuoteProduct && (
+        <InquiryModal
+          isOpen={!!selectedQuoteProduct}
+          onClose={() => setSelectedQuoteProduct(null)}
+          product={{
+            id: selectedQuoteProduct.id,
+            name: selectedQuoteProduct.name,
+            sku: selectedQuoteProduct.sku,
+            d2cPrice: selectedQuoteProduct.d2cPrice,
+            image: selectedQuoteProduct.images?.[0]
+          }}
+        />
+      )}
     </section>
   );
 }

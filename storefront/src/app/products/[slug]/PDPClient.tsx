@@ -9,6 +9,7 @@ import { useWishlistStore } from '@/store/wishlist';
 import { checkPincode, getSavedPincode } from '../actions';
 import { useEffect } from 'react';
 import Image from 'next/image';
+import InquiryModal from '@/components/InquiryModal';
 
 type Variant = {
   id: string;
@@ -88,6 +89,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   // Onsitego warranty states
   const [warranties, setWarranties] = useState<any[]>([]);
   const [selectedWarranty, setSelectedWarranty] = useState<any | null>(null);
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
   const handleSwipe = (endX: number) => {
     if (touchStartX === null) return;
@@ -538,6 +540,16 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             </div>
           </div>
 
+          <div style={{ margin: '16px 20px 0', textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setInquiryModalOpen(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Request Bulk Quote
+            </button>
+          </div>
+
           {/* Mobile Variant Comparison Table */}
           {allOptions.length > 1 && (
             <div style={{ margin: '12px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
@@ -716,6 +728,16 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 </div>
               </div>
 
+              <div style={{ marginTop: '-20px', textAlign: 'right' }}>
+                <button
+                  type="button"
+                  onClick={() => setInquiryModalOpen(true)}
+                  style={{ background: 'none', border: 'none', color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Request Bulk Quote
+                </button>
+              </div>
+
               {/* Desktop Variant Comparison Table */}
               {allOptions.length > 1 && (
                 <div style={{ background: 'var(--surface2)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
@@ -891,17 +913,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '22px' }}></i>
                   </button>
                 </div>
-
-                {isB2B && (
-                  <button
-                    className="btn-outline w-full"
-                    style={{ height: '54px', borderRadius: '12px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                    onClick={() => router.push(`/rfq?product=${product.slug}`)}
-                  >
-                    <i className="ti ti-file-text"></i>
-                    Request Enterprise Quotation
-                  </button>
-                )}
               </div>
 
               {/* Details & Delivery */}
@@ -989,6 +1000,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             </div>
           </div>
         )}
+
+        <InquiryModal
+          isOpen={inquiryModalOpen}
+          onClose={() => setInquiryModalOpen(false)}
+          product={{
+            id: (selectedVariant && selectedVariant.id !== 'original') ? selectedVariant.id : product.id,
+            name: (selectedVariant && selectedVariant.id !== 'original') ? `${product.name} - ${selectedVariant.name}` : product.name,
+            sku: (selectedVariant && selectedVariant.id !== 'original') ? selectedVariant.sku : product.sku,
+            d2cPrice: displayPrice,
+            image: activeImages[0]
+          }}
+        />
 
         <style jsx>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

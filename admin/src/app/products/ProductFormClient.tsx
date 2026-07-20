@@ -412,6 +412,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   useEffect(() => {
     setProductFormState({
       mode,
+      productId: defaultValues?.id,
       productName: parentValues.name,
       sku: parentValues.sku,
       isDirty,
@@ -608,7 +609,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       )}
 
       {/* === STICKY TOP BAR REDESIGN === */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border py-4 px-6 -mx-6 flex items-center justify-between gap-4">
+      <div className="lg:hidden sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border py-4 px-6 -mx-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link 
             href="/products" 
@@ -619,10 +620,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 12H5M5 12L12 19M5 12L12 5" /></svg>
           </Link>
           <div>
-            <div className="font-mono text-[9px] uppercase tracking-widest text-muted">
-              Products / {parentValues.categoryId ? categories.find(c => c.id === parentValues.categoryId)?.name || 'Catalog' : 'Catalog'}
-            </div>
-            <div className="flex items-baseline gap-3 mt-1">
+            <div className="flex items-baseline gap-3">
               <h1 className="font-serif text-[20px] text-primary font-light tracking-wide">
                 {parentValues.name || 'New Product'}
               </h1>

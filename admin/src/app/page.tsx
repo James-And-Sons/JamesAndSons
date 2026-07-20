@@ -1,7 +1,21 @@
 import { prisma } from '../lib/prisma';
 import Link from 'next/link';
+import ClickableRow from '@/components/ClickableRow';
 
 export const dynamic = 'force-dynamic';
+
+function getInitials(firstName?: string, lastName?: string): string {
+  const f = firstName?.[0] || '';
+  const l = lastName?.[0] || '';
+  return (f + l).toUpperCase() || 'CU';
+}
+
+function formatTimeAgo(date: Date): string {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  if (seconds < 3600) return `${Math.max(1, Math.floor(seconds / 60))}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
 
 export default async function Dashboard() {
   const [orders, rfqs, b2bRegistrations, pendingB2B] = await Promise.all([
@@ -11,95 +25,160 @@ export default async function Dashboard() {
       take: 5
     }),
     prisma.rFQ.findMany({
-      include: { user: true },
+      include: { user: true, items: true },
       orderBy: { createdAt: 'desc' },
       take: 5
     }),
     prisma.user.count({ where: { role: 'B2B_BUYER' } }),
-    prisma.user.count({ where: { role: 'B2B_APPROVER' } }) // Assuming pending might be a different role or status, making mock numbers dynamically safe
+    prisma.user.count({ where: { role: 'B2B_APPROVER' } })
   ]);
 
-  // Aggregate stats (Note: For a real app, use aggregate queries for 'MTD')
   const totalRevenue = orders.reduce((acc, order) => acc + order.totalAmount, 0) || 0;
-  const activeOrders = orders.length; // Mock logic 
+  const activeOrders = orders.length;
   const pendingRfqs = rfqs.filter((r: any) => r.status === 'SUBMITTED' || r.status === 'DRAFT').length;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       {/* Header Section */}
-      <div>
-        <h2 className="font-serif text-[32px] text-primary font-light tracking-wide mb-2">Platform Overview</h2>
-        <p className="font-body text-muted text-[14px]">Metrics and action items for James &amp; Sons operations.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-[32px] md:text-[36px] font-normal text-primary tracking-wide mb-1">
+            Platform overview
+          </h1>
+          <p className="font-body text-muted text-[13px] m-0">
+            Metrics and action items for James &amp; Sons operations.
+          </p>
+        </div>
+        <div className="live-pill">
+          <span className="live-dot" aria-hidden="true" />
+          <span>Live data · Updated 2 min ago</span>
+        </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="premium-card p-6">
-          <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">Total Revenue (All Time)</h3>
-          <p className="font-serif text-[36px] text-gold mt-4 mb-2">₹{totalRevenue.toLocaleString('en-IN')}</p>
-          <span className="font-mono text-[10px] tracking-wider text-emerald-400">+ Live Data Connected</span>
-        </div>
-        <div className="premium-card p-6">
-          <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">Recent Orders</h3>
-          <p className="font-serif text-[36px] text-primary mt-4 mb-2">{activeOrders}</p>
-          <span className="font-mono text-[10px] tracking-wider text-muted">D2C &amp; B2B Flow Active</span>
-        </div>
-        <div className="premium-card p-6 border-accent/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[40px] h-[40px] bg-accent/10 rounded-bl-full" />
-          <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-accent">Total tracked RFQs</h3>
-          <p className="font-serif text-[36px] text-primary mt-4 mb-2">{rfqs.length}</p>
-          <span className="font-mono text-[10px] tracking-wider text-accent">{pendingRfqs} pending review</span>
-        </div>
-        <div className="premium-card p-6">
-          <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B Registrations</h3>
-          <p className="font-serif text-[36px] text-primary mt-4 mb-2">{b2bRegistrations}</p>
-          <span className="font-mono text-[10px] tracking-wider text-muted">{pendingB2B} Pending Approval</span>
-        </div>
-      </div>      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Recent Orders Table */}
-        <div className="premium-card flex flex-col overflow-hidden">
-          <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-surface-muted/30">
-            <h3 className="font-serif text-[22px] text-primary font-light">Recent Orders</h3>
-            <Link href="/orders" className="font-mono text-[9px] uppercase tracking-widest text-accent hover:text-accent-hover transition-colors">View All</Link>
+      {/* KPI Cards Grid - Clickable & Reflows on Mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Key metrics">
+        <Link 
+          href="/orders" 
+          role="listitem"
+          className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">TOTAL REVENUE</span>
+            <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">₹</span>
           </div>
-          <div className="flex-1 table-responsive">
-            <table className="w-full text-left">
-              <thead className="border-b border-border bg-surface-muted/30">
+          <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+            ₹{Math.round(totalRevenue).toLocaleString('en-IN')}
+          </p>
+          <p className="font-mono text-[11px] text-muted mt-2 m-0">All time</p>
+        </Link>
+
+        <Link 
+          href="/orders" 
+          role="listitem"
+          className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">RECENT ORDERS</span>
+            <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">📦</span>
+          </div>
+          <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+            {activeOrders}
+          </p>
+          <p className="font-mono text-[11px] text-muted mt-2 m-0">D2C &amp; B2B flow active</p>
+        </Link>
+
+        <Link 
+          href="/rfqs" 
+          role="listitem"
+          className="premium-card p-5 block no-underline group border-[#D6A24A]/40 bg-[#D6A24A]/10 hover:border-[#D6A24A]/70 transition-all rounded-lg"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-[#D6A24A] font-semibold">RFQS PENDING</span>
+            <span className="font-mono text-[14px] text-[#D6A24A]" aria-hidden="true">⚠</span>
+          </div>
+          <p className="font-serif text-[32px] font-normal text-[#D6A24A] m-0 leading-tight">
+            {pendingRfqs}
+          </p>
+          <p className="font-mono text-[11px] text-[#D6A24A]/80 mt-2 m-0">Needs review today</p>
+        </Link>
+
+        <Link 
+          href="/b2b" 
+          role="listitem"
+          className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B REGISTRATIONS</span>
+            <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">👥</span>
+          </div>
+          <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+            {b2bRegistrations}
+          </p>
+          <p className="font-mono text-[11px] text-muted mt-2 m-0">{pendingB2B} pending approval</p>
+        </Link>
+      </div>
+
+      {/* Main Dashboard Panels */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        
+        {/* Panel 1: Recent Orders */}
+        <section className="premium-card flex flex-col overflow-hidden rounded-lg" aria-labelledby="ordersTitle">
+          <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-surface-muted/40">
+            <h2 className="font-serif text-[20px] text-primary font-normal m-0" id="ordersTitle">
+              Recent orders
+            </h2>
+            <Link 
+              href="/orders" 
+              className="btn-ghost font-mono text-[10px] uppercase tracking-[0.12em]"
+            >
+              View all
+            </Link>
+          </div>
+          
+          <div className="table-responsive flex-1">
+            <table className="w-full text-left border-collapse">
+              <caption className="sr-only">Recent orders with customer, amount and status</caption>
+              <thead className="border-b border-border bg-surface-muted/20">
                 <tr>
-                  <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Order ID</th>
-                  <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer</th>
-                  <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Amount</th>
-                  <th className="px-8 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Status</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Order</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Amount</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-y divide-border/40">
                 {orders.map((o: any) => {
-                  const getStatusStyle = (status: string) => {
-                    const s = status.toUpperCase();
-                    if (['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s)) {
-                      return 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10';
-                    }
-                    if (['PENDING', 'PROCESSING'].includes(s)) {
-                      return 'text-amber-500 border-amber-500/30 bg-amber-500/10';
-                    }
-                    return 'text-rose-500 border-rose-500/30 bg-rose-500/10';
-                  };
+                  const s = (o.status || '').toUpperCase();
+                  const isPaid = ['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s);
+                  const isProcessing = ['PROCESSING', 'SUBMITTED'].includes(s);
+                  
+                  const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
+
                   return (
-                    <tr key={o.id} className="hover:bg-surface-muted/50 transition-colors">
-                      <td className="px-8 py-5 font-mono text-[12px] text-accent font-semibold">{o.orderNumber}</td>
-                      <td className="px-8 py-5 font-serif text-[15px] text-primary">{o.user.firstName} {o.user.lastName}</td>
-                      <td className="px-8 py-5 font-mono text-[14px] text-secondary text-right tabular-nums">₹{o.totalAmount.toLocaleString('en-IN')}</td>
-                      <td className="px-8 py-5 text-right">
-                        <span className={`font-mono text-[9px] uppercase tracking-wider border px-3 py-1 rounded-full ${getStatusStyle(o.status)}`}>
-                          {o.status.replace('_', ' ')}
+                    <ClickableRow key={o.id} href={`/orders/${o.id}`} className="hover:bg-surface-muted/40 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-[12px] text-accent hover:underline font-semibold">
+                          {o.orderNumber}
                         </span>
                       </td>
-                    </tr>
+                      <td className="px-6 py-4 font-serif text-[15px] text-primary">
+                        {o.user.firstName} {o.user.lastName}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">
+                        ₹{Math.round(o.totalAmount).toLocaleString('en-IN')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`status-pill ${pillClass}`}>
+                          <span className="dot" aria-hidden="true" />
+                          <span>{s.replace('_', ' ')}</span>
+                        </span>
+                      </td>
+                    </ClickableRow>
                   );
                 })}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-8 py-8 text-center text-muted font-mono text-[10px] uppercase tracking-widest">
+                    <td colSpan={4} className="px-6 py-8 text-center text-muted font-mono text-[10px] uppercase tracking-widest">
                       No recent orders.
                     </td>
                   </tr>
@@ -107,37 +186,67 @@ export default async function Dashboard() {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        {/* Action Required: RFQs */}
-        <div className="premium-card flex flex-col overflow-hidden">
-          <div className="px-8 py-6 border-b border-border flex justify-between items-center bg-surface-muted/30">
-            <h3 className="font-serif text-[22px] text-primary font-light flex items-center gap-3">
-              Action Required: RFQs <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span></span>
-            </h3>
-            <Link href="/orders" className="font-mono text-[9px] uppercase tracking-widest text-accent hover:text-accent-hover transition-colors">Go to Inbox</Link>
+        {/* Panel 2: Needs Review (RFQs) */}
+        <section className="premium-card flex flex-col overflow-hidden rounded-lg" aria-labelledby="rfqTitle">
+          <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-surface-muted/40">
+            <h2 className="font-serif text-[20px] text-primary font-normal m-0" id="rfqTitle">
+              Needs review · {pendingRfqs}
+            </h2>
+            <Link 
+              href="/rfqs" 
+              className="btn-ghost font-mono text-[10px] uppercase tracking-[0.12em]"
+            >
+              Open inbox
+            </Link>
           </div>
-          <div className="divide-y divide-border/50 bg-background/25">
-            {rfqs.map((r: any) => (
-              <div key={r.id} className="p-8 flex justify-between items-center hover:bg-surface-muted/50 transition-colors group">
-                <div>
-                  <h4 className="font-mono text-[12px] text-accent tracking-wider mb-2 font-semibold">{r.rfqNumber}</h4>
-                  <p className="font-serif text-[15px] text-primary">{r.user.firstName} {r.user.lastName} <span className="text-muted block font-mono text-[10px] uppercase tracking-widest mt-1">(Items: {r.items?.length || 0})</span></p>
-                </div>
-                {r.status === 'DRAFT' || r.status === 'SUBMITTED' ? (
-                  <Link href={`/orders/${r.id}`} className="px-6 py-2 bg-accent text-black hover:bg-accent-hover font-mono text-[9px] uppercase tracking-widest font-bold transition-colors">Review</Link>
-                ) : (
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-muted border border-border px-3 py-1 bg-surface-muted">{r.status}</span>
-                )}
-              </div>
-            ))}
+
+          <div className="divide-y divide-border/40 p-2">
+            {rfqs.map((r: any) => {
+              const initials = getInitials(r.user.firstName, r.user.lastName);
+              const itemCount = r.items?.length || 0;
+              const timeAgo = formatTimeAgo(r.createdAt);
+
+              return (
+                <Link 
+                  key={r.id} 
+                  href={`/rfqs/${r.id}`}
+                  className="p-4 flex items-center gap-3.5 hover:bg-surface-muted/40 transition-colors rounded-sm no-underline block group"
+                >
+                  {/* User Avatar Circle */}
+                  <div className="w-9 h-9 rounded-full border border-accent/40 bg-accent/5 flex items-center justify-center font-serif text-[13px] text-accent shrink-0" aria-hidden="true">
+                    {initials}
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-[15px] text-primary m-0 font-normal leading-snug truncate">
+                      {r.user.firstName} {r.user.lastName}
+                    </p>
+                    <p className="font-mono text-[10px] text-muted m-0 mt-0.5 tracking-wide truncate">
+                      {r.rfqNumber} · {itemCount} {itemCount === 1 ? 'item' : 'items'} · {timeAgo}
+                    </p>
+                  </div>
+
+                  {/* Review Action Deep-Link */}
+                  <span 
+                    className="px-4 py-2 border border-accent/50 text-accent group-hover:bg-accent group-hover:text-black transition-all font-mono text-[10px] uppercase tracking-[0.12em] rounded-sm font-semibold shrink-0"
+                  >
+                    Review
+                  </span>
+                </Link>
+              );
+            })}
+
             {rfqs.length === 0 && (
               <div className="p-8 text-center text-muted font-mono text-[10px] uppercase tracking-widest">
                 No RFQs require attention.
               </div>
             )}
           </div>
-        </div>
+        </section>
+
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/lib/context/SidebarContext';
+import SyncButton from '@/components/SyncButton';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
@@ -78,7 +79,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     }
   }, [currentCategoryId, currentManageId, pathname, searchParams]);
 
-  const renderLink = (name: string, href: string, badge?: number | null) => {
+  const renderLink = (name: string, href: string, badge?: number | null, icon?: string) => {
     const isActive = href === '/' 
       ? pathname === '/' 
       : pathname.startsWith(href) && 
@@ -89,6 +90,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     return (
       <Link
         href={href}
+        aria-current={isActive ? 'page' : undefined}
         onClick={(e) => {
           handleNavClick(e);
           if (onClose) onClose();
@@ -101,9 +103,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           }
         `}
       >
-        <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-2">
-          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>}
-          {name}
+        <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-2.5">
+          {icon ? (
+            <span className={`text-[12px] ${isActive ? 'text-accent' : 'text-muted/70 group-hover:text-accent'}`} aria-hidden="true">{icon}</span>
+          ) : isActive ? (
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
+          ) : null}
+          <span>{name}</span>
         </span>
         {badge !== null && badge !== undefined && badge > 0 && (
           <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
@@ -348,6 +354,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     if (!productFormState) return null;
     const {
       mode,
+      productId,
       productName,
       sku,
       isDirty,
@@ -404,19 +411,33 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       <div className="flex-1 flex flex-col justify-between min-h-[350px]">
         <div className="space-y-6">
           {/* Header */}
-          <div className="pb-4 border-b border-border">
-            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider text-muted mb-2">
-              <span className={`w-1.5 h-1.5 rounded-full ${isDirty ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span>
-              {mode === 'add' ? 'Adding Product' : 'Editing Product'}
+          <div className="pb-4 border-b border-border space-y-3">
+            <div className="flex items-center gap-2">
+              <Link
+                href="/products"
+                onClick={handleNavClick}
+                className="flex-1 text-center block px-4 py-2.5 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-red-400 hover:border-red-500/40 hover:bg-red-950/20 transition-colors border border-border bg-background/50 rounded-sm"
+              >
+                ← Exit
+              </Link>
+              <SyncButton
+                productId={productId}
+                label="Sync"
+                className="flex-1 text-center block px-4 py-2.5 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-accent hover:border-accent/40 transition-colors border border-border bg-background/50 rounded-sm cursor-pointer disabled:opacity-50"
+              />
             </div>
             <h2 className="font-serif text-[18px] text-primary font-medium tracking-wide truncate max-w-[200px]" title={productName}>
               {productName || 'New Product'}
             </h2>
-            {sku && (
-              <span className="font-mono text-[9px] text-muted border border-border px-1.5 py-0.5 rounded uppercase mt-1 inline-block">
-                {sku}
-              </span>
-            )}
+            <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-wider text-muted flex-wrap">
+              <span className={`w-1.5 h-1.5 rounded-full ${isDirty ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+              <span>{mode === 'add' ? 'Adding' : 'Editing'}</span>
+              {sku && (
+                <span className="font-mono text-[9px] text-muted border border-border px-1.5 py-0.5 rounded uppercase">
+                  {sku}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Variant View Section */}
@@ -506,7 +527,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         </div>
 
         {/* Footer Link */}
-        <div className="pt-4 border-t border-border mt-auto space-y-2">
+        <div className="pt-4 border-t border-border mt-auto">
           {productFormState.submitForm && (
             <button
               type="button"
@@ -522,13 +543,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {productFormState.saving ? 'Saving...' : productFormState.mode === 'add' ? '✓ Save Product' : '✓ Update Product'}
             </button>
           )}
-          <Link
-            href="/products"
-            onClick={handleNavClick}
-            className="w-full text-center block px-4 py-3 text-[10px] font-mono tracking-[0.15em] uppercase text-muted hover:text-primary transition-colors border border-border hover:bg-surface-muted bg-background/50 rounded-sm"
-          >
-            ← Exit Editor
-          </Link>
         </div>
       </div>
     );
@@ -572,14 +586,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
           {productFormState ? (
             renderProductFormOutline()
           ) : (
             <>
-              {renderLink('Dashboard', '/')}
-              {renderLink('Orders', '/orders')}
-              {renderLink('RFQ Inbox', '/rfqs')}
+              {renderLink('Dashboard', '/', null, '◈')}
+              {renderLink('Orders', '/orders', null, '📦')}
+              {renderLink('RFQ Inbox', '/rfqs', null, '✉')}
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Catalog</p>
               {renderCatalogDropdown()}
 
               {renderDropdown('Categories', 'collections', '/collections', categories.map(c => ({
@@ -594,25 +610,28 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                 active: currentManageId === s.id
               })))}
 
-              {renderLink('B2B Workspace', '/b2b')}
-              {renderLink('Pages / CMS', '/pages')}
-              {renderLink('Blog', '/blog')}
-              {renderLink('Coupons', '/promotions')}
-              {renderLink('Affiliates', '/affiliates')}
-              {renderLink('Tickets', '/tickets', openTickets)}
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Business</p>
+              {renderLink('B2B Workspace', '/b2b', null, '🏢')}
+              {renderLink('Pages / CMS', '/pages', null, '📄')}
+              {renderLink('Blog', '/blog', null, '✎')}
+              {renderLink('Coupons', '/promotions', null, '🏷')}
+              {renderLink('Affiliates', '/affiliates', null, '👥')}
+              {renderLink('Tickets', '/tickets', openTickets, '🎫')}
 
-              {renderLink('Customers', '/customers')}
-              {renderLink('Admin Settings', '/account')}
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
+              {renderLink('Customers', '/customers', null, '👥')}
+              {renderLink('Admin Settings', '/account', null, '⚙')}
             </>
           )}
         </nav>
 
-        <div className="p-3 border-t border-border bg-background">
+        <div className="p-4 border-t border-border bg-background/50">
           <button
             onClick={handleLogout}
-            className="w-full text-left px-3 py-2 text-[9px] font-mono tracking-[0.12em] uppercase text-muted hover:text-red-500 transition-colors border border-transparent hover:border-border"
+            className="w-full px-4 py-2.5 text-[10px] font-mono tracking-[0.14em] uppercase text-[#C97E6A] bg-[#C97E6A]/10 border border-[#C97E6A]/30 hover:bg-[#C97E6A]/20 transition-all rounded-sm flex items-center justify-between cursor-pointer font-medium"
           >
-            Sign Out
+            <span>Sign Out</span>
+            <span aria-hidden="true">➔</span>
           </button>
         </div>
       </aside>

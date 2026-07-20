@@ -19,9 +19,7 @@ export default async function EditProductPage(props: { params: Promise<{ id: str
 
   return (
     <div className="max-w-5xl mx-auto pb-12">
-      <div className="bg-surface border border-border p-8">
-        <ProductFormClient categories={categories} spaces={spaces} defaultValues={product} mode="edit" />
-      </div>
+      <ProductFormClient categories={categories} spaces={spaces} defaultValues={product} mode="edit" />
     </div>
   );
 }

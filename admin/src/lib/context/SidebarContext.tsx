@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState } from 'react';
 
 export interface ProductFormSidebarState {
   mode: 'add' | 'edit';
+  productId?: string;
   productName: string;
   sku: string;
   isDirty: boolean;
