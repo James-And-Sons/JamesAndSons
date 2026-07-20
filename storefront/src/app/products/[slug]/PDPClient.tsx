@@ -526,7 +526,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           {product.description && (
             <div style={{ margin: '16px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '20px' }}>
               <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Provenance & Craftsmanship</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7 }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 {product.description}
               </div>
             </div>
@@ -716,7 +716,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '20px' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>The Masterpiece</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-muted)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                   {product.description || 'Discover the essence of luxury with this masterfully crafted piece, designed to bring sustainable brilliance to your grand spaces.'}
                 </div>
               </div>

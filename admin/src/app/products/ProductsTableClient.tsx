@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import ActionDropdown from '@/components/ActionDropdown';
 import SyncButton from '@/components/SyncButton';
@@ -87,11 +87,18 @@ export default function ProductsTableClient({
     });
   }, [products, searchTerm, selectedCategory, selectedStatus, chipFilter]);
 
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, selectedStatus, chipFilter]);
+
   // Derive paginated products based on current page and items per page
   const paginatedProducts = useMemo(() => {
     const startIdx = (currentPage - 1) * itemsPerPage;
     return filteredProducts.slice(startIdx, startIdx + itemsPerPage);
   }, [filteredProducts, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -528,15 +535,17 @@ export default function ProductsTableClient({
           </span>
           <div className="flex gap-2">
             <button
-              className="px-4 py-2 border border-border text-[10px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50 min-h-[36px] rounded-sm cursor-not-allowed"
-              disabled
+              className="px-4 py-2 border border-border text-[10px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50 min-h-[36px] rounded-sm cursor-pointer disabled:cursor-not-allowed hover:text-primary transition-colors"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
               aria-label="Previous page"
             >
               Prev
             </button>
             <button
-              className="px-4 py-2 border border-border text-[10px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50 min-h-[36px] rounded-sm cursor-not-allowed"
-              disabled
+              className="px-4 py-2 border border-border text-[10px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50 min-h-[36px] rounded-sm cursor-pointer disabled:cursor-not-allowed hover:text-primary transition-colors"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages || totalPages === 0}
               aria-label="Next page"
             >
               Next
