@@ -552,6 +552,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 alignItems: 'center',
                 justify: 'center',
                 gap: '10px',
+                padding: '0 32px',
                 fontSize: '14px',
                 background: 'var(--gold)',
                 color: 'var(--obsidian)',
@@ -779,7 +780,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               onClick={handleAddToCart}
               disabled={availableStock === 0}
               style={{
-                padding: '12px 20px',
+                padding: '12px 32px',
                 background: 'var(--gold)',
                 border: 'none',
                 borderRadius: '12px',
@@ -1152,6 +1153,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                       flex: 1,
                       height: '54px',
                       borderRadius: '12px',
+                      padding: '0 40px',
                       fontSize: '14px',
                       whiteSpace: 'nowrap',
                       background: 'var(--gold)',
