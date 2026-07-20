@@ -1,0 +1,97 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: NextRequest) {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'GEMINI_API_KEY is not configured in the environment.' },
+        { status: 500 }
+      );
+    }
+
+    const { prompt, type, tone } = await req.json();
+
+    if (!prompt) {
+      return NextResponse.json(
+        { error: 'Prompt is required for generating listing details.' },
+        { status: 400 }
+      );
+    }
+
+    // Initialize Google Gen AI Client
+    const ai = new GoogleGenerativeAI(apiKey);
+    
+    const systemPrompt = `You are a high-end luxury e-commerce copywriter and SEO specialist for "James and Sons" (jamesandsons.in), an elite bespoke lighting brand.
+Your job is to generate a COMPLETE, comprehensive product listing specification based on user input.
+
+You MUST respond ONLY with a valid JSON object matching this schema:
+{
+  "name": "A refined, luxury, high-end product title (e.g., 'Aurelia Brass Ring Pendant Chandelier')",
+  "description": "A compelling, detailed narrative description. Use newlines (\\n) to separate distinct paragraphs. Preserve spacing breaks.",
+  "bulletPoints": [
+    "Highlight 1: Material and craftsmanship details",
+    "Highlight 2: Lighting performance or source detail",
+    "Highlight 3: Aesthetic/suitability"
+  ],
+  "materialAndFinish": ["Solid Brass", "Hand-blown Glass"],
+  "bulbType": ["E27 LED"],
+  "style": ["Modern Luxury", "Art Deco"],
+  "power": "40W",
+  "voltage": "220-240V",
+  "isLed": true,
+  "hsnCode": "94051010",
+  "gstRate": 18,
+  "color": "Warm Gold",
+  "size": "32 inches",
+  "material": "Brass & Crystal Glass",
+  "countryOfOrigin": "India",
+  "brand": "James and Sons",
+  "warranty": "2 Years Manufacturer Warranty",
+  "googleProductCategory": "Home & Garden > Lighting > Light Fixtures > Chandeliers",
+  "amazonFixtureForm": "Chandelier",
+  "amazonMountingType": "Ceiling Mount",
+  "amazonLightingMethod": "Ambient & Downlight",
+  "amazonWaterResistance": "IP20 Indoor Use",
+  "amazonTheme": "Modern Luxury",
+  "amazonSpecialFeatures": ["Dimmable", "Adjustable Height", "Handcrafted"],
+  "amazonIncludedComponents": "Chandelier, Canopy, LED Bulbs, Mounting Hardware",
+  "amazonKeywords": "chandelier, brass light, luxury pendant, living room lighting, modern ceiling fixture"
+}
+
+Tone requirement: ${tone || 'Luxurious & Elegant'}.
+Product category context: ${type || 'Lighting Fixture'}.
+
+Do not include markdown wrappers like \`\`\`json or trailing/leading text. Output raw JSON only.`;
+
+    // We target gemini-2.5-flash for fast text generation
+    const model = ai.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: systemPrompt,
+    });
+
+    const result = await model.generateContent({
+      contents: [
+        { role: 'user', parts: [{ text: `Keywords / Specs: ${prompt}` }] }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.7,
+      }
+    });
+
+    const responseText = result.response.text().trim();
+    const parsedData = JSON.parse(responseText);
+
+    return NextResponse.json({ success: true, data: parsedData });
+  } catch (err: any) {
+    console.error('Gemini generation failure:', err);
+    return NextResponse.json(
+      { error: err.message || 'Failed to generate product copy using AI.' },
+      { status: 500 }
+    );
+  }
+}
