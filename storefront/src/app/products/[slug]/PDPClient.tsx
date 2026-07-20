@@ -393,7 +393,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             onClick={() => activeImages.length > 0 && setLightboxOpen(true)}
             onTouchStart={e => setTouchStartX(e.touches[0].clientX)}
             onTouchEnd={e => handleSwipe(e.changedTouches[0].clientX)}
-            style={{ margin: '0 20px', position: 'relative', height: '260px', borderRadius: '24px', border: '0.5px solid var(--border)', overflow: 'hidden', cursor: activeImages.length > 0 ? 'zoom-in' : 'default' }}
+            style={{ margin: '0 20px', position: 'relative', width: 'calc(100% - 40px)', aspectRatio: '1 / 1', borderRadius: '24px', border: '0.5px solid var(--border)', overflow: 'hidden', cursor: activeImages.length > 0 ? 'zoom-in' : 'default' }}
           >
             {activeImages.length > 0 ? (
               <Image
@@ -810,7 +810,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   {/* Main Active Image Container */}
                   <div
                     className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center relative cursor-zoom-in"
-                    style={{ height: '480px' }}
+                    style={{ width: '100%', aspectRatio: '1 / 1' }}
                     onClick={() => setLightboxOpen(true)}
                   >
                     <Image
