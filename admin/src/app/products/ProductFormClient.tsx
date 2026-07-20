@@ -327,6 +327,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     bulbType: defaultValues?.bulbType?.join(', ') || '',
     style: defaultValues?.style?.join(', ') || '',
     power: defaultValues?.power || '',
+    voltage: defaultValues?.voltage || '',
     material: defaultValues?.material || '',
     countryOfOrigin: defaultValues?.countryOfOrigin || 'India',
     brand: defaultValues?.brand || 'James and Sons',

@@ -138,7 +138,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   // Merge bullets parsed from description text and the explicit product.bulletPoints
   const mergedBullets = [
     ...(parsedDesc.bullets || []),
-    ...(product.bulletPoints || []).map(b => b.trim().replace(/^[.,:;\-\s]+/, '').replace(/[.,:;\-\s]+$/, ''))
+    ...(product.bulletPoints || []).map((b: string) => b.trim().replace(/^[.,:;\-\s]+/, '').replace(/[.,:;\-\s]+$/, ''))
   ].filter(Boolean);
 
   // Onsitego warranty states
