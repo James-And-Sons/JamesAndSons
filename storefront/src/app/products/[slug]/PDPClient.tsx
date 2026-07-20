@@ -572,36 +572,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             </button>
           </div>
 
-          {/* Commercial Bulk Quote CTA Upgrade */}
-          <div style={{ padding: '16px 24px 0' }}>
-            <button
-              type="button"
-              onClick={() => setInquiryModalOpen(true)}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                background: 'rgba(196,160,90,0.08)',
-                border: '1px solid rgba(196,160,90,0.3)',
-                borderRadius: '14px',
-                color: 'var(--gold)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justify: 'center',
-                gap: '8px',
-                transition: 'all 0.2s'
-              }}
-            >
-              <i className="ti ti-building" style={{ fontSize: '16px' }}></i>
-              <span>Request Commercial / Bulk Quote ↗</span>
-            </button>
-          </div>
-
           {/* Trust — Brand Highlights */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '0.5px solid var(--border)', borderBottom: '0.5px solid var(--border)', padding: '20px 24px', margin: '24px 0 0' }}>
             {[
@@ -701,6 +671,36 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               )}
             </div>
           )}
+
+          {/* Commercial Bulk Quote CTA Upgrade (Mobile - Below Specifications) */}
+          <div style={{ margin: '16px 20px 0' }}>
+            <button
+              type="button"
+              onClick={() => setInquiryModalOpen(true)}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                background: 'rgba(196,160,90,0.08)',
+                border: '1px solid rgba(196,160,90,0.3)',
+                borderRadius: '14px',
+                color: 'var(--gold)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <i className="ti ti-building" style={{ fontSize: '16px' }}></i>
+              <span>Request Commercial / Bulk Quote ↗</span>
+            </button>
+          </div>
 
           {/* Mobile Variant Comparison Table */}
           {allOptions.length > 1 && (
