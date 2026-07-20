@@ -29,6 +29,126 @@ const GOOGLE_PRODUCT_CATEGORIES = [
   "Home & Garden > Lighting > Light Fixtures > Recessed Lighting"
 ];
 
+import { createPortal } from 'react-dom';
+
+interface DropdownOption {
+  value: string;
+  label: string;
+}
+
+interface CustomDropdownProps {
+  value: string;
+  options: DropdownOption[];
+  onChange: (val: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}
+
+function CustomDropdown({ value, options, onChange, placeholder = "Select...", required }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const updateCoords = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      window.addEventListener('resize', updateCoords);
+      window.addEventListener('scroll', updateCoords, true);
+    }
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value);
+
+  return (
+    <div className="relative w-full font-sans text-[13px]">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-background border border-border px-4 py-3 text-[13px] text-primary focus:outline-none focus:border-accent transition-colors flex items-center justify-between cursor-pointer rounded-sm"
+      >
+        <span className={selectedOption ? 'text-primary' : 'text-muted/60'}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <span className={`text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true">▾</span>
+      </button>
+
+      {isOpen && typeof window !== 'undefined' && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'absolute',
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            width: `${coords.width}px`,
+          }}
+          className="bg-surface border border-border shadow-xl z-[9999] max-h-60 overflow-y-auto rounded-sm py-1 font-sans text-[13px]"
+        >
+          {placeholder && !required && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                setIsOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-surface-muted hover:text-primary transition-colors text-muted/60 text-[13px] cursor-pointer"
+            >
+              {placeholder}
+            </button>
+          )}
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 hover:bg-surface-muted transition-colors text-[13px] flex items-center justify-between cursor-pointer ${
+                opt.value === value ? 'bg-surface-muted text-accent font-semibold' : 'text-secondary'
+              }`}
+            >
+              <span>{opt.label}</span>
+              {opt.value === value && <span>✓</span>}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+
 type Variant = {
   id?: string;
   name: string;
@@ -583,8 +703,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     }
   }
 
-  const inputCls = "w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent transition-colors";
-  const selectCls = "w-full bg-background border border-border px-4 py-3 text-[14px] font-body text-primary focus:outline-none focus:border-accent transition-colors appearance-none pr-10 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M7%209l3%203%203-3%22%20stroke%3D%22%23a1a1aa%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_16px_center] bg-[size:20px_20px] bg-no-repeat cursor-pointer";
+  const inputCls = "w-full bg-background border border-border px-4 py-3 text-[13px] font-sans text-primary focus:outline-none focus:border-accent transition-colors";
+  const selectCls = "w-full bg-background border border-border px-4 py-3 text-[13px] font-sans text-primary focus:outline-none focus:border-accent transition-colors appearance-none pr-10 bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M7%209l3%203%203-3%22%20stroke%3D%22%23a1a1aa%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_16px_center] bg-[size:20px_20px] bg-no-repeat cursor-pointer";
   const labelCls = "font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1";
 
 
@@ -734,16 +854,13 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                   </div>
                   <div>
                     <label htmlFor="categoryId" className={labelCls}>Category *</label>
-                    <select
-                      id="categoryId"
-                      required
+                    <CustomDropdown
                       value={parentValues.categoryId}
-                      onChange={e => handleParentFieldChange('categoryId', e.target.value)}
-                      className={selectCls}
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                      options={categories.map(c => ({ value: c.id, label: c.name }))}
+                      onChange={val => handleParentFieldChange('categoryId', val)}
+                      placeholder="Select Category"
+                      required
+                    />
                   </div>
                   <div className="col-span-2">
                     <label className={labelCls}>Suited Spaces (Toggle chips)</label>
@@ -1653,16 +1770,12 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                   </div>
                   <div className="col-span-2">
                     <label className={labelCls}>Google Product Category Override</label>
-                    <select
-                      value={variants[activeTab].googleProductCategory}
-                      onChange={e => updateVariantField(activeTab, 'googleProductCategory', e.target.value)}
-                      className={selectCls}
-                    >
-                      <option value="">Inherit Parent ({parentValues.googleProductCategory || 'None'})</option>
-                      {GOOGLE_PRODUCT_CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                    <CustomDropdown
+                      value={variants[activeTab].googleProductCategory || ''}
+                      options={GOOGLE_PRODUCT_CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+                      onChange={val => updateVariantField(activeTab, 'googleProductCategory', val)}
+                      placeholder={`Inherit Parent (${parentValues.googleProductCategory || 'None'})`}
+                    />
                   </div>
                 </div>
               </CollapsibleCard>

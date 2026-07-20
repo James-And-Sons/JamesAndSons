@@ -18,6 +18,7 @@ interface ProductItem {
   updatedAt: Date;
   categoryId: string | null;
   category: { id: string; name: string } | null;
+  slug: string;
 }
 
 interface CategoryItem {
