@@ -328,6 +328,8 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     style: defaultValues?.style?.join(', ') || '',
     power: defaultValues?.power || '',
     voltage: defaultValues?.voltage || '',
+    color: defaultValues?.color || '',
+    size: defaultValues?.size || '',
     material: defaultValues?.material || '',
     countryOfOrigin: defaultValues?.countryOfOrigin || 'India',
     brand: defaultValues?.brand || 'James and Sons',

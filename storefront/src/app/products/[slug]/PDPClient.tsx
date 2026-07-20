@@ -591,7 +591,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 borderRadius: '16px',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'center',
+                justifyContent: 'center',
                 gap: '10px',
                 padding: '0 32px',
                 fontSize: '14px',
@@ -737,7 +737,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'center',
+                justifyContent: 'center',
                 gap: '8px',
                 transition: 'all 0.2s'
               }}
@@ -1012,7 +1012,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justify: 'center',
+                    justifyContent: 'center',
                     gap: '10px',
                     transition: 'all 0.2s'
                   }}
@@ -1347,7 +1347,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   </div>
                 </div>
 
-                <div style={{ background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', justify: 'center', gap: '12px' }}>
+                <div style={{ background: 'var(--surface2)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '12px' }}>
                   <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>100% Satisfaction Standard</div>
                   <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
                     Every James and Sons fixture undergoes 48-hour burn testing and artisan quality inspection before dispatch to luxury residences across India.
