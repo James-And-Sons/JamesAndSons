@@ -698,7 +698,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               }}
             >
               <i className="ti ti-building" style={{ fontSize: '16px' }}></i>
-              <span>Request Commercial / Bulk Quote ↗</span>
+              <span>Request Bulk Quote</span>
             </button>
           </div>
 
@@ -963,7 +963,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   }}
                 >
                   <i className="ti ti-building" style={{ fontSize: '18px' }}></i>
-                  <span>Request Commercial / Bulk Quote ↗</span>
+                  <span>Request Bulk Quote</span>
                 </button>
               </div>
 
