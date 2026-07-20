@@ -258,7 +258,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
   const [aiType, setAiType] = useState('');
   const [aiKeywords, setAiKeywords] = useState('');
   const [generatingAi, setGeneratingAi] = useState(false);
-  const [aiResult, setAiResult] = useState<{ name: string; description: string; bulletPoints: string[] } | null>(null);
+  const [aiResult, setAiResult] = useState<any | null>(null);
 
   const handleGenerateAiListing = async () => {
     if (!aiKeywords.trim()) {
@@ -292,9 +292,32 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     setIsDirty(true);
     setParentValues(prev => ({
       ...prev,
-      name: aiResult.name,
-      description: aiResult.description,
-      bulletPoints: aiResult.bulletPoints.join('\n'),
+      name: aiResult.name || prev.name,
+      description: aiResult.description || prev.description,
+      bulletPoints: Array.isArray(aiResult.bulletPoints) ? aiResult.bulletPoints.join('\n') : (aiResult.bulletPoints || prev.bulletPoints),
+      materialAndFinish: Array.isArray(aiResult.materialAndFinish) ? aiResult.materialAndFinish.join(', ') : (aiResult.materialAndFinish || prev.materialAndFinish),
+      bulbType: Array.isArray(aiResult.bulbType) ? aiResult.bulbType.join(', ') : (aiResult.bulbType || prev.bulbType),
+      style: Array.isArray(aiResult.style) ? aiResult.style.join(', ') : (aiResult.style || prev.style),
+      power: aiResult.power || prev.power,
+      voltage: aiResult.voltage || prev.voltage,
+      isLed: typeof aiResult.isLed === 'boolean' ? aiResult.isLed : prev.isLed,
+      hsnCode: aiResult.hsnCode || prev.hsnCode,
+      gstRate: typeof aiResult.gstRate === 'number' ? aiResult.gstRate : prev.gstRate,
+      color: aiResult.color || prev.color,
+      size: aiResult.size || prev.size,
+      material: aiResult.material || prev.material,
+      countryOfOrigin: aiResult.countryOfOrigin || prev.countryOfOrigin,
+      brand: aiResult.brand || prev.brand,
+      warranty: aiResult.warranty || prev.warranty,
+      googleProductCategory: aiResult.googleProductCategory || prev.googleProductCategory,
+      amazonFixtureForm: aiResult.amazonFixtureForm || prev.amazonFixtureForm,
+      amazonMountingType: aiResult.amazonMountingType || prev.amazonMountingType,
+      amazonLightingMethod: aiResult.amazonLightingMethod || prev.amazonLightingMethod,
+      amazonWaterResistance: aiResult.amazonWaterResistance || prev.amazonWaterResistance,
+      amazonTheme: aiResult.amazonTheme || prev.amazonTheme,
+      amazonSpecialFeatures: Array.isArray(aiResult.amazonSpecialFeatures) ? aiResult.amazonSpecialFeatures : (aiResult.amazonSpecialFeatures || prev.amazonSpecialFeatures),
+      amazonIncludedComponents: aiResult.amazonIncludedComponents || prev.amazonIncludedComponents,
+      amazonKeywords: aiResult.amazonKeywords || prev.amazonKeywords,
     }));
     setShowAiAssistant(false);
     setAiResult(null);
@@ -972,21 +995,37 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                               <div className="font-mono text-[9px] text-muted uppercase">Generated Description</div>
                               <div className="font-sans text-[12px] text-secondary whitespace-pre-wrap">{aiResult.description}</div>
                             </div>
-                            <div>
-                              <div className="font-mono text-[9px] text-muted uppercase">Generated Bullet Points</div>
-                              <ul className="list-disc pl-4 font-sans text-[12px] text-secondary space-y-1">
-                                {aiResult.bulletPoints.map((bp, i) => (
-                                  <li key={i}>{bp}</li>
-                                ))}
-                              </ul>
+                            {aiResult.bulletPoints && (
+                              <div>
+                                <div className="font-mono text-[9px] text-muted uppercase">Generated Bullet Points</div>
+                                <ul className="list-disc pl-4 font-sans text-[12px] text-secondary space-y-1">
+                                  {aiResult.bulletPoints.map((bp: string, i: number) => (
+                                    <li key={i}>{bp}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            <div className="pt-2 border-t border-border/30">
+                              <div className="font-mono text-[9px] text-accent uppercase font-semibold mb-1">Generated Specs &amp; SEO Attributes</div>
+                              <div className="flex flex-wrap gap-1.5 font-mono text-[9px]">
+                                {aiResult.material && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary">Material: {aiResult.material}</span>}
+                                {aiResult.power && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary">Power: {aiResult.power}</span>}
+                                {aiResult.voltage && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary">Voltage: {aiResult.voltage}</span>}
+                                {aiResult.hsnCode && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary">HSN: {aiResult.hsnCode}</span>}
+                                {aiResult.amazonFixtureForm && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary">Form: {aiResult.amazonFixtureForm}</span>}
+                                {aiResult.amazonMountingType && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary">Mount: {aiResult.amazonMountingType}</span>}
+                                {aiResult.amazonKeywords && <span className="bg-surface border border-border px-2 py-0.5 rounded text-secondary truncate max-w-full">Keywords: {aiResult.amazonKeywords}</span>}
+                              </div>
                             </div>
+
                             <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
                               <button
                                 type="button"
                                 onClick={handleApplyAiListing}
                                 className="px-4 py-2 border border-accent/40 text-accent hover:bg-accent/10 font-mono text-[10px] uppercase tracking-wider rounded-sm font-bold cursor-pointer"
                               >
-                                Apply to Form Fields
+                                Apply All Fields to Form
                               </button>
                             </div>
                           </div>
