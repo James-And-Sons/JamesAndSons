@@ -16,6 +16,7 @@
     "@james-andsons/db": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",
+    "@james-andsons/ui": "*",
     "@james-andsons/utils": "*",
     "@james-andsons/zoho": "*",
     "@google/generative-ai": "^0.24.1",
