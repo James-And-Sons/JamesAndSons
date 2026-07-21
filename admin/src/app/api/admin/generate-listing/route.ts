@@ -68,13 +68,13 @@ Product category context: ${type || 'Lighting Fixture'}.
 Do not include markdown wrappers like \`\`\`json or trailing/leading text. Output raw JSON only.`;
 
     const candidateModels = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
+      'gemini-3.5-flash',
       'gemini-2.5-flash',
-      'gemini-1.5-pro',
-      'gemini-1.5-pro-latest',
-      'gemini-2.0-flash-lite-preview-02-05',
+      'gemini-2.0-flash',
+      'gemini-flash-latest',
+      'gemini-2.0-flash-lite',
+      'gemini-2.5-pro',
+      'gemini-pro-latest',
     ];
 
     let lastError: any = null;
