@@ -12,7 +12,8 @@
     "dev:storefront": "npm run dev --workspace=@james-andsons/storefront",
     "dev:backend": "npm run start:dev --workspace=@james-andsons/backend",
     "build": "npm run build --workspace=@james-andsons/assets && npm run build --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "postinstall": "npm run db:generate --workspace=@james-andsons/db"
   },
   "packageManager": "yarn@4.14.1"
 }
