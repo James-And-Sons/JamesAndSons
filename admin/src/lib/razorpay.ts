@@ -1,3 +1,9 @@
 import { getRazorpayInstance } from '@james-andsons/razorpay';
 export const razorpay = getRazorpayInstance();
-export * from '@james-andsons/razorpay';
+export {
+  getRazorpayInstance,
+  createRazorpayOrder,
+  createPaymentLink,
+  refundRazorpayPayment,
+  RazorpayProvider
+} from '@james-andsons/razorpay';

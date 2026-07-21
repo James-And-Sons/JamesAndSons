@@ -1,1 +1,7 @@
-export * from '@james-andsons/razorpay';
+export {
+  getRazorpayInstance,
+  createRazorpayOrder,
+  createPaymentLink,
+  refundRazorpayPayment,
+  RazorpayProvider
+} from '@james-andsons/razorpay';
