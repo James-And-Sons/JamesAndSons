@@ -1,6 +1,16 @@
+function getFlipkartCredentials() {
+  let appId = process.env.FLIPKART_APP_ID?.trim() || '';
+  let appSecret = process.env.FLIPKART_APP_SECRET?.trim() || '';
+
+  // Strip any literal surrounding quotes if pasted from a .env template
+  appId = appId.replace(/^['"]|['"]$/g, '');
+  appSecret = appSecret.replace(/^['"]|['"]$/g, '');
+
+  return { appId, appSecret };
+}
+
 async function getFlipkartAccessToken() {
-  const appId = process.env.FLIPKART_APP_ID;
-  const appSecret = process.env.FLIPKART_APP_SECRET;
+  const { appId, appSecret } = getFlipkartCredentials();
 
   if (!appId || !appSecret) {
     throw new Error('Missing Flipkart app credentials.');
@@ -9,7 +19,7 @@ async function getFlipkartAccessToken() {
   // Base64 encoding credentials for Basic Auth
   const authHeader = 'Basic ' + Buffer.from(`${appId}:${appSecret}`).toString('base64');
 
-  const res = await fetch('https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_Api', {
+  const res = await fetch('https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_api', {
     method: 'POST',
     headers: {
       'Authorization': authHeader
@@ -26,8 +36,7 @@ async function getFlipkartAccessToken() {
 }
 
 export async function syncToFlipkart(product: any) {
-  const appId = process.env.FLIPKART_APP_ID;
-  const appSecret = process.env.FLIPKART_APP_SECRET;
+  const { appId, appSecret } = getFlipkartCredentials();
 
   if (
     !appId || 
