@@ -4,13 +4,11 @@
   "workspaces": [
     "admin",
     "storefront",
-    "backend",
     "packages/*"
   ],
   "scripts": {
     "dev:admin": "npm run dev --workspace=@james-andsons/admin",
     "dev:storefront": "npm run dev --workspace=@james-andsons/storefront",
-    "dev:backend": "npm run start:dev --workspace=@james-andsons/backend",
     "build": "npm run build --workspace=@james-andsons/assets && npm run build --workspaces",
     "lint": "npm run lint --workspaces",
     "postinstall": "npm run db:generate --workspace=@james-andsons/db"
