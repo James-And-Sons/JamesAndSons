@@ -29,6 +29,58 @@ function writeCell(sheet: any, row: number, col: number, value: any) {
   sheet[cellRef] = { t: type, v: value };
 }
 
+function getFlipkartTypeAndMount(categoryName: string, productName: string) {
+  const cat = (categoryName || '').toLowerCase();
+  const name = (productName || '').toLowerCase();
+
+  if (cat.includes('chandelier') || name.includes('chandelier')) {
+    return { 
+      type: 'Chandelier', 
+      mountType: 'Hanging', 
+      suitableFor: 'Living Room::Dining Room',
+      usage: 'Decorative' 
+    };
+  }
+  if (cat.includes('hanging') || cat.includes('pendant') || name.includes('hanging') || name.includes('pendant')) {
+    return { 
+      type: 'Pendant', 
+      mountType: 'Hanging', 
+      suitableFor: 'Accent Light::Decorative Light',
+      usage: 'Decorative' 
+    };
+  }
+  if (cat.includes('table') || name.includes('table')) {
+    return { 
+      type: 'Table', 
+      mountType: 'Table', 
+      suitableFor: 'Bedside Lamp::Study Lamp',
+      usage: 'Decorative' 
+    };
+  }
+  if (cat.includes('floor') || name.includes('floor')) {
+    return { 
+      type: 'Floor', 
+      mountType: 'Floor', 
+      suitableFor: 'Living Room::Reading Lamp',
+      usage: 'Decorative' 
+    };
+  }
+  if (cat.includes('pole') || cat.includes('gate') || name.includes('pole') || name.includes('gate') || name.includes('post')) {
+    return { 
+      type: 'Gate Lamp', 
+      mountType: 'Post Mount', 
+      suitableFor: 'Outdoor Light::Gate Light',
+      usage: 'Functional' 
+    };
+  }
+  return { 
+    type: 'Sconce', 
+    mountType: 'Wall Mounted', 
+    suitableFor: 'Wall Light::Accent Light',
+    usage: 'Decorative' 
+  };
+}
+
 function writeRowAttributes(
   sheet: any,
   rowIdx: number,
@@ -40,6 +92,9 @@ function writeRowAttributes(
   size: string,
   v: any = null       // variant if exists
 ) {
+  const categoryName = p.category?.name || '';
+  const mapping = getFlipkartTypeAndMount(categoryName, name);
+
   // Col 7 (G): Seller SKU ID
   writeCell(sheet, rowIdx, 7, sku);
 
@@ -50,8 +105,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 9, brand);
 
   // Col 10 (J): Mount Type
-  const mountType = getMountingType(v ? { ...p, ...v } : p);
-  writeCell(sheet, rowIdx, 10, mountType === 'Wall Mount' ? 'Wall Mounted' : 'Hanging');
+  writeCell(sheet, rowIdx, 10, mapping.mountType);
 
   // Col 11 (K): Material
   writeCell(sheet, rowIdx, 11, getMaterial(v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p));
@@ -60,7 +114,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 12, "Yes");
 
   // Col 13 (M): Suitable For
-  writeCell(sheet, rowIdx, 13, "Decorative Light");
+  writeCell(sheet, rowIdx, 13, mapping.suitableFor);
 
   // Col 14 (N): Adjustable
   writeCell(sheet, rowIdx, 14, "No");
@@ -72,7 +126,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 16, color);
 
   // Col 17 (Q): Type
-  writeCell(sheet, rowIdx, 17, "Sconce");
+  writeCell(sheet, rowIdx, 17, mapping.type);
 
   // Col 18 (R): Pack of Lamps
   writeCell(sheet, rowIdx, 18, 1);
@@ -98,7 +152,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 24, "[cm]");
 
   // Col 25 (Y): Items Included
-  writeCell(sheet, rowIdx, 25, "1 Wall Lamp, Hanging Accessories");
+  writeCell(sheet, rowIdx, 25, "1 Lamp, Hanging/Fitting Accessories");
 
   // Col 26 (Z): Pack of
   writeCell(sheet, rowIdx, 26, 1);
@@ -122,7 +176,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 34, p.description || p.name);
 
   // Col 35 (AI): Search Keywords
-  writeCell(sheet, rowIdx, 35, `${p.name}::Wall Light::Decorative Light`);
+  writeCell(sheet, rowIdx, 35, `${p.name}::Decorative Light::Lamp`);
 
   // Col 36-39 (AJ-AM): Key Specs
   writeCell(sheet, rowIdx, 36, "Premium Finish");
@@ -187,7 +241,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 65, "Wall Switch");
 
   // Col 66 (BN): Usage
-  writeCell(sheet, rowIdx, 66, "Decorative");
+  writeCell(sheet, rowIdx, 66, mapping.usage);
 
   // Col 67 (BO): Gift Pack
   writeCell(sheet, rowIdx, 67, "No");
@@ -196,7 +250,10 @@ function writeRowAttributes(
 export async function GET(req: NextRequest) {
   try {
     const products = await prisma.product.findMany({
-      include: { variants: true },
+      include: { 
+        variants: true,
+        category: true
+      },
       orderBy: { name: 'asc' }
     });
 
