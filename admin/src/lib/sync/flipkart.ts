@@ -9,16 +9,11 @@ async function getFlipkartAccessToken() {
   // Base64 encoding credentials for Basic Auth
   const authHeader = 'Basic ' + Buffer.from(`${appId}:${appSecret}`).toString('base64');
 
-  const res = await fetch('https://api.flipkart.net/oauth-service/oauth/token', {
+  const res = await fetch('https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_Api', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
       'Authorization': authHeader
-    },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      scope: 'seller_api'
-    })
+    }
   });
 
   if (!res.ok) {
