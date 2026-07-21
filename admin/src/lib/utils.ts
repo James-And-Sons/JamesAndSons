@@ -1,15 +1,9 @@
+import { formatPriceFull, formatDate as sharedFormatDate } from '@james-andsons/utils';
+
 export function formatPrice(amount: number) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatPriceFull(amount);
 }
 
 export function formatDate(date: Date | string) {
-  return new Date(date).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
+  return sharedFormatDate(date);
 }

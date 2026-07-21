@@ -1,0 +1,22 @@
+{
+  "name": "@james-andsons/db",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.5.0",
+    "@prisma/adapter-pg": "^7.5.0",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "prisma": "^7.5.0",
+    "typescript": "^5"
+  }
+}

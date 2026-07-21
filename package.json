@@ -4,7 +4,8 @@
   "workspaces": [
     "admin",
     "storefront",
-    "backend"
+    "backend",
+    "packages/*"
   ],
   "scripts": {
     "dev:admin": "npm run dev --workspace=@james-andsons/admin",

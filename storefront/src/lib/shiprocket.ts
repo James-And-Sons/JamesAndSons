@@ -1,48 +1,7 @@
-// In-memory token cache for serverless environments
-let cachedToken: string | null = null;
-let tokenExpiryTime: number = 0;
+import { getShiprocketToken as sharedGetToken } from '@james-andsons/shiprocket';
 
 export async function getShiprocketToken() {
-  const now = Date.now();
-
-  // If we have a valid token (with 5 mins buffer), reuse it
-  if (cachedToken && now < tokenExpiryTime - 5 * 60 * 1000) {
-    return cachedToken;
-  }
-
-  const email = process.env.SHIPROCKET_EMAIL;
-  const password = process.env.SHIPROCKET_PASSWORD;
-
-  if (!email || !password) {
-    console.error('CRITICAL: Shiprocket credentials missing from Environment Variables.');
-    return null;
-  }
-
-  console.log(`Attempting Shiprocket login for: ${email}`);
-
-  try {
-    const res = await fetch('https://apiv2.shiprocket.in/v1/external/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-      cache: 'no-store'
-    });
-
-    if (!res.ok) {
-      throw new Error(`Shiprocket auth failed: ${res.statusText}`);
-    }
-
-    const data = await res.json();
-    cachedToken = data.token;
-
-    // Simplistic expiry: assume token is good for 9 days (Shiprocket tokens usually last 10)
-    tokenExpiryTime = now + 9 * 24 * 60 * 60 * 1000;
-
-    return cachedToken;
-  } catch (err) {
-    console.error('getShiprocketToken Error:', err);
-    return null;
-  }
+  return sharedGetToken();
 }
 
 /**
