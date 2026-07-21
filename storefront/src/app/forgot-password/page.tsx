@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Navigation from '@/components/Navigation'
 import ForgotPasswordForm from './ForgotPasswordForm'
 
@@ -18,7 +19,9 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
 
-          <ForgotPasswordForm />
+          <Suspense fallback={<div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>Loading...</div>}>
+            <ForgotPasswordForm />
+          </Suspense>
         </div>
       </div>
     </>

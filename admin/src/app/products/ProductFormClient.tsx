@@ -419,9 +419,100 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 
 
   // Spaces (Product spaces)
+  const [localSpaces, setLocalSpaces] = useState<Space[]>(spaces);
+  const creatingSpacesRef = useRef<string[]>([]);
   const [selectedSpaces, setSelectedSpaces] = useState<string[]>(
     defaultValues?.spaces?.map((s: any) => s.id) || []
   );
+
+  useEffect(() => {
+    const desc = parentValues.description || '';
+    if (!desc.trim()) return;
+
+    const COMMON_SPACES = [
+      'Living Room', 'Bedroom', 'Dining Room', 'Kitchen', 'Office', 'Study', 'Outdoor', 'Bathroom', 
+      'Lounge', 'Foyer', 'Lobby', 'Balcony', 'Staircase', 'Corridor', 'Hallway', 'Library', 'Bar', 
+      'Terrace', 'Pooja Room', 'Drawing Room', 'Gym', 'Home Theater', 'Home Office'
+    ];
+
+    const lowerDesc = desc.toLowerCase();
+    
+    const foundSpaces = COMMON_SPACES.filter(name => {
+      const escapedName = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedName}\\b`, 'i');
+      return regex.test(lowerDesc);
+    });
+
+    if (foundSpaces.length === 0) return;
+
+    const processSpaces = async () => {
+      const newSelections: string[] = [];
+      const spacesToCreate: string[] = [];
+
+      for (const spaceName of foundSpaces) {
+        const existingSpace = localSpaces.find(
+          s => s.name.toLowerCase() === spaceName.toLowerCase()
+        );
+
+        if (existingSpace) {
+          if (!selectedSpaces.includes(existingSpace.id)) {
+            newSelections.push(existingSpace.id);
+          }
+        } else {
+          if (!creatingSpacesRef.current.includes(spaceName.toLowerCase())) {
+            creatingSpacesRef.current.push(spaceName.toLowerCase());
+            spacesToCreate.push(spaceName);
+          }
+        }
+      }
+
+      if (newSelections.length > 0) {
+        setSelectedSpaces(prev => {
+          const next = [...prev];
+          let changed = false;
+          newSelections.forEach(id => {
+            if (!next.includes(id)) {
+              next.push(id);
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
+      }
+
+      if (spacesToCreate.length > 0) {
+        for (const name of spacesToCreate) {
+          try {
+            const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            const res = await fetch('/api/spaces', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, slug })
+            });
+            if (res.ok) {
+              const newSpace = await res.json();
+              setLocalSpaces(prev => {
+                if (prev.some(s => s.id === newSpace.id)) return prev;
+                return [...prev, newSpace];
+              });
+              setSelectedSpaces(prev => {
+                if (prev.includes(newSpace.id)) return prev;
+                return [...prev, newSpace.id];
+              });
+            }
+          } catch (err) {
+            console.error('Failed to auto-create space:', name, err);
+          } finally {
+            creatingSpacesRef.current = creatingSpacesRef.current.filter(
+              n => n !== name.toLowerCase()
+            );
+          }
+        }
+      }
+    };
+
+    processSpaces();
+  }, [parentValues.description, localSpaces, selectedSpaces]);
 
   // Images states
   const [images, setImages] = useState<string[]>(defaultValues?.images || []);
@@ -1163,7 +1254,7 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                   <div className="col-span-2">
                     <label className={labelCls}>Suited Spaces (Toggle chips)</label>
                     <div className="flex flex-wrap gap-2">
-                      {spaces.map(s => {
+                      {localSpaces.map(s => {
                         const isSelected = selectedSpaces.includes(s.id);
                         return (
                           <button

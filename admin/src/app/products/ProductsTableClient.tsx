@@ -14,6 +14,7 @@ interface ProductItem {
   b2bPrice: number;
   stockQuantity: number;
   images: string[];
+  whiteBackgroundImages?: string[];
   createdAt: Date;
   updatedAt: Date;
   categoryId: string | null;
@@ -201,7 +202,7 @@ export default function ProductsTableClient({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by Product Name, SKU, or Category..."
-              className="bg-transparent text-primary font-mono text-[12px] focus:outline-none w-full placeholder:text-muted/60"
+              className="bg-transparent text-primary font-mono text-[12px] focus:outline-none focus-visible:outline-none w-full placeholder:text-muted/60"
             />
             {searchTerm && (
               <button
@@ -346,8 +347,8 @@ export default function ProductsTableClient({
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3.5">
                         <div className="w-10 h-12 bg-background border border-border flex items-center justify-center font-mono text-[8px] text-muted tracking-widest text-center shrink-0 overflow-hidden rounded-sm">
-                          {product.images && product.images.length > 0 ? (
-                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                          {product.images?.[0] || product.whiteBackgroundImages?.[0] ? (
+                            <img src={product.images?.[0] || product.whiteBackgroundImages?.[0]} alt={product.name} className="w-full h-full object-cover" />
                           ) : (
                             'IMG'
                           )}
@@ -448,8 +449,8 @@ export default function ProductsTableClient({
                 {/* Top: Image + Name + SKU */}
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-14 bg-background border border-border flex items-center justify-center font-mono text-[9px] text-muted shrink-0 overflow-hidden rounded-sm">
-                    {product.images && product.images.length > 0 ? (
-                      <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                    {product.images?.[0] || product.whiteBackgroundImages?.[0] ? (
+                      <img src={product.images?.[0] || product.whiteBackgroundImages?.[0]} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
                       'IMG'
                     )}

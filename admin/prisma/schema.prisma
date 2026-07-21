@@ -426,6 +426,9 @@ model BlogPost {
   updatedAt   DateTime @updatedAt
   metaTitle   String?
   metaDesc    String?
+  geoTakeaway String?  @db.Text
+  faq         Json?
+  citations   Json?
   isDraft     Boolean  @default(true)
 }
 

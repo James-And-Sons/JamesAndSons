@@ -57,65 +57,73 @@ export default async function Dashboard() {
 
       {/* KPI Cards Grid - Clickable & Reflows on Mobile */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Key metrics">
-        <Link 
-          href="/orders" 
-          role="listitem"
-          className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">TOTAL REVENUE</span>
-            <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">₹</span>
-          </div>
-          <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
-            ₹{Math.round(totalRevenue).toLocaleString('en-IN')}
-          </p>
-          <p className="font-mono text-[11px] text-muted mt-2 m-0">All time</p>
-        </Link>
+        {totalRevenue > 0 && (
+          <Link 
+            href="/orders" 
+            role="listitem"
+            className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">TOTAL REVENUE</span>
+              <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">₹</span>
+            </div>
+            <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+              ₹{Math.round(totalRevenue).toLocaleString('en-IN')}
+            </p>
+            <p className="font-mono text-[11px] text-muted mt-2 m-0">All time</p>
+          </Link>
+        )}
 
-        <Link 
-          href="/orders" 
-          role="listitem"
-          className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">RECENT ORDERS</span>
-            <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">📦</span>
-          </div>
-          <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
-            {activeOrders}
-          </p>
-          <p className="font-mono text-[11px] text-muted mt-2 m-0">D2C &amp; B2B flow active</p>
-        </Link>
+        {activeOrders > 0 && (
+          <Link 
+            href="/orders" 
+            role="listitem"
+            className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">RECENT ORDERS</span>
+              <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">📦</span>
+            </div>
+            <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+              {activeOrders}
+            </p>
+            <p className="font-mono text-[11px] text-muted mt-2 m-0">D2C &amp; B2B flow active</p>
+          </Link>
+        )}
 
-        <Link 
-          href="/rfqs" 
-          role="listitem"
-          className="premium-card p-5 block no-underline group border-[#D6A24A]/40 bg-[#D6A24A]/10 hover:border-[#D6A24A]/70 transition-all rounded-lg"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-[#D6A24A] font-semibold">RFQS PENDING</span>
-            <span className="font-mono text-[14px] text-[#D6A24A]" aria-hidden="true">⚠</span>
-          </div>
-          <p className="font-serif text-[32px] font-normal text-[#D6A24A] m-0 leading-tight">
-            {pendingRfqs}
-          </p>
-          <p className="font-mono text-[11px] text-[#D6A24A]/80 mt-2 m-0">Needs review today</p>
-        </Link>
+        {pendingRfqs > 0 && (
+          <Link 
+            href="/rfqs" 
+            role="listitem"
+            className="premium-card p-5 block no-underline group border-[#D6A24A]/40 bg-[#D6A24A]/10 hover:border-[#D6A24A]/70 transition-all rounded-lg"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-[#D6A24A] font-semibold">RFQS PENDING</span>
+              <span className="font-mono text-[14px] text-[#D6A24A]" aria-hidden="true">⚠</span>
+            </div>
+            <p className="font-serif text-[32px] font-normal text-[#D6A24A] m-0 leading-tight">
+              {pendingRfqs}
+            </p>
+            <p className="font-mono text-[11px] text-[#D6A24A]/80 mt-2 m-0">Needs review today</p>
+          </Link>
+        )}
 
-        <Link 
-          href="/b2b" 
-          role="listitem"
-          className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B REGISTRATIONS</span>
-            <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">👥</span>
-          </div>
-          <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
-            {b2bRegistrations}
-          </p>
-          <p className="font-mono text-[11px] text-muted mt-2 m-0">{pendingB2B} pending approval</p>
-        </Link>
+        {b2bRegistrations > 0 && (
+          <Link 
+            href="/b2b" 
+            role="listitem"
+            className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B REGISTRATIONS</span>
+              <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">👥</span>
+            </div>
+            <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+              {b2bRegistrations}
+            </p>
+            <p className="font-mono text-[11px] text-muted mt-2 m-0">{pendingB2B} pending approval</p>
+          </Link>
+        )}
       </div>
 
       {/* Main Dashboard Panels */}

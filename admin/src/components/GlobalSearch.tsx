@@ -112,7 +112,7 @@ export default function GlobalSearch() {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="bg-transparent text-primary font-mono text-[11px] focus:outline-none w-full placeholder:text-muted/60"
+          className="bg-transparent text-primary font-mono text-[11px] focus:outline-none focus-visible:outline-none w-full placeholder:text-muted/60"
         />
         {loading ? (
           <span className="inline-block animate-spin border border-t-transparent border-muted rounded-full w-3 h-3" />

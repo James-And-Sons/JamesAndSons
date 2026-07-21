@@ -1,11 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { loginAction } from './action'
 
-export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null)
+function LoginForm() {
+  const searchParams = useSearchParams()
+  const urlMessage = searchParams.get('message')
+  
+  const [error, setError] = useState<string | null>(urlMessage || null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (urlMessage) {
+      setError(urlMessage)
+    }
+  }, [urlMessage])
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -21,7 +31,6 @@ export default function LoginPage() {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0A0905] overflow-y-auto">
       {/* Background Ambience */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-
         <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#C9A84C]/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#C9A84C]/5 rounded-full blur-[120px]" />
       </div>
@@ -56,7 +65,7 @@ export default function LoginPage() {
                   name="email"
                   required
                   className="w-full bg-[#0A0905] border border-[rgba(201,168,76,0.1)] rounded-xl px-5 py-4 text-[14px] text-[#F0E8D5] focus:outline-none focus:border-[#C9A84C] transition-all placeholder:text-[#3A3528]"
-                  placeholder="admin@jamesandsons.in"
+                  placeholder="Enter your email"
                 />
               </div>
 
@@ -70,7 +79,7 @@ export default function LoginPage() {
                   name="password"
                   required
                   className="w-full bg-[#0A0905] border border-[rgba(201,168,76,0.1)] rounded-xl px-5 py-4 text-[14px] text-[#F0E8D5] focus:outline-none focus:border-[#C9A84C] transition-all placeholder:text-[#3A3528]"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                 />
               </div>
             </div>
@@ -104,5 +113,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0A0905] text-[#F0E8D5] font-mono text-[12px]">Loading Portal...</div>}>
+      <LoginForm />
+    </Suspense>
   )
 }

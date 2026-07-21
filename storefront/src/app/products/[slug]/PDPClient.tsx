@@ -115,10 +115,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       const trimmed = line.trim();
       if (!trimmed) continue;
       
-      // Matches list bullet indicators: •, -, *, 1., 2., a., b.
-      const isBullet = /^[•\-\*\d+\.\)]\s*(.*)/.test(trimmed);
+      let cleanText = trimmed;
+      let isBullet = false;
+      
+      if (/^[•\-\*]\s*/.test(trimmed)) {
+        cleanText = trimmed.replace(/^[•\-\*]\s*/, '');
+        isBullet = true;
+      } else if (/^\d+[\.\)]\s*/.test(trimmed)) {
+        cleanText = trimmed.replace(/^\d+[\.\)]\s*/, '');
+        isBullet = true;
+      }
+
       if (isBullet) {
-        const cleanText = trimmed.replace(/^[•\-\*\d+\.\)]\s*/, '');
         const finalCleanText = cleanBulletText(cleanText);
         if (finalCleanText) {
           bullets.push(finalCleanText);
@@ -630,27 +638,27 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
 
           {/* Pincode Section */}
-          <div style={{ margin: '20px 20px 0', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '16px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>Check Delivery Estimate</div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+          <div style={{ margin: '12px auto 0', maxWidth: '340px', width: 'calc(100% - 40px)', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '12px', padding: '8px 12px' }}>
+            <div style={{ fontSize: '10px', color: 'var(--gold)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>Check Delivery Estimate</div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'stretch' }}>
               <input
-                placeholder="Enter 6-digit pincode"
+                placeholder="Enter Pincode"
                 maxLength={6}
                 value={pincode}
                 onChange={e => setPincode(e.target.value.replace(/\D/g, ''))}
-                style={{ flex: 1, minWidth: 0, background: 'var(--obsidian)', border: '0.5px solid var(--border)', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', color: 'var(--cream)', outline: 'none' }}
+                style={{ flex: 1, minWidth: 0, background: 'var(--obsidian)', border: '0.5px solid var(--border)', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', color: 'var(--cream)', outline: 'none' }}
               />
-              <button onClick={() => handleCheckPincode(pincode)} className="btn-outline" style={{ flexShrink: 0, borderRadius: '12px', padding: '0 18px', fontSize: '13px', whiteSpace: 'nowrap' }}>
+              <button onClick={() => handleCheckPincode(pincode)} className="btn-outline" style={{ flexShrink: 0, borderRadius: '6px', padding: '0 10px', fontSize: '11px', whiteSpace: 'nowrap' }}>
                 {checkingPincode ? '...' : 'Check'}
               </button>
             </div>
             {shippingRes && (
-              <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <i className="ti ti-truck"></i> Expected Delivery by {shippingRes.etd}
               </div>
             )}
             {pincodeError && (
-              <div style={{ marginTop: '10px', fontSize: '12px', color: '#f87171', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#f87171', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)' }}>
                 <i className="ti ti-alert-triangle"></i> {pincodeError}
               </div>
             )}
@@ -1236,28 +1244,28 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               </div>
 
               {/* Details & Delivery */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', padding: '24px', borderRadius: '16px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '16px' }}>Delivery Estimate</div>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: '10px', maxWidth: '340px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '8px' }}>Delivery Estimate</div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
-                      placeholder="Enter 6-digit Pincode"
+                      placeholder="Enter Pincode"
                       maxLength={6}
                       value={pincode}
                       onChange={e => setPincode(e.target.value.replace(/\D/g, ''))}
-                      style={{ flex: 1, minWidth: 0, height: '46px', boxSizing: 'border-box', background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '14px', outline: 'none', borderRadius: '8px' }}
+                      style={{ flex: 1, minWidth: 0, height: '32px', boxSizing: 'border-box', background: 'var(--obsidian)', border: '1px solid var(--border)', color: 'var(--cream)', padding: '6px 10px', fontFamily: 'var(--font-mono)', fontSize: '12px', outline: 'none', borderRadius: '4px' }}
                     />
-                    <button onClick={() => handleCheckPincode(pincode)} disabled={pincode.length !== 6 || checkingPincode} className="btn-outline" style={{ padding: '0 24px', fontSize: '11px', height: '46px', minHeight: 'none', boxSizing: 'border-box', borderRadius: '8px' }}>
+                    <button onClick={() => handleCheckPincode(pincode)} disabled={pincode.length !== 6 || checkingPincode} className="btn-outline" style={{ padding: '0 12px', fontSize: '10px', height: '32px', minHeight: 'none', boxSizing: 'border-box', borderRadius: '4px' }}>
                       {checkingPincode ? '...' : 'Check'}
                     </button>
                   </div>
                   {shippingRes && (
-                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontSize: '13px', fontFamily: 'var(--font-body)' }}>
+                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--green)', fontSize: '12px', fontFamily: 'var(--font-body)' }}>
                       <i className="ti ti-truck"></i> Expected Delivery to {shippingRes.city} by {shippingRes.etd}
                     </div>
                   )}
                   {pincodeError && (
-                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171', fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
                       <i className="ti ti-alert-triangle"></i> {pincodeError}
                     </div>
                   )}

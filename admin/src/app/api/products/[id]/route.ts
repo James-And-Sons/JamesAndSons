@@ -64,6 +64,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     }
 
     // Fetch Category to get centrally managed HSN code, GST rate, and BIS standard
+    let categoryName = '';
     if (productData.categoryId) {
       const category = await prisma.category.findUnique({
         where: { id: productData.categoryId }
@@ -72,7 +73,26 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         productData.hsnCode = category.hsnCode || null;
         productData.gstRate = category.gstRate !== null && category.gstRate !== undefined ? category.gstRate : 18.0;
         productData.bisCertification = category.bisStandard || null;
+        categoryName = category.name;
       }
+    }
+
+    let spaceRecords: any[] = [];
+    if (spaceIds && spaceIds.length > 0) {
+      spaceRecords = await prisma.space.findMany({
+        where: { id: { in: spaceIds } },
+        select: { name: true }
+      });
+    }
+
+    if (!productData.amazonKeywords || !productData.amazonKeywords.trim()) {
+      const { generateKeywords } = require('@/lib/sync/mapping');
+      productData.amazonKeywords = generateKeywords({
+        name: productData.name,
+        category: { name: categoryName },
+        spaces: spaceRecords,
+        style: productData.style
+      });
     }
 
     // Delete old variants and recreate
