@@ -12,6 +12,7 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@james-andsons/config": "*",
     "@james-andsons/db": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",

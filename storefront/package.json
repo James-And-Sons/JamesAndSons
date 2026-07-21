@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@james-andsons/config": "*",
     "@james-andsons/db": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",
