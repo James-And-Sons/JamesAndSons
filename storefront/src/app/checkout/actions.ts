@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendInvoiceEmail } from '@/lib/email';
 import { generateSequentialInvoiceNumber } from '@/lib/invoice';
 import { createClient } from '@/utils/supabase/server';
-import { UserAddress } from '@prisma/client';
+import { UserAddress } from '@james-andsons/db';
 import { calculateShipping } from '@/lib/shiprocket';
 
 type CartItem = {
