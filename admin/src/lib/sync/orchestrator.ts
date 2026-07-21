@@ -68,9 +68,15 @@ export async function orchestrateSync(product: any) {
     const channelName = channels[idx].name;
     if (result.status === 'fulfilled') {
       const resVal: any = result.value;
-      if (resVal && resVal.success === false && resVal.reason === 'Credentials missing') {
-        console.log(`[Sync Orchestrator] ${channelName} sync skipped due to missing environment configurations.`);
-        logSyncHistory(primarySku, quantity, channelName, 'SKIPPED', 'Missing credentials');
+      if (resVal && resVal.success === false) {
+        if (resVal.reason === 'Credentials missing') {
+          console.log(`[Sync Orchestrator] ${channelName} sync skipped due to missing environment configurations.`);
+          logSyncHistory(primarySku, quantity, channelName, 'SKIPPED', 'Missing credentials');
+        } else {
+          const errMsg = resVal.error || resVal.reason || 'Unknown error';
+          console.error(`[Sync Orchestrator] ${channelName} sync failed:`, errMsg);
+          logSyncHistory(primarySku, quantity, channelName, 'FAILED', errMsg);
+        }
       } else {
         console.log(`[Sync Orchestrator] ${channelName} sync completed successfully.`);
         logSyncHistory(primarySku, quantity, channelName, 'SUCCESS');
