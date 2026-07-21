@@ -1,4 +1,6 @@
 import Razorpay from 'razorpay';
+import crypto from 'crypto';
+import { IPaymentProvider, CreateOrderParams, OrderResult, VerifySignatureParams } from '@james-andsons/interfaces';
 
 let razorpayInstance: any = null;
 
@@ -104,5 +106,52 @@ export async function refundRazorpayPayment(
   } catch (error) {
     console.error('Razorpay Refund Failed:', error);
     throw error;
+  }
+}
+
+/**
+ * Implement IPaymentProvider interface for white-label, swappable configuration
+ */
+export class RazorpayProvider implements IPaymentProvider {
+  private rzp: any;
+  private keyId: string;
+  private keySecret: string;
+
+  constructor(config: IRazorpayConfig = {}) {
+    this.keyId = config.keyId || process.env.RAZORPAY_KEY_ID || '';
+    this.keySecret = config.keySecret || process.env.RAZORPAY_KEY_SECRET || '';
+    if (!this.keyId || !this.keySecret) {
+      throw new Error('Razorpay credentials are missing.');
+    }
+    this.rzp = new Razorpay({ key_id: this.keyId, key_secret: this.keySecret });
+  }
+
+  async createOrder(params: CreateOrderParams): Promise<OrderResult> {
+    const order = await this.rzp.orders.create({
+      amount: Math.round(params.amount),
+      currency: params.currency || 'INR',
+      receipt: params.receipt,
+      notes: params.notes,
+      payment_capture: true,
+    });
+    return {
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      receipt: order.receipt,
+      status: order.status,
+      rawResponse: order
+    };
+  }
+
+  verifySignature(params: VerifySignatureParams): boolean {
+    const secret = params.webhookSecret || this.keySecret;
+    if (!secret) return false;
+    const body = params.orderId + '|' + params.paymentId;
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(body.toString())
+      .digest('hex');
+    return expectedSignature === params.signature;
   }
 }

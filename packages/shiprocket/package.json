@@ -7,7 +7,9 @@
     "build": "tsc",
     "dev": "tsc -w"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@james-andsons/interfaces": "*"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "typescript": "^5"
