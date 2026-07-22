@@ -42,6 +42,9 @@ function writeRowAttributes(
   spaces: any[],
   v: any = null       // variant if exists
 ) {
+  // Brand Name (Col 9 - Col I)
+  writeCell(sheet, rowIdx, 9, "James & Sons");
+
   // Part Number (Col 16) - Must be identical to SKU
   writeCell(sheet, rowIdx, 16, sku);
 
@@ -82,27 +85,32 @@ function writeRowAttributes(
   // Number of Pieces (Col 59)
   writeCell(sheet, rowIdx, 59, 1);
 
-  // Unit Count & Unit Count Type (Col 60 & 61)
-  writeCell(sheet, rowIdx, 60, 1);
-  writeCell(sheet, rowIdx, 61, "Count");
-
   // Theme (Col 63)
   writeCell(sheet, rowIdx, 63, p.amazonTheme || getStyle(p));
 
   // Manufacturer Contact Information (Col 68)
   writeCell(sheet, rowIdx, 68, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
 
+  // Power Source Type (Col 77 - Col BY)
+  writeCell(sheet, rowIdx, 77, "Corded Electric");
+
   // Lighting Method (Col 79)
   writeCell(sheet, rowIdx, 79, getLightingMethod(p));
 
-  // Power Source Type (Col 87)
-  writeCell(sheet, rowIdx, 87, "Corded Electric");
+  // Voltage & Voltage Unit (Col 87 - Col CI & Col 88 - Col CJ)
+  const voltVal = extractNumber(v ? v.voltage || p.voltage : p.voltage) || 220;
+  writeCell(sheet, rowIdx, 87, voltVal);
+  writeCell(sheet, rowIdx, 88, "Volts");
 
   // Mounting Type (Col 93)
   writeCell(sheet, rowIdx, 93, getMountingType(p));
 
   // Finish Type (Col 94)
   writeCell(sheet, rowIdx, 94, getFinishType(v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p));
+
+  // Unit Count & Unit Count Type (Col 97 - Col CS & Col 98 - Col CT)
+  writeCell(sheet, rowIdx, 97, 1);
+  writeCell(sheet, rowIdx, 98, "Count");
 
   // Included Components (Col 100)
   writeCell(sheet, rowIdx, 100, p.amazonIncludedComponents || "1 Pendant Light, Hanging Accessories, Wire");
@@ -144,8 +152,8 @@ function writeRowAttributes(
   // Light Fixture Installation Location (Col 241)
   writeCell(sheet, rowIdx, 241, getInstallationLocation(p));
 
-  // Item Condition (Col 251)
-  writeCell(sheet, rowIdx, 251, "New");
+  // Item Condition (Col 244 - Col IJ)
+  writeCell(sheet, rowIdx, 244, "New");
 
   // B2B Pricing
   writeCell(sheet, rowIdx, 283, price); // Your Price INR (B2B)
@@ -154,14 +162,14 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 290, 5); // Quantity Threshold 1
   writeCell(sheet, rowIdx, 291, 5); // Quantity Price 1 (Percent Discount)
 
-  // Number of Boxes (Col 311)
-  writeCell(sheet, rowIdx, 311, 1);
+  // Number of Boxes (Col 317)
+  writeCell(sheet, rowIdx, 317, 1);
 
-  // Are Batteries Required? (Col 318)
-  writeCell(sheet, rowIdx, 318, "No");
+  // Are Batteries Required? (Col 324)
+  writeCell(sheet, rowIdx, 324, "No");
 
-  // Dangerous Goods Regulations (Col 344)
-  writeCell(sheet, rowIdx, 344, "Not Applicable");
+  // Dangerous Goods Regulations (Col 350)
+  writeCell(sheet, rowIdx, 350, "Not Applicable");
 
   // Manufacturer's Email or Electronic Address (Col 396)
   writeCell(sheet, rowIdx, 396, "sales@jamesandsons.com");
@@ -374,41 +382,43 @@ export async function GET(req: NextRequest) {
             writeCell(sheet, rowIdx, 86, "Volts");
           }
 
-          // Actual Product Weight & Dimensions
+          // Actual Product Weight & Dimensions (HU, HV, HW, HX, HY, HZ)
           const actHeight = v.actualHeight || p.actualHeight || 53;
           const actLength = v.actualDepth || p.actualDepth || (v as any).length || p.length || 15;
           const actWidth = v.actualWidth || p.actualWidth || 20;
 
-          writeCell(sheet, rowIdx, 185, actLength); // Item Depth Front To Back
-          writeCell(sheet, rowIdx, 186, "Centimetres"); // Item Depth Unit
-          writeCell(sheet, rowIdx, 187, actHeight); // Item Height Floor To Top
-          writeCell(sheet, rowIdx, 188, "Centimetres"); // Item Height Unit of Measure
-          writeCell(sheet, rowIdx, 189, actWidth); // Item Width Side To Side
-          writeCell(sheet, rowIdx, 190, "Centimetres"); // Item Width Unit
+          writeCell(sheet, rowIdx, 229, actHeight); // Col HU
+          writeCell(sheet, rowIdx, 230, "Centimeters"); // Col HV
+          writeCell(sheet, rowIdx, 231, actLength); // Col HW
+          writeCell(sheet, rowIdx, 232, "Centimeters"); // Col HX
+          writeCell(sheet, rowIdx, 233, actWidth); // Col HY
+          writeCell(sheet, rowIdx, 234, "Centimeters"); // Col HZ
 
           writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
           writeCell(sheet, rowIdx, 198, "Kilograms"); // Item Weight Unit
 
           // Package Dimensions & Weight
-          writeCell(sheet, rowIdx, 301, vLength); // Item Package Length
-          writeCell(sheet, rowIdx, 302, "Centimetres");
-          writeCell(sheet, rowIdx, 303, vWidth); // Item Package Width
-          writeCell(sheet, rowIdx, 304, "Centimetres");
-          writeCell(sheet, rowIdx, 305, vHeight); // Item Package Height
-          writeCell(sheet, rowIdx, 306, "Centimetres");
-          writeCell(sheet, rowIdx, 307, vWeight); // Package Weight
-          writeCell(sheet, rowIdx, 308, "Kilograms");
+          writeCell(sheet, rowIdx, 307, vLength); // Item Package Length
+          writeCell(sheet, rowIdx, 308, "Centimeters");
+          writeCell(sheet, rowIdx, 309, vWidth); // Item Package Width
+          writeCell(sheet, rowIdx, 310, "Centimeters");
+          writeCell(sheet, rowIdx, 311, vHeight); // Item Package Height
+          writeCell(sheet, rowIdx, 312, "Centimeters");
+          writeCell(sheet, rowIdx, 313, vWeight); // Package Weight
+          writeCell(sheet, rowIdx, 314, "Kilograms");
 
           const vMinPrice = v.b2bPrice || p.b2bPrice || Math.round(vPrice * 0.85);
           const vMaxPrice = vMrp || Math.round(vPrice * 1.30);
 
+          writeCell(sheet, rowIdx, 268, "DEFAULT"); // Col JH (Fulfillment Channel Code)
           writeCell(sheet, rowIdx, 269, vStock); // Quantity (IN)
-          writeCell(sheet, rowIdx, 271, 5); // Handling Time (Leadtime to ship)
+          writeCell(sheet, rowIdx, 270, 5); // Handling Time
           writeCell(sheet, rowIdx, 273, vPrice); // Your Price INR
           writeCell(sheet, rowIdx, 274, vMrp); // Maximum Retail Price
-          writeCell(sheet, rowIdx, 275, vMinPrice); // Minimum Seller Allowed Price
-          writeCell(sheet, rowIdx, 276, vMaxPrice); // Maximum Seller Allowed Price
-          writeCell(sheet, rowIdx, 312, vOrigin); // Country of Origin
+          writeCell(sheet, rowIdx, 275, "No Price Rule"); // Col JO (Pricing Rule)
+          writeCell(sheet, rowIdx, 276, vMinPrice); // Minimum Seller Allowed Price
+          writeCell(sheet, rowIdx, 277, vMaxPrice); // Maximum Seller Allowed Price
+          writeCell(sheet, rowIdx, 318, vOrigin); // Country of Origin
 
           rowIdx++;
         }
@@ -481,41 +491,43 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        // Actual Product Weight & Dimensions
+        // Actual Product Weight & Dimensions (HU, HV, HW, HX, HY, HZ)
         const actHeight = p.actualHeight || 53;
         const actLength = p.actualDepth || p.length || 15;
         const actWidth = p.actualWidth || 20;
 
-        writeCell(sheet, rowIdx, 185, actLength); // Item Depth Front To Back
-        writeCell(sheet, rowIdx, 186, "Centimetres"); // Item Depth Unit
-        writeCell(sheet, rowIdx, 187, actHeight); // Item Height Floor To Top
-        writeCell(sheet, rowIdx, 188, "Centimetres"); // Item Height Unit of Measure
-        writeCell(sheet, rowIdx, 189, actWidth); // Item Width Side To Side
-        writeCell(sheet, rowIdx, 190, "Centimetres"); // Item Width Unit
+        writeCell(sheet, rowIdx, 229, actHeight); // Col HU
+        writeCell(sheet, rowIdx, 230, "Centimeters"); // Col HV
+        writeCell(sheet, rowIdx, 231, actLength); // Col HW
+        writeCell(sheet, rowIdx, 232, "Centimeters"); // Col HX
+        writeCell(sheet, rowIdx, 233, actWidth); // Col HY
+        writeCell(sheet, rowIdx, 234, "Centimeters"); // Col HZ
 
         writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
         writeCell(sheet, rowIdx, 198, "Kilograms"); // Item Weight Unit
 
         // Package Dimensions & Weight
-        writeCell(sheet, rowIdx, 301, pLength); // Item Package Length
-        writeCell(sheet, rowIdx, 302, "Centimetres");
-        writeCell(sheet, rowIdx, 303, pWidth); // Item Package Width
-        writeCell(sheet, rowIdx, 304, "Centimetres");
-        writeCell(sheet, rowIdx, 305, pHeight); // Item Package Height
-        writeCell(sheet, rowIdx, 306, "Centimetres");
-        writeCell(sheet, rowIdx, 307, pWeight); // Package Weight
-        writeCell(sheet, rowIdx, 308, "Kilograms");
+        writeCell(sheet, rowIdx, 307, pLength); // Item Package Length
+        writeCell(sheet, rowIdx, 308, "Centimeters");
+        writeCell(sheet, rowIdx, 309, pWidth); // Item Package Width
+        writeCell(sheet, rowIdx, 310, "Centimeters");
+        writeCell(sheet, rowIdx, 311, pHeight); // Item Package Height
+        writeCell(sheet, rowIdx, 312, "Centimeters");
+        writeCell(sheet, rowIdx, 313, pWeight); // Package Weight
+        writeCell(sheet, rowIdx, 314, "Kilograms");
 
         const pMinPrice = p.b2bPrice || Math.round(pPrice * 0.85);
         const pMaxPrice = pMrp || Math.round(pPrice * 1.30);
 
+        writeCell(sheet, rowIdx, 268, "DEFAULT"); // Col JH (Fulfillment Channel Code)
         writeCell(sheet, rowIdx, 269, pStock); // Quantity (IN)
-        writeCell(sheet, rowIdx, 271, 5); // Handling Time (Leadtime to ship)
+        writeCell(sheet, rowIdx, 270, 5); // Handling Time
         writeCell(sheet, rowIdx, 273, pPrice); // Your Price INR
         writeCell(sheet, rowIdx, 274, pMrp); // Maximum Retail Price
-        writeCell(sheet, rowIdx, 275, pMinPrice); // Minimum Seller Allowed Price
-        writeCell(sheet, rowIdx, 276, pMaxPrice); // Maximum Seller Allowed Price
-        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
+        writeCell(sheet, rowIdx, 275, "No Price Rule"); // Col JO (Pricing Rule)
+        writeCell(sheet, rowIdx, 276, pMinPrice); // Minimum Seller Allowed Price
+        writeCell(sheet, rowIdx, 277, pMaxPrice); // Maximum Seller Allowed Price
+        writeCell(sheet, rowIdx, 318, pOrigin); // Country of Origin
 
         rowIdx++;
       }
