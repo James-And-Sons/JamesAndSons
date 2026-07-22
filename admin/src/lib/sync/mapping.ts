@@ -233,9 +233,11 @@ export function getLightingMethod(product: any): string {
 }
 
 export function getWaterResistanceLevel(product: any): string {
-  if (product?.amazonWaterResistance) {
-    return product.amazonWaterResistance;
-  }
+  const val = String(product?.amazonWaterResistance || '').toLowerCase();
+  if (val.includes('waterproof')) return 'Waterproof';
+  if (val.includes('repellent')) return 'Water Repellent';
+  if (val.includes('moisture')) return 'Moisture Resistant';
+  if (val.includes('resistant') && !val.includes('not')) return 'Water Resistant';
   return 'Not Water Resistant';
 }
 

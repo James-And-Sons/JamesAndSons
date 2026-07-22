@@ -45,8 +45,8 @@ function writeRowAttributes(
   // Brand Name (Col 9 - Col I)
   writeCell(sheet, rowIdx, 9, "James & Sons");
 
-  // Part Number (Col 16) - Must be identical to SKU
-  writeCell(sheet, rowIdx, 16, sku);
+  // Part Number (Col 60 - Col BH) - Must be identical to SKU
+  writeCell(sheet, rowIdx, 60, sku);
 
   // Model Number (Col 17)
   writeCell(sheet, rowIdx, 17, sku);
@@ -73,7 +73,7 @@ function writeRowAttributes(
   // Item Type Name (Col 55)
   writeCell(sheet, rowIdx, 55, getItemTypeName(p));
 
-  // Water Resistance Level (Col 56)
+  // Water Resistance Level (Col 56 - Col BD) - Must be official dropdown value
   writeCell(sheet, rowIdx, 56, getWaterResistanceLevel(p));
 
   // Color (Col 57)
@@ -250,7 +250,7 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 2, "LIGHT_FIXTURE"); // Product Type
         writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
         writeCell(sheet, rowIdx, 4, "Parent"); // Parentage Level
-        writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
+        writeCell(sheet, rowIdx, 6, "SIZE"); // Col F - Variation Theme Name
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
 
         // Standardized and expanded attributes
@@ -302,7 +302,7 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
+        writeCell(sheet, rowIdx, 318, pOrigin || "India"); // Col LF - Country of Origin
 
         rowIdx++;
 
@@ -329,7 +329,7 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
           writeCell(sheet, rowIdx, 4, "Child"); // Parentage Level
           writeCell(sheet, rowIdx, 5, p.sku); // Parent SKU
-          writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
+          writeCell(sheet, rowIdx, 6, "SIZE"); // Col F - Variation Theme Name
           writeCell(sheet, rowIdx, 7, `${p.name} - ${v.name}`); // Item Name
           writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
           writeCell(sheet, rowIdx, 11, vSku); // Product Id
@@ -418,7 +418,8 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 275, "No Price Rule"); // Col JO (Pricing Rule)
           writeCell(sheet, rowIdx, 276, vMinPrice); // Minimum Seller Allowed Price
           writeCell(sheet, rowIdx, 277, vMaxPrice); // Maximum Seller Allowed Price
-          writeCell(sheet, rowIdx, 318, vOrigin); // Country of Origin
+          writeCell(sheet, rowIdx, 300, "Migrated Template"); // Col KN - Shipping Template
+          writeCell(sheet, rowIdx, 318, vOrigin || pOrigin || "India"); // Col LF - Country of Origin
 
           rowIdx++;
         }
@@ -527,7 +528,8 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 275, "No Price Rule"); // Col JO (Pricing Rule)
         writeCell(sheet, rowIdx, 276, pMinPrice); // Minimum Seller Allowed Price
         writeCell(sheet, rowIdx, 277, pMaxPrice); // Maximum Seller Allowed Price
-        writeCell(sheet, rowIdx, 318, pOrigin); // Country of Origin
+        writeCell(sheet, rowIdx, 300, "Migrated Template"); // Col KN - Shipping Template
+        writeCell(sheet, rowIdx, 318, pOrigin || "India"); // Col LF - Country of Origin
 
         rowIdx++;
       }

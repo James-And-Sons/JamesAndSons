@@ -416,7 +416,7 @@ export async function syncToAmazon(product: any) {
       ];
       attributes.variation_theme = [
         {
-          name: 'COLOR/SIZE'
+          name: 'SIZE'
         }
       ];
     } else {
@@ -470,7 +470,7 @@ export async function syncToAmazon(product: any) {
         ];
         attributes.variation_theme = [
           {
-            name: 'COLOR/SIZE'
+            name: 'SIZE'
           }
         ];
       }
