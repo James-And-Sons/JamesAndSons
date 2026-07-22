@@ -43,8 +43,7 @@ interface DynamicCoupon {
 
 type View = 'DASHBOARD' | 'EDITOR' | 'COUPONS';
 type Channel = 'EMAIL' | 'WHATSAPP';
-type ViewMode = 'VISUAL' | 'HTML';
-type EditorStepTab = 'COPY' | 'TARGETING' | 'PREVIEW';
+type PreviewDevice = 'DESKTOP' | 'MOBILE';
 
 // ─── Status helpers (match platform's globals.css status-pill classes) ────────
 function statusPillClass(status: string): string {
@@ -151,10 +150,9 @@ export default function CampaignManagerClient({
   const [view, setView] = useState<View>('DASHBOARD');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-  // Editor controls (Clean 3-Tab Architecture)
-  const [editorStepTab, setEditorStepTab] = useState<EditorStepTab>('COPY');
+  // Editor controls (Clean Split Canvas)
   const [channel, setChannel] = useState<Channel>('EMAIL');
-  const [viewMode, setViewMode] = useState<ViewMode>('VISUAL');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('DESKTOP');
   
   // Editable campaign fields
   const [editName, setEditName] = useState('');
@@ -165,13 +163,12 @@ export default function CampaignManagerClient({
   const [editDiscount, setEditDiscount] = useState(15);
   const [editProducts, setEditProducts] = useState<any[]>([]);
 
-  // Non-tech Visual Editor state fields
+  // Simple text editor fields
   const [visHeadline, setVisHeadline] = useState('');
-  const [visGreeting, setVisGreeting] = useState('');
   const [visBodyText, setVisBodyText] = useState('');
   const [visCtaText, setVisCtaText] = useState('');
 
-  // Confirmation Modals
+  // Confirmation Modals & Drawers
   const [confirmScheduleModal, setConfirmScheduleModal] = useState(false);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [newCustomName, setNewCustomName] = useState('');
@@ -254,15 +251,12 @@ export default function CampaignManagerClient({
     setEditDiscount(campaign.segmentationRules?.discountValue || 15);
     setEditProducts(campaign.recommendedProducts || []);
     
-    // Parse visual text defaults
     setVisHeadline(campaign.name.replace(/Festive Blast.*/, '').trim() || 'Festive Celebration');
-    setVisGreeting('Dear {{CUSTOMER_NAME}},');
     setVisBodyText('We invite you to elevate your interior spaces with our signature handcrafted brass lighting and festive decor collection.');
     setVisCtaText('Claim Your Exclusive Voucher');
 
-    setEditorStepTab('COPY');
     setChannel('EMAIL');
-    setViewMode('VISUAL');
+    setPreviewDevice('DESKTOP');
     setCouponsPreview([]);
     setView('EDITOR');
   };
@@ -283,19 +277,17 @@ export default function CampaignManagerClient({
     setLoadingCoupons(false);
   };
 
-  // Recompile HTML when visual text fields change in VISUAL edit mode
+  // Recompile HTML when visual text fields change
   useEffect(() => {
-    if (viewMode === 'VISUAL') {
-      const compiled = compileVisualHtml({
-        headline: visHeadline,
-        greeting: visGreeting,
-        bodyText: visBodyText,
-        ctaText: visCtaText,
-        discountValue: editDiscount
-      });
-      setEditBodyHtml(compiled);
-    }
-  }, [visHeadline, visGreeting, visBodyText, visCtaText, editDiscount, viewMode]);
+    const compiled = compileVisualHtml({
+      headline: visHeadline,
+      greeting: 'Dear {{CUSTOMER_NAME}},',
+      bodyText: visBodyText,
+      ctaText: visCtaText,
+      discountValue: editDiscount
+    });
+    setEditBodyHtml(compiled);
+  }, [visHeadline, visBodyText, visCtaText, editDiscount]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleDraftAI = async (holidayId: string, segment = 'VIP') => {
@@ -664,25 +656,25 @@ export default function CampaignManagerClient({
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // VIEW: EDITOR (Clean 3-Tab Focused Step Architecture)
+  // VIEW: EDITOR (Clean Split-Canvas Studio Layout)
   // ════════════════════════════════════════════════════════════════════════════
   if (view === 'EDITOR' && selectedCampaign) {
     const isDraft = selectedCampaign.status === 'DRAFT';
     const isLive = ['SCHEDULED', 'ACTIVE'].includes(selectedCampaign.status);
 
     return (
-      <div className="flex flex-col max-w-full overflow-hidden border border-border rounded-lg bg-background min-h-[600px]">
+      <div className="flex flex-col max-w-full overflow-hidden border border-border rounded-lg bg-background min-h-[700px]">
         
-        {/* CLEAN TOPBAR HEADER */}
-        <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border bg-surface shrink-0">
+        {/* UNCLUTTERED TOPBAR HEADER */}
+        <header className="flex items-center justify-between gap-4 px-6 py-3.5 border-b border-border bg-surface shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setView('DASHBOARD')}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer shrink-0 min-h-[38px]"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted hover:text-primary transition-colors cursor-pointer border-none bg-transparent p-0"
             >
-              ← Campaigns
+              ← Back
             </button>
-            <div className="w-px h-5 bg-border hidden sm:block" aria-hidden="true" />
+            <div className="w-px h-4 bg-border" aria-hidden="true" />
             
             <div className="min-w-0 flex items-center gap-2">
               <label htmlFor="edit-campaign-name" className="sr-only">Campaign Name</label>
@@ -692,7 +684,7 @@ export default function CampaignManagerClient({
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 placeholder="Campaign Name..."
-                className="font-serif text-[20px] font-normal text-primary bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none px-1 py-0.5 transition-colors truncate max-w-[320px]"
+                className="font-serif text-[18px] text-primary bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none px-1 py-0.5 transition-colors truncate max-w-[260px]"
               />
               <span className={statusPillClass(selectedCampaign.status)}>
                 <span className="dot" aria-hidden="true" />
@@ -701,16 +693,15 @@ export default function CampaignManagerClient({
             </div>
           </div>
 
-          {/* Action Cluster */}
+          {/* Clean Action Cluster */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleRegenerateAI}
               disabled={isRegeneratingAI}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent/15 border border-accent text-accent px-3.5 py-2 hover:bg-accent hover:text-background transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[38px] flex items-center gap-1.5"
-              title="Automatically generate fresh personalized copy using AI"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3.5 py-2 hover:bg-accent/10 transition-colors rounded-sm cursor-pointer disabled:opacity-50 min-h-[38px] flex items-center gap-1.5"
             >
-              ✨ {isRegeneratingAI ? 'AI Writing…' : 'AI Generate'}
+              ✨ {isRegeneratingAI ? 'Writing…' : 'AI Generate'}
             </button>
 
             <button
@@ -718,7 +709,7 @@ export default function CampaignManagerClient({
               disabled={isSaving}
               className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer disabled:opacity-50 min-h-[38px]"
             >
-              {isSaving ? 'Saving…' : '💾 Save Draft'}
+              {isSaving ? 'Saving…' : '💾 Save'}
             </button>
 
             {isDraft && (
@@ -727,22 +718,22 @@ export default function CampaignManagerClient({
                 disabled={isDispatching}
                 className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[38px]"
               >
-                {isDispatching ? 'Scheduling…' : '🚀 Approve & Schedule →'}
+                {isDispatching ? 'Scheduling…' : '🚀 Schedule →'}
               </button>
             )}
 
             {isLive && (
               <button
                 onClick={() => handleUnschedule(selectedCampaign.id)}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3.5 py-2 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer min-h-[38px]"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3 py-2 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer min-h-[38px]"
               >
-                ↺ Undo Schedule
+                ↺ Undo
               </button>
             )}
 
             <button
               onClick={() => handleDeleteCampaign(selectedCampaign.id)}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-red-400 border border-red-500/30 px-3 py-2 hover:bg-red-900/20 transition-colors bg-background rounded-sm cursor-pointer min-h-[38px]"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-red-400 border border-red-500/30 px-2.5 py-2 hover:bg-red-900/20 transition-colors bg-background rounded-sm cursor-pointer min-h-[38px]"
               title="Delete campaign"
             >
               🗑
@@ -750,329 +741,202 @@ export default function CampaignManagerClient({
           </div>
         </header>
 
-        {/* CLEAN 3-TAB STEP NAVIGATION */}
-        <div className="flex border-b border-border bg-surface shrink-0 overflow-x-auto">
-          {[
-            { id: 'COPY',     label: '✍️ Campaign Copy & Channels' },
-            { id: 'TARGETING',label: '🎯 Audience & Products' },
-            { id: 'PREVIEW',  label: '👁 Live Preview' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setEditorStepTab(tab.id as EditorStepTab)}
-              className={`font-mono text-[11px] uppercase tracking-[0.12em] px-6 py-3.5 border-b-2 transition-colors cursor-pointer shrink-0 ${
-                editorStepTab === tab.id
-                  ? 'border-accent text-accent font-semibold bg-background'
-                  : 'border-transparent text-muted hover:text-primary hover:bg-surface-muted/40'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* TAB 1: CAMPAIGN COPY & CHANNELS */}
-        {editorStepTab === 'COPY' && (
-          <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-background max-w-[900px] mx-auto w-full">
+        {/* 2-COLUMN SPLIT CANVAS STUDIO (Left: Controls, Right: Live Interactive Canvas) */}
+        <div className="flex flex-col lg:flex-row flex-1 min-w-0 overflow-hidden">
+          
+          {/* LEFT COLUMN: FORM INPUTS (Width: 460px) */}
+          <div className="w-full lg:w-[460px] shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-surface p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-140px)]">
             
-            {/* Channel & View Mode Switcher Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 p-4 border border-border bg-surface rounded-md">
-              {/* Channel Selector */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mr-1">Channel:</span>
-                <button
-                  type="button"
-                  onClick={() => setChannel('EMAIL')}
-                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-4 py-2 rounded-sm border cursor-pointer transition-colors ${
-                    channel === 'EMAIL'
-                      ? 'bg-accent/15 border-accent text-accent font-semibold'
-                      : 'border-border text-muted hover:text-primary bg-background'
-                  }`}
-                >
-                  ✉️ Email Blast
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChannel('WHATSAPP')}
-                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-4 py-2 rounded-sm border cursor-pointer transition-colors ${
-                    channel === 'WHATSAPP'
-                      ? 'bg-[#25D366]/15 border-[#25D366]/60 text-[#25D366] font-semibold'
-                      : 'border-border text-muted hover:text-primary bg-background'
-                  }`}
-                >
-                  💬 WhatsApp Broadcast
-                </button>
-
-                <div className="w-px h-4 bg-border mx-1 hidden sm:block" aria-hidden="true" />
-
-                <button
-                  type="button"
-                  onClick={handleRegenerateAI}
-                  disabled={isRegeneratingAI}
-                  className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent/15 border border-accent text-accent px-3.5 py-2 hover:bg-accent hover:text-background transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[38px] flex items-center gap-1.5"
-                  title="Generate fresh personalized marketing copy with AI"
-                >
-                  ✨ {isRegeneratingAI ? 'Writing Copy…' : 'AI Generate Copy'}
-                </button>
-              </div>
-
-              {/* View Mode Switcher for Email */}
-              {channel === 'EMAIL' && (
-                <div className="flex items-center gap-1 bg-background border border-border p-1 rounded-sm">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('VISUAL')}
-                    className={`font-mono text-[9.5px] uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm cursor-pointer transition-colors ${
-                      viewMode === 'VISUAL' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
-                    }`}
-                  >
-                    ✨ Friendly Text Editor
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('HTML')}
-                    className={`font-mono text-[9.5px] uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm cursor-pointer transition-colors ${
-                      viewMode === 'HTML' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
-                    }`}
-                  >
-                    &lt;/&gt; Raw HTML Code
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Personalization Tokens Helper Bar */}
-            <div className="p-3.5 border border-border/80 bg-surface/60 rounded-md flex flex-wrap items-center justify-between gap-3">
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Personalization Tokens:</span>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { token: '{{CUSTOMER_NAME}}', desc: 'First Name' },
-                  { token: '{{COUPON_CODE}}',   desc: 'Voucher Code' },
-                  { token: '{{HOLIDAY_NAME}}',  desc: 'Festival' },
-                  { token: '{{DISCOUNT_VALUE}}',desc: '% Off' },
-                ].map(t => (
-                  <button
-                    key={t.token}
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(t.token);
-                      showToast(`Copied ${t.token} to clipboard!`);
-                    }}
-                    title={`Click to copy ${t.token}`}
-                    className="flex items-center gap-1.5 px-2.5 py-1 border border-border bg-background hover:border-accent/50 transition-colors cursor-pointer rounded-sm group active:scale-[0.98]"
-                  >
-                    <span className="text-muted text-[10px] group-hover:text-accent" aria-hidden="true">📋</span>
-                    <code className="font-mono text-[10px] text-accent">{t.token}</code>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* EMAIL COPY FORM */}
-            {channel === 'EMAIL' && (
-              <div className="space-y-5">
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="email-subject" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block">
-                      Email Subject Line
-                    </label>
-                    <span className={`font-mono text-[10px] ${editSubject.length > 60 ? 'text-[#c97e6a] font-semibold' : 'text-muted'}`}>
-                      Subject length: {editSubject.length} / 60 chars {editSubject.length > 60 ? '(Clipped on mobile)' : '(Optimal: 40-60)'}
-                    </span>
-                  </div>
+            {/* 1. AUDIENCE & DISCOUNT SETUP */}
+            <div className="p-4 border border-border/80 bg-background rounded-md space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">1. Audience &amp; Voucher</span>
+                <div className="flex items-center gap-1">
+                  <span className="font-mono text-[10px] text-muted">Discount:</span>
                   <input
-                    id="email-subject"
-                    type="text"
-                    value={editSubject}
-                    onChange={e => setEditSubject(e.target.value)}
-                    placeholder="e.g. {{CUSTOMER_NAME}}, your exclusive Diwali offer awaits ✨"
-                    className={`w-full px-3.5 py-2.5 border bg-surface text-primary font-mono text-[12px] focus:outline-none transition-colors rounded-sm ${
-                      editSubject.length > 60 ? 'border-[#c97e6a]' : 'border-border focus:border-accent'
-                    }`}
+                    type="number"
+                    value={editDiscount}
+                    onChange={e => setEditDiscount(Number(e.target.value))}
+                    min={5} max={50}
+                    className="w-10 bg-surface border border-border text-accent font-serif text-[15px] px-1 text-center focus:outline-none focus:border-accent rounded-sm"
                   />
-                </div>
-
-                {viewMode === 'VISUAL' ? (
-                  <div className="space-y-4 border border-border bg-surface p-5 rounded-md">
-                    <div>
-                      <label htmlFor="vis-headline" className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
-                        Main Headline / Title
-                      </label>
-                      <input
-                        id="vis-headline"
-                        type="text"
-                        value={visHeadline}
-                        onChange={e => setVisHeadline(e.target.value)}
-                        placeholder="e.g. Celebrate Diwali in Grandeur"
-                        className="w-full px-3.5 py-2.5 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="vis-greeting" className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
-                        Personalized Greeting Line
-                      </label>
-                      <input
-                        id="vis-greeting"
-                        type="text"
-                        value={visGreeting}
-                        onChange={e => setVisGreeting(e.target.value)}
-                        placeholder="e.g. Dear {{CUSTOMER_NAME}},"
-                        className="w-full px-3.5 py-2.5 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="vis-body" className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
-                        Message Body (Plain English Paragraphs)
-                      </label>
-                      <textarea
-                        id="vis-body"
-                        value={visBodyText}
-                        onChange={e => setVisBodyText(e.target.value)}
-                        rows={6}
-                        placeholder="Type your main invitation or announcement here in plain English..."
-                        className="w-full p-3.5 border border-border bg-background text-primary font-serif text-[14px] leading-relaxed focus:outline-none focus:border-accent rounded-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="vis-cta" className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
-                        Button Label
-                      </label>
-                      <input
-                        id="vis-cta"
-                        type="text"
-                        value={visCtaText}
-                        onChange={e => setVisCtaText(e.target.value)}
-                        placeholder="e.g. Claim Your Exclusive Voucher"
-                        className="w-full px-3.5 py-2.5 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <label htmlFor="email-body" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block mb-1.5">
-                      Email Body HTML Code
-                    </label>
-                    <textarea
-                      id="email-body"
-                      value={editBodyHtml}
-                      onChange={e => setEditBodyHtml(e.target.value)}
-                      rows={16}
-                      className="w-full p-4 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
-                      spellCheck={false}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* WHATSAPP COPY FORM */}
-            {channel === 'WHATSAPP' && (
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="wa-body" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block mb-1.5">
-                    WhatsApp Broadcast Message
-                  </label>
-                  <textarea
-                    id="wa-body"
-                    value={editWhatsappText}
-                    onChange={e => setEditWhatsappText(e.target.value)}
-                    rows={14}
-                    className="w-full p-4 border border-border bg-surface text-primary font-mono text-[12px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
-                    placeholder={`🪔 *Namaste {{CUSTOMER_NAME}}!* ✨\n\nCelebrate with James & Sons handcrafted brass lighting.\n\nYour personal *{{DISCOUNT_VALUE}}% OFF* voucher: *{{COUPON_CODE}}*\n\nShop: https://jamesandsons.in/collections/festive`}
-                  />
-                </div>
-                <div className="flex justify-between font-mono text-[10px] text-muted">
-                  <span>{editWhatsappText.length} characters</span>
-                  <span className={editWhatsappText.trim().split(/\s+/).filter(Boolean).length > 160 ? 'text-[#c97e6a]' : ''}>
-                    {editWhatsappText.trim().split(/\s+/).filter(Boolean).length} words
-                  </span>
+                  <span className="font-serif text-[12px] text-accent">%</span>
                 </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* TAB 2: AUDIENCE & PRODUCTS */}
-        {editorStepTab === 'TARGETING' && (
-          <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-background max-w-[900px] mx-auto w-full">
-            
-            {/* Target Audience Section */}
-            <div className="p-5 border border-border bg-surface rounded-md space-y-4">
-              <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">1. Target Audience Segment</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-1.5">
                 {[
-                  { id: 'VIP',    label: 'VIP Buyers',     desc: 'Orders total > ₹25,000' },
-                  { id: 'LAPSED', label: 'Lapsed Buyers',  desc: 'Last order > 90 days ago' },
-                  { id: 'ALL',    label: 'All Customers',   desc: 'Full registered base' },
+                  { id: 'VIP', label: 'VIP' },
+                  { id: 'LAPSED', label: 'Lapsed (90d+)' },
+                  { id: 'ALL', label: 'All Base' },
                 ].map(s => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => setEditSegment(s.id)}
-                    className={`p-4 border rounded-sm text-left transition-colors cursor-pointer ${
+                    className={`font-mono text-[9.5px] uppercase tracking-[0.08em] py-1.5 px-2 border rounded-sm transition-colors cursor-pointer text-center ${
                       editSegment === s.id
-                        ? 'border-accent bg-accent/10 text-primary'
-                        : 'border-border bg-background hover:border-accent/40 text-muted'
+                        ? 'bg-accent/15 border-accent text-accent font-semibold'
+                        : 'border-border text-muted hover:border-accent/40 bg-surface'
                     }`}
                   >
-                    <div className="font-mono text-[12px] font-semibold text-primary">{s.label}</div>
-                    <div className="font-mono text-[10px] text-muted mt-1">{s.desc}</div>
+                    {s.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Voucher Discount Section */}
-            <div className="p-5 border border-border bg-surface rounded-md space-y-3">
-              <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">2. Voucher Offer & Discount</div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 border border-border bg-background px-4 py-2 rounded-sm focus-within:border-accent">
-                  <label htmlFor="discount-val-t" className="sr-only">Discount %</label>
-                  <input
-                    id="discount-val-t"
-                    type="number"
-                    value={editDiscount}
-                    onChange={e => setEditDiscount(Number(e.target.value))}
-                    min={5} max={50}
-                    className="w-12 bg-transparent text-accent font-serif text-[24px] focus:outline-none tabular-nums"
-                  />
-                  <span className="font-serif text-[18px] text-accent">% OFF</span>
-                </div>
-                <div className="font-mono text-[11px] text-muted leading-relaxed">
-                  Generates unique 8-character single-use vouchers per customer (e.g. <code className="text-accent">DIW8K9X2</code>).
+            {/* 2. MESSAGE CONTENT */}
+            <div className="p-4 border border-border/80 bg-background rounded-md space-y-4">
+              {/* Channel Selector Pills */}
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">2. Message Copy</span>
+                <div className="flex items-center gap-1 bg-surface p-1 rounded-sm border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setChannel('EMAIL')}
+                    className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm transition-colors cursor-pointer ${
+                      channel === 'EMAIL' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
+                    }`}
+                  >
+                    ✉️ Email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChannel('WHATSAPP')}
+                    className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm transition-colors cursor-pointer ${
+                      channel === 'WHATSAPP' ? 'bg-[#25D366] text-background font-semibold' : 'text-muted hover:text-primary'
+                    }`}
+                  >
+                    💬 WhatsApp
+                  </button>
                 </div>
               </div>
+
+              {/* Personalization Tokens Quick Chips */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted">Insert:</span>
+                {[
+                  { token: '{{CUSTOMER_NAME}}', label: 'Name' },
+                  { token: '{{COUPON_CODE}}',   label: 'Code' },
+                  { token: '{{DISCOUNT_VALUE}}',label: '% Off' },
+                ].map(t => (
+                  <button
+                    key={t.token}
+                    type="button"
+                    onClick={() => {
+                      if (channel === 'EMAIL') {
+                        setVisBodyText(prev => prev + ' ' + t.token);
+                      } else {
+                        setEditWhatsappText(prev => prev + ' ' + t.token);
+                      }
+                    }}
+                    className="font-mono text-[9px] border border-border bg-surface px-2 py-0.5 hover:border-accent hover:text-accent rounded-sm transition-colors cursor-pointer"
+                  >
+                    + {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* EMAIL FORM FIELDS */}
+              {channel === 'EMAIL' && (
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="e-sub" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                      Subject Line
+                    </label>
+                    <input
+                      id="e-sub"
+                      type="text"
+                      value={editSubject}
+                      onChange={e => setEditSubject(e.target.value)}
+                      placeholder="Email subject..."
+                      className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[11px] focus:outline-none focus:border-accent rounded-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="v-head" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                      Main Headline
+                    </label>
+                    <input
+                      id="v-head"
+                      type="text"
+                      value={visHeadline}
+                      onChange={e => setVisHeadline(e.target.value)}
+                      placeholder="e.g. Celebrate Diwali in Grandeur"
+                      className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[11px] focus:outline-none focus:border-accent rounded-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="v-body" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                      Body Paragraphs
+                    </label>
+                    <textarea
+                      id="v-body"
+                      value={visBodyText}
+                      onChange={e => setVisBodyText(e.target.value)}
+                      rows={5}
+                      placeholder="Main message copy..."
+                      className="w-full p-3 border border-border bg-surface text-primary font-serif text-[13px] leading-relaxed focus:outline-none focus:border-accent rounded-sm resize-y"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="v-cta" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                      CTA Button Text
+                    </label>
+                    <input
+                      id="v-cta"
+                      type="text"
+                      value={visCtaText}
+                      onChange={e => setVisCtaText(e.target.value)}
+                      placeholder="e.g. Claim Your Exclusive Voucher"
+                      className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[11px] focus:outline-none focus:border-accent rounded-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* WHATSAPP FORM FIELDS */}
+              {channel === 'WHATSAPP' && (
+                <div>
+                  <label htmlFor="wa-text" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                    WhatsApp Message Text
+                  </label>
+                  <textarea
+                    id="wa-text"
+                    value={editWhatsappText}
+                    onChange={e => setEditWhatsappText(e.target.value)}
+                    rows={10}
+                    placeholder="WhatsApp broadcast copy..."
+                    className="w-full p-3 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent rounded-sm resize-y"
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Featured Products Section */}
-            <div className="p-5 border border-border bg-surface rounded-md space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">3. Featured Catalog Products</div>
-                  <p className="font-mono text-[10px] text-muted mt-0.5">Embedded in campaign layout &amp; recommendations</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* 3. FEATURED PRODUCTS */}
+            <div className="p-4 border border-border/80 bg-background rounded-md space-y-3">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold block">3. Featured Products</span>
+              <div className="space-y-2">
                 {editProducts.map((p, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-3 p-3 border border-border bg-background rounded-sm">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <div key={idx} className="flex items-center justify-between gap-2 p-2 border border-border bg-surface rounded-sm">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       {p.images?.[0]
-                        ? <img src={p.images[0]} alt={p.name} className="w-10 h-10 object-cover rounded-sm shrink-0" />
-                        : <div className="w-10 h-10 bg-surface-muted rounded-sm shrink-0 flex items-center justify-center text-accent text-xs">✦</div>
+                        ? <img src={p.images[0]} alt={p.name} className="w-8 h-8 object-cover rounded-sm shrink-0" />
+                        : <div className="w-8 h-8 bg-surface-muted rounded-sm shrink-0 flex items-center justify-center text-accent text-xs">✦</div>
                       }
                       <div className="min-w-0">
-                        <div className="font-serif text-[13px] text-primary truncate" title={p.name}>{p.name}</div>
-                        <div className="font-mono text-[10px] text-accent tabular-nums mt-0.5">₹{(p.d2cPrice || 0).toLocaleString('en-IN')}</div>
+                        <div className="font-serif text-[12px] text-primary truncate" title={p.name}>{p.name}</div>
+                        <div className="font-mono text-[9.5px] text-accent tabular-nums">₹{(p.d2cPrice || 0).toLocaleString('en-IN')}</div>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => { setSwapIndex(idx); setSwapQuery(''); }}
-                      className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1 hover:border-accent hover:text-primary transition-colors bg-surface rounded-sm cursor-pointer shrink-0"
+                      className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1 hover:border-accent hover:text-primary transition-colors bg-background rounded-sm cursor-pointer shrink-0"
                     >
                       Swap
                     </button>
@@ -1081,47 +945,65 @@ export default function CampaignManagerClient({
               </div>
             </div>
           </div>
-        )}
 
-        {/* TAB 3: LIVE PREVIEW */}
-        {editorStepTab === 'PREVIEW' && (
-          <div className="flex-1 p-6 space-y-5 overflow-y-auto bg-background max-w-[900px] mx-auto w-full">
-            <div className="p-3.5 border border-border rounded-sm bg-surface flex gap-2.5">
-              <span aria-hidden="true">🔍</span>
-              <p className="font-mono text-[11px] text-muted m-0">
-                Live Preview for sample customer <strong className="text-primary">Priya</strong> with voucher code <code className="text-accent tracking-wider">DIW8K9X2</code>.
-              </p>
+          {/* RIGHT COLUMN: LIVE REAL-TIME PREVIEW CANVAS */}
+          <div className="flex-1 min-w-0 bg-background flex flex-col overflow-hidden">
+            {/* Preview Toolbar */}
+            <div className="px-5 py-2.5 border-b border-border bg-surface flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Preview Canvas:</span>
+                <span className="font-mono text-[10px] text-accent">Sample Customer: Priya (DIW8K9X2)</span>
+              </div>
+
+              <div className="flex items-center gap-1 border border-border bg-background p-1 rounded-sm">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice('DESKTOP')}
+                  className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
+                    previewDevice === 'DESKTOP' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  🖥 Desktop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice('MOBILE')}
+                  className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
+                    previewDevice === 'MOBILE' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  📱 Mobile
+                </button>
+              </div>
             </div>
 
-            {channel === 'EMAIL' ? (
-              <>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Email Subject Line</div>
-                  <div className="px-4 py-3 border border-border bg-surface rounded-sm font-serif text-[15px] text-primary">
-                    {personalizedSubject || '(no subject)'}
+            {/* Interactive Preview Canvas */}
+            <div className="flex-1 p-6 overflow-y-auto flex items-center justify-center bg-surface-muted/30">
+              {channel === 'EMAIL' ? (
+                <div
+                  className={`transition-all duration-300 ${
+                    previewDevice === 'MOBILE' ? 'w-[375px]' : 'w-full max-w-[620px]'
+                  }`}
+                >
+                  <div className="mb-2 font-serif text-[13px] text-muted border-b border-border/60 pb-2">
+                    Subject: <strong className="text-primary">{personalizedSubject || '(No subject entered)'}</strong>
                   </div>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Rendered Email HTML</div>
                   <div
-                    className="border border-border rounded-md overflow-hidden bg-white"
+                    className="border border-border rounded-lg overflow-hidden bg-white shadow-2xl"
                     dangerouslySetInnerHTML={{ __html: personalizedHtml }}
                   />
                 </div>
-              </>
-            ) : (
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">WhatsApp Broadcast Preview</div>
-                <div className="bg-[#0b141a] rounded-md p-6 border border-border">
-                  <div className="bg-[#202c33] rounded-xl rounded-bl-none max-w-[85%] px-4 py-3">
-                    <p className="text-[#e9edef] font-mono text-[12px] leading-[1.75] m-0 whitespace-pre-wrap">{personalizedWA}</p>
-                    <div className="font-mono text-[9px] text-[#8696a0] mt-1.5 text-right">Delivered ✓✓</div>
+              ) : (
+                <div className="w-[340px] bg-[#0b141a] rounded-2xl p-5 border border-border/80 shadow-2xl">
+                  <div className="bg-[#202c33] rounded-xl rounded-bl-none px-4 py-3">
+                    <p className="text-[#e9edef] font-mono text-[11.5px] leading-[1.75] m-0 whitespace-pre-wrap">{personalizedWA}</p>
+                    <div className="font-mono text-[8.5px] text-[#8696a0] mt-1.5 text-right">Delivered ✓✓</div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* CONFIRM APPROVE & SCHEDULE MODAL */}
         {confirmScheduleModal && (
