@@ -748,25 +748,28 @@ export default function CampaignManagerClient({
           <div className="w-full lg:w-[58%] shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-surface p-6 space-y-5">
             
             {/* 1. AUDIENCE & DISCOUNT SETUP */}
-            <div className="p-4 border border-border/80 bg-background rounded-md space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">1. Audience &amp; Voucher</span>
-                <div className="flex items-center gap-1">
-                  <span className="font-mono text-[10px] text-muted">Discount:</span>
+            <div className="p-5 border border-border/80 bg-background rounded-lg space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="font-sans text-[11px] uppercase tracking-[0.14em] text-accent font-bold">1. Audience &amp; Offer</span>
+                
+                {/* Enlarged Discount Percentage Selector */}
+                <div className="flex items-center gap-2 border border-border/90 bg-surface px-3.5 py-1.5 rounded-md focus-within:border-accent transition-colors shadow-sm">
+                  <label htmlFor="edit-discount-input" className="font-sans text-[11px] font-bold text-muted uppercase tracking-wider">Discount:</label>
                   <input
+                    id="edit-discount-input"
                     type="number"
                     value={editDiscount}
                     onChange={e => setEditDiscount(Number(e.target.value))}
                     min={5} max={50}
-                    className="w-10 bg-surface border border-border text-accent font-serif text-[15px] px-1 text-center focus:outline-none focus:border-accent rounded-sm"
+                    className="w-16 bg-transparent text-accent font-sans text-[20px] font-bold text-center focus:outline-none tabular-nums"
                   />
-                  <span className="font-serif text-[12px] text-accent">%</span>
+                  <span className="font-sans text-[15px] font-bold text-accent">% OFF</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'VIP', label: 'VIP' },
+                  { id: 'VIP', label: 'VIP Buyers' },
                   { id: 'LAPSED', label: 'Lapsed (90d+)' },
                   { id: 'ALL', label: 'All Base' },
                 ].map(s => (
@@ -774,9 +777,9 @@ export default function CampaignManagerClient({
                     key={s.id}
                     type="button"
                     onClick={() => setEditSegment(s.id)}
-                    className={`font-mono text-[9.5px] uppercase tracking-[0.08em] py-1.5 px-2 border rounded-sm transition-colors cursor-pointer text-center ${
+                    className={`font-sans text-[12px] font-semibold py-2 px-2.5 border rounded-md transition-colors cursor-pointer text-center ${
                       editSegment === s.id
-                        ? 'bg-accent/15 border-accent text-accent font-semibold'
+                        ? 'bg-accent/15 border-accent text-accent font-bold shadow-sm'
                         : 'border-border text-muted hover:border-accent/40 bg-surface'
                     }`}
                   >
@@ -787,16 +790,16 @@ export default function CampaignManagerClient({
             </div>
 
             {/* 2. MESSAGE CONTENT */}
-            <div className="p-4 border border-border/80 bg-background rounded-md space-y-4">
+            <div className="p-5 border border-border/80 bg-background rounded-lg space-y-5">
               {/* Channel Selector Pills */}
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">2. Message Copy</span>
-                <div className="flex items-center gap-1 bg-surface p-1 rounded-sm border border-border">
+              <div className="flex items-center justify-between border-b border-border/80 pb-3.5">
+                <span className="font-sans text-[11px] uppercase tracking-[0.14em] text-accent font-bold">2. Message Copy</span>
+                <div className="flex items-center gap-1 bg-surface p-1 rounded-md border border-border">
                   <button
                     type="button"
                     onClick={() => setChannel('EMAIL')}
-                    className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm transition-colors cursor-pointer ${
-                      channel === 'EMAIL' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
+                    className={`font-sans text-[11px] font-semibold px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                      channel === 'EMAIL' ? 'bg-accent text-background shadow-sm' : 'text-muted hover:text-primary'
                     }`}
                   >
                     ✉️ Email
@@ -804,8 +807,8 @@ export default function CampaignManagerClient({
                   <button
                     type="button"
                     onClick={() => setChannel('WHATSAPP')}
-                    className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm transition-colors cursor-pointer ${
-                      channel === 'WHATSAPP' ? 'bg-[#25D366] text-background font-semibold' : 'text-muted hover:text-primary'
+                    className={`font-sans text-[11px] font-semibold px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                      channel === 'WHATSAPP' ? 'bg-[#25D366] text-background shadow-sm' : 'text-muted hover:text-primary'
                     }`}
                   >
                     💬 WhatsApp
@@ -814,11 +817,11 @@ export default function CampaignManagerClient({
               </div>
 
               {/* Personalization Tokens Quick Chips */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted">Insert Token:</span>
+              <div className="flex items-center gap-2 flex-wrap bg-surface p-3 border border-border rounded-md">
+                <span className="font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-accent">Insert Token:</span>
                 {[
-                  { token: '{{CUSTOMER_NAME}}', label: 'Name' },
-                  { token: '{{COUPON_CODE}}',   label: 'Code' },
+                  { token: '{{CUSTOMER_NAME}}', label: 'First Name' },
+                  { token: '{{COUPON_CODE}}',   label: 'Voucher Code' },
                   { token: '{{DISCOUNT_VALUE}}',label: '% Off' },
                 ].map(t => (
                   <button
@@ -831,7 +834,7 @@ export default function CampaignManagerClient({
                         setEditWhatsappText(prev => prev + ' ' + t.token);
                       }
                     }}
-                    className="font-mono text-[9px] border border-border bg-surface px-2 py-0.5 hover:border-accent hover:text-accent rounded-sm transition-colors cursor-pointer"
+                    className="font-sans text-[11px] font-medium border border-border bg-background px-2.5 py-1 hover:border-accent hover:text-accent rounded-md transition-colors cursor-pointer shadow-xs"
                   >
                     + {t.label}
                   </button>
@@ -840,9 +843,9 @@ export default function CampaignManagerClient({
 
               {/* EMAIL FORM FIELDS */}
               {channel === 'EMAIL' && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <label htmlFor="e-sub" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                    <label htmlFor="e-sub" className="font-sans text-[12px] font-semibold text-secondary block mb-1.5">
                       Subject Line
                     </label>
                     <input
@@ -851,12 +854,12 @@ export default function CampaignManagerClient({
                       value={editSubject}
                       onChange={e => setEditSubject(e.target.value)}
                       placeholder="Email subject..."
-                      className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[11px] focus:outline-none focus:border-accent rounded-sm"
+                      className="w-full px-3.5 py-2.5 border border-border bg-surface text-primary font-sans text-[13px] focus:outline-none focus:border-accent rounded-md transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="v-head" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                    <label htmlFor="v-head" className="font-sans text-[12px] font-semibold text-secondary block mb-1.5">
                       Main Headline
                     </label>
                     <input
@@ -865,13 +868,13 @@ export default function CampaignManagerClient({
                       value={visHeadline}
                       onChange={e => setVisHeadline(e.target.value)}
                       placeholder="e.g. Celebrate Diwali in Grandeur"
-                      className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[11px] focus:outline-none focus:border-accent rounded-sm"
+                      className="w-full px-3.5 py-2.5 border border-border bg-surface text-primary font-sans text-[13px] focus:outline-none focus:border-accent rounded-md transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="v-body" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
-                      Body Paragraphs
+                    <label htmlFor="v-body" className="font-sans text-[12px] font-semibold text-secondary block mb-1.5">
+                      Body Paragraphs (Plain English)
                     </label>
                     <textarea
                       id="v-body"
@@ -879,12 +882,12 @@ export default function CampaignManagerClient({
                       onChange={e => setVisBodyText(e.target.value)}
                       rows={6}
                       placeholder="Main message copy..."
-                      className="w-full p-3 border border-border bg-surface text-primary font-serif text-[13px] leading-relaxed focus:outline-none focus:border-accent rounded-sm resize-y"
+                      className="w-full p-3.5 border border-border bg-surface text-primary font-sans text-[13px] leading-relaxed focus:outline-none focus:border-accent rounded-md resize-y transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="v-cta" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                    <label htmlFor="v-cta" className="font-sans text-[12px] font-semibold text-secondary block mb-1.5">
                       CTA Button Text
                     </label>
                     <input
@@ -893,7 +896,7 @@ export default function CampaignManagerClient({
                       value={visCtaText}
                       onChange={e => setVisCtaText(e.target.value)}
                       placeholder="e.g. Claim Your Exclusive Voucher"
-                      className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[11px] focus:outline-none focus:border-accent rounded-sm"
+                      className="w-full px-3.5 py-2.5 border border-border bg-surface text-primary font-sans text-[13px] focus:outline-none focus:border-accent rounded-md transition-colors"
                     />
                   </div>
                 </div>
@@ -902,7 +905,7 @@ export default function CampaignManagerClient({
               {/* WHATSAPP FORM FIELDS */}
               {channel === 'WHATSAPP' && (
                 <div>
-                  <label htmlFor="wa-text" className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted block mb-1">
+                  <label htmlFor="wa-text" className="font-sans text-[12px] font-semibold text-secondary block mb-1.5">
                     WhatsApp Message Text
                   </label>
                   <textarea
@@ -911,15 +914,15 @@ export default function CampaignManagerClient({
                     onChange={e => setEditWhatsappText(e.target.value)}
                     rows={12}
                     placeholder="WhatsApp broadcast copy..."
-                    className="w-full p-3 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent rounded-sm resize-y"
+                    className="w-full p-3.5 border border-border bg-surface text-primary font-sans text-[13px] leading-relaxed focus:outline-none focus:border-accent rounded-md resize-y transition-colors"
                   />
                 </div>
               )}
             </div>
 
             {/* 3. FEATURED PRODUCTS */}
-            <div className="p-4 border border-border/80 bg-background rounded-md space-y-3">
-              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold block">3. Featured Products</span>
+            <div className="p-5 border border-border/80 bg-background rounded-lg space-y-3">
+              <span className="font-sans text-[11px] uppercase tracking-[0.14em] text-accent font-bold block">3. Featured Products</span>
               <div className="space-y-2">
                 {editProducts.map((p, idx) => (
                   <div key={idx} className="flex items-center justify-between gap-2 p-2 border border-border bg-surface rounded-sm">
