@@ -466,13 +466,38 @@ export async function syncToAmazon(product: any) {
         ];
       }
 
-      // Note: We omit purchasable_offer (pricing) here because Amazon India's Listings Items API
-      // strictly validates maximum_seller_allowed_price schedule start_at parameters and throws
-      // validation errors for newly created listings. Pricing is managed directly in Seller Central.
+      const offerPrice = price;
+      const offerMrp = (v ? v.mrp : null) || product.mrp || Math.round(price * 1.3);
+
+      attributes.purchasable_offer = [
+        {
+          marketplace_id: marketplaceId,
+          currency: 'INR',
+          our_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: offerPrice
+                }
+              ]
+            }
+          ]
+        }
+      ];
+
+      attributes.list_price = [
+        {
+          marketplace_id: marketplaceId,
+          currency: 'INR',
+          value_with_tax: offerMrp
+        }
+      ];
+
       attributes.fulfillment_availability = [
         {
           fulfillment_channel_code: 'DEFAULT',
-          quantity: quantity
+          quantity: quantity,
+          lead_time_to_ship_max_days: 5
         }
       ];
     }

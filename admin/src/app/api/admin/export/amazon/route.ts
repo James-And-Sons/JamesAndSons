@@ -363,9 +363,15 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 307, vWeight); // Package Weight
           writeCell(sheet, rowIdx, 308, "Kilograms");
 
+          const vMinPrice = v.b2bPrice || p.b2bPrice || Math.round(vPrice * 0.85);
+          const vMaxPrice = vMrp || Math.round(vPrice * 1.30);
+
           writeCell(sheet, rowIdx, 269, vStock); // Quantity (IN)
+          writeCell(sheet, rowIdx, 271, 5); // Handling Time (Leadtime to ship)
           writeCell(sheet, rowIdx, 273, vPrice); // Your Price INR
           writeCell(sheet, rowIdx, 274, vMrp); // Maximum Retail Price
+          writeCell(sheet, rowIdx, 275, vMinPrice); // Minimum Seller Allowed Price
+          writeCell(sheet, rowIdx, 276, vMaxPrice); // Maximum Seller Allowed Price
           writeCell(sheet, rowIdx, 312, vOrigin); // Country of Origin
 
           rowIdx++;
@@ -466,9 +472,15 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 307, pWeight); // Package Weight
         writeCell(sheet, rowIdx, 308, "Kilograms");
 
+        const pMinPrice = p.b2bPrice || Math.round(pPrice * 0.85);
+        const pMaxPrice = pMrp || Math.round(pPrice * 1.30);
+
         writeCell(sheet, rowIdx, 269, pStock); // Quantity (IN)
+        writeCell(sheet, rowIdx, 271, 5); // Handling Time (Leadtime to ship)
         writeCell(sheet, rowIdx, 273, pPrice); // Your Price INR
         writeCell(sheet, rowIdx, 274, pMrp); // Maximum Retail Price
+        writeCell(sheet, rowIdx, 275, pMinPrice); // Minimum Seller Allowed Price
+        writeCell(sheet, rowIdx, 276, pMaxPrice); // Maximum Seller Allowed Price
         writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
 
         rowIdx++;
