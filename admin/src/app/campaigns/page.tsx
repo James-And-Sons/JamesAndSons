@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 import CampaignManagerClient from './CampaignManagerClient';
+import { ensureCampaignTablesExist } from '@/lib/services/db-ensure';
 
 export const dynamic = 'force-dynamic';
 
 async function seedHolidaysIfEmpty() {
+  await ensureCampaignTablesExist();
   const count = await prisma.indianHoliday.count();
   if (count > 0) return;
 

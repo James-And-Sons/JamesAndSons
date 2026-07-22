@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { draftCampaignForHoliday, dispatchCampaignStage2 } from '@/lib/services/draft-campaign';
+import { ensureCampaignTablesExist } from '@/lib/services/db-ensure';
 
 export const dynamic = 'force-dynamic';
 
 // Seed default Indian Major Holidays for calendar automation if database is empty
 async function seedDefaultIndianHolidays() {
+  await ensureCampaignTablesExist();
   const count = await prisma.indianHoliday.count();
   if (count > 0) return;
 

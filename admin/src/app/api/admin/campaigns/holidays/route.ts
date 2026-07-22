@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureCampaignTablesExist } from '@/lib/services/db-ensure';
 
 export const dynamic = 'force-dynamic';
 
 async function ensureHolidaysSeeded() {
+  await ensureCampaignTablesExist();
   const count = await prisma.indianHoliday.count();
   if (count > 0) return;
 
