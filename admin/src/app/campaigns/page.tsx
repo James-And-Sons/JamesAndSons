@@ -137,11 +137,13 @@ export default async function CampaignsPage() {
   };
 
   return (
-    <CampaignManagerClient
-      initialHolidays={holidays as any}
-      initialCampaigns={campaigns as any}
-      initialAnalytics={analytics}
-      initialCatalogProducts={catalogProducts}
-    />
+    <div style={{ padding: '32px' }}>
+      <CampaignManagerClient
+        initialHolidays={holidays as any}
+        initialCampaigns={campaigns as any}
+        initialAnalytics={analytics}
+        initialCatalogProducts={catalogProducts}
+      />
+    </div>
   );
 }
