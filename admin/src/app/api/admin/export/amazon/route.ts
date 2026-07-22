@@ -334,7 +334,7 @@ export async function GET(req: NextRequest) {
 
           // Actual Product Weight & Dimensions
           const actHeight = v.actualHeight || p.actualHeight || 53;
-          const actLength = v.actualDepth || v.actualLength || p.actualDepth || p.actualLength || 15;
+          const actLength = v.actualDepth || p.actualDepth || (v as any).length || p.length || 15;
           const actWidth = v.actualWidth || p.actualWidth || 20;
 
           writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
@@ -441,7 +441,7 @@ export async function GET(req: NextRequest) {
 
         // Actual Product Weight & Dimensions
         const actHeight = p.actualHeight || 53;
-        const actLength = p.actualDepth || p.actualLength || 15;
+        const actLength = p.actualDepth || p.length || 15;
         const actWidth = p.actualWidth || 20;
 
         writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
