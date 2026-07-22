@@ -44,7 +44,6 @@ interface DynamicCoupon {
 type View = 'DASHBOARD' | 'EDITOR' | 'COUPONS';
 type Channel = 'EMAIL' | 'WHATSAPP';
 type ViewMode = 'VISUAL' | 'HTML' | 'PREVIEW';
-type MobileStep = 'AUDIENCE' | 'CONTENT' | 'PRODUCTS' | 'PREVIEW';
 
 // ─── Status helpers (match platform's globals.css status-pill classes) ────────
 function statusPillClass(status: string): string {
@@ -151,10 +150,9 @@ export default function CampaignManagerClient({
   const [view, setView] = useState<View>('DASHBOARD');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-  // Separate Channel axis from View Mode axis
+  // Editor controls
   const [channel, setChannel] = useState<Channel>('EMAIL');
   const [viewMode, setViewMode] = useState<ViewMode>('VISUAL');
-  const [mobileStep, setMobileStep] = useState<MobileStep>('CONTENT');
   
   // Editable campaign fields
   const [editName, setEditName] = useState('');
@@ -268,18 +266,18 @@ export default function CampaignManagerClient({
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleDraftAI = async (holidayId: string, segment = 'VIP') => {
-    setIsDrafting(holidayId);
+    setIsDrafting(`${holidayId}_${segment}`);
     try {
       const res = await fetch('/api/admin/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'DRAFT_AI', holidayId, segment, discountValue: 15 }),
+        body: JSON.stringify({ action: 'DRAFT_AI', holidayId, segment, discountValue: editDiscount || 15 }),
       });
       const data = await res.json();
       if (data.success && data.campaign) {
         await refreshData();
         openEditor(data.campaign);
-        showToast('AI draft ready — review & personalize below.');
+        showToast(`AI draft for ${segment} buyers ready!`);
       } else {
         showToast(data.error || 'Failed to generate AI draft.', 'err');
       }
@@ -633,7 +631,7 @@ export default function CampaignManagerClient({
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // VIEW: EDITOR
+  // VIEW: EDITOR (Redesigned with Horizontal Setup Bar above Content & Products)
   // ════════════════════════════════════════════════════════════════════════════
   if (view === 'EDITOR' && selectedCampaign) {
     const isDraft = selectedCampaign.status === 'DRAFT';
@@ -641,7 +639,7 @@ export default function CampaignManagerClient({
 
     return (
       <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
-        {/* Editor Top Bar */}
+        {/* Topbar Header */}
         <header className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-surface shrink-0">
           <button
             onClick={() => setView('DASHBOARD')}
@@ -675,7 +673,7 @@ export default function CampaignManagerClient({
             </span>
           )}
 
-          {/* Grouped Action Buttons with clear separation between Save vs Approve vs Delete */}
+          {/* Grouped Action Buttons */}
           <div className="flex gap-2 flex-wrap items-center">
             <button
               onClick={handleSave}
@@ -717,150 +715,88 @@ export default function CampaignManagerClient({
           </div>
         </header>
 
-        {/* Mobile Viewport Step Selector Bar (< lg viewports) */}
-        <div className="lg:hidden flex border-b border-border bg-surface shrink-0 overflow-x-auto">
-          {[
-            { id: 'AUDIENCE', label: '1. Setup' },
-            { id: 'CONTENT', label: '2. Copy Content' },
-            { id: 'PRODUCTS', label: '3. Products' },
-            { id: 'PREVIEW', label: '4. Preview' },
-          ].map(step => (
-            <button
-              key={step.id}
-              onClick={() => setMobileStep(step.id as MobileStep)}
-              className={`flex-1 min-w-[100px] font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 px-3 border-b-2 text-center transition-colors cursor-pointer ${
-                mobileStep === step.id
-                  ? 'border-accent text-accent bg-accent/5 font-semibold'
-                  : 'border-transparent text-muted hover:text-primary'
-              }`}
-            >
-              {step.label}
-            </button>
-          ))}
-        </div>
+        {/* REQUEST 4: HORIZONTAL SETUP PANEL (Placed horizontally above Channel & Products) */}
+        <section
+          aria-label="Campaign setup, audience targeting, and personalization tokens"
+          className="px-6 py-3.5 border-b border-border bg-surface shrink-0 flex flex-wrap items-center justify-between gap-6"
+        >
+          {/* Audience Segment Selection */}
+          <fieldset className="border-0 p-0 m-0 flex items-center gap-3">
+            <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent shrink-0 p-0">Audience:</legend>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { id: 'VIP',    label: 'VIP Buyers',     desc: '> ₹25k' },
+                { id: 'LAPSED', label: 'Lapsed (90d+)',   desc: 'Win-back' },
+                { id: 'ALL',    label: 'All Customers',   desc: 'Full Base' },
+              ].map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setEditSegment(s.id)}
+                  className={`font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-1.5 border transition-colors rounded-sm cursor-pointer ${
+                    editSegment === s.id
+                      ? 'bg-accent/15 border-accent text-accent font-semibold'
+                      : 'border-border text-muted hover:border-accent/40 bg-background'
+                  }`}
+                >
+                  {s.label} <span className="text-muted/70 text-[9px]">({s.desc})</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
 
-        {/* Editor Body: 3-column desktop / 1-column mobile step flow */}
+          {/* Voucher Discount Input */}
+          <fieldset className="border-0 p-0 m-0 flex items-center gap-2">
+            <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent shrink-0 p-0">Voucher Discount:</legend>
+            <div className="flex items-center gap-1.5 border border-border bg-background rounded-sm px-2.5 py-1 focus-within:border-accent transition-colors">
+              <label htmlFor="discount-val" className="sr-only">Discount percentage</label>
+              <input
+                id="discount-val"
+                type="number"
+                value={editDiscount}
+                onChange={e => setEditDiscount(Number(e.target.value))}
+                min={5} max={50}
+                className="w-10 bg-transparent text-accent font-serif text-[18px] focus:outline-none tabular-nums"
+              />
+              <span className="font-serif text-[15px] text-accent">% OFF</span>
+            </div>
+          </fieldset>
+
+          {/* Personalization Tokens */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent shrink-0">Tokens:</span>
+            {[
+              { token: '{{CUSTOMER_NAME}}', desc: 'Name' },
+              { token: '{{COUPON_CODE}}',   desc: 'Code' },
+              { token: '{{HOLIDAY_NAME}}',  desc: 'Festival' },
+              { token: '{{DISCOUNT_VALUE}}',desc: '% Off' },
+            ].map(t => (
+              <button
+                key={t.token}
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(t.token);
+                  showToast(`Copied ${t.token} to clipboard!`);
+                }}
+                title={`Click to copy ${t.token}`}
+                className="flex items-center gap-1 px-2 py-1 border border-border bg-background hover:border-accent/50 hover:bg-accent/5 transition-colors cursor-pointer rounded-sm group active:scale-[0.98]"
+              >
+                <span className="text-muted text-[10px] group-hover:text-accent" aria-hidden="true">📋</span>
+                <code className="font-mono text-[9.5px] text-accent group-hover:text-accent-hover">{t.token}</code>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* 2-Column Editor Body (Left: Content Editor, Right: Featured Products) */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* PANEL 1: Settings */}
-          <aside
-            aria-label="Campaign setup and targeting"
-            className={`w-full lg:w-[240px] shrink-0 border-r border-border overflow-y-auto p-5 space-y-6 bg-surface ${
-              mobileStep === 'AUDIENCE' ? 'block' : 'hidden lg:block'
-            }`}
-          >
-            {/* Audience Segment */}
-            <fieldset className="border-0 p-0 m-0">
-              <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3 p-0">Audience Segment</legend>
-              <div className="space-y-1.5">
-                {[
-                  { id: 'VIP',    label: 'VIP Buyers',     desc: 'Orders > ₹25k' },
-                  { id: 'LAPSED', label: 'Lapsed (90d+)',   desc: 'Win-back' },
-                  { id: 'ALL',    label: 'All Customers',   desc: 'Full base' },
-                ].map(s => (
-                  <label
-                    key={s.id}
-                    className={`flex items-center gap-3 px-3 py-2.5 border cursor-pointer transition-colors rounded-sm ${
-                      editSegment === s.id
-                        ? 'border-accent/60 bg-accent/5 text-primary'
-                        : 'border-border hover:border-accent/30 text-muted hover:text-primary'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="segment"
-                      value={s.id}
-                      checked={editSegment === s.id}
-                      onChange={() => setEditSegment(s.id)}
-                      className="sr-only"
-                    />
-                    <div>
-                      <div className="font-mono text-[11px] tracking-wide">{s.label}</div>
-                      <div className="font-mono text-[9px] text-muted mt-0.5 uppercase tracking-[0.1em]">{s.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            {/* Discount */}
-            <fieldset className="border-0 p-0 m-0">
-              <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3 p-0">Voucher Discount</legend>
-              <div className="flex items-center gap-2 border border-border bg-background rounded-sm px-3 py-2 focus-within:border-accent transition-colors">
-                <label htmlFor="discount-val" className="sr-only">Discount percentage</label>
-                <input
-                  id="discount-val"
-                  type="number"
-                  value={editDiscount}
-                  onChange={e => setEditDiscount(Number(e.target.value))}
-                  min={5} max={50}
-                  className="w-14 bg-transparent text-accent font-serif text-[22px] focus:outline-none tabular-nums"
-                />
-                <div>
-                  <div className="font-serif text-[18px] text-accent">%</div>
-                  <div className="font-mono text-[9px] text-muted uppercase tracking-[0.1em]">off sitewide</div>
-                </div>
-              </div>
-              <p className="font-mono text-[10px] text-muted mt-2 leading-relaxed">
-                Unique 8-char code per user, e.g.{' '}
-                <code className="text-accent tracking-wider">DIW8K9X2</code>
-              </p>
-            </fieldset>
-
-            {/* Personalization Tokens */}
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3">Personalization Tokens</div>
-              <div className="space-y-1.5">
-                {[
-                  { token: '{{CUSTOMER_NAME}}', desc: "First name" },
-                  { token: '{{COUPON_CODE}}',   desc: "Unique code" },
-                  { token: '{{HOLIDAY_NAME}}',  desc: "Festival" },
-                  { token: '{{DISCOUNT_VALUE}}',desc: "% value" },
-                ].map(t => (
-                  <button
-                    key={t.token}
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(t.token);
-                      showToast(`Copied ${t.token} to clipboard!`);
-                    }}
-                    title={`Click to copy ${t.token}`}
-                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 border border-border bg-background hover:border-accent/50 hover:bg-accent/5 transition-colors cursor-pointer rounded-sm group active:scale-[0.98]"
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-muted text-[11px] group-hover:text-accent" aria-hidden="true">📋</span>
-                      <code className="font-mono text-[10px] text-accent group-hover:text-accent-hover truncate">{t.token}</code>
-                    </div>
-                    <span className="font-mono text-[9px] text-muted uppercase tracking-[0.08em] shrink-0">{t.desc}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="font-mono text-[10px] text-muted mt-2">Click to copy token to clipboard.</p>
-            </div>
-
-            {/* Sample Vouchers */}
-            {couponsPreview.length > 0 && (
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3">Sample Vouchers</div>
-                <div className="space-y-1.5">
-                  {couponsPreview.map((code, i) => (
-                    <div key={i} className="font-mono text-[12px] text-accent tracking-[0.2em] font-semibold px-3 py-2 bg-accent/5 border border-accent/20 rounded-sm tabular-nums">
-                      {code}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </aside>
-
-          {/* PANEL 2: Content Editor */}
+          {/* LEFT COLUMN: Main Content Editor */}
           <main
             aria-label="Campaign content editor"
-            className={`flex-1 flex flex-col overflow-hidden bg-background ${
-              mobileStep === 'CONTENT' || mobileStep === 'PREVIEW' ? 'block' : 'hidden lg:flex'
-            }`}
+            className="flex-1 flex flex-col overflow-hidden bg-background border-r border-border"
           >
-            {/* Top Bar Axis 1: Channel Switcher (Email vs WhatsApp) */}
+            {/* Controls Bar: Channel Switcher + View Mode Switcher */}
             <div className="px-5 py-2.5 border-b border-border bg-surface flex flex-wrap items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted mr-1">Channel:</span>
@@ -888,7 +824,7 @@ export default function CampaignManagerClient({
                 </button>
               </div>
 
-              {/* Axis 2: View Mode Switcher (Friendly Text vs Raw HTML vs Live Preview) */}
+              {/* View Mode Switcher */}
               <div className="flex items-center gap-1 bg-background border border-border p-1 rounded-sm">
                 <button
                   type="button"
@@ -934,8 +870,6 @@ export default function CampaignManagerClient({
                     <label htmlFor="email-subject" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block">
                       Email Subject Line
                     </label>
-
-                    {/* Real-time Subject Length Counter */}
                     <span className={`font-mono text-[10px] ${editSubject.length > 60 ? 'text-[#c97e6a] font-semibold' : 'text-muted'}`}>
                       Subject length: {editSubject.length} / 60 chars {editSubject.length > 60 ? '(Clipped on mobile)' : '(Optimal: 40-60)'}
                     </span>
@@ -961,7 +895,7 @@ export default function CampaignManagerClient({
                         ✨ Friendly Text Fields (No HTML Code Required)
                       </span>
                       <span className="font-mono text-[10px] text-muted">
-                        Automatically generates luxury email design
+                        Automatically generates luxury email layout
                       </span>
                     </div>
 
@@ -1113,12 +1047,10 @@ export default function CampaignManagerClient({
             )}
           </main>
 
-          {/* PANEL 3: Products */}
+          {/* RIGHT COLUMN: Featured Products */}
           <aside
             aria-label="Featured products"
-            className={`w-full lg:w-[260px] shrink-0 border-l border-border flex flex-col overflow-hidden bg-surface ${
-              mobileStep === 'PRODUCTS' ? 'block' : 'hidden lg:flex'
-            }`}
+            className="w-[280px] shrink-0 flex flex-col overflow-hidden bg-surface"
           >
             <div className="px-5 py-3.5 border-b border-border shrink-0">
               <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Featured Products</div>
@@ -1150,7 +1082,7 @@ export default function CampaignManagerClient({
               ))}
             </div>
 
-            {/* Dispatch context */}
+            {/* Dispatch Context Footer */}
             <div className="p-4 border-t border-border shrink-0 space-y-2">
               {isDraft && (
                 <div className="px-3 py-2.5 border border-border bg-accent/5 rounded-sm">
@@ -1373,22 +1305,22 @@ export default function CampaignManagerClient({
         ))}
       </section>
 
-      {/* Main grid: Calendar + Campaign List */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
-
-        {/* Indian Festival Calendar */}
-        <section aria-labelledby="calendar-heading" className="premium-card p-5 rounded-lg flex flex-col">
-          <div className="flex items-center justify-between mb-4 shrink-0">
+      {/* REQUEST 1 & 2: HORIZONTAL FESTIVAL CALENDAR STRIP (Placed right above All Campaigns) */}
+      <section aria-labelledby="calendar-heading" className="premium-card p-5 rounded-lg flex flex-col space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Indian Calendar</div>
-              <h2 id="calendar-heading" className="font-serif text-[18px] font-normal text-primary m-0">Upcoming Festivals</h2>
+              <h2 id="calendar-heading" className="font-serif text-[20px] font-normal text-primary m-0">
+                Upcoming Festivals &amp; Segment Triggers
+              </h2>
             </div>
             <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1 rounded-sm bg-background">
-              Auto 20-Day
+              Auto 20-Day Sweeps
             </span>
           </div>
 
-          <div className="flex gap-4 mb-3 shrink-0">
+          <div className="flex items-center gap-4">
             {[
               { color: '#c97e6a', label: '≤7 days' },
               { color: 'var(--color-accent)', label: '≤20 days' },
@@ -1400,249 +1332,294 @@ export default function CampaignManagerClient({
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="space-y-2 overflow-y-auto flex-1" style={{ maxHeight: '480px' }}>
-            {holidays.map(h => {
-              const hasDraft = campaigns.some(c => c.holiday?.id === h.id || c.holidayId === h.id);
-              const draft = campaigns.find(c => c.holiday?.id === h.id || c.holidayId === h.id);
-              const isPast = h.daysRemaining < 0;
-              const urgColor = urgencyColor(h.daysRemaining);
-              const isInTriggerZone = h.daysRemaining >= 0 && h.daysRemaining <= 22;
+        {/* Horizontal Scrollable Festival Cards */}
+        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+          {holidays.map(h => {
+            const festivalCampaigns = campaigns.filter(c => c.holiday?.id === h.id || c.holidayId === h.id);
+            const isPast = h.daysRemaining < 0;
+            const urgColor = urgencyColor(h.daysRemaining);
+            const isInTriggerZone = h.daysRemaining >= 0 && h.daysRemaining <= 22;
 
-              return (
-                <article
-                  key={h.id}
-                  className={`border rounded-sm transition-opacity ${isPast ? 'opacity-40' : 'opacity-100'} ${isInTriggerZone ? 'border-accent/30 bg-accent/5' : 'border-border bg-background'}`}
-                  aria-label={`${h.name}, ${h.daysRemaining < 0 ? 'passed' : h.daysRemaining + ' days away'}`}
-                >
-                  <div className="flex items-center justify-between px-3 py-2.5">
+            return (
+              <article
+                key={h.id}
+                className={`min-w-[280px] max-w-[320px] shrink-0 border rounded-sm p-3.5 flex flex-col justify-between space-y-3 transition-opacity ${
+                  isPast ? 'opacity-40 bg-background' : isInTriggerZone ? 'border-accent/40 bg-accent/5' : 'border-border bg-background'
+                }`}
+                aria-label={`${h.name}, ${h.daysRemaining < 0 ? 'passed' : h.daysRemaining + ' days away'}`}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-serif text-[13px] text-primary">{h.name}</div>
+                      <div className="font-serif text-[15px] font-normal text-primary">{h.name}</div>
                       <div className="font-mono text-[10px] text-muted mt-0.5" suppressHydrationWarning>
                         {formatDate(h.date, true)}
                       </div>
                     </div>
-                    <div
-                      className="font-mono text-[13px] font-semibold tabular-nums shrink-0"
+                    <span
+                      className="font-mono text-[12px] font-semibold tabular-nums px-2 py-0.5 border border-border rounded-sm bg-surface shrink-0"
                       style={{ color: urgColor }}
                       aria-label={isPast ? 'Passed' : `${h.daysRemaining} days remaining`}
                     >
-                      {isPast ? '—' : h.daysRemaining === 0 ? 'Today' : `${h.daysRemaining}d`}
-                    </div>
+                      {isPast ? 'Passed' : h.daysRemaining === 0 ? 'Today' : `${h.daysRemaining}d`}
+                    </span>
                   </div>
-                  {!isPast && (
-                    <div className="px-3 pb-2.5">
-                      {hasDraft && draft ? (
-                        <button
-                          onClick={() => openEditor(draft)}
-                          className="w-full font-mono text-[9px] uppercase tracking-[0.12em] text-center py-2 border border-border rounded-sm text-muted hover:border-accent/40 hover:text-accent bg-background transition-colors cursor-pointer min-h-[44px]"
-                        >
-                          ✓ Draft Ready — Open Editor →
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleDraftAI(h.id)}
-                          disabled={isDrafting === h.id}
-                          className="w-full font-mono text-[9px] uppercase tracking-[0.12em] text-center py-2 border border-border rounded-sm text-muted hover:border-accent/40 hover:text-accent bg-background transition-colors cursor-pointer disabled:opacity-50 min-h-[44px]"
-                        >
-                          {isDrafting === h.id ? '🤖 Generating…' : '+ Generate AI Campaign'}
-                        </button>
-                      )}
+
+                  {/* Existing Campaigns for this Festival */}
+                  {festivalCampaigns.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-border/40 space-y-1">
+                      <div className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted">Created Drafts:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {festivalCampaigns.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => openEditor(c)}
+                            className="font-mono text-[9.5px] px-2 py-0.5 border border-accent/40 text-accent bg-accent/10 rounded-sm hover:bg-accent hover:text-background transition-colors cursor-pointer"
+                            title={`Open draft: ${c.name}`}
+                          >
+                            ✓ {c.segmentationRules?.segment || 'VIP'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
-                </article>
+                </div>
+
+                {/* Multiple Campaign Segment Generation Chips */}
+                {!isPast && (
+                  <div className="pt-2 border-t border-border/40 space-y-1">
+                    <div className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted">Draft New Campaign:</div>
+                    <div className="flex gap-1.5">
+                      {[
+                        { id: 'VIP', label: '+ VIP' },
+                        { id: 'LAPSED', label: '+ Lapsed' },
+                        { id: 'ALL', label: '+ All Base' },
+                      ].map(seg => (
+                        <button
+                          key={seg.id}
+                          type="button"
+                          onClick={() => handleDraftAI(h.id, seg.id)}
+                          disabled={isDrafting === `${h.id}_${seg.id}`}
+                          className="flex-1 font-mono text-[9px] uppercase tracking-[0.1em] py-1 px-1.5 border border-border rounded-sm text-muted hover:border-accent/50 hover:text-accent bg-surface transition-colors cursor-pointer text-center disabled:opacity-50"
+                        >
+                          {isDrafting === `${h.id}_${seg.id}` ? '…' : seg.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* REQUEST 3: ALL CAMPAIGNS LIST (Clickable Rows) */}
+      <section aria-labelledby="campaigns-heading" className="premium-card flex flex-col overflow-hidden rounded-lg">
+        <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3 bg-surface-muted/40 shrink-0">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Campaign Inbox</div>
+            <h2 id="campaigns-heading" className="font-serif text-[18px] font-normal text-primary m-0">
+              All Campaigns ({campaigns.length})
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(['DRAFT', 'SCHEDULED', 'ACTIVE', 'COMPLETED'] as const).map(s => {
+              const count = campaigns.filter(c => c.status === s).length;
+              if (!count) return null;
+              return (
+                <span key={s} className={statusPillClass(s)}>
+                  <span className="dot" aria-hidden="true" />
+                  {count} {s}
+                </span>
               );
             })}
           </div>
-        </section>
+        </div>
 
-        {/* Campaign List (Responsive Table on Desktop, Cards on Mobile) */}
-        <section aria-labelledby="campaigns-heading" className="premium-card flex flex-col overflow-hidden rounded-lg">
-          <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3 bg-surface-muted/40 shrink-0">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Campaign Inbox</div>
-              <h2 id="campaigns-heading" className="font-serif text-[18px] font-normal text-primary m-0">
-                All Campaigns ({campaigns.length})
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(['DRAFT', 'SCHEDULED', 'ACTIVE', 'COMPLETED'] as const).map(s => {
-                const count = campaigns.filter(c => c.status === s).length;
-                if (!count) return null;
-                return (
-                  <span key={s} className={statusPillClass(s)}>
-                    <span className="dot" aria-hidden="true" />
-                    {count} {s}
-                  </span>
-                );
-              })}
-            </div>
+        {campaigns.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-8">
+            <span className="text-[36px] mb-3" aria-hidden="true">🪔</span>
+            <div className="font-serif text-[18px] text-primary mb-2">No campaigns yet</div>
+            <p className="font-mono text-[12px] text-muted max-w-[320px] leading-relaxed mb-4">
+              Draft a campaign from the festival calendar above or click "+ New Campaign" to build a custom promotion.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsCustomModalOpen(true)}
+              className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold min-h-[44px]"
+            >
+              + Create Custom Campaign
+            </button>
           </div>
-
-          {campaigns.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-8">
-              <span className="text-[36px] mb-3" aria-hidden="true">🪔</span>
-              <div className="font-serif text-[18px] text-primary mb-2">No campaigns yet</div>
-              <p className="font-mono text-[12px] text-muted max-w-[320px] leading-relaxed mb-4">
-                Create a campaign from the festival calendar or click "+ New Campaign" above to build a custom promotion.
-              </p>
-              <button
-                onClick={() => setIsCustomModalOpen(true)}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold min-h-[44px]"
-              >
-                + Create Custom Campaign
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table (md and up) */}
-              <div className="hidden md:block table-responsive flex-1">
-                <table className="w-full text-left border-collapse">
-                  <caption className="sr-only">E-commerce marketing campaigns</caption>
-                  <thead className="border-b border-border bg-surface-muted/20 sticky top-0">
-                    <tr>
-                      {['Campaign', 'Segment', 'Status', 'Dispatches', 'Redeemed', 'Revenue', 'Actions'].map((h, i) => (
-                        <th
-                          key={h}
-                          scope="col"
-                          className={`px-5 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal ${i >= 3 && i <= 5 ? 'text-right' : ''}`}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40">
-                    {campaigns.map(c => (
-                      <tr key={c.id} className="hover:bg-surface-muted/40 transition-colors group">
-                        <td className="px-5 py-4">
-                          <div className="font-serif text-[14px] text-primary">{c.name}</div>
-                          <div className="font-mono text-[10px] text-muted mt-0.5" suppressHydrationWarning>
-                            {c.holiday ? `🪔 ${c.holiday.name} · ` : '✨ Standalone Campaign · '}
-                            {formatDate(c.createdAt, false)}
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted border border-border px-2 py-1 rounded-sm bg-background">
-                            {c.segmentationRules?.segment || 'VIP'}
-                          </span>
-                          <div className="font-mono text-[10px] text-accent mt-1">{c.segmentationRules?.discountValue || 15}% OFF</div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className={statusPillClass(c.status)}>
-                            <span className="dot" aria-hidden="true" />
-                            {c.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 font-mono text-[13px] text-primary tabular-nums text-right">{c.metricsSummary?.sent || 0}</td>
-                        <td className="px-5 py-4 font-mono text-[13px] tabular-nums text-right" style={{ color: '#8cae7e' }}>{c.metricsSummary?.redeemed || 0}</td>
-                        <td className="px-5 py-4 font-mono text-[13px] text-accent tabular-nums text-right">
-                          ₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2 justify-end">
-                            <button
-                              onClick={() => openCoupons(c)}
-                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1.5 hover:border-accent/40 hover:text-accent transition-colors bg-background rounded-sm cursor-pointer"
-                              title={`Manage vouchers for ${c.name}`}
-                            >
-                              Vouchers
-                            </button>
-                            <button
-                              onClick={() => openEditor(c)}
-                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer"
-                            >
-                              Edit →
-                            </button>
-
-                            {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
-                              <button
-                                onClick={() => handleUnschedule(c.id)}
-                                className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2 py-1.5 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer"
-                                title="Undo schedule & revert to draft"
-                              >
-                                ↺ Undo
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleDeleteCampaign(c.id)}
-                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
-                              title="Delete campaign"
-                            >
-                              🗑
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+        ) : (
+          <>
+            {/* Desktop Table (md and up) — CLICKABLE ROWS */}
+            <div className="hidden md:block table-responsive flex-1">
+              <table className="w-full text-left border-collapse">
+                <caption className="sr-only">E-commerce marketing campaigns</caption>
+                <thead className="border-b border-border bg-surface-muted/20 sticky top-0">
+                  <tr>
+                    {['Campaign', 'Segment', 'Status', 'Dispatches', 'Redeemed', 'Revenue', 'Actions'].map((h, i) => (
+                      <th
+                        key={h}
+                        scope="col"
+                        className={`px-5 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal ${i >= 3 && i <= 5 ? 'text-right' : ''}`}
+                      >
+                        {h}
+                      </th>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card List (< md viewports) to avoid horizontal scroll */}
-              <div className="md:hidden divide-y divide-border/40 overflow-y-auto">
-                {campaigns.map(c => (
-                  <article key={c.id} className="p-4 space-y-3 bg-background/50">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-serif text-[15px] text-primary">{c.name}</div>
-                        <div className="font-mono text-[10px] text-muted mt-0.5">
-                          {c.holiday ? `🪔 ${c.holiday.name}` : '✨ Standalone Campaign'}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {campaigns.map(c => (
+                    <tr
+                      key={c.id}
+                      onClick={() => openEditor(c)}
+                      className="hover:bg-surface-muted/60 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="font-serif text-[14px] text-primary group-hover:text-accent transition-colors">{c.name}</div>
+                        <div className="font-mono text-[10px] text-muted mt-0.5" suppressHydrationWarning>
+                          {c.holiday ? `🪔 ${c.holiday.name} · ` : '✨ Standalone Campaign · '}
+                          {formatDate(c.createdAt, false)}
                         </div>
-                      </div>
-                      <span className={statusPillClass(c.status)}>
-                        <span className="dot" aria-hidden="true" />
-                        {c.status}
-                      </span>
-                    </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted border border-border px-2 py-1 rounded-sm bg-background">
+                          {c.segmentationRules?.segment || 'VIP'}
+                        </span>
+                        <div className="font-mono text-[10px] text-accent mt-1">{c.segmentationRules?.discountValue || 15}% OFF</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={statusPillClass(c.status)}>
+                          <span className="dot" aria-hidden="true" />
+                          {c.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-mono text-[13px] text-primary tabular-nums text-right">{c.metricsSummary?.sent || 0}</td>
+                      <td className="px-5 py-4 font-mono text-[13px] tabular-nums text-right" style={{ color: '#8cae7e' }}>{c.metricsSummary?.redeemed || 0}</td>
+                      <td className="px-5 py-4 font-mono text-[13px] text-accent tabular-nums text-right">
+                        ₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}
+                      </td>
+                      <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-2 justify-end">
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); openCoupons(c); }}
+                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1.5 hover:border-accent/40 hover:text-accent transition-colors bg-background rounded-sm cursor-pointer"
+                            title={`Manage vouchers for ${c.name}`}
+                          >
+                            Vouchers
+                          </button>
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); openEditor(c); }}
+                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer font-semibold"
+                          >
+                            Edit →
+                          </button>
 
-                    <div className="flex items-center justify-between text-[11px] font-mono border-y border-border/40 py-2">
-                      <div>
-                        <span className="text-muted">Segment: </span>
-                        <span className="text-primary font-semibold">{c.segmentationRules?.segment || 'VIP'} ({c.segmentationRules?.discountValue || 15}% OFF)</span>
-                      </div>
-                      <div>
-                        <span className="text-muted">Revenue: </span>
-                        <span className="text-accent font-semibold">₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
+                          {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); handleUnschedule(c.id); }}
+                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2 py-1.5 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer"
+                              title="Undo schedule & revert to draft"
+                            >
+                              ↺ Undo
+                            </button>
+                          )}
 
-                    <div className="flex items-center justify-end gap-2 pt-1">
-                      <button
-                        onClick={() => openCoupons(c)}
-                        className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-3 py-2 hover:bg-surface-muted rounded-sm cursor-pointer min-h-[44px]"
-                      >
-                        Vouchers
-                      </button>
-                      <button
-                        onClick={() => openEditor(c)}
-                        className="font-mono text-[10px] uppercase tracking-[0.1em] bg-accent text-background px-3 py-2 hover:bg-accent-hover rounded-sm cursor-pointer font-semibold min-h-[44px]"
-                      >
-                        Edit →
-                      </button>
-                      {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
-                        <button
-                          onClick={() => handleUnschedule(c.id)}
-                          className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/40 px-3 py-2 hover:bg-accent/10 rounded-sm cursor-pointer min-h-[44px]"
-                        >
-                          ↺ Undo
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDeleteCampaign(c.id)}
-                        className="font-mono text-[10px] uppercase tracking-[0.1em] text-red-400 border border-red-500/30 px-3 py-2 hover:bg-red-900/20 rounded-sm cursor-pointer min-h-[44px]"
-                      >
-                        🗑
-                      </button>
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); handleDeleteCampaign(c.id); }}
+                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
+                            title="Delete campaign"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List (< md viewports) — CLICKABLE CARDS */}
+            <div className="md:hidden divide-y divide-border/40 overflow-y-auto">
+              {campaigns.map(c => (
+                <article
+                  key={c.id}
+                  onClick={() => openEditor(c)}
+                  className="p-4 space-y-3 bg-background/50 cursor-pointer hover:bg-surface-muted/40 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-serif text-[15px] text-primary font-normal">{c.name}</div>
+                      <div className="font-mono text-[10px] text-muted mt-0.5">
+                        {c.holiday ? `🪔 ${c.holiday.name}` : '✨ Standalone Campaign'}
+                      </div>
                     </div>
-                  </article>
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-      </div>
+                    <span className={statusPillClass(c.status)}>
+                      <span className="dot" aria-hidden="true" />
+                      {c.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] font-mono border-y border-border/40 py-2">
+                    <div>
+                      <span className="text-muted">Segment: </span>
+                      <span className="text-primary font-semibold">{c.segmentationRules?.segment || 'VIP'} ({c.segmentationRules?.discountValue || 15}% OFF)</span>
+                    </div>
+                    <div>
+                      <span className="text-muted">Revenue: </span>
+                      <span className="text-accent font-semibold">₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1" onClick={e => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); openCoupons(c); }}
+                      className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-3 py-2 hover:bg-surface-muted rounded-sm cursor-pointer min-h-[44px]"
+                    >
+                      Vouchers
+                    </button>
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); openEditor(c); }}
+                      className="font-mono text-[10px] uppercase tracking-[0.1em] bg-accent text-background px-3 py-2 hover:bg-accent-hover rounded-sm cursor-pointer font-semibold min-h-[44px]"
+                    >
+                      Edit →
+                    </button>
+                    {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); handleUnschedule(c.id); }}
+                        className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/40 px-3 py-2 hover:bg-accent/10 rounded-sm cursor-pointer min-h-[44px]"
+                      >
+                        ↺ Undo
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); handleDeleteCampaign(c.id); }}
+                      className="font-mono text-[10px] uppercase tracking-[0.1em] text-red-400 border border-red-500/30 px-3 py-2 hover:bg-red-900/20 rounded-sm cursor-pointer min-h-[44px]"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       {/* CREATE CUSTOM CAMPAIGN MODAL */}
       {isCustomModalOpen && (
@@ -1659,6 +1636,7 @@ export default function CampaignManagerClient({
                 <h2 className="font-serif text-[18px] text-primary font-normal m-0">Create New Campaign</h2>
               </div>
               <button
+                type="button"
                 onClick={() => setIsCustomModalOpen(false)}
                 className="text-muted hover:text-primary font-mono text-[16px] cursor-pointer bg-transparent border-none"
               >
