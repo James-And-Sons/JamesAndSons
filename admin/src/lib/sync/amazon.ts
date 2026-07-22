@@ -308,6 +308,24 @@ export async function syncToAmazon(product: any) {
           value: 'not_applicable'
         }
       ],
+      are_batteries_required: [
+        {
+          marketplace_id: marketplaceId,
+          value: false
+        }
+      ],
+      number_of_boxes: [
+        {
+          marketplace_id: marketplaceId,
+          value: 1
+        }
+      ],
+      condition_type: [
+        {
+          marketplace_id: marketplaceId,
+          value: 'new_new'
+        }
+      ],
       rtip_manufacturer_contact_information: [
         {
           value: 'James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India'
