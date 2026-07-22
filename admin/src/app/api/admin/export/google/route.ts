@@ -194,11 +194,19 @@ export async function GET(req: NextRequest) {
         return itemXml;
       };
 
+      const resolveImages = (v?: any, p?: any) => {
+        if (v && v.images && v.images.length > 0) return v.images;
+        if (p && p.images && p.images.length > 0) return p.images;
+        if (v && v.whiteBackgroundImages && v.whiteBackgroundImages.length > 0) return v.whiteBackgroundImages;
+        if (p && p.whiteBackgroundImages && p.whiteBackgroundImages.length > 0) return p.whiteBackgroundImages;
+        return [];
+      };
+
       if (p.variants && p.variants.length > 0) {
         for (const v of p.variants) {
           const vPrice = v.d2cPrice || p.d2cPrice;
           const vMrp = v.mrp || p.mrp;
-          const vImages = v.images && v.images.length > 0 ? v.images : p.images;
+          const vImages = resolveImages(v, p);
           const brandVal = v.brand || p.brand || BRAND_CONFIG.name;
           const googleCatVal = v.googleProductCategory || p.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
 
@@ -220,6 +228,7 @@ export async function GET(req: NextRequest) {
       } else {
         const brandVal = p.brand || BRAND_CONFIG.name;
         const googleCatVal = p.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
+        const pImages = resolveImages(undefined, p);
 
         xml += processItem(
           p.sku,
@@ -227,7 +236,7 @@ export async function GET(req: NextRequest) {
           p.d2cPrice,
           p.mrp,
           p.stockQuantity,
-          p.images,
+          pImages,
           googleCatVal,
           brandVal,
           p.color,

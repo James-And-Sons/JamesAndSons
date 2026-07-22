@@ -152,11 +152,19 @@ export async function syncToGoogleMerchant(product: any) {
   const entries: any[] = [];
   let batchId = 1;
 
+  const resolveImages = (v?: any, p?: any) => {
+    if (v && v.images && v.images.length > 0) return v.images;
+    if (p && p.images && p.images.length > 0) return p.images;
+    if (v && v.whiteBackgroundImages && v.whiteBackgroundImages.length > 0) return v.whiteBackgroundImages;
+    if (p && p.whiteBackgroundImages && p.whiteBackgroundImages.length > 0) return p.whiteBackgroundImages;
+    return [];
+  };
+
   if (product.variants && product.variants.length > 0) {
     for (const v of product.variants) {
       const vPrice = v.d2cPrice || product.d2cPrice;
       const vMrp = v.mrp || product.mrp;
-      const vImages = v.images && v.images.length > 0 ? v.images : product.images;
+      const vImages = resolveImages(v, product);
       const vCategory = v.googleProductCategory || product.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
       const vBrand = v.brand || product.brand || BRAND_CONFIG.name;
 
@@ -170,11 +178,13 @@ export async function syncToGoogleMerchant(product: any) {
   } else {
     const pCategory = product.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
     const pBrand = product.brand || BRAND_CONFIG.name;
+    const pImages = resolveImages(undefined, product);
+
     entries.push({
       batchId: batchId++,
       merchantId,
       method: 'insert',
-      product: buildProductPayload(product.sku, product.name, product.d2cPrice, product.mrp, product.images, pCategory, pBrand)
+      product: buildProductPayload(product.sku, product.name, product.d2cPrice, product.mrp, pImages, pCategory, pBrand)
     });
   }
 
