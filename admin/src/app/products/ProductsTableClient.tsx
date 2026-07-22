@@ -133,7 +133,8 @@ export default function ProductsTableClient({
                 <span aria-hidden="true">▾</span>
               </button>
               <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-surface border border-border py-2 w-48 shadow-xl rounded-sm">
-                <a href="/api/admin/export/pinterest" download="pinterest_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary transition-colors">Pinterest Feed</a>
+                <a href="/api/admin/export/google" download="google_merchant_feed.xml" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary transition-colors">Google Merchant Feed</a>
+                <a href="/api/admin/export/pinterest" download="pinterest_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Pinterest Feed</a>
                 <a href="/api/admin/export/meta" download="meta_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Meta Feed</a>
                 <a href="/api/admin/export/amazon" download="amazon_listing_feed.xlsm" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Amazon Feed</a>
                 <a href="/api/admin/export/flipkart" download="flipkart_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Flipkart Feed</a>

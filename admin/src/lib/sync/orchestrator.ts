@@ -1,5 +1,6 @@
 import { syncToMeta } from './meta';
 import { syncToPinterest } from './pinterest';
+import { syncToGoogleMerchant } from './google';
 import { syncToAmazon } from './amazon';
 import { syncToFlipkart } from './flipkart';
 import { syncToPepperfry } from './pepperfry';
@@ -49,6 +50,7 @@ export async function orchestrateSync(product: any) {
   console.log(`[Sync Orchestrator] Starting omnichannel sync for Product: ${product.name} (SKU: ${product.sku})`);
 
   const channels = [
+    { name: 'Google Merchant', fn: syncToGoogleMerchant },
     { name: 'Meta', fn: syncToMeta },
     { name: 'Pinterest', fn: syncToPinterest },
     { name: 'Amazon', fn: syncToAmazon },

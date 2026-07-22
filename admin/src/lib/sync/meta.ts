@@ -44,7 +44,7 @@ export async function syncToMeta(product: any) {
     });
   }
 
-  const endpoint = `https://graph.facebook.com/v19.0/${catalogId}/batch`;
+  const endpoint = `https://graph.facebook.com/v19.0/${catalogId}/items_batch`;
   console.log(`[Meta Sync] Pushing ${itemsToSync.length} items to Meta Catalog...`);
 
   const response = await fetch(endpoint, {
@@ -53,7 +53,10 @@ export async function syncToMeta(product: any) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${accessToken}`
     },
-    body: JSON.stringify({ requests: itemsToSync })
+    body: JSON.stringify({
+      item_type: 'PRODUCT_ITEM',
+      requests: itemsToSync
+    })
   });
 
   if (!response.ok) {
