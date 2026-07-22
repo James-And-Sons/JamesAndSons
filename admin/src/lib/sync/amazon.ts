@@ -466,24 +466,7 @@ export async function syncToAmazon(product: any) {
         ];
       }
 
-      const offerPrice = price;
       const offerMrp = (v ? v.mrp : null) || product.mrp || Math.round(price * 1.3);
-
-      attributes.purchasable_offer = [
-        {
-          marketplace_id: marketplaceId,
-          currency: 'INR',
-          our_price: [
-            {
-              schedule: [
-                {
-                  value_with_tax: offerPrice
-                }
-              ]
-            }
-          ]
-        }
-      ];
 
       attributes.list_price = [
         {
