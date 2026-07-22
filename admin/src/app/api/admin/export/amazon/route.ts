@@ -43,7 +43,7 @@ function writeRowAttributes(
   v: any = null       // variant if exists
 ) {
   // Brand Name (Col 9 - Col I)
-  writeCell(sheet, rowIdx, 9, "James & Sons");
+  writeCell(sheet, rowIdx, 9, "James & Sons, Aligarh");
 
   // Part Number (Col 60 - Col BH) - Must be identical to SKU
   writeCell(sheet, rowIdx, 60, sku);
@@ -252,6 +252,8 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 4, "Parent"); // Parentage Level
         writeCell(sheet, rowIdx, 6, "SIZE"); // Col F - Variation Theme Name
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
+        writeCell(sheet, rowIdx, 10, "GTIN Exempt"); // Col J - Product Id Type
+        writeCell(sheet, rowIdx, 11, null); // Col K - Product Id (GTIN Exempt)
 
         // Standardized and expanded attributes
         writeRowAttributes(
@@ -344,8 +346,8 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 5, p.sku); // Parent SKU
           writeCell(sheet, rowIdx, 6, "SIZE"); // Col F - Variation Theme Name
           writeCell(sheet, rowIdx, 7, `${p.name} - ${v.name}`); // Item Name
-          writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
-          writeCell(sheet, rowIdx, 11, vSku); // Product Id
+          writeCell(sheet, rowIdx, 10, "GTIN Exempt"); // Col J - Product Id Type
+          writeCell(sheet, rowIdx, 11, null); // Col K - Product Id (GTIN Exempt)
 
           // Standardized and expanded attributes
           writeRowAttributes(
@@ -443,7 +445,7 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 270, 5); // Handling Time
           writeCell(sheet, rowIdx, 273, vPrice); // Your Price INR
           writeCell(sheet, rowIdx, 274, vMrp); // Maximum Retail Price
-          writeCell(sheet, rowIdx, 275, "No Price Rule"); // Col JO (Pricing Rule)
+          writeCell(sheet, rowIdx, 275, "Competitive Price Rule by Amazon"); // Col JO - Pricing Rule
           writeCell(sheet, rowIdx, 276, vMinPrice); // Minimum Seller Allowed Price
           writeCell(sheet, rowIdx, 277, vMaxPrice); // Maximum Seller Allowed Price
           writeCell(sheet, rowIdx, 300, "Migrated Template"); // Col KN - Shipping Template
@@ -469,8 +471,8 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
         writeCell(sheet, rowIdx, 4, null); // Parentage Level
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
-        writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
-        writeCell(sheet, rowIdx, 11, pSku); // Product Id
+        writeCell(sheet, rowIdx, 10, "GTIN Exempt"); // Col J - Product Id Type
+        writeCell(sheet, rowIdx, 11, null); // Col K - Product Id (GTIN Exempt)
 
         // Standardized and expanded attributes
         writeRowAttributes(
@@ -566,7 +568,7 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 270, 5); // Handling Time
         writeCell(sheet, rowIdx, 273, pPrice); // Your Price INR
         writeCell(sheet, rowIdx, 274, pMrp); // Maximum Retail Price
-        writeCell(sheet, rowIdx, 275, "No Price Rule"); // Col JO (Pricing Rule)
+        writeCell(sheet, rowIdx, 275, "Competitive Price Rule by Amazon"); // Col JO - Pricing Rule
         writeCell(sheet, rowIdx, 276, pMinPrice); // Minimum Seller Allowed Price
         writeCell(sheet, rowIdx, 277, pMaxPrice); // Maximum Seller Allowed Price
         writeCell(sheet, rowIdx, 300, "Migrated Template"); // Col KN - Shipping Template
