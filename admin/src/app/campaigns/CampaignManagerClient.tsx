@@ -741,11 +741,11 @@ export default function CampaignManagerClient({
           </div>
         </header>
 
-        {/* 2-COLUMN SPLIT CANVAS STUDIO (Left: Controls, Right: Live Interactive Canvas) */}
-        <div className="flex flex-col lg:flex-row flex-1 min-w-0 overflow-hidden">
+        {/* 2-COLUMN SPLIT CANVAS STUDIO (Left: Form Editor - 58%, Right: Live Preview - 42%) */}
+        <div className="flex flex-col lg:flex-row flex-1 min-w-0">
           
-          {/* LEFT COLUMN: FORM INPUTS (Width: 460px) */}
-          <div className="w-full lg:w-[460px] shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-surface p-5 space-y-5 overflow-y-auto max-h-[calc(100vh-140px)]">
+          {/* LEFT COLUMN: FORM INPUTS (Width: 58% - Bigger than preview, no viewport height restriction at base) */}
+          <div className="w-full lg:w-[58%] shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-surface p-6 space-y-5">
             
             {/* 1. AUDIENCE & DISCOUNT SETUP */}
             <div className="p-4 border border-border/80 bg-background rounded-md space-y-3">
@@ -815,7 +815,7 @@ export default function CampaignManagerClient({
 
               {/* Personalization Tokens Quick Chips */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted">Insert:</span>
+                <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted">Insert Token:</span>
                 {[
                   { token: '{{CUSTOMER_NAME}}', label: 'Name' },
                   { token: '{{COUPON_CODE}}',   label: 'Code' },
@@ -877,7 +877,7 @@ export default function CampaignManagerClient({
                       id="v-body"
                       value={visBodyText}
                       onChange={e => setVisBodyText(e.target.value)}
-                      rows={5}
+                      rows={6}
                       placeholder="Main message copy..."
                       className="w-full p-3 border border-border bg-surface text-primary font-serif text-[13px] leading-relaxed focus:outline-none focus:border-accent rounded-sm resize-y"
                     />
@@ -909,7 +909,7 @@ export default function CampaignManagerClient({
                     id="wa-text"
                     value={editWhatsappText}
                     onChange={e => setEditWhatsappText(e.target.value)}
-                    rows={10}
+                    rows={12}
                     placeholder="WhatsApp broadcast copy..."
                     className="w-full p-3 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent rounded-sm resize-y"
                   />
@@ -946,55 +946,28 @@ export default function CampaignManagerClient({
             </div>
           </div>
 
-          {/* RIGHT COLUMN: LIVE REAL-TIME PREVIEW CANVAS */}
-          <div className="flex-1 min-w-0 bg-background flex flex-col overflow-hidden">
-            {/* Preview Toolbar */}
-            <div className="px-5 py-2.5 border-b border-border bg-surface flex items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Preview Canvas:</span>
-                <span className="font-mono text-[10px] text-accent">Sample Customer: Priya (DIW8K9X2)</span>
-              </div>
-
-              <div className="flex items-center gap-1 border border-border bg-background p-1 rounded-sm">
-                <button
-                  type="button"
-                  onClick={() => setPreviewDevice('DESKTOP')}
-                  className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                    previewDevice === 'DESKTOP' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
-                  }`}
-                >
-                  🖥 Desktop
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewDevice('MOBILE')}
-                  className={`font-mono text-[9.5px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                    previewDevice === 'MOBILE' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
-                  }`}
-                >
-                  📱 Mobile
-                </button>
-              </div>
+          {/* RIGHT COLUMN: LIVE REAL-TIME PREVIEW CANVAS (Width: 42%) */}
+          <div className="w-full lg:w-[42%] min-w-0 bg-background flex flex-col p-6 space-y-4">
+            {/* Preview Header */}
+            <div className="pb-3 border-b border-border flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent font-semibold">Live Campaign Preview</span>
+              <span className="font-mono text-[10px] text-muted">Customer: Priya (DIW8K9X2)</span>
             </div>
 
             {/* Interactive Preview Canvas */}
-            <div className="flex-1 p-6 overflow-y-auto flex items-center justify-center bg-surface-muted/30">
+            <div className="flex-1 flex items-start justify-center pt-2">
               {channel === 'EMAIL' ? (
-                <div
-                  className={`transition-all duration-300 ${
-                    previewDevice === 'MOBILE' ? 'w-[375px]' : 'w-full max-w-[620px]'
-                  }`}
-                >
-                  <div className="mb-2 font-serif text-[13px] text-muted border-b border-border/60 pb-2">
+                <div className="w-full max-w-[560px]">
+                  <div className="mb-2.5 font-serif text-[13px] text-muted border-b border-border/60 pb-2">
                     Subject: <strong className="text-primary">{personalizedSubject || '(No subject entered)'}</strong>
                   </div>
                   <div
-                    className="border border-border rounded-lg overflow-hidden bg-white shadow-2xl"
+                    className="border border-border rounded-lg overflow-hidden bg-white shadow-xl"
                     dangerouslySetInnerHTML={{ __html: personalizedHtml }}
                   />
                 </div>
               ) : (
-                <div className="w-[340px] bg-[#0b141a] rounded-2xl p-5 border border-border/80 shadow-2xl">
+                <div className="w-full max-w-[360px] bg-[#0b141a] rounded-2xl p-5 border border-border/80 shadow-2xl">
                   <div className="bg-[#202c33] rounded-xl rounded-bl-none px-4 py-3">
                     <p className="text-[#e9edef] font-mono text-[11.5px] leading-[1.75] m-0 whitespace-pre-wrap">{personalizedWA}</p>
                     <div className="font-mono text-[8.5px] text-[#8696a0] mt-1.5 text-right">Delivered ✓✓</div>
