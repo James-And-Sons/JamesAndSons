@@ -65,6 +65,17 @@ function urgencyColor(days: number): string {
   return 'var(--color-muted)';
 }
 
+function formatDate(dateInput: string | Date | null | undefined, includeYear = true): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = d.getUTCDate();
+  const month = months[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+  return includeYear ? `${day} ${month} ${year}` : `${day} ${month}`;
+}
+
 // Helper to compile plain text fields into luxury HTML template for non-tech users
 function compileVisualHtml({
   headline,
@@ -594,11 +605,11 @@ export default function CampaignManagerClient({
                         {c.isRedeemed ? 'Redeemed' : 'Active'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 font-mono text-[11px] text-muted tabular-nums">
-                      {new Date(c.expiresAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
+                    <td className="px-5 py-3.5 font-mono text-[11px] text-muted tabular-nums" suppressHydrationWarning>
+                      {formatDate(c.expiresAt, true)}
                     </td>
-                    <td className="px-5 py-3.5 font-mono text-[11px] text-muted tabular-nums">
-                      {new Date(c.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    <td className="px-5 py-3.5 font-mono text-[11px] text-muted tabular-nums" suppressHydrationWarning>
+                      {formatDate(c.createdAt, false)}
                     </td>
                     <td className="px-5 py-3.5">
                       {!c.isRedeemed && (
@@ -1403,8 +1414,8 @@ export default function CampaignManagerClient({
                   <div className="flex items-center justify-between px-3 py-2.5">
                     <div>
                       <div className="font-serif text-[13px] text-primary">{h.name}</div>
-                      <div className="font-mono text-[10px] text-muted mt-0.5">
-                        {new Date(h.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      <div className="font-mono text-[10px] text-muted mt-0.5" suppressHydrationWarning>
+                        {formatDate(h.date, true)}
                       </div>
                     </div>
                     <div
@@ -1502,9 +1513,9 @@ export default function CampaignManagerClient({
                       <tr key={c.id} className="hover:bg-surface-muted/40 transition-colors group">
                         <td className="px-5 py-4">
                           <div className="font-serif text-[14px] text-primary">{c.name}</div>
-                          <div className="font-mono text-[10px] text-muted mt-0.5">
+                          <div className="font-mono text-[10px] text-muted mt-0.5" suppressHydrationWarning>
                             {c.holiday ? `🪔 ${c.holiday.name} · ` : '✨ Standalone Campaign · '}
-                            {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            {formatDate(c.createdAt, false)}
                           </div>
                         </td>
                         <td className="px-5 py-4">
@@ -1680,7 +1691,7 @@ export default function CampaignManagerClient({
                   <option value="">None (Standalone Promotion)</option>
                   {holidays.map(h => (
                     <option key={h.id} value={h.id}>
-                      🪔 {h.name} ({new Date(h.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })})
+                      🪔 {h.name} ({formatDate(h.date, false)})
                     </option>
                   ))}
                 </select>
