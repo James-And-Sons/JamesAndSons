@@ -69,6 +69,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ success: true, result });
     }
 
+    if (action === 'REGENERATE_AI') {
+      const { generateAICampaignCopy } = await import('@/lib/services/ai-campaign');
+      const campaign = await prisma.campaign.findUnique({
+        where: { id },
+        include: { holiday: true }
+      });
+      if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
+
+      const reqBody = await req.json().catch(() => ({}));
+      const segment = reqBody.segment || (campaign.segmentationRules as any)?.segment || 'VIP';
+      const discountValue = reqBody.discountValue || (campaign.segmentationRules as any)?.discountValue || 15;
+      const holidayName = campaign.holiday?.name || campaign.name;
+
+      const aiResult = await generateAICampaignCopy({ holidayName, targetSegment: segment, discountValue });
+
+      return NextResponse.json({
+        success: true,
+        aiResult: {
+          emailSubject: aiResult.email_subject,
+          emailBodyHtml: aiResult.email_body_html,
+        }
+      });
+    }
+
     if (action === 'UNSCHEDULE' || action === 'REVERT_TO_DRAFT') {
       const result = await unscheduleCampaign(id);
       return NextResponse.json({ success: true, campaign: result });

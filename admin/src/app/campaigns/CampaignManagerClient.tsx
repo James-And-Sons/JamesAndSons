@@ -187,6 +187,7 @@ export default function CampaignManagerClient({
 
   // Loading & confirmation states
   const [isDrafting, setIsDrafting] = useState<string | null>(null);
+  const [isRegeneratingAI, setIsRegeneratingAI] = useState(false);
   const [isCreatingCustom, setIsCreatingCustom] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
@@ -201,6 +202,35 @@ export default function CampaignManagerClient({
   const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleRegenerateAI = async () => {
+    if (!selectedCampaign) return;
+    setIsRegeneratingAI(true);
+    try {
+      const res = await fetch(`/api/admin/campaigns/${selectedCampaign.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REGENERATE_AI',
+          segment: editSegment,
+          discountValue: editDiscount
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.aiResult) {
+        setEditSubject(data.aiResult.emailSubject || editSubject);
+        setEditBodyHtml(data.aiResult.emailBodyHtml || editBodyHtml);
+        setEditWhatsappText(data.aiResult.whatsappText || editWhatsappText);
+        showToast(`✨ AI generated fresh copy tailored for ${editSegment} segment!`);
+      } else {
+        showToast(data.error || 'Failed to generate AI copy.', 'err');
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Error running AI generation.', 'err');
+    } finally {
+      setIsRegeneratingAI(false);
+    }
   };
 
   const refreshData = useCallback(async () => {
@@ -674,6 +704,16 @@ export default function CampaignManagerClient({
           {/* Action Cluster */}
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              onClick={handleRegenerateAI}
+              disabled={isRegeneratingAI}
+              className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent/15 border border-accent text-accent px-3.5 py-2 hover:bg-accent hover:text-background transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[38px] flex items-center gap-1.5"
+              title="Automatically generate fresh personalized copy using AI"
+            >
+              ✨ {isRegeneratingAI ? 'AI Writing…' : 'AI Generate'}
+            </button>
+
+            <button
               onClick={handleSave}
               disabled={isSaving}
               className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer disabled:opacity-50 min-h-[38px]"
@@ -738,7 +778,7 @@ export default function CampaignManagerClient({
             {/* Channel & View Mode Switcher Header */}
             <div className="flex flex-wrap items-center justify-between gap-4 p-4 border border-border bg-surface rounded-md">
               {/* Channel Selector */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mr-1">Channel:</span>
                 <button
                   type="button"
@@ -761,6 +801,18 @@ export default function CampaignManagerClient({
                   }`}
                 >
                   💬 WhatsApp Broadcast
+                </button>
+
+                <div className="w-px h-4 bg-border mx-1 hidden sm:block" aria-hidden="true" />
+
+                <button
+                  type="button"
+                  onClick={handleRegenerateAI}
+                  disabled={isRegeneratingAI}
+                  className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent/15 border border-accent text-accent px-3.5 py-2 hover:bg-accent hover:text-background transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[38px] flex items-center gap-1.5"
+                  title="Generate fresh personalized marketing copy with AI"
+                >
+                  ✨ {isRegeneratingAI ? 'Writing Copy…' : 'AI Generate Copy'}
                 </button>
               </div>
 
