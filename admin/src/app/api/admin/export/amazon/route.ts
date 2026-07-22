@@ -42,9 +42,9 @@ function writeRowAttributes(
   spaces: any[],
   v: any = null       // variant if exists
 ) {
-  // Brand Name (Col 9)
-  writeCell(sheet, rowIdx, 9, "James & Sons, Aligarh");
-  
+  // Part Number (Col 16) - Must be identical to SKU
+  writeCell(sheet, rowIdx, 16, sku);
+
   // Model Number (Col 17)
   writeCell(sheet, rowIdx, 17, sku);
   
@@ -53,6 +53,10 @@ function writeRowAttributes(
   
   // Manufacturer (Col 19)
   writeCell(sheet, rowIdx, 19, "James & Sons");
+
+  // External Product Information Entity & Value (Col 30 & 31)
+  writeCell(sheet, rowIdx, 30, "9405");
+  writeCell(sheet, rowIdx, 31, "HSN Code");
 
   // Style (Col 48)
   writeCell(sheet, rowIdx, 48, getStyle(v ? { ...p, style: v.style || p.style } : p));
@@ -78,6 +82,10 @@ function writeRowAttributes(
   // Number of Pieces (Col 59)
   writeCell(sheet, rowIdx, 59, 1);
 
+  // Unit Count & Unit Count Type (Col 60 & 61)
+  writeCell(sheet, rowIdx, 60, 1);
+  writeCell(sheet, rowIdx, 61, "Count");
+
   // Theme (Col 63)
   writeCell(sheet, rowIdx, 63, p.amazonTheme || getStyle(p));
 
@@ -86,6 +94,9 @@ function writeRowAttributes(
 
   // Lighting Method (Col 79)
   writeCell(sheet, rowIdx, 79, getLightingMethod(p));
+
+  // Power Source Type (Col 87)
+  writeCell(sheet, rowIdx, 87, "Corded Electric");
 
   // Mounting Type (Col 93)
   writeCell(sheet, rowIdx, 93, getMountingType(p));
@@ -102,6 +113,10 @@ function writeRowAttributes(
   // Bulb Base (Col 127)
   writeCell(sheet, rowIdx, 127, "E12");
 
+  // External Product Information Entity & Value (Col 142 & 143)
+  writeCell(sheet, rowIdx, 142, "HSN Code");
+  writeCell(sheet, rowIdx, 143, "9405");
+
   // Room Type (Col 151-155)
   const roomNames = (spaces || []).map((s: any) => s.name);
   if (roomNames.length === 0) {
@@ -111,8 +126,26 @@ function writeRowAttributes(
     writeCell(sheet, rowIdx, 151 + idx, rn);
   });
 
+  // Shade Material (Col 164)
+  writeCell(sheet, rowIdx, 164, "Fabric");
+
+  // Number of Light Sources (Col 167)
+  writeCell(sheet, rowIdx, 167, 1);
+
+  // Importer Contact Information (Col 172)
+  writeCell(sheet, rowIdx, 172, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
+
+  // Packer Contact Information (Col 177)
+  writeCell(sheet, rowIdx, 177, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
+
+  // Indoor Outdoor Usage (Col 183)
+  writeCell(sheet, rowIdx, 183, "Indoor");
+
   // Light Fixture Installation Location (Col 241)
   writeCell(sheet, rowIdx, 241, getInstallationLocation(p));
+
+  // Item Condition (Col 251)
+  writeCell(sheet, rowIdx, 251, "New");
 
   // B2B Pricing
   writeCell(sheet, rowIdx, 283, price); // Your Price INR (B2B)
@@ -120,6 +153,15 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 289, "Percent"); // Quantity Price Type (B2B)
   writeCell(sheet, rowIdx, 290, 5); // Quantity Threshold 1
   writeCell(sheet, rowIdx, 291, 5); // Quantity Price 1 (Percent Discount)
+
+  // Number of Boxes (Col 311)
+  writeCell(sheet, rowIdx, 311, 1);
+
+  // Are Batteries Required? (Col 318)
+  writeCell(sheet, rowIdx, 318, "No");
+
+  // Dangerous Goods Regulations (Col 344)
+  writeCell(sheet, rowIdx, 344, "Not Applicable");
 
   // Manufacturer's Email or Electronic Address (Col 396)
   writeCell(sheet, rowIdx, 396, "sales@jamesandsons.com");
@@ -337,15 +379,15 @@ export async function GET(req: NextRequest) {
           const actLength = v.actualDepth || p.actualDepth || (v as any).length || p.length || 15;
           const actWidth = v.actualWidth || p.actualWidth || 20;
 
-          writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
-          writeCell(sheet, rowIdx, 198, "kg");
+          writeCell(sheet, rowIdx, 185, actLength); // Item Depth Front To Back
+          writeCell(sheet, rowIdx, 186, "Centimetres"); // Item Depth Unit
+          writeCell(sheet, rowIdx, 187, actHeight); // Item Height Floor To Top
+          writeCell(sheet, rowIdx, 188, "Centimetres"); // Item Height Unit of Measure
+          writeCell(sheet, rowIdx, 189, actWidth); // Item Width Side To Side
+          writeCell(sheet, rowIdx, 190, "Centimetres"); // Item Width Unit
 
-          writeCell(sheet, rowIdx, 229, actHeight);
-          writeCell(sheet, rowIdx, 230, "cm");
-          writeCell(sheet, rowIdx, 231, actLength);
-          writeCell(sheet, rowIdx, 232, "cm");
-          writeCell(sheet, rowIdx, 233, actWidth);
-          writeCell(sheet, rowIdx, 234, "cm");
+          writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
+          writeCell(sheet, rowIdx, 198, "Kilograms"); // Item Weight Unit
 
           // Package Dimensions & Weight
           writeCell(sheet, rowIdx, 301, vLength); // Item Package Length
@@ -444,15 +486,15 @@ export async function GET(req: NextRequest) {
         const actLength = p.actualDepth || p.length || 15;
         const actWidth = p.actualWidth || 20;
 
-        writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
-        writeCell(sheet, rowIdx, 198, "kg");
+        writeCell(sheet, rowIdx, 185, actLength); // Item Depth Front To Back
+        writeCell(sheet, rowIdx, 186, "Centimetres"); // Item Depth Unit
+        writeCell(sheet, rowIdx, 187, actHeight); // Item Height Floor To Top
+        writeCell(sheet, rowIdx, 188, "Centimetres"); // Item Height Unit of Measure
+        writeCell(sheet, rowIdx, 189, actWidth); // Item Width Side To Side
+        writeCell(sheet, rowIdx, 190, "Centimetres"); // Item Width Unit
 
-        writeCell(sheet, rowIdx, 229, actHeight);
-        writeCell(sheet, rowIdx, 230, "cm");
-        writeCell(sheet, rowIdx, 231, actLength);
-        writeCell(sheet, rowIdx, 232, "cm");
-        writeCell(sheet, rowIdx, 233, actWidth);
-        writeCell(sheet, rowIdx, 234, "cm");
+        writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
+        writeCell(sheet, rowIdx, 198, "Kilograms"); // Item Weight Unit
 
         // Package Dimensions & Weight
         writeCell(sheet, rowIdx, 301, pLength); // Item Package Length
