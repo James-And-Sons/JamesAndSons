@@ -31,12 +31,18 @@ Target Audience Segment: ${targetSegment} (${
 
 Discount Offer: ${discountValue}% OFF via a dynamic 8-character single-use voucher code: {{COUPON_CODE}}.
 
+PERSONALIZATION TOKENS (You MUST use these in your output):
+- {{CUSTOMER_NAME}} — The recipient's first name (e.g., "Rahul", "Priya"). Use in email subject and opening lines for warmth.
+- {{COUPON_CODE}} — The unique 8-character single-use voucher code per customer.
+- {{HOLIDAY_NAME}} — The festival name (e.g., "Diwali"), if you want to reference it dynamically.
+- {{DISCOUNT_VALUE}} — The discount percentage (${discountValue}).
+
 STRICT REQUIREMENT: You MUST respond ONLY with a raw JSON object containing EXACTLY these 4 fields:
 {
-  "email_subject": "A captivating, high-open-rate subject line with festive flair and luxury tone",
-  "email_body_html": "Fully styled HTML string for an email template. Use inline CSS with a dark luxury aesthetic (#0d0d0d background, #D4AF37 gold text accents, #1a1a1a card containers, clear typography, {{COUPON_CODE}} voucher box, and a prominent 'Claim Your Exclusive Voucher' button)",
-  "whatsapp_broadcast_text": "Concise, elegant WhatsApp message (under 160 words). Include emojis (✨, 🪔, 🎁, 🕯️), clear highlight of the ${discountValue}% OFF discount using code {{COUPON_CODE}}, and a direct link call-to-action: https://jamesandsons.in/collections/festive",
-  "recommended_products_query": "4-5 search terms separated by space to query our catalog for the 4 most relevant festive products (e.g. 'brass pendant chandelier wall sconce gold')"
+  "email_subject": "A captivating subject line using {{CUSTOMER_NAME}} (e.g. '{{CUSTOMER_NAME}}, your exclusive Diwali access is ready ✨')",
+  "email_body_html": "Fully styled HTML string. Use inline CSS with a dark luxury aesthetic (#0d0d0d background, #D4AF37 gold text accents). Start the opening line with 'Dear {{CUSTOMER_NAME}},' for personalization. Include {{COUPON_CODE}} in a prominent voucher box, and a 'Claim Your Exclusive Voucher' CTA button.",
+  "whatsapp_broadcast_text": "Concise WhatsApp message under 160 words. Start with 'Namaste {{CUSTOMER_NAME}}! 🪔'. Include emojis, ${discountValue}% OFF using *{{COUPON_CODE}}*, and link: https://jamesandsons.in/collections/festive",
+  "recommended_products_query": "4-5 search terms separated by space (e.g. 'brass pendant chandelier wall sconce gold')"
 }`;
 
   if (!apiKey) {
@@ -83,10 +89,10 @@ STRICT REQUIREMENT: You MUST respond ONLY with a raw JSON object containing EXAC
 
 function getFallbackCampaignCopy(holidayName: string, discount: number, segment: string): AICampaignOutput {
   const isVip = segment === 'VIP';
-  const prefix = isVip ? '✨ Exclusive VIP Access: ' : '🪔 Festive Celebration: ';
+  const prefix = isVip ? '✨ ' : '🪔 ';
 
   return {
-    email_subject: `${prefix}Illuminate Your Home for ${holidayName} — Enjoy ${discount}% Off`,
+    email_subject: `${prefix}{{CUSTOMER_NAME}}, your exclusive ${holidayName} offer is ready — ${discount}% Off`,
     email_body_html: `
 <div style="background-color: #0d0d0d; color: #f5f5f5; font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px 20px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(212,175,55,0.3); border-radius: 16px;">
   <div style="text-align: center; margin-bottom: 30px;">
@@ -95,6 +101,7 @@ function getFallbackCampaignCopy(holidayName: string, discount: number, segment:
   </div>
   
   <div style="text-align: center; padding: 30px 20px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+    <p style="color: #D4AF37; font-size: 13px; margin-bottom: 4px;">Dear {{CUSTOMER_NAME}},</p>
     <h1 style="color: #ffffff; font-size: 26px; font-weight: 300; margin-bottom: 12px;">Celebrate ${holidayName} in Grandeur</h1>
     <p style="color: #cccccc; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
       In honor of ${holidayName}, we invite you to elevate your interior spaces with our signature handcrafted brass lighting and festive decor collection.
@@ -118,7 +125,7 @@ function getFallbackCampaignCopy(holidayName: string, discount: number, segment:
   </div>
 </div>
     `.trim(),
-    whatsapp_broadcast_text: `🪔 *Celebrate ${holidayName} with James & Sons* ✨\n\nElevate your home with handcrafted brass lighting & bespoke festive decor.\n\nEnjoy an exclusive *${discount}% OFF* using your unique single-use voucher code:\n👉 *{{COUPON_CODE}}*\n\nExplore the festive collection:\nhttps://jamesandsons.in/collections/festive`,
+    whatsapp_broadcast_text: `🪔 *Namaste {{CUSTOMER_NAME}}!* ✨\n\nCelebrate *${holidayName}* with James & Sons — handcrafted brass lighting & bespoke festive decor.\n\nWe have reserved an exclusive *${discount}% OFF* just for you. Use your unique personal code:\n👉 *{{COUPON_CODE}}*\n\nExplore the festive collection:\nhttps://jamesandsons.in/collections/festive\n\n_Valid until the festival. Single use only._`,
     recommended_products_query: 'brass pendant sconce chandelier luxury'
   };
 }
