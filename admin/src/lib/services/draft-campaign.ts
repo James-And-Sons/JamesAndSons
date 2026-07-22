@@ -274,6 +274,51 @@ export async function dispatchCampaignStage1(campaignId: string) {
     codePrefix: prefix
   });
 
+  // Background dispatch to all target customers (Email + WhatsApp)
+  const { sendEmail, sendWhatsAppMessage } = await import('@/lib/services/messaging');
+  
+  // Async dispatch without blocking HTTP response
+  (async () => {
+    try {
+      const generatedCoupons = await prisma.dynamicCoupon.findMany({
+        where: { campaignId: campaign.id },
+        include: { customer: true }
+      });
+
+      for (const coupon of generatedCoupons) {
+        const custName = coupon.customer?.firstName || 'Valued Customer';
+        const custEmail = coupon.customer?.email;
+        const custPhone = coupon.customer?.phone;
+
+        // 1. Dispatch Email
+        if (custEmail && campaign.emailBodyHtml) {
+          const personalizedHtml = campaign.emailBodyHtml
+            .replace(/\{\{CUSTOMER_NAME\}\}/g, custName)
+            .replace(/\{\{COUPON_CODE\}\}/g, coupon.uniqueCode)
+            .replace(/\{\{DISCOUNT_VALUE\}\}/g, String(discountValue));
+
+          const subject = (campaign.emailSubject || 'Exclusive Offer for {{CUSTOMER_NAME}}')
+            .replace(/\{\{CUSTOMER_NAME\}\}/g, custName)
+            .replace(/\{\{COUPON_CODE\}\}/g, coupon.uniqueCode);
+
+          await sendEmail({ to: custEmail, subject, html: personalizedHtml });
+        }
+
+        // 2. Dispatch WhatsApp
+        if (custPhone && campaign.whatsappText) {
+          const personalizedWA = campaign.whatsappText
+            .replace(/\{\{CUSTOMER_NAME\}\}/g, custName)
+            .replace(/\{\{COUPON_CODE\}\}/g, coupon.uniqueCode)
+            .replace(/\{\{DISCOUNT_VALUE\}\}/g, String(discountValue));
+
+          await sendWhatsAppMessage({ to: custPhone, text: personalizedWA });
+        }
+      }
+    } catch (dispatchErr) {
+      console.error('[Campaign Dispatcher] Background messaging error:', dispatchErr);
+    }
+  })();
+
   const updatedMetrics: any = campaign.metrics || {};
   updatedMetrics.sentCount = customerIds.length;
   updatedMetrics.stage1SentAt = new Date().toISOString();
