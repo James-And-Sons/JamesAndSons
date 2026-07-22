@@ -42,8 +42,9 @@ interface DynamicCoupon {
 }
 
 type View = 'DASHBOARD' | 'EDITOR' | 'COUPONS';
-type EditorTab = 'EMAIL' | 'WHATSAPP' | 'PREVIEW';
-type EmailEditMode = 'VISUAL' | 'HTML';
+type Channel = 'EMAIL' | 'WHATSAPP';
+type ViewMode = 'VISUAL' | 'HTML' | 'PREVIEW';
+type MobileStep = 'AUDIENCE' | 'CONTENT' | 'PRODUCTS' | 'PREVIEW';
 
 // ─── Status helpers (match platform's globals.css status-pill classes) ────────
 function statusPillClass(status: string): string {
@@ -139,9 +140,10 @@ export default function CampaignManagerClient({
   const [view, setView] = useState<View>('DASHBOARD');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-  // Editor state
-  const [editorTab, setEditorTab] = useState<EditorTab>('EMAIL');
-  const [emailEditMode, setEmailEditMode] = useState<EmailEditMode>('VISUAL');
+  // Separate Channel axis from View Mode axis
+  const [channel, setChannel] = useState<Channel>('EMAIL');
+  const [viewMode, setViewMode] = useState<ViewMode>('VISUAL');
+  const [mobileStep, setMobileStep] = useState<MobileStep>('CONTENT');
   
   // Editable campaign fields
   const [editName, setEditName] = useState('');
@@ -158,7 +160,8 @@ export default function CampaignManagerClient({
   const [visBodyText, setVisBodyText] = useState('');
   const [visCtaText, setVisCtaText] = useState('');
 
-  // Custom campaign modal state
+  // Confirmation Modals
+  const [confirmScheduleModal, setConfirmScheduleModal] = useState(false);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [newCustomName, setNewCustomName] = useState('');
   const [newCustomHolidayId, setNewCustomHolidayId] = useState('');
@@ -216,8 +219,8 @@ export default function CampaignManagerClient({
     setVisBodyText('We invite you to elevate your interior spaces with our signature handcrafted brass lighting and festive decor collection.');
     setVisCtaText('Claim Your Exclusive Voucher');
 
-    setEditorTab('EMAIL');
-    setEmailEditMode('VISUAL');
+    setChannel('EMAIL');
+    setViewMode('VISUAL');
     setCouponsPreview([]);
     setView('EDITOR');
   };
@@ -240,7 +243,7 @@ export default function CampaignManagerClient({
 
   // Recompile HTML when visual text fields change in VISUAL edit mode
   useEffect(() => {
-    if (emailEditMode === 'VISUAL') {
+    if (viewMode === 'VISUAL') {
       const compiled = compileVisualHtml({
         headline: visHeadline,
         greeting: visGreeting,
@@ -250,7 +253,7 @@ export default function CampaignManagerClient({
       });
       setEditBodyHtml(compiled);
     }
-  }, [visHeadline, visGreeting, visBodyText, visCtaText, editDiscount, emailEditMode]);
+  }, [visHeadline, visGreeting, visBodyText, visCtaText, editDiscount, viewMode]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleDraftAI = async (holidayId: string, segment = 'VIP') => {
@@ -337,8 +340,9 @@ export default function CampaignManagerClient({
     finally { setIsSaving(false); }
   };
 
-  const handleSchedule = async () => {
+  const handleScheduleConfirm = async () => {
     if (!selectedCampaign) return;
+    setConfirmScheduleModal(false);
     setIsDispatching(true);
     await handleSave();
     try {
@@ -350,7 +354,7 @@ export default function CampaignManagerClient({
       const data = await res.json();
       if (data.success) {
         setCouponsPreview(data.result.sampleCodes || []);
-        showToast(`Scheduled. ${data.result.couponsGenerated} unique vouchers generated.`);
+        showToast(`✨ Campaign Scheduled! ${data.result.couponsGenerated} single-use vouchers generated.`);
         await refreshData();
         setSelectedCampaign(prev => prev ? { ...prev, status: 'SCHEDULED' } : null);
       } else {
@@ -475,7 +479,7 @@ export default function CampaignManagerClient({
           <div className="flex items-center gap-3">
             <button
               onClick={() => setView('DASHBOARD')}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer min-h-[44px]"
             >
               ← Back
             </button>
@@ -510,8 +514,10 @@ export default function CampaignManagerClient({
         <div className="premium-card flex flex-col overflow-hidden rounded-lg">
           <div className="p-4 border-b border-border flex flex-wrap gap-3 bg-surface-muted/40 items-center justify-between">
             <div className="flex-1 min-w-[220px] flex items-center gap-2 border border-border bg-background px-3 py-2 rounded-sm focus-within:border-accent transition-colors">
+              <label htmlFor="coupon-search" className="sr-only">Search vouchers</label>
               <span className="text-muted text-xs" aria-hidden="true">🔍</span>
               <input
+                id="coupon-search"
                 type="text"
                 value={couponSearch}
                 onChange={e => setCouponSearch(e.target.value)}
@@ -527,7 +533,7 @@ export default function CampaignManagerClient({
                 <button
                   key={f}
                   onClick={() => setCouponFilter(f)}
-                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-3 py-2 border transition-colors rounded-sm cursor-pointer ${
+                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-2.5 border transition-colors rounded-sm cursor-pointer min-h-[44px] ${
                     couponFilter === f
                       ? 'bg-accent text-background border-accent'
                       : 'border-border text-muted hover:border-accent hover:text-primary bg-background'
@@ -598,7 +604,7 @@ export default function CampaignManagerClient({
                       {!c.isRedeemed && (
                         <button
                           onClick={() => handleRevokeCoupon(c.id)}
-                          className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1.5 hover:border-red-600/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
+                          className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-3 py-2 hover:border-red-600/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer min-h-[44px]"
                         >
                           Revoke
                         </button>
@@ -625,10 +631,10 @@ export default function CampaignManagerClient({
     return (
       <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
         {/* Editor Top Bar */}
-        <div className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-surface shrink-0">
+        <header className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-surface shrink-0">
           <button
             onClick={() => setView('DASHBOARD')}
-            className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
+            className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
           >
             ← Campaigns
           </button>
@@ -636,7 +642,9 @@ export default function CampaignManagerClient({
           
           {/* Editable Campaign Name */}
           <div className="flex-1 min-w-0 flex items-center gap-2">
+            <label htmlFor="edit-campaign-name" className="sr-only">Campaign Name</label>
             <input
+              id="edit-campaign-name"
               type="text"
               value={editName}
               onChange={e => setEditName(e.target.value)}
@@ -656,20 +664,21 @@ export default function CampaignManagerClient({
             </span>
           )}
 
-          <div className="flex gap-2 flex-wrap">
+          {/* Grouped Action Buttons with clear separation between Save vs Approve vs Delete */}
+          <div className="flex gap-2 flex-wrap items-center">
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer disabled:opacity-50"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer disabled:opacity-50 min-h-[44px]"
             >
               {isSaving ? 'Saving…' : '💾 Save Draft'}
             </button>
 
             {isDraft && (
               <button
-                onClick={handleSchedule}
+                onClick={() => setConfirmScheduleModal(true)}
                 disabled={isDispatching}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[44px]"
               >
                 {isDispatching ? 'Scheduling…' : '🚀 Approve & Schedule →'}
               </button>
@@ -678,34 +687,60 @@ export default function CampaignManagerClient({
             {isLive && (
               <button
                 onClick={() => handleUnschedule(selectedCampaign.id)}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3.5 py-2 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3.5 py-2.5 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer min-h-[44px]"
                 title="Revert scheduled campaign back to draft for editing"
               >
-                ↺ Undo Schedule (Draft Mode)
+                ↺ Undo Schedule
               </button>
             )}
 
+            <div className="w-px h-4 bg-border/60 mx-1" aria-hidden="true" />
+
             <button
               onClick={() => handleDeleteCampaign(selectedCampaign.id)}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-red-400 border border-red-500/30 px-3 py-2 hover:bg-red-900/20 hover:border-red-500 transition-colors bg-background rounded-sm cursor-pointer"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-red-400 border border-red-500/30 px-3 py-2.5 hover:bg-red-900/20 hover:border-red-500 transition-colors bg-background rounded-sm cursor-pointer min-h-[44px]"
               title="Delete campaign"
             >
               🗑 Delete
             </button>
           </div>
+        </header>
+
+        {/* Mobile Viewport Step Selector Bar (< lg viewports) */}
+        <div className="lg:hidden flex border-b border-border bg-surface shrink-0 overflow-x-auto">
+          {[
+            { id: 'AUDIENCE', label: '1. Setup' },
+            { id: 'CONTENT', label: '2. Copy Content' },
+            { id: 'PRODUCTS', label: '3. Products' },
+            { id: 'PREVIEW', label: '4. Preview' },
+          ].map(step => (
+            <button
+              key={step.id}
+              onClick={() => setMobileStep(step.id as MobileStep)}
+              className={`flex-1 min-w-[100px] font-mono text-[10px] uppercase tracking-[0.1em] py-2.5 px-3 border-b-2 text-center transition-colors cursor-pointer ${
+                mobileStep === step.id
+                  ? 'border-accent text-accent bg-accent/5 font-semibold'
+                  : 'border-transparent text-muted hover:text-primary'
+              }`}
+            >
+              {step.label}
+            </button>
+          ))}
         </div>
 
-        {/* Editor Body: 3-column split */}
+        {/* Editor Body: 3-column desktop / 1-column mobile step flow */}
         <div className="flex flex-1 overflow-hidden">
 
           {/* PANEL 1: Settings */}
           <aside
-            aria-label="Campaign settings"
-            className="w-[240px] shrink-0 border-r border-border overflow-y-auto p-5 space-y-6 bg-surface"
+            aria-label="Campaign setup and targeting"
+            className={`w-full lg:w-[240px] shrink-0 border-r border-border overflow-y-auto p-5 space-y-6 bg-surface ${
+              mobileStep === 'AUDIENCE' ? 'block' : 'hidden lg:block'
+            }`}
           >
             {/* Audience Segment */}
-            <fieldset>
-              <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3">Audience</legend>
+            <fieldset className="border-0 p-0 m-0">
+              <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3 p-0">Audience Segment</legend>
               <div className="space-y-1.5">
                 {[
                   { id: 'VIP',    label: 'VIP Buyers',     desc: 'Orders > ₹25k' },
@@ -738,15 +773,16 @@ export default function CampaignManagerClient({
             </fieldset>
 
             {/* Discount */}
-            <fieldset>
-              <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3">Voucher Discount</legend>
+            <fieldset className="border-0 p-0 m-0">
+              <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3 p-0">Voucher Discount</legend>
               <div className="flex items-center gap-2 border border-border bg-background rounded-sm px-3 py-2 focus-within:border-accent transition-colors">
+                <label htmlFor="discount-val" className="sr-only">Discount percentage</label>
                 <input
+                  id="discount-val"
                   type="number"
                   value={editDiscount}
                   onChange={e => setEditDiscount(Number(e.target.value))}
                   min={5} max={50}
-                  aria-label="Discount percentage"
                   className="w-14 bg-transparent text-accent font-serif text-[22px] focus:outline-none tabular-nums"
                 />
                 <div>
@@ -763,7 +799,7 @@ export default function CampaignManagerClient({
             {/* Personalization Tokens */}
             <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent mb-3">Personalization Tokens</div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {[
                   { token: '{{CUSTOMER_NAME}}', desc: "First name" },
                   { token: '{{COUPON_CODE}}',   desc: "Unique code" },
@@ -772,12 +808,19 @@ export default function CampaignManagerClient({
                 ].map(t => (
                   <button
                     key={t.token}
-                    onClick={() => { navigator.clipboard.writeText(t.token); showToast(`Copied ${t.token}`); }}
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(t.token);
+                      showToast(`Copied ${t.token} to clipboard!`);
+                    }}
                     title={`Click to copy ${t.token}`}
-                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 border border-border bg-background hover:border-accent/40 transition-colors cursor-pointer rounded-sm group"
+                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 border border-border bg-background hover:border-accent/50 hover:bg-accent/5 transition-colors cursor-pointer rounded-sm group active:scale-[0.98]"
                   >
-                    <code className="font-mono text-[10px] text-accent group-hover:text-accent-hover">{t.token}</code>
-                    <span className="font-mono text-[9px] text-muted uppercase tracking-[0.08em]">{t.desc}</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-muted text-[11px] group-hover:text-accent" aria-hidden="true">📋</span>
+                      <code className="font-mono text-[10px] text-accent group-hover:text-accent-hover truncate">{t.token}</code>
+                    </div>
+                    <span className="font-mono text-[9px] text-muted uppercase tracking-[0.08em] shrink-0">{t.desc}</span>
                   </button>
                 ))}
               </div>
@@ -800,78 +843,114 @@ export default function CampaignManagerClient({
           </aside>
 
           {/* PANEL 2: Content Editor */}
-          <main className="flex-1 flex flex-col overflow-hidden bg-background" aria-label="Campaign content editor">
-            {/* Tabs */}
-            <div className="flex gap-0 border-b border-border shrink-0 items-center justify-between pr-4">
-              <div className="flex">
-                {(['EMAIL', 'WHATSAPP', 'PREVIEW'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setEditorTab(tab)}
-                    className={`font-mono text-[10px] uppercase tracking-[0.14em] px-5 py-3 border-b-2 transition-colors cursor-pointer ${
-                      editorTab === tab
-                        ? 'border-b-accent text-accent bg-surface/50'
-                        : 'border-b-transparent text-muted hover:text-primary hover:bg-surface/30'
-                    }`}
-                  >
-                    {tab === 'EMAIL' ? '✉ Email' : tab === 'WHATSAPP' ? '💬 WhatsApp' : '👁 Live Preview'}
-                  </button>
-                ))}
+          <main
+            aria-label="Campaign content editor"
+            className={`flex-1 flex flex-col overflow-hidden bg-background ${
+              mobileStep === 'CONTENT' || mobileStep === 'PREVIEW' ? 'block' : 'hidden lg:flex'
+            }`}
+          >
+            {/* Top Bar Axis 1: Channel Switcher (Email vs WhatsApp) */}
+            <div className="px-5 py-2.5 border-b border-border bg-surface flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted mr-1">Channel:</span>
+                <button
+                  type="button"
+                  onClick={() => setChannel('EMAIL')}
+                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 rounded-sm border cursor-pointer transition-colors ${
+                    channel === 'EMAIL'
+                      ? 'bg-accent/15 border-accent text-accent font-semibold'
+                      : 'border-border text-muted hover:text-primary bg-background'
+                  }`}
+                >
+                  ✉️ Email Blast
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChannel('WHATSAPP')}
+                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 rounded-sm border cursor-pointer transition-colors ${
+                    channel === 'WHATSAPP'
+                      ? 'bg-[#25D366]/15 border-[#25D366]/60 text-[#25D366] font-semibold'
+                      : 'border-border text-muted hover:text-primary bg-background'
+                  }`}
+                >
+                  💬 WhatsApp Broadcast
+                </button>
               </div>
 
-              {/* Mode switch for Email Editor: Non-Tech Visual vs HTML Code */}
-              {editorTab === 'EMAIL' && (
-                <div className="flex items-center gap-1.5 bg-surface border border-border p-1 rounded-sm">
-                  <button
-                    onClick={() => setEmailEditMode('VISUAL')}
-                    className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                      emailEditMode === 'VISUAL'
-                        ? 'bg-accent text-background font-semibold'
-                        : 'text-muted hover:text-primary'
-                    }`}
-                  >
-                    ✨ Friendly Text Editor
-                  </button>
-                  <button
-                    onClick={() => setEmailEditMode('HTML')}
-                    className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                      emailEditMode === 'HTML'
-                        ? 'bg-accent text-background font-semibold'
-                        : 'text-muted hover:text-primary'
-                    }`}
-                  >
-                    &lt;/&gt; Raw HTML
-                  </button>
-                </div>
-              )}
+              {/* Axis 2: View Mode Switcher (Friendly Text vs Raw HTML vs Live Preview) */}
+              <div className="flex items-center gap-1 bg-background border border-border p-1 rounded-sm">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('VISUAL')}
+                  className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
+                    viewMode === 'VISUAL'
+                      ? 'bg-accent text-background font-semibold'
+                      : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  ✨ Friendly Text Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('HTML')}
+                  className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
+                    viewMode === 'HTML'
+                      ? 'bg-accent text-background font-semibold'
+                      : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  &lt;/&gt; Raw HTML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('PREVIEW')}
+                  className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
+                    viewMode === 'PREVIEW'
+                      ? 'bg-accent text-background font-semibold'
+                      : 'text-muted hover:text-primary'
+                  }`}
+                >
+                  👁 Live Preview
+                </button>
+              </div>
             </div>
 
-            {/* EMAIL TAB */}
-            {editorTab === 'EMAIL' && (
+            {/* EMAIL TAB CONTENT */}
+            {channel === 'EMAIL' && viewMode !== 'PREVIEW' && (
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div>
-                  <label htmlFor="email-subject" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block mb-1.5">
-                    Subject Line
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="email-subject" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block">
+                      Email Subject Line
+                    </label>
+
+                    {/* Real-time Subject Length Counter */}
+                    <span className={`font-mono text-[10px] ${editSubject.length > 60 ? 'text-[#c97e6a] font-semibold' : 'text-muted'}`}>
+                      Subject length: {editSubject.length} / 60 chars {editSubject.length > 60 ? '(Clipped on mobile)' : '(Optimal: 40-60)'}
+                    </span>
+                  </div>
+
                   <input
                     id="email-subject"
                     type="text"
                     value={editSubject}
                     onChange={e => setEditSubject(e.target.value)}
                     placeholder="e.g. {{CUSTOMER_NAME}}, your exclusive Diwali offer awaits ✨"
-                    className="w-full px-3 py-2.5 border border-border bg-surface text-primary font-mono text-[12px] focus:outline-none focus:border-accent transition-colors rounded-sm"
+                    className={`w-full px-3 py-2.5 border bg-surface text-primary font-mono text-[12px] focus:outline-none transition-colors rounded-sm ${
+                      editSubject.length > 60 ? 'border-[#c97e6a]' : 'border-border focus:border-accent'
+                    }`}
                   />
                 </div>
 
-                {/* NON-TECH VISUAL EDITOR */}
-                {emailEditMode === 'VISUAL' ? (
+                {/* VISUAL TEXT EDITOR */}
+                {viewMode === 'VISUAL' ? (
                   <div className="space-y-4 border border-border/60 bg-surface/40 p-4 rounded-sm">
                     <div className="flex items-center justify-between border-b border-border/40 pb-2">
                       <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent">
-                        ✨ Friendly Text Fields (No HTML Required)
+                        ✨ Friendly Text Fields (No HTML Code Required)
                       </span>
                       <span className="font-mono text-[10px] text-muted">
-                        Changes automatically generate luxury design layout
+                        Automatically generates luxury email design
                       </span>
                     </div>
 
@@ -941,7 +1020,7 @@ export default function CampaignManagerClient({
                       id="email-body"
                       value={editBodyHtml}
                       onChange={e => setEditBodyHtml(e.target.value)}
-                      rows={20}
+                      rows={18}
                       className="w-full p-3.5 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
                       spellCheck={false}
                     />
@@ -950,8 +1029,8 @@ export default function CampaignManagerClient({
               </div>
             )}
 
-            {/* WHATSAPP TAB */}
-            {editorTab === 'WHATSAPP' && (
+            {/* WHATSAPP TAB CONTENT */}
+            {channel === 'WHATSAPP' && viewMode !== 'PREVIEW' && (
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="flex gap-2.5 p-3.5 border border-border rounded-sm bg-surface">
                   <span aria-hidden="true">💡</span>
@@ -968,43 +1047,47 @@ export default function CampaignManagerClient({
                     id="wa-body"
                     value={editWhatsappText}
                     onChange={e => setEditWhatsappText(e.target.value)}
-                    rows={16}
+                    rows={14}
                     className="w-full p-3.5 border border-border bg-surface text-primary font-mono text-[12px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
                     placeholder={`🪔 *Namaste {{CUSTOMER_NAME}}!* ✨\n\nCelebrate with James & Sons handcrafted brass lighting.\n\nYour personal *{{DISCOUNT_VALUE}}% OFF* voucher: *{{COUPON_CODE}}*\n\nShop: https://jamesandsons.in/collections/festive`}
                   />
                 </div>
                 <div className="flex justify-between font-mono text-[10px] text-muted">
                   <span>{editWhatsappText.length} characters</span>
-                  <span className={editWhatsappText.trim().split(/\s+/).filter(Boolean).length > 160 ? 'text-red-400' : ''}>
+                  <span className={editWhatsappText.trim().split(/\s+/).filter(Boolean).length > 160 ? 'text-[#c97e6a]' : ''}>
                     {editWhatsappText.trim().split(/\s+/).filter(Boolean).length} words
                   </span>
                 </div>
               </div>
             )}
 
-            {/* PREVIEW TAB */}
-            {editorTab === 'PREVIEW' && (
+            {/* PREVIEW CONTENT */}
+            {viewMode === 'PREVIEW' && (
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 <div className="p-3.5 border border-border rounded-sm bg-surface flex gap-2.5">
                   <span aria-hidden="true">🔍</span>
                   <p className="font-mono text-[11px] text-muted m-0">
-                    Preview for sample customer <strong className="text-primary">Priya</strong> with code <code className="text-accent tracking-wider">DIW8K9X2</code>.
+                    Preview for sample customer <strong className="text-primary">Priya</strong> with voucher code <code className="text-accent tracking-wider">DIW8K9X2</code>.
                   </p>
                 </div>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Email Subject</div>
-                  <div className="px-4 py-3 border border-border bg-surface rounded-sm font-serif text-[15px] text-primary">
-                    {personalizedSubject || '(no subject)'}
-                  </div>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Email HTML Rendered</div>
-                  <div
-                    className="border border-border rounded-sm overflow-hidden"
-                    dangerouslySetInnerHTML={{ __html: personalizedHtml }}
-                  />
-                </div>
-                {editWhatsappText && (
+
+                {channel === 'EMAIL' ? (
+                  <>
+                    <div>
+                      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Email Subject</div>
+                      <div className="px-4 py-3 border border-border bg-surface rounded-sm font-serif text-[15px] text-primary">
+                        {personalizedSubject || '(no subject)'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Rendered Email HTML</div>
+                      <div
+                        className="border border-border rounded-sm overflow-hidden"
+                        dangerouslySetInnerHTML={{ __html: personalizedHtml }}
+                      />
+                    </div>
+                  </>
+                ) : (
                   <div>
                     <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">WhatsApp Broadcast Preview</div>
                     <div className="bg-[#0b141a] rounded-sm p-5 border border-border">
@@ -1022,7 +1105,9 @@ export default function CampaignManagerClient({
           {/* PANEL 3: Products */}
           <aside
             aria-label="Featured products"
-            className="w-[260px] shrink-0 border-l border-border flex flex-col overflow-hidden bg-surface"
+            className={`w-full lg:w-[260px] shrink-0 border-l border-border flex flex-col overflow-hidden bg-surface ${
+              mobileStep === 'PRODUCTS' ? 'block' : 'hidden lg:flex'
+            }`}
           >
             <div className="px-5 py-3.5 border-b border-border shrink-0">
               <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Featured Products</div>
@@ -1040,10 +1125,11 @@ export default function CampaignManagerClient({
                     : <div className="w-10 h-10 bg-surface-muted rounded-sm shrink-0 flex items-center justify-center text-accent text-xs">✦</div>
                   }
                   <div className="flex-1 min-w-0">
-                    <div className="font-serif text-[12px] text-primary truncate">{p.name}</div>
+                    <div className="font-serif text-[12px] text-primary truncate" title={p.name}>{p.name}</div>
                     <div className="font-mono text-[10px] text-accent tabular-nums mt-0.5">₹{(p.d2cPrice || 0).toLocaleString('en-IN')}</div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => { setSwapIndex(idx); setSwapQuery(''); }}
                     className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1 hover:border-accent/40 hover:text-primary transition-colors bg-surface rounded-sm cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
                   >
@@ -1073,6 +1159,65 @@ export default function CampaignManagerClient({
           </aside>
         </div>
 
+        {/* CONFIRM APPROVE & SCHEDULE MODAL */}
+        {confirmScheduleModal && (
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm Schedule & Voucher Generation"
+          >
+            <div className="bg-surface border border-border rounded-lg w-full max-w-[480px] flex flex-col overflow-hidden">
+              <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Points of Dispatch</div>
+                  <h2 className="font-serif text-[18px] text-primary font-normal m-0">Confirm Campaign Dispatch</h2>
+                </div>
+                <button onClick={() => setConfirmScheduleModal(false)} className="text-muted hover:text-primary font-mono text-[16px] cursor-pointer bg-transparent border-none">✕</button>
+              </div>
+
+              <div className="p-5 space-y-3">
+                <div className="p-3.5 border border-accent/30 bg-accent/5 rounded-sm space-y-2 font-mono text-[11px]">
+                  <div className="flex justify-between text-primary">
+                    <span className="text-muted uppercase">Target Segment:</span>
+                    <span className="font-semibold text-accent">{editSegment} Buyers</span>
+                  </div>
+                  <div className="flex justify-between text-primary">
+                    <span className="text-muted uppercase">Voucher Discount:</span>
+                    <span className="font-semibold text-accent">{editDiscount}% OFF</span>
+                  </div>
+                  <div className="flex justify-between text-primary">
+                    <span className="text-muted uppercase">Voucher Format:</span>
+                    <span className="font-semibold">8-Char Single-Use Alphanumeric</span>
+                  </div>
+                </div>
+
+                <p className="font-mono text-[11px] text-muted leading-relaxed m-0">
+                  This will save all edits and batch-generate unique single-use vouchers for all active customers in the <strong>{editSegment}</strong> audience segment. Stage 1 email &amp; WhatsApp dispatches will be activated.
+                </p>
+              </div>
+
+              <div className="px-5 py-4 border-t border-border bg-surface-muted/40 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConfirmScheduleModal(false)}
+                  className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted border border-border px-4 py-2 hover:bg-surface-muted rounded-sm cursor-pointer bg-background"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleScheduleConfirm}
+                  disabled={isDispatching}
+                  className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-5 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold disabled:opacity-50 min-h-[44px]"
+                >
+                  {isDispatching ? 'Generating Vouchers…' : '🚀 Confirm & Issue Vouchers'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {toast && <ToastBar msg={toast.msg} type={toast.type} />}
 
         {/* Product Swap Drawer */}
@@ -1090,8 +1235,10 @@ export default function CampaignManagerClient({
               </div>
               <div className="px-5 py-3 border-b border-border shrink-0">
                 <div className="flex items-center gap-2 border border-border bg-background px-3 py-2 rounded-sm focus-within:border-accent transition-colors">
+                  <label htmlFor="swap-search" className="sr-only">Search catalog</label>
                   <span className="text-muted text-xs" aria-hidden="true">🔍</span>
                   <input
+                    id="swap-search"
                     type="text"
                     value={swapQuery}
                     onChange={e => setSwapQuery(e.target.value)}
@@ -1155,7 +1302,7 @@ export default function CampaignManagerClient({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsCustomModalOpen(true)}
-            className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold"
+            className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold min-h-[44px]"
           >
             + New Campaign
           </button>
@@ -1168,13 +1315,13 @@ export default function CampaignManagerClient({
               <button
                 onClick={handleSweep}
                 disabled={isCronRunning}
-                className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-3 py-1.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50"
+                className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-3 py-1.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 min-h-[44px]"
               >
                 {isCronRunning ? 'Sweeping…' : 'Confirm'}
               </button>
               <button
                 onClick={() => setConfirmSweep(false)}
-                className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted border border-border px-2.5 py-1.5 hover:bg-surface-muted rounded-sm cursor-pointer bg-background"
+                className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted border border-border px-2.5 py-1.5 hover:bg-surface-muted rounded-sm cursor-pointer bg-background min-h-[44px]"
               >
                 Cancel
               </button>
@@ -1182,7 +1329,7 @@ export default function CampaignManagerClient({
           ) : (
             <button
               onClick={() => setConfirmSweep(true)}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-4 py-2.5 hover:bg-accent/8 hover:border-accent transition-colors rounded-sm cursor-pointer bg-background"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-4 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors rounded-sm cursor-pointer bg-background min-h-[44px]"
             >
               ⚡ Run 20-Day Sweep
             </button>
@@ -1190,13 +1337,13 @@ export default function CampaignManagerClient({
         </div>
       </div>
 
-      {/* KPI Row */}
+      {/* KPI Row with Trend Context */}
       <section aria-label="Campaign metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Dispatches',    value: (analytics.totalSent || 0).toLocaleString(),            sub: 'Email + WhatsApp',   color: undefined },
-          { label: 'Avg Open Rate',       value: `${analytics.overallOpenRate || '0.0'}%`,               sub: 'All campaigns',      color: 'var(--color-accent)' },
-          { label: 'Vouchers Redeemed',   value: (analytics.totalRedeemed || 0).toLocaleString(),        sub: 'Single-use codes',   color: '#8cae7e' },
-          { label: 'Attributed Revenue',  value: `₹${(analytics.totalRevenue || 0).toLocaleString('en-IN')}`, sub: 'Festive orders', color: 'var(--color-accent)' },
+          { label: 'Total Dispatches',    value: (analytics.totalSent || 0).toLocaleString(),            sub: analytics.totalSent > 0 ? 'Email + WhatsApp dispatches' : 'No campaigns sent yet', color: undefined },
+          { label: 'Avg Open Rate',       value: `${analytics.overallOpenRate || '0.0'}%`,               sub: analytics.totalSent > 0 ? 'Live benchmark tracking' : 'Updates live upon send',     color: 'var(--color-accent)' },
+          { label: 'Vouchers Redeemed',   value: (analytics.totalRedeemed || 0).toLocaleString(),        sub: analytics.totalSent > 0 ? 'Single-use customer codes' : 'Tracked upon checkout',    color: '#8cae7e' },
+          { label: 'Attributed Revenue',  value: `₹${(analytics.totalRevenue || 0).toLocaleString('en-IN')}`, sub: analytics.totalSent > 0 ? 'Attributed festive sales' : 'Measured via vouchers', color: 'var(--color-accent)' },
         ].map(k => (
           <div key={k.label} className="premium-card p-5 rounded-lg">
             <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted mb-2">{k.label}</div>
@@ -1273,7 +1420,7 @@ export default function CampaignManagerClient({
                       {hasDraft && draft ? (
                         <button
                           onClick={() => openEditor(draft)}
-                          className="w-full font-mono text-[9px] uppercase tracking-[0.12em] text-center py-1.5 border border-border rounded-sm text-muted hover:border-accent/40 hover:text-accent bg-background transition-colors cursor-pointer"
+                          className="w-full font-mono text-[9px] uppercase tracking-[0.12em] text-center py-2 border border-border rounded-sm text-muted hover:border-accent/40 hover:text-accent bg-background transition-colors cursor-pointer min-h-[44px]"
                         >
                           ✓ Draft Ready — Open Editor →
                         </button>
@@ -1281,7 +1428,7 @@ export default function CampaignManagerClient({
                         <button
                           onClick={() => handleDraftAI(h.id)}
                           disabled={isDrafting === h.id}
-                          className="w-full font-mono text-[9px] uppercase tracking-[0.12em] text-center py-1.5 border border-border rounded-sm text-muted hover:border-accent/40 hover:text-accent bg-background transition-colors cursor-pointer disabled:opacity-50"
+                          className="w-full font-mono text-[9px] uppercase tracking-[0.12em] text-center py-2 border border-border rounded-sm text-muted hover:border-accent/40 hover:text-accent bg-background transition-colors cursor-pointer disabled:opacity-50 min-h-[44px]"
                         >
                           {isDrafting === h.id ? '🤖 Generating…' : '+ Generate AI Campaign'}
                         </button>
@@ -1294,7 +1441,7 @@ export default function CampaignManagerClient({
           </div>
         </section>
 
-        {/* Campaign List */}
+        {/* Campaign List (Responsive Table on Desktop, Cards on Mobile) */}
         <section aria-labelledby="campaigns-heading" className="premium-card flex flex-col overflow-hidden rounded-lg">
           <div className="px-5 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3 bg-surface-muted/40 shrink-0">
             <div>
@@ -1326,95 +1473,158 @@ export default function CampaignManagerClient({
               </p>
               <button
                 onClick={() => setIsCustomModalOpen(true)}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold min-h-[44px]"
               >
                 + Create Custom Campaign
               </button>
             </div>
           ) : (
-            <div className="table-responsive flex-1">
-              <table className="w-full text-left border-collapse">
-                <caption className="sr-only">E-commerce marketing campaigns</caption>
-                <thead className="border-b border-border bg-surface-muted/20 sticky top-0">
-                  <tr>
-                    {['Campaign', 'Segment', 'Status', 'Dispatches', 'Redeemed', 'Revenue', 'Actions'].map((h, i) => (
-                      <th
-                        key={h}
-                        scope="col"
-                        className={`px-5 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal ${i >= 3 && i <= 5 ? 'text-right' : ''}`}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {campaigns.map(c => (
-                    <tr key={c.id} className="hover:bg-surface-muted/40 transition-colors group">
-                      <td className="px-5 py-4">
-                        <div className="font-serif text-[14px] text-primary">{c.name}</div>
-                        <div className="font-mono text-[10px] text-muted mt-0.5">
-                          {c.holiday ? `🪔 ${c.holiday.name} · ` : '✨ Standalone Campaign · '}
-                          {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted border border-border px-2 py-1 rounded-sm bg-background">
-                          {c.segmentationRules?.segment || 'VIP'}
-                        </span>
-                        <div className="font-mono text-[10px] text-accent mt-1">{c.segmentationRules?.discountValue || 15}% OFF</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className={statusPillClass(c.status)}>
-                          <span className="dot" aria-hidden="true" />
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 font-mono text-[13px] text-primary tabular-nums text-right">{c.metricsSummary?.sent || 0}</td>
-                      <td className="px-5 py-4 font-mono text-[13px] tabular-nums text-right" style={{ color: '#8cae7e' }}>{c.metricsSummary?.redeemed || 0}</td>
-                      <td className="px-5 py-4 font-mono text-[13px] text-accent tabular-nums text-right">
-                        ₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2 justify-end">
-                          <button
-                            onClick={() => openCoupons(c)}
-                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1.5 hover:border-accent/40 hover:text-accent transition-colors bg-background rounded-sm cursor-pointer"
-                            title={`Manage vouchers for ${c.name}`}
-                          >
-                            Vouchers
-                          </button>
-                          <button
-                            onClick={() => openEditor(c)}
-                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer"
-                          >
-                            Edit →
-                          </button>
-
-                          {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
-                            <button
-                              onClick={() => handleUnschedule(c.id)}
-                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2 py-1.5 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer"
-                              title="Undo schedule & revert to draft"
-                            >
-                              ↺ Undo
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleDeleteCampaign(c.id)}
-                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
-                            title="Delete campaign"
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </td>
+            <>
+              {/* Desktop Table (md and up) */}
+              <div className="hidden md:block table-responsive flex-1">
+                <table className="w-full text-left border-collapse">
+                  <caption className="sr-only">E-commerce marketing campaigns</caption>
+                  <thead className="border-b border-border bg-surface-muted/20 sticky top-0">
+                    <tr>
+                      {['Campaign', 'Segment', 'Status', 'Dispatches', 'Redeemed', 'Revenue', 'Actions'].map((h, i) => (
+                        <th
+                          key={h}
+                          scope="col"
+                          className={`px-5 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal ${i >= 3 && i <= 5 ? 'text-right' : ''}`}
+                        >
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {campaigns.map(c => (
+                      <tr key={c.id} className="hover:bg-surface-muted/40 transition-colors group">
+                        <td className="px-5 py-4">
+                          <div className="font-serif text-[14px] text-primary">{c.name}</div>
+                          <div className="font-mono text-[10px] text-muted mt-0.5">
+                            {c.holiday ? `🪔 ${c.holiday.name} · ` : '✨ Standalone Campaign · '}
+                            {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted border border-border px-2 py-1 rounded-sm bg-background">
+                            {c.segmentationRules?.segment || 'VIP'}
+                          </span>
+                          <div className="font-mono text-[10px] text-accent mt-1">{c.segmentationRules?.discountValue || 15}% OFF</div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={statusPillClass(c.status)}>
+                            <span className="dot" aria-hidden="true" />
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 font-mono text-[13px] text-primary tabular-nums text-right">{c.metricsSummary?.sent || 0}</td>
+                        <td className="px-5 py-4 font-mono text-[13px] tabular-nums text-right" style={{ color: '#8cae7e' }}>{c.metricsSummary?.redeemed || 0}</td>
+                        <td className="px-5 py-4 font-mono text-[13px] text-accent tabular-nums text-right">
+                          ₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              onClick={() => openCoupons(c)}
+                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1.5 hover:border-accent/40 hover:text-accent transition-colors bg-background rounded-sm cursor-pointer"
+                              title={`Manage vouchers for ${c.name}`}
+                            >
+                              Vouchers
+                            </button>
+                            <button
+                              onClick={() => openEditor(c)}
+                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer"
+                            >
+                              Edit →
+                            </button>
+
+                            {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
+                              <button
+                                onClick={() => handleUnschedule(c.id)}
+                                className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2 py-1.5 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer"
+                                title="Undo schedule & revert to draft"
+                              >
+                                ↺ Undo
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleDeleteCampaign(c.id)}
+                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
+                              title="Delete campaign"
+                            >
+                              🗑
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card List (< md viewports) to avoid horizontal scroll */}
+              <div className="md:hidden divide-y divide-border/40 overflow-y-auto">
+                {campaigns.map(c => (
+                  <article key={c.id} className="p-4 space-y-3 bg-background/50">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-serif text-[15px] text-primary">{c.name}</div>
+                        <div className="font-mono text-[10px] text-muted mt-0.5">
+                          {c.holiday ? `🪔 ${c.holiday.name}` : '✨ Standalone Campaign'}
+                        </div>
+                      </div>
+                      <span className={statusPillClass(c.status)}>
+                        <span className="dot" aria-hidden="true" />
+                        {c.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono border-y border-border/40 py-2">
+                      <div>
+                        <span className="text-muted">Segment: </span>
+                        <span className="text-primary font-semibold">{c.segmentationRules?.segment || 'VIP'} ({c.segmentationRules?.discountValue || 15}% OFF)</span>
+                      </div>
+                      <div>
+                        <span className="text-muted">Revenue: </span>
+                        <span className="text-accent font-semibold">₹{(c.metricsSummary?.revenue || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => openCoupons(c)}
+                        className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-3 py-2 hover:bg-surface-muted rounded-sm cursor-pointer min-h-[44px]"
+                      >
+                        Vouchers
+                      </button>
+                      <button
+                        onClick={() => openEditor(c)}
+                        className="font-mono text-[10px] uppercase tracking-[0.1em] bg-accent text-background px-3 py-2 hover:bg-accent-hover rounded-sm cursor-pointer font-semibold min-h-[44px]"
+                      >
+                        Edit →
+                      </button>
+                      {['SCHEDULED', 'ACTIVE'].includes(c.status) && (
+                        <button
+                          onClick={() => handleUnschedule(c.id)}
+                          className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/40 px-3 py-2 hover:bg-accent/10 rounded-sm cursor-pointer min-h-[44px]"
+                        >
+                          ↺ Undo
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteCampaign(c.id)}
+                        className="font-mono text-[10px] uppercase tracking-[0.1em] text-red-400 border border-red-500/30 px-3 py-2 hover:bg-red-900/20 rounded-sm cursor-pointer min-h-[44px]"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
           )}
         </section>
       </div>
@@ -1476,10 +1686,10 @@ export default function CampaignManagerClient({
                 </select>
               </div>
 
-              <div>
-                <label className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
+              <fieldset className="border-0 p-0 m-0">
+                <legend className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1 p-0">
                   Target Audience Segment
-                </label>
+                </legend>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: 'VIP', label: 'VIP Buyers' },
@@ -1490,7 +1700,7 @@ export default function CampaignManagerClient({
                       key={s.id}
                       type="button"
                       onClick={() => setNewCustomSegment(s.id)}
-                      className={`font-mono text-[10px] uppercase tracking-[0.1em] py-2 px-2 border transition-colors rounded-sm cursor-pointer ${
+                      className={`font-mono text-[10px] uppercase tracking-[0.1em] py-2 px-2 border transition-colors rounded-sm cursor-pointer min-h-[44px] ${
                         newCustomSegment === s.id
                           ? 'bg-accent text-background border-accent font-semibold'
                           : 'border-border text-muted hover:border-accent/40 bg-background'
@@ -1500,7 +1710,7 @@ export default function CampaignManagerClient({
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div>
                 <label htmlFor="custom-discount" className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
@@ -1523,15 +1733,17 @@ export default function CampaignManagerClient({
 
             <div className="px-5 py-4 border-t border-border bg-surface-muted/40 flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setIsCustomModalOpen(false)}
-                className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted border border-border px-4 py-2 hover:bg-surface-muted rounded-sm cursor-pointer bg-background"
+                className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted border border-border px-4 py-2 hover:bg-surface-muted rounded-sm cursor-pointer bg-background min-h-[44px]"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleCreateCustom}
                 disabled={isCreatingCustom}
-                className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-5 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold disabled:opacity-50"
+                className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-5 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold disabled:opacity-50 min-h-[44px]"
               >
                 {isCreatingCustom ? 'Creating…' : 'Create & Edit Draft →'}
               </button>
