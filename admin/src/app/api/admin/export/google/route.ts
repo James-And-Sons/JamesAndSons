@@ -38,9 +38,18 @@ export async function GET(req: NextRequest) {
       orderBy: { name: 'asc' }
     });
 
+    const getStorefrontUrl = () => {
+      const base = process.env.NEXT_PUBLIC_STOREFRONT_URL || BRAND_CONFIG.storefrontUrl || 'https://jamesandsons.in';
+      if (!base || base.includes('localhost')) {
+        return 'https://jamesandsons.in';
+      }
+      return base.replace(/\/+$/, '');
+    };
+
+    const baseUrl = getStorefrontUrl();
     const getAvailabilityXml = (qty: number) => (qty > 0 ? 'in_stock' : 'out_of_stock');
     const getAvailabilityCsv = (qty: number) => (qty > 0 ? 'in stock' : 'out of stock');
-    const getProductLink = (slug: string) => `${BRAND_CONFIG.storefrontUrl}/products/${slug}`;
+    const getProductLink = (slug: string) => `${baseUrl}/products/${slug}`;
     const getPriceText = (price: number) => `${Math.round(price)}.00 ${BRAND_CONFIG.currencyCode || 'INR'}`;
 
     if (format === 'csv') {

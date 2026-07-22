@@ -107,6 +107,14 @@ export async function syncToGoogleMerchant(product: any) {
     currency: BRAND_CONFIG.currencyCode || 'INR'
   });
 
+  const getStorefrontUrl = () => {
+    const base = process.env.NEXT_PUBLIC_STOREFRONT_URL || BRAND_CONFIG.storefrontUrl || 'https://jamesandsons.in';
+    if (!base || base.includes('localhost')) {
+      return 'https://jamesandsons.in';
+    }
+    return base.replace(/\/+$/, '');
+  };
+
   const buildProductPayload = (
     sku: string,
     name: string,
@@ -116,14 +124,15 @@ export async function syncToGoogleMerchant(product: any) {
     category: string,
     brandName: string
   ) => {
-    const primaryImage = images && images.length > 0 ? images[0] : `${BRAND_CONFIG.storefrontUrl}/images/placeholder.png`;
+    const baseUrl = getStorefrontUrl();
+    const primaryImage = images && images.length > 0 ? images[0] : `${baseUrl}/images/placeholder.png`;
     const additionalImages = images && images.length > 1 ? images.slice(1, 10) : [];
 
     return {
       offerId: sku,
       title: name,
       description: product.description || name,
-      link: `${BRAND_CONFIG.storefrontUrl}/products/${product.slug}`,
+      link: `${baseUrl}/products/${product.slug}`,
       imageLink: primaryImage,
       ...(additionalImages.length > 0 ? { additionalImageLinks: additionalImages } : {}),
       contentLanguage: 'en',
