@@ -27,19 +27,28 @@ function getServiceAccountCredentials(): ServiceAccountCredentials | null {
     };
   }
 
-  // 3. Check for credentials file path
-  const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'jamesandsons-6562df87cb89.json';
-  const resolvedPath = path.isAbsolute(credPath) ? credPath : path.join(process.cwd(), credPath);
+  // 3. Check for credentials file path across potential working directories (Vercel serverless support)
+  const credFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'jamesandsons-6562df87cb89.json';
+  const candidatePaths = [
+    path.isAbsolute(credFilename) ? credFilename : path.join(process.cwd(), credFilename),
+    path.join(process.cwd(), 'admin', credFilename),
+    path.join(process.cwd(), 'jamesandsons-6562df87cb89.json'),
+    path.join(process.cwd(), 'admin', 'jamesandsons-6562df87cb89.json'),
+    path.join(__dirname, credFilename),
+    path.join(__dirname, '..', '..', '..', 'jamesandsons-6562df87cb89.json')
+  ];
 
-  if (fs.existsSync(resolvedPath)) {
-    try {
-      const content = fs.readFileSync(resolvedPath, 'utf8');
-      const parsed = JSON.parse(content);
-      if (parsed.client_email && parsed.private_key) {
-        return { client_email: parsed.client_email, private_key: parsed.private_key };
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        const content = fs.readFileSync(p, 'utf8');
+        const parsed = JSON.parse(content);
+        if (parsed.client_email && parsed.private_key) {
+          return { client_email: parsed.client_email, private_key: parsed.private_key };
+        }
+      } catch (err) {
+        console.warn(`[Google Merchant Sync] Failed to read credentials file at ${p}:`, err);
       }
-    } catch (err) {
-      console.warn('[Google Merchant Sync] Failed to read service account credentials file:', err);
     }
   }
 
