@@ -6,14 +6,22 @@ function getFlipkartCredentials() {
   appId = appId.replace(/^['"]|['"]$/g, '');
   appSecret = appSecret.replace(/^['"]|['"]$/g, '');
 
-  return { appId, appSecret };
+  const isPlaceholder = 
+    !appId || 
+    !appSecret || 
+    appId.includes('your_') || 
+    appSecret.includes('your_') || 
+    appId.toLowerCase().includes('placeholder') || 
+    appSecret.toLowerCase().includes('placeholder');
+
+  return { appId, appSecret, isPlaceholder };
 }
 
 async function getFlipkartAccessToken() {
-  const { appId, appSecret } = getFlipkartCredentials();
+  const { appId, appSecret, isPlaceholder } = getFlipkartCredentials();
 
-  if (!appId || !appSecret) {
-    throw new Error('Missing Flipkart app credentials.');
+  if (isPlaceholder) {
+    throw new Error('Credentials missing');
   }
 
   // Base64 encoding credentials for Basic Auth
@@ -28,7 +36,8 @@ async function getFlipkartAccessToken() {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Failed to refresh Flipkart token: ${text}`);
+    const cleanText = text.trim().startsWith('<') ? `HTTP ${res.status} (${res.statusText || 'HTML Error'})` : text;
+    throw new Error(`Failed to refresh Flipkart token: ${cleanText}`);
   }
 
   const data = await res.json();
@@ -36,14 +45,9 @@ async function getFlipkartAccessToken() {
 }
 
 export async function syncToFlipkart(product: any) {
-  const { appId, appSecret } = getFlipkartCredentials();
+  const { isPlaceholder } = getFlipkartCredentials();
 
-  if (
-    !appId || 
-    !appSecret || 
-    appId.includes('your_') || 
-    appSecret.includes('your_')
-  ) {
+  if (isPlaceholder) {
     console.warn('[Flipkart Sync] Missing or placeholder Flipkart credentials. Skipping Flipkart sync.');
     return { success: false, reason: 'Credentials missing' };
   }
