@@ -46,6 +46,19 @@ export function generateDefaultBullets(product: any): string[] {
     return product.bulletPoints.slice(0, 5);
   }
 
+  // Extract bullets from description if available
+  if (product?.description && typeof product.description === 'string') {
+    const rawDesc = product.description.replace(/<[^>]*>/g, ' ');
+    const lines = rawDesc
+      .split(/\n|•|;|\||- /)
+      .map((line: string) => line.trim())
+      .filter((line: string) => line.length > 15 && line.length < 250);
+
+    if (lines.length >= 3) {
+      return lines.slice(0, 5);
+    }
+  }
+
   const name = product.name || 'Luxury Lighting Fixture';
   const mat = getMaterial(product);
   const finish = getFinishType(product);
@@ -211,6 +224,22 @@ export function generateKeywords(product: any): string {
 
   const combined = Array.from(keywordsSet).join(' ');
   return combined.substring(0, 250);
+}
+
+export function generateKeywordsList(product: any): string[] {
+  const mat = getMaterial(product);
+  const style = getStyle(product);
+  const cat = product?.category?.name || 'Lighting';
+
+  const baseKeywords = generateKeywords(product);
+  
+  const cluster1 = `${baseKeywords}`.substring(0, 245);
+  const cluster2 = `${style} ${mat} ${cat} fixture indoor decorative home lighting`.substring(0, 245);
+  const cluster3 = `handcrafted luxury brass metal wall lamp pendant chandelier sconce`.substring(0, 245);
+  const cluster4 = `living room bedroom hallway bedside dining room hotel cafe decor`.substring(0, 245);
+  const cluster5 = `e27 holder warm light ambient illumination modern aesthetic accent`.substring(0, 245);
+
+  return [cluster1, cluster2, cluster3, cluster4, cluster5];
 }
 
 export function getFinishType(product: any): string {

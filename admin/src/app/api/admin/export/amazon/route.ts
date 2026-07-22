@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
-import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName, generateDefaultBullets } from '@/lib/sync/mapping';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, generateKeywordsList, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName, generateDefaultBullets } from '@/lib/sync/mapping';
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -269,24 +269,37 @@ export async function GET(req: NextRequest) {
           null
         );
 
-        // Browse Node & Keywords
+        // Browse Node & Keywords (Cols 38-42: AL, AM, AN, AO, AP)
         writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
-        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        const pKwList = generateKeywordsList(p);
+        pKwList.forEach((kw, idx) => {
+          writeCell(sheet, rowIdx, 38 + idx, kw);
+        });
         writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
-        // Images
+        // Images (Main: Col 22 V, Other 1-8: Cols 23-30 W-AD)
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
-            writeCell(sheet, rowIdx, 23 + idx, img);
+            writeCell(sheet, rowIdx, 23 + idx, img); // Cols 23 to 30 (W to AD)
           });
         }
         writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-        // Bullets
+        // Bullets (Cols 33-37: AG, AH, AI, AJ, AK)
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
+
+        // Shade Height & Width (Cols 162, 163, 165, 166)
+        if ((p as any).shadeHeight) {
+          writeCell(sheet, rowIdx, 162, (p as any).shadeHeight);
+          writeCell(sheet, rowIdx, 163, "Centimeters");
+        }
+        if ((p as any).shadeWidth) {
+          writeCell(sheet, rowIdx, 165, (p as any).shadeWidth);
+          writeCell(sheet, rowIdx, 166, "Centimeters");
+        }
 
         // Wattage
         const pWatt = extractNumber(p.power);
@@ -350,24 +363,39 @@ export async function GET(req: NextRequest) {
             v
           );
 
-          // Browse Node & Keywords
+          // Browse Node & Keywords (Cols 38-42: AL, AM, AN, AO, AP)
           writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
-          writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+          const vKwList = generateKeywordsList(p);
+          vKwList.forEach((kw, idx) => {
+            writeCell(sheet, rowIdx, 38 + idx, kw);
+          });
           writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
-          // Images
+          // Images (Main: Col 22 V, Other 1-8: Cols 23-30 W-AD)
           if (vImages.length > 0) {
             writeCell(sheet, rowIdx, 22, vImages[0]);
             vImages.slice(1, 9).forEach((img, idx) => {
-              writeCell(sheet, rowIdx, 23 + idx, img);
+              writeCell(sheet, rowIdx, 23 + idx, img); // Cols 23 to 30 (W to AD)
             });
           }
           writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-          // Bullets
+          // Bullets (Cols 33-37: AG, AH, AI, AJ, AK)
           vBullets.slice(0, 5).forEach((b, idx) => {
             writeCell(sheet, rowIdx, 33 + idx, b);
           });
+
+          // Shade Height & Width (Cols 162, 163, 165, 166)
+          const vShadeH = (v as any).shadeHeight || (p as any).shadeHeight;
+          const vShadeW = (v as any).shadeWidth || (p as any).shadeWidth;
+          if (vShadeH) {
+            writeCell(sheet, rowIdx, 162, vShadeH);
+            writeCell(sheet, rowIdx, 163, "Centimeters");
+          }
+          if (vShadeW) {
+            writeCell(sheet, rowIdx, 165, vShadeW);
+            writeCell(sheet, rowIdx, 166, "Centimeters");
+          }
 
           if (vMaterial) {
             writeCell(sheet, rowIdx, 49, vMaterial); // Material
@@ -460,24 +488,37 @@ export async function GET(req: NextRequest) {
           null
         );
 
-        // Browse Node & Keywords
+        // Browse Node & Keywords (Cols 38-42: AL, AM, AN, AO, AP)
         writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
-        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        const sKwList = generateKeywordsList(p);
+        sKwList.forEach((kw, idx) => {
+          writeCell(sheet, rowIdx, 38 + idx, kw);
+        });
         writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
-        // Images
+        // Images (Main: Col 22 V, Other 1-8: Cols 23-30 W-AD)
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
-            writeCell(sheet, rowIdx, 23 + idx, img);
+            writeCell(sheet, rowIdx, 23 + idx, img); // Cols 23 to 30 (W to AD)
           });
         }
         writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-        // Bullets
+        // Bullets (Cols 33-37: AG, AH, AI, AJ, AK)
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
+
+        // Shade Height & Width (Cols 162, 163, 165, 166)
+        if ((p as any).shadeHeight) {
+          writeCell(sheet, rowIdx, 162, (p as any).shadeHeight);
+          writeCell(sheet, rowIdx, 163, "Centimeters");
+        }
+        if ((p as any).shadeWidth) {
+          writeCell(sheet, rowIdx, 165, (p as any).shadeWidth);
+          writeCell(sheet, rowIdx, 166, "Centimeters");
+        }
 
         if (pMaterial) {
           writeCell(sheet, rowIdx, 49, pMaterial); // Material
