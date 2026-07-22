@@ -280,9 +280,9 @@ export default function CampaignManagerClient({
       if (data.success && data.campaign) {
         await refreshData();
         openEditor(data.campaign);
-        showToast(`AI draft for ${segment} buyers ready!`);
+        showToast(`Marketing draft for ${segment} buyers ready!`);
       } else {
-        showToast(data.error || 'Failed to generate AI draft.', 'err');
+        showToast(data.error || 'Failed to generate marketing draft.', 'err');
       }
     } catch (e: any) {
       showToast(e.message || 'Network error.', 'err');
@@ -1202,12 +1202,12 @@ export default function CampaignManagerClient({
       {/* Page Header */}
       <div className="flex flex-wrap items-end justify-between gap-4 max-w-full">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent mb-1">AI Marketing Engine</div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent mb-1">Marketing Engine</div>
           <h1 className="font-serif text-[28px] md:text-[32px] font-normal text-primary tracking-wide m-0">
             Festival &amp; Custom Campaign Manager
           </h1>
           <p className="font-mono text-[12px] text-muted mt-1 m-0">
-            AI-personalized multi-channel campaigns · Calendar triggers &amp; Custom Promotions · Per-customer unique vouchers
+            Multi-channel marketing campaigns · Calendar triggers &amp; Custom Promotions · Per-customer unique vouchers
           </p>
         </div>
 

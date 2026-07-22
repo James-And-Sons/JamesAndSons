@@ -39,6 +39,7 @@ function HeaderTitle() {
     if (pathname === '/b2b') return [{ label: 'B2B Workspace', href: '/b2b' }];
     if (pathname === '/pages') return [{ label: 'CMS Pages', href: '/pages' }];
     if (pathname === '/blog') return [{ label: 'Blog', href: '/blog' }];
+    if (pathname === '/campaigns') return [{ label: 'Marketing', href: '/campaigns' }];
     if (pathname === '/promotions') return [{ label: 'Coupons & Promotions', href: '/promotions' }];
     if (pathname === '/affiliates') return [{ label: 'Affiliates', href: '/affiliates' }];
     if (pathname === '/tickets') return [{ label: 'Support Tickets', href: '/tickets' }];
