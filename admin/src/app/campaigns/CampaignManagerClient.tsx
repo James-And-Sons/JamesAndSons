@@ -789,12 +789,12 @@ export default function CampaignManagerClient({
         </section>
 
         {/* 2-Column Editor Body (Left: Content Editor, Right: Featured Products) */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1 min-w-0 overflow-hidden">
 
           {/* LEFT COLUMN: Main Content Editor */}
           <main
             aria-label="Campaign content editor"
-            className="flex-1 flex flex-col overflow-hidden bg-background border-r border-border"
+            className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background border-b lg:border-b-0 lg:border-r border-border"
           >
             {/* Controls Bar: Channel Switcher + View Mode Switcher */}
             <div className="px-5 py-2.5 border-b border-border bg-surface flex flex-wrap items-center justify-between gap-3 shrink-0">

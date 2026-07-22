@@ -137,7 +137,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
             />
           </Suspense>
         )}
-        <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
+        <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 min-w-0 overflow-x-hidden ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
           {!isLoginPage && (
             <header className="h-[64px] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300">
               <div className="flex items-center gap-4">
@@ -161,8 +161,8 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
               </div>
             </header>
           )}
-          <main id="main" className={isLoginPage ? '' : 'p-4 lg:p-10 flex-1 overflow-auto bg-background selection:bg-accent/20 transition-colors duration-300'}>
-            <div className={isLoginPage ? '' : 'max-w-[1200px] mx-auto w-full'}>
+          <main id="main" className={isLoginPage ? '' : 'p-4 lg:p-10 flex-1 overflow-x-hidden bg-background selection:bg-accent/20 transition-colors duration-300'}>
+            <div className={isLoginPage ? '' : 'max-w-[1200px] mx-auto w-full min-w-0 overflow-x-hidden'}>
               {children}
             </div>
           </main>
