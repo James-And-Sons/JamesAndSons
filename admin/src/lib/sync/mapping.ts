@@ -32,7 +32,41 @@ export function getFixtureForm(product: any): string {
   if (cat.includes('pendant') || cat.includes('hanging') || t.includes('pendant') || t.includes('hanging')) {
     return 'Pendant';
   }
+  if (cat.includes('wall') || cat.includes('sconce') || t.includes('wall') || t.includes('sconce') || t.includes('bracket')) {
+    return 'Sconce';
+  }
+  if (t.includes('gate') || t.includes('pole') || t.includes('post') || t.includes('bollard')) {
+    return 'Path';
+  }
   return 'Ceiling';
+}
+
+export function generateDefaultBullets(product: any): string[] {
+  if (product?.bulletPoints && Array.isArray(product.bulletPoints) && product.bulletPoints.length >= 3) {
+    return product.bulletPoints.slice(0, 5);
+  }
+
+  const name = product.name || 'Luxury Lighting Fixture';
+  const mat = getMaterial(product);
+  const finish = getFinishType(product);
+  const watt = product.power || 'Max 60W';
+  const volt = product.voltage || '220V AC';
+  
+  const h = product.actualHeight || product.height || 53;
+  const l = product.actualDepth || product.actualLength || product.length || 15;
+  const w = product.actualWidth || product.breadth || 20;
+
+  const spacesStr = (product.spaces && Array.isArray(product.spaces) && product.spaces.length > 0)
+    ? product.spaces.map((s: any) => s.name).join(', ')
+    : 'living rooms, bedrooms, hallways, dining areas, hotels, cafes, and decorative spaces';
+
+  return [
+    `ELEGANT DESIGN & PREMIUM BUILD: ${name} features a classic design crafted with high-grade ${mat} and a ${finish} finish for long-lasting durability and timeless aesthetic appeal.`,
+    `SOFT & WARM ILLUMINATION: Designed with a high-quality shade that diffuses light evenly, providing a soft, ambient glow to create a warm and welcoming atmosphere.`,
+    `UNIVERSAL BULB COMPATIBILITY: Features a standard E27 bulb holder compatible with LED, CFL, and incandescent bulbs (${watt}, ${volt}). Bulb not included.`,
+    `VERSATILE INTERIOR APPLICATION: Perfect for enhancing ${spacesStr}, adding a touch of luxury and sophistication to residential and commercial environments.`,
+    `COMPACT PRODUCT DIMENSIONS: Measures ${h} cm in height, ${l} cm in length, and ${w} cm in breadth for a space-efficient lighting solution with simple wall/ceiling installation.`
+  ];
 }
 
 export function getStyle(product: any): string {

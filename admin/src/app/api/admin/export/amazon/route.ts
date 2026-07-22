@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
-import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName } from '@/lib/sync/mapping';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName, generateDefaultBullets } from '@/lib/sync/mapping';
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
       const pDesc = p.description || p.name;
       const pMaterial = p.material || (p.materialAndFinish && p.materialAndFinish.length > 0 ? p.materialAndFinish[0] : null);
       const pOrigin = p.countryOfOrigin || "India";
-      const pBullets = p.bulletPoints || [];
+      const pBullets = (p.bulletPoints && Array.isArray(p.bulletPoints) && p.bulletPoints.length >= 3) ? p.bulletPoints : generateDefaultBullets(p);
       const pImages = p.images || [];
 
       // Write Parent row if variants exist
@@ -333,25 +333,19 @@ export async function GET(req: NextRequest) {
           }
 
           // Actual Product Weight & Dimensions
-          const actHeight = v.actualHeight || p.actualHeight;
-          const actLength = v.actualWidth || p.actualWidth;
-          const actWidth = v.actualDepth || p.actualDepth;
+          const actHeight = v.actualHeight || p.actualHeight || 53;
+          const actLength = v.actualDepth || v.actualLength || p.actualDepth || p.actualLength || 15;
+          const actWidth = v.actualWidth || p.actualWidth || 20;
 
           writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
           writeCell(sheet, rowIdx, 198, "kg");
 
-          if (actHeight) {
-            writeCell(sheet, rowIdx, 229, actHeight);
-            writeCell(sheet, rowIdx, 230, "cm");
-          }
-          if (actLength) {
-            writeCell(sheet, rowIdx, 231, actLength);
-            writeCell(sheet, rowIdx, 232, "cm");
-          }
-          if (actWidth) {
-            writeCell(sheet, rowIdx, 233, actWidth);
-            writeCell(sheet, rowIdx, 234, "cm");
-          }
+          writeCell(sheet, rowIdx, 229, actHeight);
+          writeCell(sheet, rowIdx, 230, "cm");
+          writeCell(sheet, rowIdx, 231, actLength);
+          writeCell(sheet, rowIdx, 232, "cm");
+          writeCell(sheet, rowIdx, 233, actWidth);
+          writeCell(sheet, rowIdx, 234, "cm");
 
           // Package Dimensions & Weight
           writeCell(sheet, rowIdx, 301, vLength); // Item Package Length
@@ -446,21 +440,19 @@ export async function GET(req: NextRequest) {
         }
 
         // Actual Product Weight & Dimensions
+        const actHeight = p.actualHeight || 53;
+        const actLength = p.actualDepth || p.actualLength || 15;
+        const actWidth = p.actualWidth || 20;
+
         writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
         writeCell(sheet, rowIdx, 198, "kg");
 
-        if (p.actualHeight) {
-          writeCell(sheet, rowIdx, 229, p.actualHeight);
-          writeCell(sheet, rowIdx, 230, "cm");
-        }
-        if (p.actualWidth) {
-          writeCell(sheet, rowIdx, 231, p.actualWidth);
-          writeCell(sheet, rowIdx, 232, "cm");
-        }
-        if (p.actualDepth) {
-          writeCell(sheet, rowIdx, 233, p.actualDepth);
-          writeCell(sheet, rowIdx, 234, "cm");
-        }
+        writeCell(sheet, rowIdx, 229, actHeight);
+        writeCell(sheet, rowIdx, 230, "cm");
+        writeCell(sheet, rowIdx, 231, actLength);
+        writeCell(sheet, rowIdx, 232, "cm");
+        writeCell(sheet, rowIdx, 233, actWidth);
+        writeCell(sheet, rowIdx, 234, "cm");
 
         // Package Dimensions & Weight
         writeCell(sheet, rowIdx, 301, pLength); // Item Package Length

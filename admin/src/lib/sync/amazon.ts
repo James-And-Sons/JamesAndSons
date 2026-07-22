@@ -11,7 +11,8 @@ import {
   getMountingType,
   getFinishType,
   getLightingMethod,
-  getWaterResistanceLevel
+  getWaterResistanceLevel,
+  generateDefaultBullets
 } from './mapping';
 
 async function getLwaAccessToken() {
@@ -114,9 +115,9 @@ export async function syncToAmazon(product: any) {
           : (product.images || []);
 
     const vWeight = (v ? v.weight : null) || product.weight || 0.5;
-    const vLength = (v ? v.length : null) || product.length || 10;
-    const vWidth = (v ? v.breadth : null) || product.breadth || 10;
-    const vHeight = (v ? v.height : null) || product.height || 10;
+    const vLength = (v ? v.actualDepth : null) || (v ? v.actualLength : null) || product.actualDepth || product.actualLength || (v ? v.length : null) || product.length || 15;
+    const vWidth = (v ? v.actualWidth : null) || product.actualWidth || (v ? v.breadth : null) || product.breadth || 20;
+    const vHeight = (v ? v.actualHeight : null) || product.actualHeight || (v ? v.height : null) || product.height || 53;
 
     const wattVal = extractNumber((v ? v.power : null) || product.power);
     const voltVal = extractNumber((v ? v.voltage : null) || product.voltage);
@@ -352,22 +353,12 @@ export async function syncToAmazon(product: any) {
       });
     }
 
-    if (bulletsVal && bulletsVal.length > 0) {
-      attributes.bullet_point = bulletsVal.slice(0, 5).map((bp: string) => ({
-        marketplace_id: marketplaceId,
-        language_tag: 'en_IN',
-        value: bp
-      }));
-    } else {
-      // Compliance requires at least 1 bullet point
-      attributes.bullet_point = [
-        {
-          marketplace_id: marketplaceId,
-          language_tag: 'en_IN',
-          value: 'Elegant design and premium build.'
-        }
-      ];
-    }
+    const finalBullets = (bulletsVal && bulletsVal.length > 0) ? bulletsVal.slice(0, 5) : generateDefaultBullets(product);
+    attributes.bullet_point = finalBullets.map((bp: string) => ({
+      marketplace_id: marketplaceId,
+      language_tag: 'en_IN',
+      value: bp
+    }));
 
     if (materialVal) {
       attributes.material = [
