@@ -50,7 +50,7 @@ You MUST respond ONLY with a valid JSON object matching this schema:
   "material": "Brass & Crystal Glass",
   "countryOfOrigin": "India",
   "brand": "James and Sons",
-  "warranty": "2 Years Manufacturer Warranty",
+  "warranty": "6 Months Manufacturer Warranty",
   "googleProductCategory": "Home & Garden > Lighting > Light Fixtures > Chandeliers",
   "amazonFixtureForm": "Chandelier",
   "amazonMountingType": "Ceiling Mount",

@@ -384,7 +384,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       { key: 'Fixture Form', val: product.amazonFixtureForm || null },
       { key: 'Mounting Type', val: selectedVariant?.amazonMountingType || product.amazonMountingType || null },
       { key: 'Lighting Method', val: product.amazonLightingMethod || null },
-      { key: 'Weight', val: (selectedVariant?.weight && selectedVariant.weight > 0) ? `${selectedVariant.weight} kg` : (product.weight && product.weight > 0 ? `${product.weight} kg` : null) },
+      { key: 'Weight', val: (selectedVariant?.weight && selectedVariant.weight > 0) ? `~ ${selectedVariant.weight} kg` : (product.weight && product.weight > 0 ? `~ ${product.weight} kg` : null) },
       // 5. Design & Style
       { key: 'Design Style', val: (selectedVariant?.style && selectedVariant.style.length > 0) ? selectedVariant.style.join(', ') : (product.style?.length > 0 ? product.style.join(', ') : null) },
       { key: 'Size Category', val: selectedVariant?.size || product.size || null },
@@ -395,7 +395,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       // 7. Brand & Provenance
       { key: 'Brand', val: selectedVariant?.brand || product.brand || 'James and Sons' },
       { key: 'Country of Origin', val: selectedVariant?.countryOfOrigin || product.countryOfOrigin || 'India' },
-      { key: 'Warranty', val: selectedVariant?.warranty || product.warranty || '2 Years Manufacturer Warranty' },
+      { key: 'Warranty', val: (selectedVariant?.warranty && !selectedVariant.warranty.includes('2 Year')) ? selectedVariant.warranty : ((product.warranty && !product.warranty.includes('2 Year')) ? product.warranty : '6 Months Manufacturer Warranty') },
       // 8. Compliance & Tax
       {
         key: 'Compliance & Tax',
@@ -697,7 +697,37 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 {visibleSpecs.map(spec => (
                   <div key={spec.key} style={{ display: 'flex', gap: '12px', alignItems: 'baseline', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--gold)', textTransform: 'uppercase', flex: '0 0 120px', fontWeight: 600, letterSpacing: '0.05em' }}>{spec.key}</div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)', flex: 1 }}>{spec.val}</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)', flex: 1 }}>
+                      {spec.key === 'Weight' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span>{spec.val}</span>
+                          <span
+                            title="Approximate net weight without bulbs or packaging"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '18px',
+                              height: '18px',
+                              borderRadius: '50%',
+                              background: 'rgba(212,175,55,0.15)',
+                              border: '1px solid var(--gold)',
+                              color: 'var(--gold)',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              cursor: 'help'
+                            }}
+                          >
+                            ?
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                            (approx. net weight without bulbs)
+                          </span>
+                        </div>
+                      ) : (
+                        spec.val
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -972,7 +1002,37 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     {visibleSpecs.map((spec, sIdx, sArr) => (
                       <div key={spec.key} style={{ display: 'flex', alignItems: 'baseline', padding: '16px 0', borderBottom: sIdx === sArr.length - 1 ? 'none' : '1px dashed var(--border)' }}>
                         <div style={{ flex: '0 0 160px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{spec.key}</div>
-                        <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)' }}>{spec.val}</div>
+                        <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)' }}>
+                          {spec.key === 'Weight' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span>{spec.val}</span>
+                              <span
+                                title="Approximate net weight without bulbs or packaging"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '18px',
+                                  height: '18px',
+                                  borderRadius: '50%',
+                                  background: 'rgba(212,175,55,0.15)',
+                                  border: '1px solid var(--gold)',
+                                  color: 'var(--gold)',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'help'
+                                }}
+                              >
+                                ?
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                                (approx. net weight without bulbs)
+                              </span>
+                            </div>
+                          ) : (
+                            spec.val
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
