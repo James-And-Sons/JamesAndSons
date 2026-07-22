@@ -638,9 +638,9 @@ export default function CampaignManagerClient({
     const isLive = ['SCHEDULED', 'ACTIVE'].includes(selectedCampaign.status);
 
     return (
-      <div className="flex flex-col" style={{ height: 'calc(100vh - 57px)' }}>
+      <div className="flex flex-col max-w-full overflow-hidden border border-border rounded-lg bg-background" style={{ minHeight: 'calc(100vh - 140px)' }}>
         {/* Topbar Header */}
-        <header className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-surface shrink-0">
+        <header className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-surface shrink-0 max-w-full overflow-hidden">
           <button
             onClick={() => setView('DASHBOARD')}
             className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
@@ -718,7 +718,7 @@ export default function CampaignManagerClient({
         {/* REQUEST 4: HORIZONTAL SETUP PANEL (Placed horizontally above Channel & Products) */}
         <section
           aria-label="Campaign setup, audience targeting, and personalization tokens"
-          className="px-6 py-3.5 border-b border-border bg-surface shrink-0 flex flex-wrap items-center justify-between gap-6"
+          className="px-6 py-3.5 border-b border-border bg-surface shrink-0 flex flex-wrap items-center justify-between gap-6 max-w-full overflow-x-auto"
         >
           {/* Audience Segment Selection */}
           <fieldset className="border-0 p-0 m-0 flex items-center gap-3">
@@ -1229,9 +1229,9 @@ export default function CampaignManagerClient({
   // VIEW: DASHBOARD
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="space-y-6" suppressHydrationWarning>
+    <div className="space-y-6 max-w-full overflow-hidden" suppressHydrationWarning>
       {/* Page Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4 max-w-full">
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent mb-1">AI Marketing Engine</div>
           <h1 className="font-serif text-[28px] md:text-[32px] font-normal text-primary tracking-wide m-0">
@@ -1242,7 +1242,7 @@ export default function CampaignManagerClient({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
             onClick={() => setIsCustomModalOpen(true)}
@@ -1285,7 +1285,7 @@ export default function CampaignManagerClient({
       </div>
 
       {/* KPI Row with Trend Context */}
-      <section aria-label="Campaign metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section aria-label="Campaign metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-full">
         {[
           { label: 'Total Dispatches',    value: (analytics.totalSent || 0).toLocaleString(),            sub: (analytics.totalSent || 0) > 0 ? 'Email + WhatsApp dispatches' : 'No campaigns sent yet', color: undefined },
           { label: 'Avg Open Rate',       value: `${analytics.overallOpenRate || '0.0'}%`,               sub: (analytics.totalSent || 0) > 0 ? 'Live benchmark tracking' : 'Updates live upon send',     color: 'var(--color-accent)' },
@@ -1306,7 +1306,7 @@ export default function CampaignManagerClient({
       </section>
 
       {/* REQUEST 1 & 2: HORIZONTAL FESTIVAL CALENDAR STRIP (Placed right above All Campaigns) */}
-      <section aria-labelledby="calendar-heading" className="premium-card p-5 rounded-lg flex flex-col space-y-4">
+      <section aria-labelledby="calendar-heading" className="premium-card p-5 rounded-lg flex flex-col space-y-4 max-w-full overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div>

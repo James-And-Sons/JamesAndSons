@@ -137,7 +137,7 @@ export default async function CampaignsPage() {
   };
 
   return (
-    <div style={{ padding: '32px' }}>
+    <div className="p-4 md:p-8 max-w-full overflow-x-hidden">
       <CampaignManagerClient
         initialHolidays={holidays as any}
         initialCampaigns={campaigns as any}
