@@ -614,6 +614,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {renderLink('B2B Workspace', '/b2b', null, '🏢')}
               {renderLink('Pages / CMS', '/pages', null, '📄')}
               {renderLink('Blog', '/blog', null, '✎')}
+              {renderLink('AI Campaigns', '/campaigns', null, '🪔')}
               {renderLink('Coupons', '/promotions', null, '🏷')}
               {renderLink('Affiliates', '/affiliates', null, '👥')}
               {renderLink('Tickets', '/tickets', openTickets, '🎫')}

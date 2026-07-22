@@ -85,6 +85,7 @@ model User {
   ticketMessages TicketMessage[]
  
   blogPosts   BlogPost[]
+  dynamicCoupons DynamicCoupon[]
 }
 
 model Company {
@@ -586,4 +587,80 @@ model UcServiceMapping {
   createdAt           DateTime @default(now())
 
   @@map("uc_service_mappings")
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CampaignStage {
+  STAGE_1_DISPATCH
+  STAGE_2_EXPIRY_WARNING
+}
+
+model IndianHoliday {
+  id        String     @id @default(uuid())
+  name      String
+  date      DateTime
+  isMajor   Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  campaigns Campaign[]
+
+  @@map("indian_holidays")
+}
+
+model Campaign {
+  id                 String          @id @default(uuid())
+  holidayId          String?
+  name               String
+  status             CampaignStatus  @default(DRAFT)
+  stage              CampaignStage   @default(STAGE_1_DISPATCH)
+  segmentationRules  Json            // e.g. { segment: "VIP" | "LAPSED" | "ALL", discountValue: 15 }
+  metrics            Json            // e.g. { sentCount: 0, openCount: 0, redeemedCount: 0, totalRevenue: 0 }
+  emailSubject       String?
+  emailBodyHtml      String?         @db.Text
+  whatsappText       String?         @db.Text
+  recommendedProducts Json?          // Array of top 4 product objects/IDs selected by AI
+  scheduledAt        DateTime?
+  sentAt             DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  holiday            IndianHoliday?  @relation(fields: [holidayId], references: [id])
+  dynamicCoupons     DynamicCoupon[]
+
+  @@map("campaigns")
+}
+
+model CampaignTemplate {
+  id         String   @id @default(uuid())
+  name       String
+  htmlLayout String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("campaign_templates")
+}
+
+model DynamicCoupon {
+  id            String    @id @default(uuid())
+  campaignId    String
+  customerId    String?
+  uniqueCode    String    @unique // 8-char alphanumeric code (e.g. DIWALI8X)
+  discountValue Float     @default(15)
+  isRedeemed    Boolean   @default(false)
+  redeemedAt    DateTime?
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+
+  campaign      Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  customer      User?     @relation(fields: [customerId], references: [id])
+
+  @@map("dynamic_coupons")
 }
