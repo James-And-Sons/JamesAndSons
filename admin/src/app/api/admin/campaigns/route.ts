@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { draftCampaignForHoliday } from '@/lib/services/draft-campaign';
+import { draftCampaignForHoliday, draftCustomCampaign } from '@/lib/services/draft-campaign';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { action, holidayId, segment, discountValue } = await req.json();
+    const { action, holidayId, name, segment, discountValue } = await req.json();
 
     if (action === 'DRAFT_AI') {
       if (!holidayId) {
@@ -78,6 +78,16 @@ export async function POST(req: NextRequest) {
       }
 
       const campaign = await draftCampaignForHoliday(holidayId, segment || 'VIP', discountValue || 15);
+      return NextResponse.json({ success: true, campaign });
+    }
+
+    if (action === 'CREATE_CUSTOM') {
+      const campaign = await draftCustomCampaign({
+        name: name || 'Festive Lighting Promotion',
+        segment: segment || 'VIP',
+        discountValue: discountValue || 15,
+        holidayId
+      });
       return NextResponse.json({ success: true, campaign });
     }
 

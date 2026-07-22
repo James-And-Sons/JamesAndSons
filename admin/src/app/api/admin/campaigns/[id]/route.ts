@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { dispatchCampaignStage1, dispatchCampaignStage2 } from '@/lib/services/draft-campaign';
+import { dispatchCampaignStage1, dispatchCampaignStage2, unscheduleCampaign, deleteCampaign } from '@/lib/services/draft-campaign';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const updated = await prisma.campaign.update({
       where: { id },
       data: {
+        name: body.name,
         emailSubject: body.emailSubject,
         emailBodyHtml: body.emailBodyHtml,
         whatsappText: body.whatsappText,
@@ -68,9 +69,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ success: true, result });
     }
 
+    if (action === 'UNSCHEDULE' || action === 'REVERT_TO_DRAFT') {
+      const result = await unscheduleCampaign(id);
+      return NextResponse.json({ success: true, campaign: result });
+    }
+
     return NextResponse.json({ error: 'Invalid campaign action' }, { status: 400 });
   } catch (err: any) {
     console.error('[Campaign Action API] Error:', err);
     return NextResponse.json({ error: err.message || 'Failed to execute campaign action' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    await deleteCampaign(id);
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Failed to delete campaign' }, { status: 500 });
   }
 }
