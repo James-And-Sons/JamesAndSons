@@ -43,7 +43,8 @@ interface DynamicCoupon {
 
 type View = 'DASHBOARD' | 'EDITOR' | 'COUPONS';
 type Channel = 'EMAIL' | 'WHATSAPP';
-type ViewMode = 'VISUAL' | 'HTML' | 'PREVIEW';
+type ViewMode = 'VISUAL' | 'HTML';
+type EditorStepTab = 'COPY' | 'TARGETING' | 'PREVIEW';
 
 // ─── Status helpers (match platform's globals.css status-pill classes) ────────
 function statusPillClass(status: string): string {
@@ -150,7 +151,8 @@ export default function CampaignManagerClient({
   const [view, setView] = useState<View>('DASHBOARD');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-  // Editor controls
+  // Editor controls (Clean 3-Tab Architecture)
+  const [editorStepTab, setEditorStepTab] = useState<EditorStepTab>('COPY');
   const [channel, setChannel] = useState<Channel>('EMAIL');
   const [viewMode, setViewMode] = useState<ViewMode>('VISUAL');
   
@@ -228,6 +230,7 @@ export default function CampaignManagerClient({
     setVisBodyText('We invite you to elevate your interior spaces with our signature handcrafted brass lighting and festive decor collection.');
     setVisCtaText('Claim Your Exclusive Voucher');
 
+    setEditorStepTab('COPY');
     setChannel('EMAIL');
     setViewMode('VISUAL');
     setCouponsPreview([]);
@@ -631,54 +634,49 @@ export default function CampaignManagerClient({
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // VIEW: EDITOR (Redesigned with Horizontal Setup Bar above Content & Products)
+  // VIEW: EDITOR (Clean 3-Tab Focused Step Architecture)
   // ════════════════════════════════════════════════════════════════════════════
   if (view === 'EDITOR' && selectedCampaign) {
     const isDraft = selectedCampaign.status === 'DRAFT';
     const isLive = ['SCHEDULED', 'ACTIVE'].includes(selectedCampaign.status);
 
     return (
-      <div className="flex flex-col max-w-full overflow-hidden border border-border rounded-lg bg-background" style={{ minHeight: 'calc(100vh - 140px)' }}>
-        {/* Topbar Header */}
-        <header className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-border bg-surface shrink-0 max-w-full overflow-hidden">
-          <button
-            onClick={() => setView('DASHBOARD')}
-            className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
-          >
-            ← Campaigns
-          </button>
-          <div className="w-px h-4 bg-border mx-1" aria-hidden="true" />
-          
-          {/* Editable Campaign Name */}
-          <div className="flex-1 min-w-0 flex items-center gap-2">
-            <label htmlFor="edit-campaign-name" className="sr-only">Campaign Name</label>
-            <input
-              id="edit-campaign-name"
-              type="text"
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-              placeholder="Campaign Name..."
-              className="font-serif text-[18px] font-normal text-primary bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none px-1 py-0.5 transition-colors w-full max-w-[340px]"
-            />
+      <div className="flex flex-col max-w-full overflow-hidden border border-border rounded-lg bg-background min-h-[600px]">
+        
+        {/* CLEAN TOPBAR HEADER */}
+        <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border bg-surface shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setView('DASHBOARD')}
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer shrink-0 min-h-[38px]"
+            >
+              ← Campaigns
+            </button>
+            <div className="w-px h-5 bg-border hidden sm:block" aria-hidden="true" />
+            
+            <div className="min-w-0 flex items-center gap-2">
+              <label htmlFor="edit-campaign-name" className="sr-only">Campaign Name</label>
+              <input
+                id="edit-campaign-name"
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                placeholder="Campaign Name..."
+                className="font-serif text-[20px] font-normal text-primary bg-transparent border-b border-transparent hover:border-border focus:border-accent focus:outline-none px-1 py-0.5 transition-colors truncate max-w-[320px]"
+              />
+              <span className={statusPillClass(selectedCampaign.status)}>
+                <span className="dot" aria-hidden="true" />
+                {selectedCampaign.status}
+              </span>
+            </div>
           </div>
 
-          <span className={statusPillClass(selectedCampaign.status)}>
-            <span className="dot" aria-hidden="true" />
-            {selectedCampaign.status}
-          </span>
-          
-          {selectedCampaign.holiday && (
-            <span className="font-mono text-[10px] text-muted border border-border px-2.5 py-1 rounded-sm bg-background">
-              🪔 {selectedCampaign.holiday.name}
-            </span>
-          )}
-
-          {/* Grouped Action Buttons */}
-          <div className="flex gap-2 flex-wrap items-center">
+          {/* Action Cluster */}
+          <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer disabled:opacity-50 min-h-[44px]"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-3.5 py-2 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer disabled:opacity-50 min-h-[38px]"
             >
               {isSaving ? 'Saving…' : '💾 Save Draft'}
             </button>
@@ -687,7 +685,7 @@ export default function CampaignManagerClient({
               <button
                 onClick={() => setConfirmScheduleModal(true)}
                 disabled={isDispatching}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[44px]"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 font-semibold min-h-[38px]"
               >
                 {isDispatching ? 'Scheduling…' : '🚀 Approve & Schedule →'}
               </button>
@@ -696,114 +694,56 @@ export default function CampaignManagerClient({
             {isLive && (
               <button
                 onClick={() => handleUnschedule(selectedCampaign.id)}
-                className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3.5 py-2.5 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer min-h-[44px]"
-                title="Revert scheduled campaign back to draft for editing"
+                className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 px-3.5 py-2 hover:bg-accent/10 transition-colors bg-background rounded-sm cursor-pointer min-h-[38px]"
               >
                 ↺ Undo Schedule
               </button>
             )}
 
-            <div className="w-px h-4 bg-border/60 mx-1" aria-hidden="true" />
-
             <button
               onClick={() => handleDeleteCampaign(selectedCampaign.id)}
-              className="font-mono text-[10px] uppercase tracking-[0.14em] text-red-400 border border-red-500/30 px-3 py-2.5 hover:bg-red-900/20 hover:border-red-500 transition-colors bg-background rounded-sm cursor-pointer min-h-[44px]"
+              className="font-mono text-[10px] uppercase tracking-[0.14em] text-red-400 border border-red-500/30 px-3 py-2 hover:bg-red-900/20 transition-colors bg-background rounded-sm cursor-pointer min-h-[38px]"
               title="Delete campaign"
             >
-              🗑 Delete
+              🗑
             </button>
           </div>
         </header>
 
-        {/* REQUEST 4: HORIZONTAL SETUP PANEL (Placed horizontally above Channel & Products) */}
-        <section
-          aria-label="Campaign setup, audience targeting, and personalization tokens"
-          className="px-6 py-3.5 border-b border-border bg-surface shrink-0 flex flex-wrap items-center justify-between gap-6 max-w-full overflow-x-auto"
-        >
-          {/* Audience Segment Selection */}
-          <fieldset className="border-0 p-0 m-0 flex items-center gap-3">
-            <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent shrink-0 p-0">Audience:</legend>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {[
-                { id: 'VIP',    label: 'VIP Buyers',     desc: '> ₹25k' },
-                { id: 'LAPSED', label: 'Lapsed (90d+)',   desc: 'Win-back' },
-                { id: 'ALL',    label: 'All Customers',   desc: 'Full Base' },
-              ].map(s => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setEditSegment(s.id)}
-                  className={`font-mono text-[10px] uppercase tracking-[0.1em] px-3 py-1.5 border transition-colors rounded-sm cursor-pointer ${
-                    editSegment === s.id
-                      ? 'bg-accent/15 border-accent text-accent font-semibold'
-                      : 'border-border text-muted hover:border-accent/40 bg-background'
-                  }`}
-                >
-                  {s.label} <span className="text-muted/70 text-[9px]">({s.desc})</span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
+        {/* CLEAN 3-TAB STEP NAVIGATION */}
+        <div className="flex border-b border-border bg-surface shrink-0 overflow-x-auto">
+          {[
+            { id: 'COPY',     label: '✍️ Campaign Copy & Channels' },
+            { id: 'TARGETING',label: '🎯 Audience & Products' },
+            { id: 'PREVIEW',  label: '👁 Live Preview' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setEditorStepTab(tab.id as EditorStepTab)}
+              className={`font-mono text-[11px] uppercase tracking-[0.12em] px-6 py-3.5 border-b-2 transition-colors cursor-pointer shrink-0 ${
+                editorStepTab === tab.id
+                  ? 'border-accent text-accent font-semibold bg-background'
+                  : 'border-transparent text-muted hover:text-primary hover:bg-surface-muted/40'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Voucher Discount Input */}
-          <fieldset className="border-0 p-0 m-0 flex items-center gap-2">
-            <legend className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent shrink-0 p-0">Voucher Discount:</legend>
-            <div className="flex items-center gap-1.5 border border-border bg-background rounded-sm px-2.5 py-1 focus-within:border-accent transition-colors">
-              <label htmlFor="discount-val" className="sr-only">Discount percentage</label>
-              <input
-                id="discount-val"
-                type="number"
-                value={editDiscount}
-                onChange={e => setEditDiscount(Number(e.target.value))}
-                min={5} max={50}
-                className="w-10 bg-transparent text-accent font-serif text-[18px] focus:outline-none tabular-nums"
-              />
-              <span className="font-serif text-[15px] text-accent">% OFF</span>
-            </div>
-          </fieldset>
-
-          {/* Personalization Tokens */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent shrink-0">Tokens:</span>
-            {[
-              { token: '{{CUSTOMER_NAME}}', desc: 'Name' },
-              { token: '{{COUPON_CODE}}',   desc: 'Code' },
-              { token: '{{HOLIDAY_NAME}}',  desc: 'Festival' },
-              { token: '{{DISCOUNT_VALUE}}',desc: '% Off' },
-            ].map(t => (
-              <button
-                key={t.token}
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(t.token);
-                  showToast(`Copied ${t.token} to clipboard!`);
-                }}
-                title={`Click to copy ${t.token}`}
-                className="flex items-center gap-1 px-2 py-1 border border-border bg-background hover:border-accent/50 hover:bg-accent/5 transition-colors cursor-pointer rounded-sm group active:scale-[0.98]"
-              >
-                <span className="text-muted text-[10px] group-hover:text-accent" aria-hidden="true">📋</span>
-                <code className="font-mono text-[9.5px] text-accent group-hover:text-accent-hover">{t.token}</code>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* 2-Column Editor Body (Left: Content Editor, Right: Featured Products) */}
-        <div className="flex flex-col lg:flex-row flex-1 min-w-0 overflow-hidden">
-
-          {/* LEFT COLUMN: Main Content Editor */}
-          <main
-            aria-label="Campaign content editor"
-            className="flex-1 min-w-0 flex flex-col overflow-hidden bg-background border-b lg:border-b-0 lg:border-r border-border"
-          >
-            {/* Controls Bar: Channel Switcher + View Mode Switcher */}
-            <div className="px-5 py-2.5 border-b border-border bg-surface flex flex-wrap items-center justify-between gap-3 shrink-0">
+        {/* TAB 1: CAMPAIGN COPY & CHANNELS */}
+        {editorStepTab === 'COPY' && (
+          <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-background max-w-[900px] mx-auto w-full">
+            
+            {/* Channel & View Mode Switcher Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4 p-4 border border-border bg-surface rounded-md">
+              {/* Channel Selector */}
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted mr-1">Channel:</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mr-1">Channel:</span>
                 <button
                   type="button"
                   onClick={() => setChannel('EMAIL')}
-                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 rounded-sm border cursor-pointer transition-colors ${
+                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-4 py-2 rounded-sm border cursor-pointer transition-colors ${
                     channel === 'EMAIL'
                       ? 'bg-accent/15 border-accent text-accent font-semibold'
                       : 'border-border text-muted hover:text-primary bg-background'
@@ -814,7 +754,7 @@ export default function CampaignManagerClient({
                 <button
                   type="button"
                   onClick={() => setChannel('WHATSAPP')}
-                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 rounded-sm border cursor-pointer transition-colors ${
+                  className={`font-mono text-[10px] uppercase tracking-[0.12em] px-4 py-2 rounded-sm border cursor-pointer transition-colors ${
                     channel === 'WHATSAPP'
                       ? 'bg-[#25D366]/15 border-[#25D366]/60 text-[#25D366] font-semibold'
                       : 'border-border text-muted hover:text-primary bg-background'
@@ -824,47 +764,61 @@ export default function CampaignManagerClient({
                 </button>
               </div>
 
-              {/* View Mode Switcher */}
-              <div className="flex items-center gap-1 bg-background border border-border p-1 rounded-sm">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('VISUAL')}
-                  className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                    viewMode === 'VISUAL'
-                      ? 'bg-accent text-background font-semibold'
-                      : 'text-muted hover:text-primary'
-                  }`}
-                >
-                  ✨ Friendly Text Editor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('HTML')}
-                  className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                    viewMode === 'HTML'
-                      ? 'bg-accent text-background font-semibold'
-                      : 'text-muted hover:text-primary'
-                  }`}
-                >
-                  &lt;/&gt; Raw HTML
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('PREVIEW')}
-                  className={`font-mono text-[9px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-sm cursor-pointer transition-colors ${
-                    viewMode === 'PREVIEW'
-                      ? 'bg-accent text-background font-semibold'
-                      : 'text-muted hover:text-primary'
-                  }`}
-                >
-                  👁 Live Preview
-                </button>
+              {/* View Mode Switcher for Email */}
+              {channel === 'EMAIL' && (
+                <div className="flex items-center gap-1 bg-background border border-border p-1 rounded-sm">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('VISUAL')}
+                    className={`font-mono text-[9.5px] uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm cursor-pointer transition-colors ${
+                      viewMode === 'VISUAL' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
+                    }`}
+                  >
+                    ✨ Friendly Text Editor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('HTML')}
+                    className={`font-mono text-[9.5px] uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm cursor-pointer transition-colors ${
+                      viewMode === 'HTML' ? 'bg-accent text-background font-semibold' : 'text-muted hover:text-primary'
+                    }`}
+                  >
+                    &lt;/&gt; Raw HTML Code
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Personalization Tokens Helper Bar */}
+            <div className="p-3.5 border border-border/80 bg-surface/60 rounded-md flex flex-wrap items-center justify-between gap-3">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Personalization Tokens:</span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { token: '{{CUSTOMER_NAME}}', desc: 'First Name' },
+                  { token: '{{COUPON_CODE}}',   desc: 'Voucher Code' },
+                  { token: '{{HOLIDAY_NAME}}',  desc: 'Festival' },
+                  { token: '{{DISCOUNT_VALUE}}',desc: '% Off' },
+                ].map(t => (
+                  <button
+                    key={t.token}
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(t.token);
+                      showToast(`Copied ${t.token} to clipboard!`);
+                    }}
+                    title={`Click to copy ${t.token}`}
+                    className="flex items-center gap-1.5 px-2.5 py-1 border border-border bg-background hover:border-accent/50 transition-colors cursor-pointer rounded-sm group active:scale-[0.98]"
+                  >
+                    <span className="text-muted text-[10px] group-hover:text-accent" aria-hidden="true">📋</span>
+                    <code className="font-mono text-[10px] text-accent">{t.token}</code>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* EMAIL TAB CONTENT */}
-            {channel === 'EMAIL' && viewMode !== 'PREVIEW' && (
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {/* EMAIL COPY FORM */}
+            {channel === 'EMAIL' && (
+              <div className="space-y-5">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label htmlFor="email-subject" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block">
@@ -874,31 +828,20 @@ export default function CampaignManagerClient({
                       Subject length: {editSubject.length} / 60 chars {editSubject.length > 60 ? '(Clipped on mobile)' : '(Optimal: 40-60)'}
                     </span>
                   </div>
-
                   <input
                     id="email-subject"
                     type="text"
                     value={editSubject}
                     onChange={e => setEditSubject(e.target.value)}
                     placeholder="e.g. {{CUSTOMER_NAME}}, your exclusive Diwali offer awaits ✨"
-                    className={`w-full px-3 py-2.5 border bg-surface text-primary font-mono text-[12px] focus:outline-none transition-colors rounded-sm ${
+                    className={`w-full px-3.5 py-2.5 border bg-surface text-primary font-mono text-[12px] focus:outline-none transition-colors rounded-sm ${
                       editSubject.length > 60 ? 'border-[#c97e6a]' : 'border-border focus:border-accent'
                     }`}
                   />
                 </div>
 
-                {/* VISUAL TEXT EDITOR */}
                 {viewMode === 'VISUAL' ? (
-                  <div className="space-y-4 border border-border/60 bg-surface/40 p-4 rounded-sm">
-                    <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                      <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent">
-                        ✨ Friendly Text Fields (No HTML Code Required)
-                      </span>
-                      <span className="font-mono text-[10px] text-muted">
-                        Automatically generates luxury email layout
-                      </span>
-                    </div>
-
+                  <div className="space-y-4 border border-border bg-surface p-5 rounded-md">
                     <div>
                       <label htmlFor="vis-headline" className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
                         Main Headline / Title
@@ -909,7 +852,7 @@ export default function CampaignManagerClient({
                         value={visHeadline}
                         onChange={e => setVisHeadline(e.target.value)}
                         placeholder="e.g. Celebrate Diwali in Grandeur"
-                        className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
+                        className="w-full px-3.5 py-2.5 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                       />
                     </div>
 
@@ -923,7 +866,7 @@ export default function CampaignManagerClient({
                         value={visGreeting}
                         onChange={e => setVisGreeting(e.target.value)}
                         placeholder="e.g. Dear {{CUSTOMER_NAME}},"
-                        className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
+                        className="w-full px-3.5 py-2.5 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                       />
                     </div>
 
@@ -937,7 +880,7 @@ export default function CampaignManagerClient({
                         onChange={e => setVisBodyText(e.target.value)}
                         rows={6}
                         placeholder="Type your main invitation or announcement here in plain English..."
-                        className="w-full p-3 border border-border bg-surface text-primary font-serif text-[14px] leading-relaxed focus:outline-none focus:border-accent rounded-sm"
+                        className="w-full p-3.5 border border-border bg-background text-primary font-serif text-[14px] leading-relaxed focus:outline-none focus:border-accent rounded-sm"
                       />
                     </div>
 
@@ -951,13 +894,12 @@ export default function CampaignManagerClient({
                         value={visCtaText}
                         onChange={e => setVisCtaText(e.target.value)}
                         placeholder="e.g. Claim Your Exclusive Voucher"
-                        className="w-full px-3 py-2 border border-border bg-surface text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
+                        className="w-full px-3.5 py-2.5 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                       />
                     </div>
                   </div>
                 ) : (
-                  /* RAW HTML EDITOR */
-                  <div className="flex-1 flex flex-col">
+                  <div>
                     <label htmlFor="email-body" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block mb-1.5">
                       Email Body HTML Code
                     </label>
@@ -965,8 +907,8 @@ export default function CampaignManagerClient({
                       id="email-body"
                       value={editBodyHtml}
                       onChange={e => setEditBodyHtml(e.target.value)}
-                      rows={18}
-                      className="w-full p-3.5 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
+                      rows={16}
+                      className="w-full p-4 border border-border bg-surface text-primary font-mono text-[11px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
                       spellCheck={false}
                     />
                   </div>
@@ -974,26 +916,19 @@ export default function CampaignManagerClient({
               </div>
             )}
 
-            {/* WHATSAPP TAB CONTENT */}
-            {channel === 'WHATSAPP' && viewMode !== 'PREVIEW' && (
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="flex gap-2.5 p-3.5 border border-border rounded-sm bg-surface">
-                  <span aria-hidden="true">💡</span>
-                  <p className="font-mono text-[11px] text-muted m-0 leading-relaxed">
-                    WhatsApp Business Broadcast: Use <strong>*bold*</strong> for emphasis. Keep under 160 words.{' '}
-                    <code className="text-accent text-[10px]">{'{{CUSTOMER_NAME}}'}</code> is personalized per recipient.
-                  </p>
-                </div>
+            {/* WHATSAPP COPY FORM */}
+            {channel === 'WHATSAPP' && (
+              <div className="space-y-4">
                 <div>
                   <label htmlFor="wa-body" className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted block mb-1.5">
-                    Broadcast Message
+                    WhatsApp Broadcast Message
                   </label>
                   <textarea
                     id="wa-body"
                     value={editWhatsappText}
                     onChange={e => setEditWhatsappText(e.target.value)}
                     rows={14}
-                    className="w-full p-3.5 border border-border bg-surface text-primary font-mono text-[12px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
+                    className="w-full p-4 border border-border bg-surface text-primary font-mono text-[12px] leading-relaxed focus:outline-none focus:border-accent transition-colors resize-y rounded-sm"
                     placeholder={`🪔 *Namaste {{CUSTOMER_NAME}}!* ✨\n\nCelebrate with James & Sons handcrafted brass lighting.\n\nYour personal *{{DISCOUNT_VALUE}}% OFF* voucher: *{{COUPON_CODE}}*\n\nShop: https://jamesandsons.in/collections/festive`}
                   />
                 </div>
@@ -1005,102 +940,136 @@ export default function CampaignManagerClient({
                 </div>
               </div>
             )}
+          </div>
+        )}
 
-            {/* PREVIEW CONTENT */}
-            {viewMode === 'PREVIEW' && (
-              <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                <div className="p-3.5 border border-border rounded-sm bg-surface flex gap-2.5">
-                  <span aria-hidden="true">🔍</span>
-                  <p className="font-mono text-[11px] text-muted m-0">
-                    Preview for sample customer <strong className="text-primary">Priya</strong> with voucher code <code className="text-accent tracking-wider">DIW8K9X2</code>.
-                  </p>
+        {/* TAB 2: AUDIENCE & PRODUCTS */}
+        {editorStepTab === 'TARGETING' && (
+          <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-background max-w-[900px] mx-auto w-full">
+            
+            {/* Target Audience Section */}
+            <div className="p-5 border border-border bg-surface rounded-md space-y-4">
+              <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">1. Target Audience Segment</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { id: 'VIP',    label: 'VIP Buyers',     desc: 'Orders total > ₹25,000' },
+                  { id: 'LAPSED', label: 'Lapsed Buyers',  desc: 'Last order > 90 days ago' },
+                  { id: 'ALL',    label: 'All Customers',   desc: 'Full registered base' },
+                ].map(s => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setEditSegment(s.id)}
+                    className={`p-4 border rounded-sm text-left transition-colors cursor-pointer ${
+                      editSegment === s.id
+                        ? 'border-accent bg-accent/10 text-primary'
+                        : 'border-border bg-background hover:border-accent/40 text-muted'
+                    }`}
+                  >
+                    <div className="font-mono text-[12px] font-semibold text-primary">{s.label}</div>
+                    <div className="font-mono text-[10px] text-muted mt-1">{s.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Voucher Discount Section */}
+            <div className="p-5 border border-border bg-surface rounded-md space-y-3">
+              <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">2. Voucher Offer & Discount</div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 border border-border bg-background px-4 py-2 rounded-sm focus-within:border-accent">
+                  <label htmlFor="discount-val-t" className="sr-only">Discount %</label>
+                  <input
+                    id="discount-val-t"
+                    type="number"
+                    value={editDiscount}
+                    onChange={e => setEditDiscount(Number(e.target.value))}
+                    min={5} max={50}
+                    className="w-12 bg-transparent text-accent font-serif text-[24px] focus:outline-none tabular-nums"
+                  />
+                  <span className="font-serif text-[18px] text-accent">% OFF</span>
                 </div>
+                <div className="font-mono text-[11px] text-muted leading-relaxed">
+                  Generates unique 8-character single-use vouchers per customer (e.g. <code className="text-accent">DIW8K9X2</code>).
+                </div>
+              </div>
+            </div>
 
-                {channel === 'EMAIL' ? (
-                  <>
-                    <div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Email Subject</div>
-                      <div className="px-4 py-3 border border-border bg-surface rounded-sm font-serif text-[15px] text-primary">
-                        {personalizedSubject || '(no subject)'}
+            {/* Featured Products Section */}
+            <div className="p-5 border border-border bg-surface rounded-md space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-accent">3. Featured Catalog Products</div>
+                  <p className="font-mono text-[10px] text-muted mt-0.5">Embedded in campaign layout &amp; recommendations</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {editProducts.map((p, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-3 p-3 border border-border bg-background rounded-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {p.images?.[0]
+                        ? <img src={p.images[0]} alt={p.name} className="w-10 h-10 object-cover rounded-sm shrink-0" />
+                        : <div className="w-10 h-10 bg-surface-muted rounded-sm shrink-0 flex items-center justify-center text-accent text-xs">✦</div>
+                      }
+                      <div className="min-w-0">
+                        <div className="font-serif text-[13px] text-primary truncate" title={p.name}>{p.name}</div>
+                        <div className="font-mono text-[10px] text-accent tabular-nums mt-0.5">₹{(p.d2cPrice || 0).toLocaleString('en-IN')}</div>
                       </div>
                     </div>
-                    <div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Rendered Email HTML</div>
-                      <div
-                        className="border border-border rounded-sm overflow-hidden"
-                        dangerouslySetInnerHTML={{ __html: personalizedHtml }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">WhatsApp Broadcast Preview</div>
-                    <div className="bg-[#0b141a] rounded-sm p-5 border border-border">
-                      <div className="bg-[#202c33] rounded-xl rounded-bl-none max-w-[85%] px-4 py-3">
-                        <p className="text-[#e9edef] font-mono text-[12px] leading-[1.75] m-0 whitespace-pre-wrap">{personalizedWA}</p>
-                        <div className="font-mono text-[9px] text-[#8696a0] mt-1.5 text-right">Delivered ✓✓</div>
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setSwapIndex(idx); setSwapQuery(''); }}
+                      className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2.5 py-1 hover:border-accent hover:text-primary transition-colors bg-surface rounded-sm cursor-pointer shrink-0"
+                    >
+                      Swap
+                    </button>
                   </div>
-                )}
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: LIVE PREVIEW */}
+        {editorStepTab === 'PREVIEW' && (
+          <div className="flex-1 p-6 space-y-5 overflow-y-auto bg-background max-w-[900px] mx-auto w-full">
+            <div className="p-3.5 border border-border rounded-sm bg-surface flex gap-2.5">
+              <span aria-hidden="true">🔍</span>
+              <p className="font-mono text-[11px] text-muted m-0">
+                Live Preview for sample customer <strong className="text-primary">Priya</strong> with voucher code <code className="text-accent tracking-wider">DIW8K9X2</code>.
+              </p>
+            </div>
+
+            {channel === 'EMAIL' ? (
+              <>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Email Subject Line</div>
+                  <div className="px-4 py-3 border border-border bg-surface rounded-sm font-serif text-[15px] text-primary">
+                    {personalizedSubject || '(no subject)'}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">Rendered Email HTML</div>
+                  <div
+                    className="border border-border rounded-md overflow-hidden bg-white"
+                    dangerouslySetInnerHTML={{ __html: personalizedHtml }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1.5">WhatsApp Broadcast Preview</div>
+                <div className="bg-[#0b141a] rounded-md p-6 border border-border">
+                  <div className="bg-[#202c33] rounded-xl rounded-bl-none max-w-[85%] px-4 py-3">
+                    <p className="text-[#e9edef] font-mono text-[12px] leading-[1.75] m-0 whitespace-pre-wrap">{personalizedWA}</p>
+                    <div className="font-mono text-[9px] text-[#8696a0] mt-1.5 text-right">Delivered ✓✓</div>
+                  </div>
+                </div>
               </div>
             )}
-          </main>
-
-          {/* RIGHT COLUMN: Featured Products */}
-          <aside
-            aria-label="Featured products"
-            className="w-[280px] shrink-0 flex flex-col overflow-hidden bg-surface"
-          >
-            <div className="px-5 py-3.5 border-b border-border shrink-0">
-              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Featured Products</div>
-              <p className="font-mono text-[10px] text-muted mt-0.5">Embedded in this campaign</p>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {editProducts.length === 0 ? (
-                <div className="py-8 text-center border border-dashed border-border rounded-sm">
-                  <p className="font-mono text-[10px] text-muted uppercase tracking-[0.1em]">No products selected</p>
-                </div>
-              ) : editProducts.map((p, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2.5 border border-border bg-background rounded-sm group hover:border-accent/30 transition-colors">
-                  {p.images?.[0]
-                    ? <img src={p.images[0]} alt={p.name} className="w-10 h-10 object-cover rounded-sm shrink-0" />
-                    : <div className="w-10 h-10 bg-surface-muted rounded-sm shrink-0 flex items-center justify-center text-accent text-xs">✦</div>
-                  }
-                  <div className="flex-1 min-w-0">
-                    <div className="font-serif text-[12px] text-primary truncate" title={p.name}>{p.name}</div>
-                    <div className="font-mono text-[10px] text-accent tabular-nums mt-0.5">₹{(p.d2cPrice || 0).toLocaleString('en-IN')}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setSwapIndex(idx); setSwapQuery(''); }}
-                    className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1 hover:border-accent/40 hover:text-primary transition-colors bg-surface rounded-sm cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
-                  >
-                    Swap
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Dispatch Context Footer */}
-            <div className="p-4 border-t border-border shrink-0 space-y-2">
-              {isDraft && (
-                <div className="px-3 py-2.5 border border-border bg-accent/5 rounded-sm">
-                  <p className="font-mono text-[10px] text-accent leading-relaxed m-0">
-                    Approving generates unique 8-char vouchers and activates the 2-stage dispatch sequence.
-                  </p>
-                </div>
-              )}
-              {isLive && (
-                <div className="px-3 py-2.5 border border-border bg-surface-muted rounded-sm">
-                  <p className="font-mono text-[10px] text-muted leading-relaxed m-0">
-                    Status: {selectedCampaign.status}. Use "Undo Schedule" above to revert back to draft if changes are needed.
-                  </p>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>
+          </div>
+        )}
 
         {/* CONFIRM APPROVE & SCHEDULE MODAL */}
         {confirmScheduleModal && (
