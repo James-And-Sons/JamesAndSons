@@ -1297,7 +1297,7 @@ export default function CampaignManagerClient({
   // VIEW: DASHBOARD
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" suppressHydrationWarning>
       {/* Page Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -1312,6 +1312,7 @@ export default function CampaignManagerClient({
 
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setIsCustomModalOpen(true)}
             className="font-mono text-[10px] uppercase tracking-[0.14em] bg-accent text-background px-4 py-2.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold min-h-[44px]"
           >
@@ -1324,6 +1325,7 @@ export default function CampaignManagerClient({
                 Auto-draft for {upcomingTrigger.length} festival(s)?
               </span>
               <button
+                type="button"
                 onClick={handleSweep}
                 disabled={isCronRunning}
                 className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-3 py-1.5 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer disabled:opacity-50 min-h-[44px]"
@@ -1331,6 +1333,7 @@ export default function CampaignManagerClient({
                 {isCronRunning ? 'Sweeping…' : 'Confirm'}
               </button>
               <button
+                type="button"
                 onClick={() => setConfirmSweep(false)}
                 className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted border border-border px-2.5 py-1.5 hover:bg-surface-muted rounded-sm cursor-pointer bg-background min-h-[44px]"
               >
@@ -1339,6 +1342,7 @@ export default function CampaignManagerClient({
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => setConfirmSweep(true)}
               className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted border border-border px-4 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors rounded-sm cursor-pointer bg-background min-h-[44px]"
             >
@@ -1351,10 +1355,10 @@ export default function CampaignManagerClient({
       {/* KPI Row with Trend Context */}
       <section aria-label="Campaign metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Dispatches',    value: (analytics.totalSent || 0).toLocaleString(),            sub: analytics.totalSent > 0 ? 'Email + WhatsApp dispatches' : 'No campaigns sent yet', color: undefined },
-          { label: 'Avg Open Rate',       value: `${analytics.overallOpenRate || '0.0'}%`,               sub: analytics.totalSent > 0 ? 'Live benchmark tracking' : 'Updates live upon send',     color: 'var(--color-accent)' },
-          { label: 'Vouchers Redeemed',   value: (analytics.totalRedeemed || 0).toLocaleString(),        sub: analytics.totalSent > 0 ? 'Single-use customer codes' : 'Tracked upon checkout',    color: '#8cae7e' },
-          { label: 'Attributed Revenue',  value: `₹${(analytics.totalRevenue || 0).toLocaleString('en-IN')}`, sub: analytics.totalSent > 0 ? 'Attributed festive sales' : 'Measured via vouchers', color: 'var(--color-accent)' },
+          { label: 'Total Dispatches',    value: (analytics.totalSent || 0).toLocaleString(),            sub: (analytics.totalSent || 0) > 0 ? 'Email + WhatsApp dispatches' : 'No campaigns sent yet', color: undefined },
+          { label: 'Avg Open Rate',       value: `${analytics.overallOpenRate || '0.0'}%`,               sub: (analytics.totalSent || 0) > 0 ? 'Live benchmark tracking' : 'Updates live upon send',     color: 'var(--color-accent)' },
+          { label: 'Vouchers Redeemed',   value: (analytics.totalRedeemed || 0).toLocaleString(),        sub: (analytics.totalSent || 0) > 0 ? 'Single-use customer codes' : 'Tracked upon checkout',    color: '#8cae7e' },
+          { label: 'Attributed Revenue',  value: `₹${(analytics.totalRevenue || 0).toLocaleString('en-IN')}`, sub: (analytics.totalSent || 0) > 0 ? 'Attributed festive sales' : 'Measured via vouchers', color: 'var(--color-accent)' },
         ].map(k => (
           <div key={k.label} className="premium-card p-5 rounded-lg">
             <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted mb-2">{k.label}</div>
