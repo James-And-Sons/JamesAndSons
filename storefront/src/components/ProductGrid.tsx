@@ -7,6 +7,7 @@ import { useCartStore } from '@/store/cart';
 import Image from 'next/image';
 import InquiryModal from './InquiryModal';
 import PriceSlider from './PriceSlider';
+import FilterPanel from './FilterPanel';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts, initialCategory }: { initialFilter?: string, initialProducts: Product[], initialCategory?: string }) {
   const router = useRouter();
@@ -164,73 +165,32 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
           </div>
 
           {showFilters && (
-            <div data-dropdown-area="true" style={{ 
-              position: 'absolute', top: '100%', left: 0, marginTop: '12px',
-              background: 'var(--surface)', border: '1px solid var(--border)', padding: '20px', width: '100%',
-              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
-              borderRadius: '16px', maxHeight: '60vh', overflowY: 'auto'
-            }}>
-              {/* Mobile Price Range Slider */}
-              <div style={{ gridColumn: '1 / -1', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
-                <PriceSlider
-                  min={globalMin}
-                  max={globalMax}
-                  currentMin={priceMin}
-                  currentMax={priceMax}
-                  onChange={(min, max) => {
-                    setPriceMin(min);
-                    setPriceMax(max);
-                  }}
-                  onReset={() => {
-                    setPriceMin(0);
-                    setPriceMax(999999999);
-                  }}
-                />
-              </div>
-              {uniqueCollections.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {uniqueCollections.map(c => (
-                      <button key={c} onClick={() => toggleFilter(c)} className={`filter-dropdown-btn ${activeFilters.includes(c) ? 'active' : ''}`}>{c}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {uniqueSpaces.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {uniqueSpaces.map(s => (
-                      <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {uniqueStyles.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {uniqueStyles.map(s => (
-                      <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Features</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {uniqueMaterials.map(m => (
-                    <button key={m} onClick={() => toggleFilter(m)} className={`filter-dropdown-btn ${activeFilters.includes(m) ? 'active' : ''}`}>{m}</button>
-                  ))}
-                  <button onClick={() => toggleFilter('LED Certified')} className={`filter-dropdown-btn ${activeFilters.includes('LED Certified') ? 'active' : ''}`}>LED Certified</button>
-                </div>
-              </div>
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '12px', zIndex: 60, width: '100%' }}>
+              <FilterPanel
+                uniqueCollections={uniqueCollections}
+                uniqueSpaces={uniqueSpaces}
+                uniqueStyles={uniqueStyles}
+                uniqueMaterials={uniqueMaterials}
+                activeFilters={activeFilters}
+                toggleFilter={toggleFilter}
+                clearAllFilters={() => {
+                  setActiveFilters([]);
+                  setPriceMin(0);
+                  setPriceMax(999999999);
+                }}
+                globalMin={globalMin}
+                globalMax={globalMax}
+                priceMin={priceMin}
+                priceMax={priceMax}
+                setPriceMin={setPriceMin}
+                setPriceMax={setPriceMax}
+                priceActive={priceActive}
+                totalResultsCount={filteredProducts.length}
+                onClose={() => setShowFilters(false)}
+              />
             </div>
           )}
+
         </div>
 
         <div className="mobile-products-grid" style={{ marginTop: '16px' }}>
@@ -333,73 +293,32 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
         </div>
 
         {showFilters && (
-          <div data-dropdown-area="true" style={{ 
-            position: 'absolute', top: '100%', left: 0, marginTop: '12px', zIndex: 50,
-            background: 'var(--surface)', border: '1px solid var(--border)', padding: '32px', width: '100%', maxWidth: '960px',
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
-          }}>
-            {/* Price Range Slider */}
-            <div style={{ gridColumn: 'span 1' }}>
-              <PriceSlider
-                min={globalMin}
-                max={globalMax}
-                currentMin={priceMin}
-                currentMax={priceMax}
-                onChange={(min, max) => {
-                  setPriceMin(min);
-                  setPriceMax(max);
-                }}
-                onReset={() => {
-                  setPriceMin(0);
-                  setPriceMax(999999999);
-                }}
-              />
-            </div>
-
-            {uniqueCollections.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {uniqueCollections.map(c => (
-                    <button key={c} onClick={() => toggleFilter(c)} className={`filter-dropdown-btn ${activeFilters.includes(c) ? 'active' : ''}`}>{c}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {uniqueSpaces.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Spaces</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {uniqueSpaces.map(s => (
-                    <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {uniqueStyles.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Styles</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {uniqueStyles.map(s => (
-                    <button key={s} onClick={() => toggleFilter(s)} className={`filter-dropdown-btn ${activeFilters.includes(s) ? 'active' : ''}`}>{s}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Materials & Features</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {uniqueMaterials.map(m => (
-                  <button key={m} onClick={() => toggleFilter(m)} className={`filter-dropdown-btn ${activeFilters.includes(m) ? 'active' : ''}`}>{m}</button>
-                ))}
-                <button onClick={() => toggleFilter('LED Certified')} className={`filter-dropdown-btn ${activeFilters.includes('LED Certified') ? 'active' : ''}`}>LED Certified</button>
-              </div>
-            </div>
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '12px', zIndex: 60 }}>
+            <FilterPanel
+              uniqueCollections={uniqueCollections}
+              uniqueSpaces={uniqueSpaces}
+              uniqueStyles={uniqueStyles}
+              uniqueMaterials={uniqueMaterials}
+              activeFilters={activeFilters}
+              toggleFilter={toggleFilter}
+              clearAllFilters={() => {
+                setActiveFilters([]);
+                setPriceMin(0);
+                setPriceMax(999999999);
+              }}
+              globalMin={globalMin}
+              globalMax={globalMax}
+              priceMin={priceMin}
+              priceMax={priceMax}
+              setPriceMin={setPriceMin}
+              setPriceMax={setPriceMax}
+              priceActive={priceActive}
+              totalResultsCount={filteredProducts.length}
+              onClose={() => setShowFilters(false)}
+            />
           </div>
         )}
+
       </div>
 
       <div className="product-grid">
