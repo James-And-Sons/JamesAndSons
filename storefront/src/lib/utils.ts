@@ -14,3 +14,12 @@ export type Product = IProduct & {
 export function formatPrice(n: number | null | undefined): string {
   return sharedFormatPrice(n);
 }
+
+// Trigger subtle web haptic vibration feedback
+export function triggerHaptic() {
+  if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate(8);
+    } catch {}
+  }
+}

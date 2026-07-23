@@ -124,6 +124,19 @@
   }
   .nav-logo span { color: var(--gold-light); font-style: italic; font-weight: 300; }
 
+  /* Navbar Haptic Micro-Animation Feedback */
+  .nav-haptic {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
+    display: inline-flex;
+    align-items: center;
+  }
+  .nav-haptic:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+  }
+  .nav-haptic:active {
+    transform: translateY(0px) scale(0.96) !important;
+  }
+
   .nav-links {
     display: flex; align-items: stretch; gap: 0;
     list-style: none;

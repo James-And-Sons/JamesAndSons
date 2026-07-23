@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { triggerHaptic } from '@/lib/utils';
 
 type DropdownItem = { name: string; slug: string };
 
@@ -88,7 +89,7 @@ export default function NavDropdown({
     cursor: 'pointer',
     padding: '8px 12px',
     borderRadius: '4px',
-    transition: 'all 0.25s ease',
+    transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
     position: 'relative',
   });
 
@@ -96,7 +97,12 @@ export default function NavDropdown({
     <ul className="nav-links" style={{ display: 'flex', gap: '8px', listStyle: 'none', alignItems: 'center', margin: 0, padding: 0 }}>
       {/* Home */}
       <li style={liStyle}>
-        <Link href="/" style={getLinkStyle(pathname === '/')}>
+        <Link
+          href="/"
+          style={getLinkStyle(pathname === '/')}
+          className="nav-haptic"
+          onMouseEnter={triggerHaptic}
+        >
           Home
         </Link>
       </li>
@@ -105,12 +111,16 @@ export default function NavDropdown({
       <li
         ref={collectionsRef}
         style={liStyle}
-        onMouseEnter={() => setCollectionsOpen(true)}
+        onMouseEnter={() => {
+          triggerHaptic();
+          setCollectionsOpen(true);
+        }}
         onMouseLeave={() => setCollectionsOpen(false)}
       >
         <Link
           href="/collections"
           style={getLinkStyle(pathname.startsWith('/collections') || collectionsOpen)}
+          className="nav-haptic"
         >
           Collections
           <svg
@@ -158,6 +168,7 @@ export default function NavDropdown({
                   fontWeight: 600,
                 }}
                 onMouseEnter={e => {
+                  triggerHaptic();
                   e.currentTarget.style.color = 'var(--gold)';
                   e.currentTarget.style.paddingLeft = '6px';
                 }}
@@ -176,6 +187,7 @@ export default function NavDropdown({
                   href={`/collections?category=${encodeURIComponent(cat.slug)}`}
                   style={dropdownLinkStyle(pathname.includes(`category=${cat.slug}`))}
                   onMouseEnter={e => {
+                    triggerHaptic();
                     e.currentTarget.style.color = 'var(--gold)';
                     e.currentTarget.style.paddingLeft = '6px';
                   }}
@@ -198,12 +210,16 @@ export default function NavDropdown({
       <li
         ref={spacesRef}
         style={liStyle}
-        onMouseEnter={() => setSpacesOpen(true)}
+        onMouseEnter={() => {
+          triggerHaptic();
+          setSpacesOpen(true);
+        }}
         onMouseLeave={() => setSpacesOpen(false)}
       >
         <Link
           href="/spaces"
           style={getLinkStyle(pathname.startsWith('/spaces') || spacesOpen)}
+          className="nav-haptic"
         >
           Spaces
           <svg
@@ -251,6 +267,7 @@ export default function NavDropdown({
                   fontWeight: 600,
                 }}
                 onMouseEnter={e => {
+                  triggerHaptic();
                   e.currentTarget.style.color = 'var(--gold)';
                   e.currentTarget.style.paddingLeft = '6px';
                 }}
@@ -269,6 +286,7 @@ export default function NavDropdown({
                   href={`/collections?space=${encodeURIComponent(space.name)}`}
                   style={dropdownLinkStyle(pathname.includes(`space=${space.name}`))}
                   onMouseEnter={e => {
+                    triggerHaptic();
                     e.currentTarget.style.color = 'var(--gold)';
                     e.currentTarget.style.paddingLeft = '6px';
                   }}
@@ -289,14 +307,24 @@ export default function NavDropdown({
 
       {/* Catalogues */}
       <li style={liStyle}>
-        <Link href="/catalogues" style={getLinkStyle(pathname === '/catalogues')}>
+        <Link
+          href="/catalogues"
+          style={getLinkStyle(pathname === '/catalogues')}
+          className="nav-haptic"
+          onMouseEnter={triggerHaptic}
+        >
           Catalogues
         </Link>
       </li>
 
       {/* Blog */}
       <li style={liStyle}>
-        <Link href="/blog" style={getLinkStyle(pathname.startsWith('/blog'))}>
+        <Link
+          href="/blog"
+          style={getLinkStyle(pathname.startsWith('/blog'))}
+          className="nav-haptic"
+          onMouseEnter={triggerHaptic}
+        >
           Blog
         </Link>
       </li>
@@ -308,6 +336,8 @@ export default function NavDropdown({
           target="_blank"
           rel="noopener noreferrer"
           style={getLinkStyle(false)}
+          className="nav-haptic"
+          onMouseEnter={triggerHaptic}
         >
           B2B Portal
         </Link>
