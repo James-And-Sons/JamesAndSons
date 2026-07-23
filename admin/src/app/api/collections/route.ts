@@ -14,7 +14,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, slug, description, technicalSubheading, hsnCode, gstRate, bisStandard, bisStatus } = await req.json();
+    const { name, slug, description, technicalSubheading, hsnCode, gstRate, bisStandard, bisStatus, image, images } = await req.json();
     const cat = await prisma.category.create({ 
       data: { 
         name, 
@@ -24,7 +24,9 @@ export async function POST(req: NextRequest) {
         hsnCode,
         gstRate: gstRate !== undefined && gstRate !== null ? parseFloat(String(gstRate)) : null,
         bisStandard,
-        bisStatus
+        bisStatus,
+        image: image || null,
+        images: Array.isArray(images) ? images : []
       } 
     });
     return NextResponse.json(cat);

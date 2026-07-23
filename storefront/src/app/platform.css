@@ -2443,3 +2443,9 @@
     }
   }
 
+  .nav-haptic {
+    transition: color 0.2s ease, opacity 0.2s ease !important;
+  }
+  .nav-haptic:hover {
+    color: var(--gold) !important;
+  }

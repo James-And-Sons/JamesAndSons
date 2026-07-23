@@ -11,6 +11,7 @@ type Space = {
   slug: string; 
   description: string | null; 
   image: string | null;
+  images: string[];
   _count: { products: number };
   products: { id: string; name: string; images: string[] }[];
 };
@@ -23,7 +24,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
   const [managingProducts, setManagingProducts] = useState<Space | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -31,8 +32,8 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
   const { setIsPageDirty } = useSidebar();
 
   const isDirty = !!(
-    (showForm && !editing && (name !== '' || description !== '' || image !== '')) ||
-    (editing !== null && (name !== editing.name || description !== (editing.description || '') || image !== (editing.image || '')))
+    (showForm && !editing && (name !== '' || description !== '' || images.length > 0)) ||
+    (editing !== null && (name !== editing.name || description !== (editing.description || '') || JSON.stringify(images) !== JSON.stringify(editing.images || [])))
   );
 
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
           setEditing(sp);
           setName(sp.name);
           setDescription(sp.description || '');
-          setImage(sp.image || '');
+          setImages(sp.images || []);
           setShowForm(true);
           setManagingProducts(null);
         }
@@ -83,8 +84,8 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
     }
   }, [spaces]);
 
-  const openAdd = () => { setEditing(null); setName(''); setDescription(''); setImage(''); setShowForm(true); setManagingProducts(null); };
-  const openEdit = (s: Space) => { setEditing(s); setName(s.name); setDescription(s.description || ''); setImage(s.image || ''); setShowForm(true); setManagingProducts(null); };
+  const openAdd = () => { setEditing(null); setName(''); setDescription(''); setImages([]); setShowForm(true); setManagingProducts(null); };
+  const openEdit = (s: Space) => { setEditing(s); setName(s.name); setDescription(s.description || ''); setImages(s.images || []); setShowForm(true); setManagingProducts(null); };
   const openManage = (s: Space) => { setManagingProducts(s); setShowForm(false); setEditing(null); };
 
   const handleSave = () => {
@@ -96,10 +97,17 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, slug, description, image }),
+        body: JSON.stringify({ 
+          name, 
+          slug, 
+          description, 
+          image: images[0] || null,
+          images
+        }),
       });
       if (!res.ok) { setError(await res.text()); return; }
       setShowForm(false);
+      setEditing(null);
       router.refresh();
     });
   };
@@ -161,12 +169,12 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
               <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Elegant light fixtures suited for bedrooms" />
             </div>
             <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Thumbnail Image</label>
+              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Space Cover Photos (Multiple)</label>
               <CloudinaryUpload 
-                onUpload={(urls) => setImage(urls[0] || '')}
-                defaultImages={image ? [image] : []}
-                multiple={false}
-                label="Add Space Image"
+                onUpload={(urls) => setImages(urls)}
+                defaultImages={images}
+                multiple={true}
+                label="Add Space Cover Photo"
               />
             </div>
           </div>
@@ -265,12 +273,12 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                             <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" />
                           </div>
                           <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Thumbnail Image</label>
+                            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Space Cover Photos (Multiple)</label>
                             <CloudinaryUpload 
-                              onUpload={(urls) => setImage(urls[0] || '')}
-                              defaultImages={image ? [image] : []}
-                              multiple={false}
-                              label="Update Space Image"
+                              onUpload={(urls) => setImages(urls)}
+                              defaultImages={images}
+                              multiple={true}
+                              label="Update Space Cover Photo"
                             />
                           </div>
                         </div>

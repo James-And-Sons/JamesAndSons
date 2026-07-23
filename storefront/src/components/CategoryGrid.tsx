@@ -9,6 +9,8 @@ type Category = {
   name: string;
   slug: string;
   _count: { products: number };
+  image?: string | null;
+  images?: string[];
 };
 
 type CategoryGridProps = {
@@ -18,18 +20,23 @@ type CategoryGridProps = {
 
 export default function CategoryGrid({ categories = [], products = [] }: CategoryGridProps) {
   const displayCategories = categories.length > 0 ? categories : [
-    { id: '1', name: 'Chandeliers', slug: 'chandeliers', _count: { products: 0 } },
-    { id: '2', name: 'Floor Lamps', slug: 'floor-lamps', _count: { products: 0 } },
-    { id: '3', name: 'Wall Brackets', slug: 'wall-brackets', _count: { products: 0 } },
-    { id: '4', name: 'Hanging Lamps', slug: 'hanging-lamps', _count: { products: 0 } },
-    { id: '5', name: 'Table Lamps', slug: 'table-lamps', _count: { products: 0 } },
+    { id: '1', name: 'Chandeliers', slug: 'chandeliers', _count: { products: 0 }, image: null, images: [] },
+    { id: '2', name: 'Floor Lamps', slug: 'floor-lamps', _count: { products: 0 }, image: null, images: [] },
+    { id: '3', name: 'Wall Brackets', slug: 'wall-brackets', _count: { products: 0 }, image: null, images: [] },
+    { id: '4', name: 'Hanging Lamps', slug: 'hanging-lamps', _count: { products: 0 }, image: null, images: [] },
+    { id: '5', name: 'Table Lamps', slug: 'table-lamps', _count: { products: 0 }, image: null, images: [] },
   ];
 
-  // Map each category slug to a randomly picked product image from that category
+  // Map each category slug to its cover image, or fallback to a deterministic product image from that category
   const categoryImages = useMemo(() => {
     const map: Record<string, string> = {};
 
     displayCategories.forEach(cat => {
+      if (cat.image) {
+        map[cat.slug] = cat.image;
+        return;
+      }
+
       const catSlug = (cat.slug || '').toLowerCase().replace(/[-_]/g, '');
       const catName = (cat.name || '').toLowerCase();
 
@@ -46,9 +53,14 @@ export default function CategoryGrid({ categories = [], products = [] }: Categor
       ]).filter(Boolean);
 
       if (pool.length > 0) {
-        // Select a random image from the pool
-        const randomIndex = Math.floor(Math.random() * pool.length);
-        map[cat.slug] = pool[randomIndex];
+        // Deterministically select an image from the pool to avoid hydration mismatches
+        let hash = 0;
+        const seed = cat.id || cat.slug || '';
+        for (let i = 0; i < seed.length; i++) {
+          hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % pool.length;
+        map[cat.slug] = pool[index];
       }
     });
 

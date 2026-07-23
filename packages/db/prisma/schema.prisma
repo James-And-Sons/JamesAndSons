@@ -110,6 +110,8 @@ model Category {
   slug                String     @unique
   description         String?
   parentId            String?
+  image               String?    // Primary category cover photo
+  images              String[]   @default([]) // Multiple category cover photos
   
   // Compliance and tax details managed centrally
   technicalSubheading String?
@@ -439,6 +441,7 @@ model Space {
   slug        String   @unique
   description String?
   image       String?
+  images      String[] @default([])
  
   products    Product[]
  

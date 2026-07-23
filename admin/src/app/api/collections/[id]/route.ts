@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   try {
-    const { name, slug, description, technicalSubheading, hsnCode, gstRate, bisStandard, bisStatus } = await req.json();
+    const { name, slug, description, technicalSubheading, hsnCode, gstRate, bisStandard, bisStatus, image, images } = await req.json();
     const cat = await prisma.category.update({ 
       where: { id }, 
       data: { 
@@ -15,7 +15,9 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         hsnCode,
         gstRate: gstRate !== undefined && gstRate !== null ? parseFloat(String(gstRate)) : null,
         bisStandard,
-        bisStatus
+        bisStatus,
+        image: image || null,
+        images: Array.isArray(images) ? images : []
       } 
     });
 

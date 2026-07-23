@@ -3,6 +3,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { addProductToCollection, removeProductFromCollection } from './actions';
 import { useSidebar } from '@/lib/context/SidebarContext';
+import CloudinaryUpload from '@/components/CloudinaryUpload';
 
 type Category = { 
   id: string; 
@@ -14,6 +15,8 @@ type Category = {
   gstRate: number | null;
   bisStandard: string | null;
   bisStatus: string | null;
+  image: string | null;
+  images: string[];
   _count: { products: number };
   products: { id: string; name: string; images: string[] }[];
 };
@@ -31,6 +34,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
   const [gstRate, setGstRate] = useState<number>(18);
   const [bisStandard, setBisStandard] = useState('');
   const [bisStatus, setBisStatus] = useState('Pending Application');
+  const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
 
@@ -38,14 +42,15 @@ export default function CategoryManager({ categories, allProducts }: { categorie
 
   const isDirty = showForm && (
     editing === null 
-      ? (name !== '' || description !== '' || technicalSubheading !== '' || hsnCode !== '' || gstRate !== 18 || bisStandard !== '' || bisStatus !== '')
+      ? (name !== '' || description !== '' || technicalSubheading !== '' || hsnCode !== '' || gstRate !== 18 || bisStandard !== '' || bisStatus !== '' || images.length > 0)
       : (name !== editing.name || 
          description !== (editing.description || '') ||
          technicalSubheading !== (editing.technicalSubheading || '') ||
          hsnCode !== (editing.hsnCode || '') ||
          gstRate !== (editing.gstRate !== null && editing.gstRate !== undefined ? editing.gstRate : 18) ||
          bisStandard !== (editing.bisStandard || '') ||
-         bisStatus !== (editing.bisStatus || ''))
+         bisStatus !== (editing.bisStatus || '') ||
+         JSON.stringify(images) !== JSON.stringify(editing.images || []))
   );
 
   useEffect(() => {
@@ -85,6 +90,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
           setGstRate(cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18);
           setBisStandard(cat.bisStandard || '');
           setBisStatus(cat.bisStatus || '');
+          setImages(cat.images || []);
           setShowForm(true);
           setManagingProducts(null);
         }
@@ -101,6 +107,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setGstRate(18);
     setBisStandard('');
     setBisStatus('Pending Application');
+    setImages([]);
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -114,6 +121,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setGstRate(cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18);
     setBisStandard(cat.bisStandard || '');
     setBisStatus(cat.bisStatus || '');
+    setImages(cat.images || []);
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -137,7 +145,9 @@ export default function CategoryManager({ categories, allProducts }: { categorie
           hsnCode,
           gstRate: parseFloat(String(gstRate)) || 18,
           bisStandard,
-          bisStatus
+          bisStatus,
+          image: images[0] || null,
+          images
         }),
       });
       if (!res.ok) { setError(await res.text()); return; }
@@ -226,6 +236,15 @@ export default function CategoryManager({ categories, allProducts }: { categorie
             <div className="space-y-1 md:col-span-2">
               <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>
               <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="Brief summary of this category" />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Category Cover Photos (Multiple)</label>
+              <CloudinaryUpload 
+                onUpload={(urls) => setImages(urls)}
+                defaultImages={images}
+                multiple={true}
+                label="Add Category Cover Photo"
+              />
             </div>
           </div>
           <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
@@ -332,8 +351,21 @@ export default function CategoryManager({ categories, allProducts }: { categorie
             {categories.map(cat => (
               <tr key={cat.id} className="hover:bg-surface-muted/50 transition-colors">
                 <td className="px-6 py-4">
-                  <div className="font-serif text-[17px] text-primary">{cat.name}</div>
-                  <div className="font-mono text-[10px] text-muted">{cat.slug}</div>
+                  <div className="flex items-center gap-3">
+                    {cat.image ? (
+                      <div className="relative w-12 h-12 border border-border overflow-hidden bg-background">
+                        <img src={cat.image} alt={cat.name} className="object-cover w-full h-full" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 border border-dashed border-border/60 flex items-center justify-center text-muted font-mono text-[9px] bg-background">
+                        No Img
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-serif text-[17px] text-primary">{cat.name}</div>
+                      <div className="font-mono text-[10px] text-muted">{cat.slug}</div>
+                    </div>
+                  </div>
                 </td>
                 <td className="px-6 py-4 font-body text-[13px] text-primary">{cat.technicalSubheading || '—'}</td>
                 <td className="px-6 py-4 font-mono text-[12px] text-secondary">{cat.hsnCode || '—'}</td>

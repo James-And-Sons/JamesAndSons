@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   let slug: string | undefined;
   try {
     const body = await req.json();
-    const { name, description, image } = body;
+    const { name, description, image, images } = body;
     slug = body.slug;
 
     if (!slug) {
@@ -33,7 +33,13 @@ export async function POST(req: NextRequest) {
     }
 
     const space = await prisma.space.create({ 
-      data: { name, slug, description, image } 
+      data: { 
+        name, 
+        slug, 
+        description, 
+        image: image || null,
+        images: Array.isArray(images) ? images : []
+      } 
     });
     return NextResponse.json(space);
   } catch (e: any) {

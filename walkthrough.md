@@ -77,3 +77,21 @@ We implemented warning suppression and a robust retry mechanism for Shiprocket s
   - Replaced the order confirmation success message mentioning "Our installation team will reach out" to refer to coordination by the "concierge team".
   - Removed "2-Year Warranty" from the checkout page trust badges, replacing it with "Secure Transit".
 
+## 6. Category Cover Images & Hydration Fixes
+
+We implemented multiple category cover photo uploads, updated storefront queries, and resolved hydration mismatch errors:
+
+### Multi-Image Category Cover Management
+- **Prisma Schema Alignment**: Successfully executed DDL schema push on Supabase direct port `5432` to add `image` (string) and `images` (string array) fields to the `Category` model.
+- **Admin API Support**: Extended `POST` and `PUT` endpoints in `/api/collections` and `/api/collections/[id]` to process, validate, and store the primary `image` and secondary `images` fields in the database.
+- **Admin UI Multi-Uploader**: Integrated `CloudinaryUpload` inside the category manager form. Admins can now upload multiple cover photos per category, reorder them, delete them, and save them. Thumbnail previews are also displayed inline in the category listings table.
+
+### Storefront Display & Hydration Resolution
+- **Deterministic Category Fallbacks**: Fixed the React hydration mismatch warnings on the homepage. Instead of using `Math.random()`, which selected different product images on the server (SSR) and client (hydration), `CategoryGrid` now maps fallbacks using a stable, deterministic hash of the category `slug` / `id`.
+- **Primary Image Prioritization**: The storefront `CategoryGrid` now displays the uploaded custom category cover image (`image`) if it is available, falling back to a deterministic category product image only when no cover photo exists.
+- **Haptic & Color Hover Polish**: Embedded `.nav-haptic` transitions and styles in the main stylesheet (`platform.css`) to enforce uniform CSS haptic interactions and gold color highlights on hover across all navbar links, dropdowns, and icon buttons.
+
+### Multi-Image Space Cover Management
+- **Space Model Schema Push**: Updated the `Space` model in `schema.prisma` to include `images` (string array) and pushed the migration to Supabase on port `5432`.
+- **Spaces Admin API**: Extended the POST/PUT handlers in `admin/src/app/api/spaces/route.ts` and `admin/src/app/api/spaces/[id]/route.ts` to process and persist `image` (first URL) and `images` (complete array).
+- **Spaces Admin UI**: Updated `SpacesManager.tsx` to mount the multi-upload `CloudinaryUpload` component for spaces, allowing admins to add multiple cover photos for each space, sort/reorder them, and preview them inside both the creation and inline editing forms.

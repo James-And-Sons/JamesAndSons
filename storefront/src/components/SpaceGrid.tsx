@@ -6,6 +6,7 @@ type Space = {
   name: string;
   slug: string;
   image: string | null;
+  images: string[];
   _count: { products: number };
 };
 
@@ -15,11 +16,11 @@ export default function SpaceGrid({ spaces = [] }: { spaces: Space[] }) {
   
   // We take up to 5 spaces for the homepage grid
   const displaySpaces = spaces.length > 0 ? spaces : [
-    { id: '1', name: 'Living Room', slug: 'living-room', image: null, _count: { products: 0 } },
-    { id: '2', name: 'Dining Room', slug: 'dining-room', image: null, _count: { products: 0 } },
-    { id: '3', name: 'Bedroom', slug: 'bedroom', image: null, _count: { products: 0 } },
-    { id: '4', name: 'Office', slug: 'office', image: null, _count: { products: 0 } },
-    { id: '5', name: 'Foyer', slug: 'foyer', image: null, _count: { products: 0 } },
+    { id: '1', name: 'Living Room', slug: 'living-room', image: null, images: [], _count: { products: 0 } },
+    { id: '2', name: 'Dining Room', slug: 'dining-room', image: null, images: [], _count: { products: 0 } },
+    { id: '3', name: 'Bedroom', slug: 'bedroom', image: null, images: [], _count: { products: 0 } },
+    { id: '4', name: 'Office', slug: 'office', image: null, images: [], _count: { products: 0 } },
+    { id: '5', name: 'Foyer', slug: 'foyer', image: null, images: [], _count: { products: 0 } },
   ];
 
   const mainSpace = displaySpaces[0];
