@@ -616,6 +616,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {renderLink('Blog', '/blog', null, '✎')}
               {renderLink('Marketing', '/campaigns', null, '🪔')}
               {renderLink('Coupons', '/promotions', null, '🏷')}
+              {renderLink('Catalogues', '/catalogues', null, '📚')}
               {renderLink('Affiliates', '/affiliates', null, '👥')}
               {renderLink('Tickets', '/tickets', openTickets, '🎫')}
 

@@ -7,11 +7,19 @@ import { useCartStore } from '@/store/cart';
 import Image from 'next/image';
 import InquiryModal from './InquiryModal';
 
-export default function ProductGrid({ initialFilter = 'All', initialProducts }: { initialFilter?: string, initialProducts: Product[] }) {
+export default function ProductGrid({ initialFilter = 'All', initialProducts, initialCategory }: { initialFilter?: string, initialProducts: Product[], initialCategory?: string }) {
   const router = useRouter();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedQuoteProduct, setSelectedQuoteProduct] = useState<any | null>(null);
+  
+  // Price range filter
+  const allPrices = initialProducts.map(p => p.d2cPrice).filter(Boolean);
+  const globalMin = allPrices.length > 0 ? Math.floor(Math.min(...allPrices) / 1000) * 1000 : 0;
+  const globalMax = allPrices.length > 0 ? Math.ceil(Math.max(...allPrices) / 1000) * 1000 : 500000;
+  const [priceMin, setPriceMin] = useState<number>(0);
+  const [priceMax, setPriceMax] = useState<number>(999999999);
+  const priceActive = priceMin > 0 || priceMax < 999999999;
   const { addItem } = useCartStore();
   const { uniqueCollections, uniqueStyles, uniqueMaterials, uniqueSpaces } = useMemo(() => ({
     uniqueCollections: Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort(),
@@ -32,6 +40,18 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
       }
     }
   }, [initialFilter, initialProducts]);
+
+  // Apply category filter from URL
+  useEffect(() => {
+    if (initialCategory) {
+      const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+      const matched = uniqueCollections.find(c =>
+        slugify(c) === initialCategory.toLowerCase() || c.toLowerCase() === initialCategory.toLowerCase()
+      );
+      if (matched) setActiveFilters([matched]);
+      else if (initialCategory) setActiveFilters([initialCategory]);
+    }
+  }, [initialCategory, initialProducts]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -55,21 +75,28 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
   const filters = ['All', ...uniqueCollections, ...uniqueSpaces, ...uniqueStyles, ...uniqueMaterials, 'LED Certified'];
 
   const filteredProducts = useMemo(() => {
-    if (activeFilters.length === 0) return initialProducts;
-    return initialProducts.filter(p =>
-      activeFilters.some(filter => {
-        const lowerFilter = filter.toLowerCase();
-        const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
-        const filterSlug = slugify(filter);
-
-        return (p.collection && (p.collection.toLowerCase() === lowerFilter || slugify(p.collection) === filterSlug)) ||
-               (p.spaces && p.spaces.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
-               (p.style && p.style.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
-               (p.materialAndFinish && p.materialAndFinish.some(m => m.toLowerCase() === lowerFilter || slugify(m) === filterSlug)) ||
-               (lowerFilter === 'led certified' && p.isLed);
-      })
-    );
-  }, [activeFilters, initialProducts]);
+    let results = initialProducts;
+    // Category / attribute filters
+    if (activeFilters.length > 0) {
+      results = results.filter(p =>
+        activeFilters.some(filter => {
+          const lowerFilter = filter.toLowerCase();
+          const slugify = (text: string) => text.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-');
+          const filterSlug = slugify(filter);
+          return (p.collection && (p.collection.toLowerCase() === lowerFilter || slugify(p.collection) === filterSlug)) ||
+                 (p.spaces && p.spaces.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+                 (p.style && p.style.some(s => s.toLowerCase() === lowerFilter || slugify(s) === filterSlug)) ||
+                 (p.materialAndFinish && p.materialAndFinish.some(m => m.toLowerCase() === lowerFilter || slugify(m) === filterSlug)) ||
+                 (lowerFilter === 'led certified' && p.isLed);
+        })
+      );
+    }
+    // Price range filter
+    if (priceActive) {
+      results = results.filter(p => p.d2cPrice >= priceMin && p.d2cPrice <= priceMax);
+    }
+    return results;
+  }, [activeFilters, initialProducts, priceMin, priceMax, priceActive]);
 
   return (
     <section className="section" id="collections" style={{ padding: 0 }}>
@@ -290,9 +317,40 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts }: 
         {showFilters && (
           <div data-dropdown-area="true" style={{ 
             position: 'absolute', top: '100%', left: 0, marginTop: '12px', zIndex: 50,
-            background: 'var(--surface)', border: '1px solid var(--border)', padding: '32px', width: '100%', maxWidth: '900px',
+            background: 'var(--surface)', border: '1px solid var(--border)', padding: '32px', width: '100%', maxWidth: '960px',
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
           }}>
+            {/* Price Range Filter */}
+            <div>
+              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Price Range</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { label: 'Under ₹10K', min: 0, max: 10000 },
+                  { label: '₹10K – ₹30K', min: 10000, max: 30000 },
+                  { label: '₹30K – ₹75K', min: 30000, max: 75000 },
+                  { label: '₹75K+', min: 75000, max: 999999999 },
+                ].map(p => {
+                  const isActive = priceMin === p.min && priceMax === p.max;
+                  return (
+                    <button
+                      key={p.label}
+                      onClick={() => { setPriceMin(isActive ? 0 : p.min); setPriceMax(isActive ? 999999999 : p.max); }}
+                      className={`filter-dropdown-btn ${isActive ? 'active' : ''}`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+                {priceActive && (
+                  <button onClick={() => { setPriceMin(0); setPriceMax(999999999); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '10px', textAlign: 'left', padding: '4px 0', letterSpacing: '0.1em' }}
+                  >
+                    Clear Price ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
             {uniqueCollections.length > 0 && (
               <div>
                 <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Collections</h4>

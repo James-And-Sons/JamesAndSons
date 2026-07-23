@@ -664,3 +664,18 @@ model DynamicCoupon {
 
   @@map("dynamic_coupons")
 }
+
+model Catalogue {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  year        Int      @default(2025)
+  coverImage  String?  // URL to cover image (Cloudinary or direct)
+  fileUrl     String   // URL to downloadable PDF
+  isPublished Boolean  @default(false)
+  downloads   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("catalogues")
+}

@@ -1,19 +1,26 @@
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import NavClient from './NavClient';
-import { getProducts } from '@/lib/products';
+import { getProducts, getCategories, getSpaces } from '@/lib/products';
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
+import NavDropdown from './NavDropdown';
 
 export default async function Navigation() {
   const supabase = await createClient();
   let user = null;
   let products: any[] = [];
+  let categories: { name: string; slug: string }[] = [];
+  let spaces: { name: string; slug: string }[] = [];
 
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
     products = await getProducts();
+    const rawCats = await getCategories();
+    categories = rawCats.map(c => ({ name: c.name, slug: c.slug }));
+    const rawSpaces = await getSpaces();
+    spaces = rawSpaces.map(s => ({ name: s.name, slug: s.slug }));
   } catch (error) {
     console.error('Error in Navigation data fetching:', error);
   }
@@ -26,16 +33,10 @@ export default async function Navigation() {
           <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '56px', width: 'auto' }} />
           James <span>&amp;</span> Sons
         </Link>
-        <ul className="nav-links">
-          <li><Link href="/">Home</Link></li>
-          <li><Link href="/collections">Collections</Link></li>
-          <li><Link href="/blog">Blog</Link></li>
-          <li><Link href="/spaces">Spaces</Link></li>
-          <li><Link href="https://indiamart.jamesandsons.in">B2B Portal</Link></li>
-        </ul>
+        <NavDropdown categories={categories} spaces={spaces} />
         <NavClient user={user} products={products} />
       </nav>
-      
+
       {/* Mobile Top Header */}
       <MobileHeader user={user} />
 

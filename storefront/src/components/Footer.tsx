@@ -21,6 +21,7 @@ export default function Footer() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               <li><Link href="/collections" className="footer-link">Collections</Link></li>
               <li><Link href="/spaces" className="footer-link">Spaces</Link></li>
+              <li><Link href="/catalogues" className="footer-link">Download Catalogues</Link></li>
               <li><Link href="https://indiamart.jamesandsons.in" className="footer-link">B2B Portal</Link></li>
             </ul>
           </div>
