@@ -7,8 +7,8 @@ export default function Footer() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
 
           <div>
-            <h3 style={{ color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>
-              James <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>&amp;</span> Sons
+            <h3 style={{ color: 'var(--gold-pale)', fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>
+              James <span style={{ color: 'var(--gold-light)', fontStyle: 'italic', fontWeight: 300 }}>&amp;</span> Sons
             </h3>
             <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '15px', color: 'var(--gold-pale)', marginBottom: '20px', letterSpacing: '0.05em' }}>
               &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16

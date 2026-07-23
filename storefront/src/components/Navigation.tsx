@@ -59,13 +59,13 @@ export default async function Navigation() {
             fontFamily: 'var(--font-serif)', 
             fontSize: '20px', 
             letterSpacing: '0.25em', 
-            color: 'var(--gold-light)', 
+            color: 'var(--gold-pale)', 
             textTransform: 'uppercase'
           }}
         >
           <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '52px', width: 'auto' }} />
           <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '52px', width: 'auto' }} />
-          James &amp; Sons
+          James <span style={{ color: 'var(--gold-light)', fontStyle: 'italic', fontWeight: 300 }}>&amp;</span> Sons
         </Link>
 
         {/* Center: Navigation Links */}
