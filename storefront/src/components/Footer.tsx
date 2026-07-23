@@ -5,17 +5,17 @@ export default function Footer() {
     <footer style={{ backgroundColor: 'var(--obsidian)', borderTop: '1px solid var(--border)', padding: '60px 40px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.1em', marginTop: 'auto' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
-          
+
           <div>
             <h3 style={{ color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>
-              James &amp; Sons
+              James <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>&amp;</span> Sons
             </h3>
             <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '15px', color: 'var(--gold-pale)', marginBottom: '20px', letterSpacing: '0.05em' }}>
               &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
             </p>
-            <p style={{ lineHeight: 1.8 }}>Curators of luxury illumination.<br/>Elevating spaces with heritage craftsmanship.</p>
+            <p style={{ lineHeight: 1.8 }}>Curators of luxury illumination.<br />Elevating spaces with heritage craftsmanship.</p>
           </div>
-          
+
           <div>
             <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Shop</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -25,7 +25,7 @@ export default function Footer() {
               <li><Link href="https://indiamart.jamesandsons.in" className="footer-link">B2B Portal</Link></li>
             </ul>
           </div>
-          
+
           <div>
             <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Company</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -34,7 +34,7 @@ export default function Footer() {
               <li><Link href="/careers" className="footer-link">Careers</Link></li>
             </ul>
           </div>
-          
+
           <div>
             <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Legal</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -48,14 +48,14 @@ export default function Footer() {
           <div>
             <h4 style={{ color: 'var(--text)', marginBottom: '12px', textTransform: 'uppercase' }}>Support</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-start' }}>
-              <Link 
-                href="/account/tickets" 
+              <Link
+                href="/account/tickets"
                 className="btn-support-ticket"
               >
                 Raise a Ticket
               </Link>
-              <Link 
-                href="/returns" 
+              <Link
+                href="/returns"
                 className="footer-link"
                 style={{ fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none' }}
               >
@@ -63,9 +63,9 @@ export default function Footer() {
               </Link>
             </div>
           </div>
-          
+
         </div>
-        
+
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} James & Sons. All rights reserved.</p>
           <div style={{ display: 'flex', gap: '16px' }}>

@@ -56,13 +56,16 @@ export default async function Navigation() {
             alignItems: 'center',
             gap: '12px',
             flexShrink: 0,
+            fontFamily: 'var(--font-serif)', 
+            fontSize: '20px', 
+            letterSpacing: '0.25em', 
+            color: 'var(--gold-light)', 
+            textTransform: 'uppercase'
           }}
         >
           <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '52px', width: 'auto' }} />
           <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '52px', width: 'auto' }} />
-          <span style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.25em', color: 'var(--gold-light)', textTransform: 'uppercase' }}>
-            James &amp; Sons
-          </span>
+          James &amp; Sons
         </Link>
 
         {/* Center: Navigation Links */}
