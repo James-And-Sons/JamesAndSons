@@ -307,21 +307,7 @@ export default function NavDropdown({
           href="https://indiamart.jamesandsons.in"
           target="_blank"
           rel="noopener noreferrer"
-          style={{
-            ...getLinkStyle(false),
-            border: '1px solid rgba(201,168,76,0.3)',
-            color: 'var(--gold)',
-            borderRadius: '4px',
-            padding: '6px 14px',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'var(--gold)';
-            e.currentTarget.style.color = 'var(--obsidian)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--gold)';
-          }}
+          style={getLinkStyle(false)}
         >
           B2B Portal
         </Link>
