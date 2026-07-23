@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
 import Image from 'next/image';
 import InquiryModal from './InquiryModal';
+import PriceSlider from './PriceSlider';
 
 export default function ProductGrid({ initialFilter = 'All', initialProducts, initialCategory }: { initialFilter?: string, initialProducts: Product[], initialCategory?: string }) {
   const router = useRouter();
@@ -169,6 +170,23 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
               display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
               borderRadius: '16px', maxHeight: '60vh', overflowY: 'auto'
             }}>
+              {/* Mobile Price Range Slider */}
+              <div style={{ gridColumn: '1 / -1', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
+                <PriceSlider
+                  min={globalMin}
+                  max={globalMax}
+                  currentMin={priceMin}
+                  currentMax={priceMax}
+                  onChange={(min, max) => {
+                    setPriceMin(min);
+                    setPriceMax(max);
+                  }}
+                  onReset={() => {
+                    setPriceMin(0);
+                    setPriceMax(999999999);
+                  }}
+                />
+              </div>
               {uniqueCollections.length > 0 && (
                 <div>
                   <h4 style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px', fontFamily: 'var(--font-mono)' }}>Collections</h4>
@@ -320,35 +338,22 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
             background: 'var(--surface)', border: '1px solid var(--border)', padding: '32px', width: '100%', maxWidth: '960px',
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
           }}>
-            {/* Price Range Filter */}
-            <div>
-              <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', fontFamily: 'var(--font-mono)' }}>Price Range</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[
-                  { label: 'Under ₹10K', min: 0, max: 10000 },
-                  { label: '₹10K – ₹30K', min: 10000, max: 30000 },
-                  { label: '₹30K – ₹75K', min: 30000, max: 75000 },
-                  { label: '₹75K+', min: 75000, max: 999999999 },
-                ].map(p => {
-                  const isActive = priceMin === p.min && priceMax === p.max;
-                  return (
-                    <button
-                      key={p.label}
-                      onClick={() => { setPriceMin(isActive ? 0 : p.min); setPriceMax(isActive ? 999999999 : p.max); }}
-                      className={`filter-dropdown-btn ${isActive ? 'active' : ''}`}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-                {priceActive && (
-                  <button onClick={() => { setPriceMin(0); setPriceMax(999999999); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '10px', textAlign: 'left', padding: '4px 0', letterSpacing: '0.1em' }}
-                  >
-                    Clear Price ✕
-                  </button>
-                )}
-              </div>
+            {/* Price Range Slider */}
+            <div style={{ gridColumn: 'span 1' }}>
+              <PriceSlider
+                min={globalMin}
+                max={globalMax}
+                currentMin={priceMin}
+                currentMax={priceMax}
+                onChange={(min, max) => {
+                  setPriceMin(min);
+                  setPriceMax(max);
+                }}
+                onReset={() => {
+                  setPriceMin(0);
+                  setPriceMax(999999999);
+                }}
+              />
             </div>
 
             {uniqueCollections.length > 0 && (

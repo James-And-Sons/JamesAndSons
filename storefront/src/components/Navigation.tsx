@@ -27,14 +27,53 @@ export default async function Navigation() {
 
   return (
     <>
-      <nav className="main-nav hidden md:flex">
-        <Link href="/" className="nav-logo" style={{ textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '56px', width: 'auto' }} />
-          <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '56px', width: 'auto' }} />
-          James <span>&amp;</span> Sons
+      <nav
+        className="main-nav hidden md:flex"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 40px',
+          height: '64px',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 999,
+          background: 'color-mix(in srgb, var(--obsidian) 92%, transparent)',
+          backdropFilter: 'blur(24px)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        {/* Left: Brand Logo */}
+        <Link
+          href="/"
+          className="nav-logo"
+          style={{
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            flexShrink: 0,
+          }}
+        >
+          <img src="/images/logo-light.png" alt="James & Sons" className="logo-light-img" style={{ height: '52px', width: 'auto' }} />
+          <img src="/images/logo-dark.png" alt="James & Sons" className="logo-dark-img" style={{ height: '52px', width: 'auto' }} />
+          <span style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.25em', color: 'var(--gold-light)', textTransform: 'uppercase' }}>
+            James <span style={{ color: 'var(--gold-pale)', fontStyle: 'italic' }}>&amp;</span> Sons
+          </span>
         </Link>
-        <NavDropdown categories={categories} spaces={spaces} />
-        <NavClient user={user} products={products} />
+
+        {/* Center: Navigation Links */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <NavDropdown categories={categories} spaces={spaces} />
+        </div>
+
+        {/* Right: Search, Account, Cart */}
+        <div style={{ flexShrink: 0 }}>
+          <NavClient user={user} products={products} />
+        </div>
       </nav>
 
       {/* Mobile Top Header */}
