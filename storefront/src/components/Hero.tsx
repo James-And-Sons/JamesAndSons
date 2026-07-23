@@ -36,7 +36,7 @@ export default function Hero() {
 
         <div className="hero-ctas">
           <Link href="/collections" className="btn-primary" style={{ textDecoration: 'none' }}>Shop Collection</Link>
-          <Link href="https://indiamart.jamesandsons.in" className="btn-outline" style={{ textDecoration: 'none' }}>B2B Portal Login</Link>
+          <Link href="https://indiamart.jamesandsons.in" className="btn-outline" style={{ textDecoration: 'none' }}>B2B Portal</Link>
         </div>
 
         <div className="hero-stats">
