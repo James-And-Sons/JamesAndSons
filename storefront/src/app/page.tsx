@@ -23,7 +23,7 @@ export default async function Home() {
       <Hero />
       <SpaceGrid spaces={spaces as any} />
       <AboutExcerpt />
-      <CategoryGrid categories={categories as any} />
+      <CategoryGrid categories={categories as any} products={products} />
       <NewArrivalsSection products={newArrivals} />
       <BestSellersSection products={bestSellers} />
       <ContactCTA />
