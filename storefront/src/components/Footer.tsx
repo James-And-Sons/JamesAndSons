@@ -8,7 +8,7 @@ export default function Footer() {
           
           <div>
             <h3 style={{ color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>
-              James <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>&amp;</span> Sons
+              James &amp; Sons
             </h3>
             <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '15px', color: 'var(--gold-pale)', marginBottom: '20px', letterSpacing: '0.05em' }}>
               &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
