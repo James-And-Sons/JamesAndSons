@@ -19,9 +19,15 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
   const allPrices = initialProducts.map(p => p.d2cPrice).filter(Boolean);
   const globalMin = allPrices.length > 0 ? Math.floor(Math.min(...allPrices) / 1000) * 1000 : 0;
   const globalMax = allPrices.length > 0 ? Math.ceil(Math.max(...allPrices) / 1000) * 1000 : 500000;
-  const [priceMin, setPriceMin] = useState<number>(0);
-  const [priceMax, setPriceMax] = useState<number>(999999999);
-  const priceActive = priceMin > 0 || priceMax < 999999999;
+  const [priceMin, setPriceMin] = useState<number>(globalMin);
+  const [priceMax, setPriceMax] = useState<number>(globalMax);
+
+  useEffect(() => {
+    setPriceMin(globalMin);
+    setPriceMax(globalMax);
+  }, [globalMin, globalMax]);
+
+  const priceActive = priceMin > globalMin || priceMax < globalMax;
   const { addItem } = useCartStore();
   const { uniqueCollections, uniqueStyles, uniqueMaterials, uniqueSpaces } = useMemo(() => ({
     uniqueCollections: Array.from(new Set(initialProducts.map(p => p.collection))).filter(c => c !== 'Uncategorized').sort(),
@@ -175,8 +181,8 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
                 toggleFilter={toggleFilter}
                 clearAllFilters={() => {
                   setActiveFilters([]);
-                  setPriceMin(0);
-                  setPriceMax(999999999);
+                  setPriceMin(globalMin);
+                  setPriceMax(globalMax);
                 }}
                 globalMin={globalMin}
                 globalMax={globalMax}
@@ -303,8 +309,8 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
               toggleFilter={toggleFilter}
               clearAllFilters={() => {
                 setActiveFilters([]);
-                setPriceMin(0);
-                setPriceMax(999999999);
+                setPriceMin(globalMin);
+                setPriceMax(globalMax);
               }}
               globalMin={globalMin}
               globalMax={globalMax}

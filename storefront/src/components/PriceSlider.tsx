@@ -19,39 +19,56 @@ export default function PriceSlider({
   onChange,
   onReset,
 }: PriceSliderProps) {
-  // Effective values bound to range
-  const safeMin = Math.max(min, currentMin);
-  const safeMax = currentMax > max ? max : currentMax;
+  // Bind values within bounds
+  const effectiveMin = currentMin < min ? min : currentMin;
+  const effectiveMax = currentMax > max ? max : currentMax;
 
-  const [minVal, setMinVal] = useState(safeMin);
-  const [maxVal, setMaxVal] = useState(safeMax);
+  const [minVal, setMinVal] = useState(effectiveMin);
+  const [maxVal, setMaxVal] = useState(effectiveMax);
 
   useEffect(() => {
     setMinVal(currentMin < min ? min : currentMin);
     setMaxVal(currentMax > max ? max : currentMax);
   }, [currentMin, currentMax, min, max]);
 
-  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.min(Number(e.target.value), maxVal - 1000);
-    setMinVal(value);
-    onChange(value, maxVal);
+  const handleMinSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Math.min(Number(e.target.value), maxVal - 1000);
+    setMinVal(val);
+    onChange(val, maxVal);
   };
 
-  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.max(Number(e.target.value), minVal + 1000);
-    setMaxVal(value);
-    onChange(minVal, value);
+  const handleMaxSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Math.max(Number(e.target.value), minVal + 1000);
+    setMaxVal(val);
+    onChange(minVal, val);
   };
 
-  // Calculate percentage positions for track fill
-  const minPercent = Math.max(0, Math.min(100, Math.round(((minVal - min) / (max - min || 1)) * 100)));
-  const maxPercent = Math.max(0, Math.min(100, Math.round(((maxVal - min) / (max - min || 1)) * 100)));
+  const handleMinInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setMinVal(val);
+    if (val >= min && val < maxVal) {
+      onChange(val, maxVal);
+    }
+  };
+
+  const handleMaxInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value);
+    setMaxVal(val);
+    if (val <= max && val > minVal) {
+      onChange(minVal, val);
+    }
+  };
+
+  // Track percentage calculation
+  const range = max - min || 1;
+  const minPercent = Math.max(0, Math.min(100, ((minVal - min) / range) * 100));
+  const maxPercent = Math.max(0, Math.min(100, ((maxVal - min) / range) * 100));
 
   const isFiltered = minVal > min || maxVal < max;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
-      {/* Header Label + Value Display */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+      {/* Label + Range Text */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span
           style={{
@@ -62,22 +79,30 @@ export default function PriceSlider({
             color: 'var(--text-muted)',
           }}
         >
-          Price Range
+          Price Filter
         </span>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            color: 'var(--gold-light)',
-            fontWeight: 600,
-          }}
-        >
-          {formatPrice(minVal)} — {maxVal >= max ? `${formatPrice(max)}+` : formatPrice(maxVal)}
-        </span>
+        {isFiltered && (
+          <button
+            type="button"
+            onClick={onReset}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'var(--gold)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+            }}
+          >
+            Reset Price ✕
+          </button>
+        )}
       </div>
 
-      {/* Range Slider Track & Inputs */}
-      <div style={{ position: 'relative', width: '100%', height: '32px', display: 'flex', alignItems: 'center' }}>
+      {/* Dual Range Track */}
+      <div style={{ position: 'relative', width: '100%', height: '24px', display: 'flex', alignItems: 'center' }}>
         {/* Background Track */}
         <div
           style={{
@@ -90,7 +115,7 @@ export default function PriceSlider({
           }}
         />
 
-        {/* Highlighted Gold Track */}
+        {/* Selected Range Active Bar */}
         <div
           style={{
             position: 'absolute',
@@ -103,133 +128,146 @@ export default function PriceSlider({
           }}
         />
 
-        {/* Min Input Slider */}
+        {/* Lower Limit Handle Input */}
         <input
           type="range"
           min={min}
           max={max}
           step={1000}
           value={minVal}
-          onChange={handleMinChange}
+          onChange={handleMinSliderChange}
           style={{
             position: 'absolute',
             width: '100%',
             height: '4px',
             WebkitAppearance: 'none',
             background: 'none',
-            pointerEvents: 'auto',
-            zIndex: minVal > max - 100 ? 5 : 3,
-            cursor: 'pointer',
+            pointerEvents: 'none',
+            zIndex: 5,
           }}
-          className="price-slider-thumb"
+          className="dual-range-input"
         />
 
-        {/* Max Input Slider */}
+        {/* Upper Limit Handle Input */}
         <input
           type="range"
           min={min}
           max={max}
           step={1000}
           value={maxVal}
-          onChange={handleMaxChange}
+          onChange={handleMaxSliderChange}
           style={{
             position: 'absolute',
             width: '100%',
             height: '4px',
             WebkitAppearance: 'none',
             background: 'none',
-            pointerEvents: 'auto',
-            zIndex: 4,
-            cursor: 'pointer',
+            pointerEvents: 'none',
+            zIndex: 6,
           }}
-          className="price-slider-thumb"
+          className="dual-range-input"
         />
       </div>
 
-      {/* Preset Pills */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
-        {[
-          { label: '< ₹25K', minP: min, maxP: 25000 },
-          { label: '₹25K–₹75K', minP: 25000, maxP: 75000 },
-          { label: '₹75K–₹150K', minP: 75000, maxP: 150000 },
-          { label: '₹150K+', minP: 150000, maxP: max },
-        ].map((preset) => {
-          const isActive = minVal === preset.minP && maxVal === preset.maxP;
-          return (
-            <button
-              key={preset.label}
-              type="button"
-              onClick={() => {
-                if (isActive) {
-                  onReset();
-                } else {
-                  onChange(preset.minP, preset.maxP);
-                }
-              }}
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '9px',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                padding: '4px 8px',
-                borderRadius: '3px',
-                border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
-                background: isActive ? 'rgba(201,168,76,0.15)' : 'transparent',
-                color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              {preset.label}
-            </button>
-          );
-        })}
-
-        {isFiltered && (
-          <button
-            type="button"
-            onClick={onReset}
+      {/* Clean Min / Max Numeric Input Boxes */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div>
+          <label
             style={{
+              display: 'block',
               fontFamily: 'var(--font-mono)',
               fontSize: '9px',
-              letterSpacing: '0.08em',
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              padding: '4px 8px',
-              border: 'none',
-              background: 'none',
-              color: 'var(--gold)',
-              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              marginBottom: '4px',
             }}
           >
-            Reset ✕
-          </button>
-        )}
+            Min Price (₹)
+          </label>
+          <input
+            type="number"
+            min={min}
+            max={maxVal - 1000}
+            step={1000}
+            value={minVal}
+            onChange={handleMinInputChange}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '4px',
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              outline: 'none',
+            }}
+          />
+        </div>
+
+        <div>
+          <label
+            style={{
+              display: 'block',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '9px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              marginBottom: '4px',
+            }}
+          >
+            Max Price (₹)
+          </label>
+          <input
+            type="number"
+            min={minVal + 1000}
+            max={max}
+            step={1000}
+            value={maxVal}
+            onChange={handleMaxInputChange}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '4px',
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              outline: 'none',
+            }}
+          />
+        </div>
       </div>
 
-      {/* Embedded CSS for custom thumb rendering */}
+      {/* Global CSS for Range Slider Thumbs */}
       <style jsx global>{`
-        input[type='range'].price-slider-thumb::-webkit-slider-thumb {
+        input[type='range'].dual-range-input::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 16px;
-          height: 16px;
+          pointer-events: auto;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: var(--gold);
           border: 2px solid var(--obsidian);
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
           cursor: pointer;
           transition: transform 0.15s ease;
         }
-        input[type='range'].price-slider-thumb::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
+        input[type='range'].dual-range-input::-webkit-slider-thumb:hover {
+          transform: scale(1.25);
         }
-        input[type='range'].price-slider-thumb::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
+        input[type='range'].dual-range-input::-moz-range-thumb {
+          pointer-events: auto;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: var(--gold);
           border: 2px solid var(--obsidian);
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
           cursor: pointer;
         }
       `}</style>

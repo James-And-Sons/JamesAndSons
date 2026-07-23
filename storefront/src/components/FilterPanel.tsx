@@ -66,7 +66,6 @@ export default function FilterPanel({
   const filteredMaterials = filterList(uniqueMaterials);
   const isLedMatch = !searchQuery || 'led certified'.includes(searchQuery);
 
-  // Auto-expand sections if search query is entered
   const isSearching = searchQuery.length > 0;
 
   // Active counts per section
@@ -89,12 +88,63 @@ export default function FilterPanel({
   });
 
   const accordionBodyStyle: React.CSSProperties = {
-    padding: '16px',
+    padding: '12px 16px',
     background: 'var(--surface)',
     border: '1px solid var(--border)',
     borderTop: 'none',
     borderRadius: '0 0 6px 6px',
-    marginBottom: '12px',
+    marginBottom: '10px',
+  };
+
+  const renderOptionRow = (item: string) => {
+    const isActive = activeFilters.includes(item);
+    return (
+      <div
+        key={item}
+        onClick={() => toggleFilter(item)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '8px 10px',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+          userSelect: 'none',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+      >
+        {/* Custom Checkbox */}
+        <div
+          style={{
+            width: '16px',
+            height: '16px',
+            borderRadius: '3px',
+            border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
+            background: isActive ? 'var(--gold)' : 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {isActive && <i className="ti ti-check" style={{ color: 'var(--obsidian)', fontSize: '12px', fontWeight: 700 }} />}
+        </div>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            letterSpacing: '0.06em',
+            color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
+            fontWeight: isActive ? 500 : 400,
+          }}
+        >
+          {item}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -107,7 +157,7 @@ export default function FilterPanel({
         padding: '24px',
         boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
         width: '100%',
-        maxWidth: '720px',
+        maxWidth: '560px',
         maxHeight: '80vh',
         display: 'flex',
         flexDirection: 'column',
@@ -130,7 +180,7 @@ export default function FilterPanel({
         />
         <input
           type="text"
-          placeholder="Search filter options (e.g. Chandelier, Gold, LED)..."
+          placeholder="Search options (e.g. Chandelier, Foyer, Gold)..."
           value={filterSearch}
           onChange={e => setFilterSearch(e.target.value)}
           style={{
@@ -170,7 +220,7 @@ export default function FilterPanel({
 
       {/* Accordion List Container */}
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {/* Section 1: Price Range */}
+        {/* Section 1: Price Range Slider */}
         {!isSearching && (
           <div>
             <div
@@ -203,8 +253,8 @@ export default function FilterPanel({
                     setPriceMax(max);
                   }}
                   onReset={() => {
-                    setPriceMin(0);
-                    setPriceMax(999999999);
+                    setPriceMin(globalMin);
+                    setPriceMax(globalMax);
                   }}
                 />
               </div>
@@ -235,32 +285,8 @@ export default function FilterPanel({
 
             {(openSections.collections || isSearching) && (
               <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {filteredCollections.map(c => {
-                    const isActive = activeFilters.includes(c);
-                    return (
-                      <button
-                        key={c}
-                        onClick={() => toggleFilter(c)}
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '10px',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
-                          background: isActive ? 'var(--gold)' : 'var(--surface2)',
-                          color: isActive ? 'var(--obsidian)' : 'var(--text)',
-                          fontWeight: isActive ? 600 : 400,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        {c}
-                      </button>
-                    );
-                  })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {filteredCollections.map(renderOptionRow)}
                 </div>
               </div>
             )}
@@ -290,32 +316,8 @@ export default function FilterPanel({
 
             {(openSections.spaces || isSearching) && (
               <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {filteredSpaces.map(s => {
-                    const isActive = activeFilters.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => toggleFilter(s)}
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '10px',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
-                          background: isActive ? 'var(--gold)' : 'var(--surface2)',
-                          color: isActive ? 'var(--obsidian)' : 'var(--text)',
-                          fontWeight: isActive ? 600 : 400,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {filteredSpaces.map(renderOptionRow)}
                 </div>
               </div>
             )}
@@ -345,32 +347,8 @@ export default function FilterPanel({
 
             {(openSections.styles || isSearching) && (
               <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {filteredStyles.map(st => {
-                    const isActive = activeFilters.includes(st);
-                    return (
-                      <button
-                        key={st}
-                        onClick={() => toggleFilter(st)}
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '10px',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
-                          background: isActive ? 'var(--gold)' : 'var(--surface2)',
-                          color: isActive ? 'var(--obsidian)' : 'var(--text)',
-                          fontWeight: isActive ? 600 : 400,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        {st}
-                      </button>
-                    );
-                  })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {filteredStyles.map(renderOptionRow)}
                 </div>
               </div>
             )}
@@ -400,53 +378,9 @@ export default function FilterPanel({
 
             {(openSections.materials || isSearching) && (
               <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {filteredMaterials.map(m => {
-                    const isActive = activeFilters.includes(m);
-                    return (
-                      <button
-                        key={m}
-                        onClick={() => toggleFilter(m)}
-                        style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '10px',
-                          letterSpacing: '0.08em',
-                          textTransform: 'uppercase',
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
-                          background: isActive ? 'var(--gold)' : 'var(--surface2)',
-                          color: isActive ? 'var(--obsidian)' : 'var(--text)',
-                          fontWeight: isActive ? 600 : 400,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        {m}
-                      </button>
-                    );
-                  })}
-                  {isLedMatch && (
-                    <button
-                      onClick={() => toggleFilter('LED Certified')}
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '10px',
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        padding: '6px 12px',
-                        borderRadius: '4px',
-                        border: activeFilters.includes('LED Certified') ? '1px solid var(--gold)' : '1px solid var(--border)',
-                        background: activeFilters.includes('LED Certified') ? 'var(--gold)' : 'var(--surface2)',
-                        color: activeFilters.includes('LED Certified') ? 'var(--obsidian)' : 'var(--text)',
-                        fontWeight: activeFilters.includes('LED Certified') ? 600 : 400,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      LED Certified
-                    </button>
-                  )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {filteredMaterials.map(renderOptionRow)}
+                  {isLedMatch && renderOptionRow('LED Certified')}
                 </div>
               </div>
             )}
