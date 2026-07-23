@@ -25,10 +25,21 @@ export default function CataloguesClient() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch('/api/admin/catalogues');
-    const data = await res.json();
-    setCatalogues(data);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/admin/catalogues');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setCatalogues(data);
+      } else {
+        setCatalogues([]);
+        if (data?.error) setError(data.error);
+      }
+    } catch (err) {
+      console.error('Failed to load catalogues:', err);
+      setCatalogues([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -38,16 +49,21 @@ export default function CataloguesClient() {
     if (!form.title || !form.fileUrl) { setError('Title and PDF URL are required.'); return; }
     setSaving(true);
     setError('');
-    const res = await fetch('/api/admin/catalogues', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      setForm(emptyForm);
-      setShowForm(false);
-      load();
-    } else {
+    try {
+      const res = await fetch('/api/admin/catalogues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setForm(emptyForm);
+        setShowForm(false);
+        load();
+      } else {
+        const data = await res.json();
+        setError(data?.error || 'Failed to create catalogue.');
+      }
+    } catch {
       setError('Failed to create catalogue.');
     }
     setSaving(false);
@@ -70,6 +86,8 @@ export default function CataloguesClient() {
 
   const inputClass = 'w-full px-3 py-2.5 bg-surface border border-border text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm';
   const labelClass = 'font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1.5';
+
+  const safeCatalogues = Array.isArray(catalogues) ? catalogues : [];
 
   return (
     <div className="max-w-[1100px] mx-auto px-6 py-8 space-y-6">
@@ -143,7 +161,7 @@ export default function CataloguesClient() {
       {/* Catalogues Table */}
       {loading ? (
         <div className="font-mono text-[11px] text-muted text-center py-16">Loading catalogues…</div>
-      ) : catalogues.length === 0 ? (
+      ) : safeCatalogues.length === 0 ? (
         <div className="text-center py-20 border border-border rounded-md bg-surface">
           <div className="font-serif text-[20px] text-muted mb-3">No Catalogues Yet</div>
           <p className="font-mono text-[10px] text-muted uppercase tracking-widest">Click "Upload New Catalogue" to add your first PDF.</p>
@@ -162,7 +180,7 @@ export default function CataloguesClient() {
               </tr>
             </thead>
             <tbody>
-              {catalogues.map(cat => (
+              {safeCatalogues.map(cat => (
                 <tr key={cat.id} className="border-b border-border hover:bg-surface/60 transition-colors">
                   <td className="px-4 py-3">
                     {cat.coverImage ? (
@@ -177,7 +195,7 @@ export default function CataloguesClient() {
                     <a href={cat.fileUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-[9px] text-accent hover:underline mt-0.5 inline-block">View PDF ↗</a>
                   </td>
                   <td className="px-4 py-3 font-mono text-[12px] text-muted">{cat.year}</td>
-                  <td className="px-4 py-3 font-mono text-[12px] text-muted tabular-nums">{cat.downloads.toLocaleString()}</td>
+                  <td className="px-4 py-3 font-mono text-[12px] text-muted tabular-nums">{(cat.downloads || 0).toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => togglePublish(cat)}
