@@ -21,6 +21,8 @@ type FilterPanelProps = {
   onClose: () => void;
 };
 
+type FilterTab = 'price' | 'collections' | 'spaces' | 'styles' | 'materials';
+
 export default function FilterPanel({
   uniqueCollections,
   uniqueSpaces,
@@ -39,22 +41,18 @@ export default function FilterPanel({
   totalResultsCount,
   onClose,
 }: FilterPanelProps) {
+  const [activeTab, setActiveTab] = useState<FilterTab>('price');
   const [filterSearch, setFilterSearch] = useState('');
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    price: true,
-    collections: true,
-    spaces: false,
-    styles: false,
-    materials: false,
-  });
-
-  const toggleSection = (key: string) => {
-    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const searchQuery = filterSearch.trim().toLowerCase();
 
-  // Helper to filter tags by search query
+  // Active count calculations per tab
+  const activeInCollections = uniqueCollections.filter(c => activeFilters.includes(c)).length;
+  const activeInSpaces = uniqueSpaces.filter(s => activeFilters.includes(s)).length;
+  const activeInStyles = uniqueStyles.filter(st => activeFilters.includes(st)).length;
+  const activeInMaterials = uniqueMaterials.filter(m => activeFilters.includes(m)).length + (activeFilters.includes('LED Certified') ? 1 : 0);
+
+  // Filter list by search query
   const filterList = (items: string[]) => {
     if (!searchQuery) return items;
     return items.filter(item => item.toLowerCase().includes(searchQuery));
@@ -66,36 +64,16 @@ export default function FilterPanel({
   const filteredMaterials = filterList(uniqueMaterials);
   const isLedMatch = !searchQuery || 'led certified'.includes(searchQuery);
 
-  const isSearching = searchQuery.length > 0;
+  // Define Nav Tabs
+  const navTabs: { id: FilterTab; label: string; icon: string; count: number; activeFlag?: boolean }[] = [
+    { id: 'price', label: 'Price Range', icon: 'ti-currency-rupee', count: 0, activeFlag: priceActive },
+    { id: 'collections', label: 'Collections', icon: 'ti-lamp', count: activeInCollections },
+    { id: 'spaces', label: 'Spaces', icon: 'ti-home', count: activeInSpaces },
+    { id: 'styles', label: 'Styles', icon: 'ti-palette', count: activeInStyles },
+    { id: 'materials', label: 'Materials & Specs', icon: 'ti-sparkles', count: activeInMaterials },
+  ];
 
-  // Active counts per section
-  const activeInCollections = uniqueCollections.filter(c => activeFilters.includes(c)).length;
-  const activeInSpaces = uniqueSpaces.filter(s => activeFilters.includes(s)).length;
-  const activeInStyles = uniqueStyles.filter(s => activeFilters.includes(s)).length;
-  const activeInMaterials = uniqueMaterials.filter(m => activeFilters.includes(m)).length + (activeFilters.includes('LED Certified') ? 1 : 0);
-
-  const accordionHeaderStyle = (isOpen: boolean): React.CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 16px',
-    background: isOpen ? 'var(--surface2)' : 'rgba(255,255,255,0.02)',
-    border: '1px solid var(--border)',
-    borderRadius: isOpen ? '6px 6px 0 0' : '6px',
-    cursor: 'pointer',
-    userSelect: 'none',
-    transition: 'all 0.2s ease',
-  });
-
-  const accordionBodyStyle: React.CSSProperties = {
-    padding: '12px 16px',
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderTop: 'none',
-    borderRadius: '0 0 6px 6px',
-    marginBottom: '10px',
-  };
-
+  // Helper to render checkbox option rows
   const renderOptionRow = (item: string) => {
     const isActive = activeFilters.includes(item);
     return (
@@ -105,22 +83,23 @@ export default function FilterPanel({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '8px 10px',
-          borderRadius: '4px',
+          gap: '12px',
+          padding: '10px 14px',
+          borderRadius: '6px',
           cursor: 'pointer',
           transition: 'background 0.2s',
           userSelect: 'none',
+          background: isActive ? 'rgba(201,168,76,0.06)' : 'transparent',
+          border: isActive ? '1px solid rgba(201,168,76,0.3)' : '1px solid transparent',
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        className="hover:!bg-[var(--surface2)]"
       >
         {/* Custom Checkbox */}
         <div
           style={{
-            width: '16px',
-            height: '16px',
-            borderRadius: '3px',
+            width: '18px',
+            height: '18px',
+            borderRadius: '4px',
             border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
             background: isActive ? 'var(--gold)' : 'transparent',
             display: 'flex',
@@ -130,14 +109,14 @@ export default function FilterPanel({
             transition: 'all 0.2s ease',
           }}
         >
-          {isActive && <i className="ti ti-check" style={{ color: 'var(--obsidian)', fontSize: '12px', fontWeight: 700 }} />}
+          {isActive && <i className="ti ti-check" style={{ color: 'var(--obsidian)', fontSize: '13px', fontWeight: 700 }} />}
         </div>
         <span
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
+            fontSize: '12px',
             letterSpacing: '0.06em',
-            color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
+            color: isActive ? 'var(--gold-light)' : 'var(--text)',
             fontWeight: isActive ? 500 : 400,
           }}
         >
@@ -153,249 +132,324 @@ export default function FilterPanel({
       style={{
         background: 'var(--obsidian)',
         border: '1px solid var(--border)',
-        borderRadius: '8px',
-        padding: '24px',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.85)',
-        width: '100%',
-        maxWidth: '560px',
-        maxHeight: '80vh',
+        borderRadius: '10px',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.9)',
+        width: '840px',
+        maxWidth: '92vw',
+        height: '520px',
+        maxHeight: '85vh',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
         overflow: 'hidden',
       }}
     >
-      {/* Search Bar inside Filter */}
-      <div style={{ position: 'relative', width: '100%' }}>
-        <i
-          className="ti ti-search"
-          style={{
-            position: 'absolute',
-            left: '14px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            fontSize: '14px',
-            color: 'var(--gold)',
-          }}
-        />
-        <input
-          type="text"
-          placeholder="Search options (e.g. Chandelier, Foyer, Gold)..."
-          value={filterSearch}
-          onChange={e => setFilterSearch(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px 14px 12px 38px',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '6px',
-            color: 'var(--text)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            outline: 'none',
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
-          onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-        />
-        {filterSearch && (
-          <button
-            onClick={() => setFilterSearch('')}
+      {/* Header Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 24px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--surface)',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <i className="ti ti-adjustments-horizontal" style={{ fontSize: '18px', color: 'var(--gold)' }} />
+          <span
             style={{
-              position: 'absolute',
-              right: '14px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontSize: '12px',
+              fontFamily: 'var(--font-serif)',
+              fontSize: '18px',
+              fontWeight: 400,
+              color: 'var(--text)',
+              letterSpacing: '0.04em',
             }}
           >
-            ✕
-          </button>
-        )}
+            Refine Selection
+          </span>
+        </div>
+
+        {/* Search Input inside Header */}
+        <div style={{ position: 'relative', flex: 1, maxWidth: '360px' }}>
+          <i
+            className="ti ti-search"
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '13px',
+              color: 'var(--gold)',
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Search filter options (e.g. Chandelier, Gold)..."
+            value={filterSearch}
+            onChange={e => setFilterSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 34px',
+              background: 'var(--obsidian)',
+              border: '1px solid var(--border)',
+              borderRadius: '6px',
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              outline: 'none',
+            }}
+            onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
+            onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+          />
+          {filterSearch && (
+            <button
+              onClick={() => setFilterSearch('')}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: '12px',
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            fontSize: '18px',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+        >
+          ✕
+        </button>
       </div>
 
-      {/* Accordion List Container */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {/* Section 1: Price Range Slider */}
-        {!isSearching && (
-          <div>
-            <div
-              style={accordionHeaderStyle(openSections.price)}
-              onClick={() => toggleSection('price')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="ti ti-currency-rupee" style={{ color: 'var(--gold)', fontSize: '14px' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text)' }}>
-                  Price Range
-                </span>
-                {priceActive && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', background: 'rgba(201,168,76,0.2)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '10px' }}>
-                    Active
-                  </span>
+      {/* Main Split Body: Left Side Nav + Right Content */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* Left Side Navigation Tabs */}
+        <div
+          style={{
+            width: '220px',
+            flexShrink: 0,
+            borderRight: '1px solid var(--border)',
+            background: 'rgba(0,0,0,0.2)',
+            padding: '16px 12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+          }}
+        >
+          {navTabs.map(tab => {
+            const isSelected = activeTab === tab.id;
+            const hasBadge = tab.count > 0 || tab.activeFlag;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  border: isSelected ? '1px solid var(--border-gold)' : '1px solid transparent',
+                  background: isSelected ? 'var(--surface2)' : 'transparent',
+                  color: isSelected ? 'var(--gold-light)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left',
+                  position: 'relative',
+                }}
+              >
+                {/* Gold Indicator Line */}
+                {isSelected && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '0',
+                      top: '20%',
+                      bottom: '20%',
+                      width: '3px',
+                      borderRadius: '0 2px 2px 0',
+                      background: 'var(--gold)',
+                    }}
+                  />
                 )}
-              </div>
-              <i className={`ti ti-chevron-${openSections.price ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: '14px' }} />
-            </div>
 
-            {openSections.price && (
-              <div style={accordionBodyStyle}>
-                <PriceSlider
-                  min={globalMin}
-                  max={globalMax}
-                  currentMin={priceMin}
-                  currentMax={priceMax}
-                  onChange={(min, max) => {
-                    setPriceMin(min);
-                    setPriceMax(max);
-                  }}
-                  onReset={() => {
-                    setPriceMin(globalMin);
-                    setPriceMax(globalMax);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Section 2: Collections / Categories */}
-        {(uniqueCollections.length > 0 && (filteredCollections.length > 0 || !isSearching)) && (
-          <div>
-            <div
-              style={accordionHeaderStyle(openSections.collections || isSearching)}
-              onClick={() => toggleSection('collections')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="ti ti-lamp" style={{ color: 'var(--gold)', fontSize: '14px' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text)' }}>
-                  Collections
-                </span>
-                {activeInCollections > 0 && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', background: 'rgba(201,168,76,0.2)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '10px' }}>
-                    {activeInCollections} selected
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <i className={`ti ${tab.icon}`} style={{ fontSize: '15px', color: isSelected ? 'var(--gold)' : 'inherit' }} />
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '11px',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      fontWeight: isSelected ? 600 : 400,
+                    }}
+                  >
+                    {tab.label}
                   </span>
-                )}
-              </div>
-              <i className={`ti ti-chevron-${(openSections.collections || isSearching) ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: '14px' }} />
-            </div>
-
-            {(openSections.collections || isSearching) && (
-              <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {filteredCollections.map(renderOptionRow)}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Section 3: Spaces */}
-        {(uniqueSpaces.length > 0 && (filteredSpaces.length > 0 || !isSearching)) && (
-          <div>
-            <div
-              style={accordionHeaderStyle(openSections.spaces || isSearching)}
-              onClick={() => toggleSection('spaces')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="ti ti-home" style={{ color: 'var(--gold)', fontSize: '14px' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text)' }}>
-                  Spaces
-                </span>
-                {activeInSpaces > 0 && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', background: 'rgba(201,168,76,0.2)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '10px' }}>
-                    {activeInSpaces} selected
+                {hasBadge && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '9px',
+                      background: isSelected ? 'var(--gold)' : 'rgba(201,168,76,0.2)',
+                      color: isSelected ? 'var(--obsidian)' : 'var(--gold)',
+                      fontWeight: 700,
+                      padding: '2px 7px',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    {tab.count > 0 ? tab.count : '•'}
                   </span>
                 )}
-              </div>
-              <i className={`ti ti-chevron-${(openSections.spaces || isSearching) ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: '14px' }} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Active Content Area */}
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+          {/* Price Range Tab */}
+          {activeTab === 'price' && (
+            <div style={{ maxWidth: '440px' }}>
+              <PriceSlider
+                min={globalMin}
+                max={globalMax}
+                currentMin={priceMin}
+                currentMax={priceMax}
+                onChange={(min, max) => {
+                  setPriceMin(min);
+                  setPriceMax(max);
+                }}
+                onReset={() => {
+                  setPriceMin(globalMin);
+                  setPriceMax(globalMax);
+                }}
+              />
             </div>
+          )}
 
-            {(openSections.spaces || isSearching) && (
-              <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {filteredSpaces.map(renderOptionRow)}
-                </div>
+          {/* Collections Tab */}
+          {activeTab === 'collections' && (
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  marginBottom: '16px',
+                }}
+              >
+                Select Collections ({filteredCollections.length})
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Section 4: Styles */}
-        {(uniqueStyles.length > 0 && (filteredStyles.length > 0 || !isSearching)) && (
-          <div>
-            <div
-              style={accordionHeaderStyle(openSections.styles || isSearching)}
-              onClick={() => toggleSection('styles')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="ti ti-palette" style={{ color: 'var(--gold)', fontSize: '14px' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text)' }}>
-                  Styles
-                </span>
-                {activeInStyles > 0 && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', background: 'rgba(201,168,76,0.2)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '10px' }}>
-                    {activeInStyles} selected
-                  </span>
-                )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {filteredCollections.map(renderOptionRow)}
               </div>
-              <i className={`ti ti-chevron-${(openSections.styles || isSearching) ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: '14px' }} />
             </div>
+          )}
 
-            {(openSections.styles || isSearching) && (
-              <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {filteredStyles.map(renderOptionRow)}
-                </div>
+          {/* Spaces Tab */}
+          {activeTab === 'spaces' && (
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  marginBottom: '16px',
+                }}
+              >
+                Select Curated Spaces ({filteredSpaces.length})
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Section 5: Materials & Features */}
-        {(filteredMaterials.length > 0 || isLedMatch || !isSearching) && (
-          <div>
-            <div
-              style={accordionHeaderStyle(openSections.materials || isSearching)}
-              onClick={() => toggleSection('materials')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <i className="ti ti-sparkles" style={{ color: 'var(--gold)', fontSize: '14px' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text)' }}>
-                  Materials &amp; Features
-                </span>
-                {activeInMaterials > 0 && (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', background: 'rgba(201,168,76,0.2)', color: 'var(--gold)', padding: '2px 6px', borderRadius: '10px' }}>
-                    {activeInMaterials} selected
-                  </span>
-                )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {filteredSpaces.map(renderOptionRow)}
               </div>
-              <i className={`ti ti-chevron-${(openSections.materials || isSearching) ? 'up' : 'down'}`} style={{ color: 'var(--text-muted)', fontSize: '14px' }} />
             </div>
+          )}
 
-            {(openSections.materials || isSearching) && (
-              <div style={accordionBodyStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {filteredMaterials.map(renderOptionRow)}
-                  {isLedMatch && renderOptionRow('LED Certified')}
-                </div>
+          {/* Styles Tab */}
+          {activeTab === 'styles' && (
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  marginBottom: '16px',
+                }}
+              >
+                Select Architectural Styles ({filteredStyles.length})
               </div>
-            )}
-          </div>
-        )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {filteredStyles.map(renderOptionRow)}
+              </div>
+            </div>
+          )}
+
+          {/* Materials & Features Tab */}
+          {activeTab === 'materials' && (
+            <div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  marginBottom: '16px',
+                }}
+              >
+                Select Materials &amp; Technical Specs ({filteredMaterials.length + (isLedMatch ? 1 : 0)})
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {filteredMaterials.map(renderOptionRow)}
+                {isLedMatch && renderOptionRow('LED Certified')}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Action Footer */}
+      {/* Footer Action Bar */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          paddingTop: '16px',
+          padding: '16px 24px',
           borderTop: '1px solid var(--border)',
+          background: 'var(--surface)',
         }}
       >
         <button
@@ -409,30 +463,29 @@ export default function FilterPanel({
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            padding: '8px 0',
           }}
         >
-          Clear All
+          Clear All Filters
         </button>
 
         <button
           onClick={onClose}
           style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
+            fontSize: '11px',
             fontWeight: 700,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
             background: 'var(--gold)',
             color: 'var(--obsidian)',
             border: 'none',
-            padding: '10px 24px',
+            padding: '12px 28px',
             borderRadius: '4px',
             cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(201,168,76,0.2)',
+            boxShadow: '0 4px 14px rgba(201,168,76,0.25)',
           }}
         >
-          Show {totalResultsCount} Products
+          Apply Filters ({totalResultsCount} Products)
         </button>
       </div>
     </div>
