@@ -76,7 +76,8 @@ export default function PriceSlider({
             fontSize: '10px',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            color: 'var(--text-muted)',
+            color: '#FFFFFF',
+            fontWeight: 600,
           }}
         >
           Price Filter
@@ -94,6 +95,7 @@ export default function PriceSlider({
               cursor: 'pointer',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
+              fontWeight: 600,
             }}
           >
             Reset Price ✕
@@ -176,11 +178,12 @@ export default function PriceSlider({
             style={{
               display: 'block',
               fontFamily: 'var(--font-mono)',
-              fontSize: '9px',
+              fontSize: '10px',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              marginBottom: '4px',
+              color: '#FFFFFF',
+              marginBottom: '6px',
+              fontWeight: 500,
             }}
           >
             Min Price (₹)
@@ -194,13 +197,14 @@ export default function PriceSlider({
             onChange={handleMinInputChange}
             style={{
               width: '100%',
-              padding: '8px 10px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              padding: '9px 12px',
+              background: 'var(--surface2)',
+              border: '1px solid rgba(201,168,76,0.4)',
               borderRadius: '4px',
-              color: 'var(--text)',
+              color: '#FFFFFF',
               fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
+              fontSize: '12px',
+              fontWeight: 600,
               outline: 'none',
             }}
           />
@@ -211,11 +215,12 @@ export default function PriceSlider({
             style={{
               display: 'block',
               fontFamily: 'var(--font-mono)',
-              fontSize: '9px',
+              fontSize: '10px',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              marginBottom: '4px',
+              color: '#FFFFFF',
+              marginBottom: '6px',
+              fontWeight: 500,
             }}
           >
             Max Price (₹)
@@ -229,13 +234,14 @@ export default function PriceSlider({
             onChange={handleMaxInputChange}
             style={{
               width: '100%',
-              padding: '8px 10px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              padding: '9px 12px',
+              background: 'var(--surface2)',
+              border: '1px solid rgba(201,168,76,0.4)',
               borderRadius: '4px',
-              color: 'var(--text)',
+              color: '#FFFFFF',
               fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
+              fontSize: '12px',
+              fontWeight: 600,
               outline: 'none',
             }}
           />

@@ -73,7 +73,7 @@ export default function FilterPanel({
     { id: 'materials', label: 'Materials & Specs', icon: 'ti-sparkles', count: activeInMaterials },
   ];
 
-  // Helper to render checkbox option rows
+  // High Contrast Checkbox Option Row
   const renderOptionRow = (item: string) => {
     const isActive = activeFilters.includes(item);
     return (
@@ -87,21 +87,21 @@ export default function FilterPanel({
           padding: '10px 14px',
           borderRadius: '6px',
           cursor: 'pointer',
-          transition: 'background 0.2s',
+          transition: 'all 0.2s ease',
           userSelect: 'none',
-          background: isActive ? 'rgba(201,168,76,0.06)' : 'transparent',
-          border: isActive ? '1px solid rgba(201,168,76,0.3)' : '1px solid transparent',
+          background: isActive ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.03)',
+          border: isActive ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.1)',
         }}
-        className="hover:!bg-[var(--surface2)]"
+        className="hover:!bg-[rgba(255,255,255,0.09)]"
       >
-        {/* Custom Checkbox */}
+        {/* Custom High-Contrast Checkbox */}
         <div
           style={{
             width: '18px',
             height: '18px',
             borderRadius: '4px',
-            border: isActive ? '1px solid var(--gold)' : '1px solid var(--border)',
-            background: isActive ? 'var(--gold)' : 'transparent',
+            border: isActive ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.5)',
+            background: isActive ? 'var(--gold)' : 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -109,15 +109,15 @@ export default function FilterPanel({
             transition: 'all 0.2s ease',
           }}
         >
-          {isActive && <i className="ti ti-check" style={{ color: 'var(--obsidian)', fontSize: '13px', fontWeight: 700 }} />}
+          {isActive && <i className="ti ti-check" style={{ color: '#000000', fontSize: '13px', fontWeight: 800 }} />}
         </div>
         <span
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '12px',
             letterSpacing: '0.06em',
-            color: isActive ? 'var(--gold-light)' : 'var(--text)',
-            fontWeight: isActive ? 500 : 400,
+            color: isActive ? '#F5E9C8' : '#FFFFFF',
+            fontWeight: isActive ? 600 : 500,
           }}
         >
           {item}
@@ -131,9 +131,9 @@ export default function FilterPanel({
       data-dropdown-area="true"
       style={{
         background: 'var(--obsidian)',
-        border: '1px solid var(--border)',
+        border: '1px solid var(--border-gold)',
         borderRadius: '10px',
-        boxShadow: '0 32px 80px rgba(0,0,0,0.9)',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.95)',
         width: '840px',
         maxWidth: '92vw',
         height: '520px',
@@ -156,13 +156,13 @@ export default function FilterPanel({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-          <i className="ti ti-adjustments-horizontal" style={{ fontSize: '18px', color: 'var(--gold)' }} />
+          <i className="ti ti-adjustments-horizontal" style={{ fontSize: '20px', color: 'var(--gold)' }} />
           <span
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: '18px',
-              fontWeight: 400,
-              color: 'var(--text)',
+              fontSize: '19px',
+              fontWeight: 500,
+              color: '#FFFFFF',
               letterSpacing: '0.04em',
             }}
           >
@@ -170,7 +170,7 @@ export default function FilterPanel({
           </span>
         </div>
 
-        {/* Search Input inside Header */}
+        {/* High-Contrast Search Input */}
         <div style={{ position: 'relative', flex: 1, maxWidth: '360px' }}>
           <i
             className="ti ti-search"
@@ -179,28 +179,28 @@ export default function FilterPanel({
               left: '12px',
               top: '50%',
               transform: 'translateY(-50%)',
-              fontSize: '13px',
+              fontSize: '14px',
               color: 'var(--gold)',
             }}
           />
           <input
             type="text"
-            placeholder="Search filter options (e.g. Chandelier, Gold)..."
+            placeholder="Search options (e.g. Chandelier, Gold)..."
             value={filterSearch}
             onChange={e => setFilterSearch(e.target.value)}
             style={{
               width: '100%',
-              padding: '8px 12px 8px 34px',
-              background: 'var(--obsidian)',
-              border: '1px solid var(--border)',
+              padding: '9px 12px 9px 36px',
+              background: 'var(--surface2)',
+              border: '1px solid rgba(201,168,76,0.3)',
               borderRadius: '6px',
-              color: 'var(--text)',
+              color: '#FFFFFF',
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               outline: 'none',
             }}
             onFocus={e => (e.target.style.borderColor = 'var(--gold)')}
-            onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+            onBlur={e => (e.target.style.borderColor = 'rgba(201,168,76,0.3)')}
           />
           {filterSearch && (
             <button
@@ -212,7 +212,7 @@ export default function FilterPanel({
                 transform: 'translateY(-50%)',
                 background: 'none',
                 border: 'none',
-                color: 'var(--text-muted)',
+                color: '#CCCCCC',
                 cursor: 'pointer',
                 fontSize: '12px',
               }}
@@ -228,7 +228,7 @@ export default function FilterPanel({
           style={{
             background: 'none',
             border: 'none',
-            color: 'var(--text-muted)',
+            color: '#DDDDDD',
             cursor: 'pointer',
             fontSize: '18px',
             padding: '4px',
@@ -237,7 +237,7 @@ export default function FilterPanel({
             justifyContent: 'center',
           }}
           onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#DDDDDD')}
         >
           ✕
         </button>
@@ -245,17 +245,17 @@ export default function FilterPanel({
 
       {/* Main Split Body: Left Side Nav + Right Content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left Side Navigation Tabs */}
+        {/* Left Side Navigation Tabs with High Contrast */}
         <div
           style={{
-            width: '220px',
+            width: '230px',
             flexShrink: 0,
             borderRight: '1px solid var(--border)',
-            background: 'rgba(0,0,0,0.2)',
+            background: 'rgba(0,0,0,0.35)',
             padding: '16px 12px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '4px',
+            gap: '6px',
           }}
         >
           {navTabs.map(tab => {
@@ -273,9 +273,9 @@ export default function FilterPanel({
                   width: '100%',
                   padding: '12px 14px',
                   borderRadius: '6px',
-                  border: isSelected ? '1px solid var(--border-gold)' : '1px solid transparent',
-                  background: isSelected ? 'var(--surface2)' : 'transparent',
-                  color: isSelected ? 'var(--gold-light)' : 'var(--text-muted)',
+                  border: isSelected ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.06)',
+                  background: isSelected ? 'rgba(201,168,76,0.18)' : 'var(--surface)',
+                  color: isSelected ? '#FFFFFF' : '#D4D4D4',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   textAlign: 'left',
@@ -288,9 +288,9 @@ export default function FilterPanel({
                     style={{
                       position: 'absolute',
                       left: '0',
-                      top: '20%',
-                      bottom: '20%',
-                      width: '3px',
+                      top: '15%',
+                      bottom: '15%',
+                      width: '4px',
                       borderRadius: '0 2px 2px 0',
                       background: 'var(--gold)',
                     }}
@@ -298,14 +298,14 @@ export default function FilterPanel({
                 )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <i className={`ti ${tab.icon}`} style={{ fontSize: '15px', color: isSelected ? 'var(--gold)' : 'inherit' }} />
+                  <i className={`ti ${tab.icon}`} style={{ fontSize: '16px', color: isSelected ? 'var(--gold)' : 'var(--gold-light)' }} />
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '11px',
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      fontWeight: isSelected ? 600 : 400,
+                      fontWeight: isSelected ? 700 : 500,
                     }}
                   >
                     {tab.label}
@@ -317,9 +317,9 @@ export default function FilterPanel({
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '9px',
-                      background: isSelected ? 'var(--gold)' : 'rgba(201,168,76,0.2)',
-                      color: isSelected ? 'var(--obsidian)' : 'var(--gold)',
-                      fontWeight: 700,
+                      background: isSelected ? 'var(--gold)' : 'rgba(201,168,76,0.25)',
+                      color: isSelected ? '#000000' : 'var(--gold-light)',
+                      fontWeight: 800,
                       padding: '2px 7px',
                       borderRadius: '10px',
                     }}
@@ -333,10 +333,10 @@ export default function FilterPanel({
         </div>
 
         {/* Right Active Content Area */}
-        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto', background: 'var(--surface)' }}>
           {/* Price Range Tab */}
           {activeTab === 'price' && (
-            <div style={{ maxWidth: '440px' }}>
+            <div style={{ maxWidth: '460px' }}>
               <PriceSlider
                 min={globalMin}
                 max={globalMax}
@@ -363,8 +363,9 @@ export default function FilterPanel({
                   fontSize: '10px',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
+                  color: 'var(--gold-light)',
                   marginBottom: '16px',
+                  fontWeight: 600,
                 }}
               >
                 Select Collections ({filteredCollections.length})
@@ -384,8 +385,9 @@ export default function FilterPanel({
                   fontSize: '10px',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
+                  color: 'var(--gold-light)',
                   marginBottom: '16px',
+                  fontWeight: 600,
                 }}
               >
                 Select Curated Spaces ({filteredSpaces.length})
@@ -405,8 +407,9 @@ export default function FilterPanel({
                   fontSize: '10px',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
+                  color: 'var(--gold-light)',
                   marginBottom: '16px',
+                  fontWeight: 600,
                 }}
               >
                 Select Architectural Styles ({filteredStyles.length})
@@ -426,8 +429,9 @@ export default function FilterPanel({
                   fontSize: '10px',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
+                  color: 'var(--gold-light)',
                   marginBottom: '16px',
+                  fontWeight: 600,
                 }}
               >
                 Select Materials &amp; Technical Specs ({filteredMaterials.length + (isLedMatch ? 1 : 0)})
@@ -459,11 +463,14 @@ export default function FilterPanel({
             fontSize: '10px',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            color: 'var(--text-muted)',
+            color: '#DDDDDD',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
+            fontWeight: 500,
           }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#DDDDDD')}
         >
           Clear All Filters
         </button>
@@ -473,19 +480,19 @@ export default function FilterPanel({
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            fontWeight: 700,
+            fontWeight: 800,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
             background: 'var(--gold)',
-            color: 'var(--obsidian)',
+            color: '#000000',
             border: 'none',
             padding: '12px 28px',
             borderRadius: '4px',
             cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(201,168,76,0.25)',
+            boxShadow: '0 4px 14px rgba(201,168,76,0.3)',
           }}
         >
-          Apply Filters ({totalResultsCount} Products)
+          Show {totalResultsCount} Products
         </button>
       </div>
     </div>

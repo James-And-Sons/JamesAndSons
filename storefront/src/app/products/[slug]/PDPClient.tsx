@@ -50,6 +50,45 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
 
+  const ApproxBadge = ({ note }: { note?: string }) => (
+    <span
+      title={note || "Approximate value subject to hand-craftsmanship and manufacturing variances."}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '14px',
+        height: '14px',
+        borderRadius: '50%',
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.2)',
+        color: 'var(--text-muted)',
+        fontSize: '9px',
+        fontFamily: 'var(--font-mono)',
+        fontWeight: 600,
+        opacity: 0.6,
+        cursor: 'help',
+        marginLeft: '6px',
+        verticalAlign: 'middle',
+        transition: 'all 0.2s ease',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.opacity = '1';
+        e.currentTarget.style.borderColor = 'var(--gold)';
+        e.currentTarget.style.color = 'var(--gold)';
+        e.currentTarget.style.background = 'rgba(201,168,76,0.15)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.opacity = '0.6';
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+        e.currentTarget.style.color = 'var(--text-muted)';
+        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+      }}
+    >
+      ?
+    </span>
+  );
+
   // Synthesize original/parent product option
   const parentOption: Variant = {
     id: 'original',
@@ -698,31 +737,10 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   <div key={spec.key} style={{ display: 'flex', gap: '12px', alignItems: 'baseline', padding: '14px 0', borderBottom: '0.5px dashed rgba(255,255,255,0.05)' }}>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--gold)', textTransform: 'uppercase', flex: '0 0 120px', fontWeight: 600, letterSpacing: '0.05em' }}>{spec.key}</div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)', flex: 1 }}>
-                      {spec.key === 'Weight' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {spec.key === 'Weight' || spec.key === 'Dimensions' ? (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap' }}>
                           <span>{spec.val}</span>
-                          <span
-                            title="Approximate net weight without bulbs or packaging"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: '18px',
-                              height: '18px',
-                              borderRadius: '50%',
-                              background: 'rgba(212,175,55,0.15)',
-                              border: '1px solid var(--gold)',
-                              color: 'var(--gold)',
-                              fontSize: '11px',
-                              fontWeight: 'bold',
-                              cursor: 'help'
-                            }}
-                          >
-                            ?
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                            (approx. net weight without bulbs)
-                          </span>
+                          <ApproxBadge note={spec.key === 'Weight' ? "Approximate net weight without bulbs or packaging. Subject to handcrafting variances." : "Approximate dimensions. Subject to handcrafting and glassblowing variances."} />
                         </div>
                       ) : (
                         spec.val
@@ -1003,31 +1021,10 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                       <div key={spec.key} style={{ display: 'flex', alignItems: 'baseline', padding: '16px 0', borderBottom: sIdx === sArr.length - 1 ? 'none' : '1px dashed var(--border)' }}>
                         <div style={{ flex: '0 0 160px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{spec.key}</div>
                         <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--cream)' }}>
-                          {spec.key === 'Weight' ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {spec.key === 'Weight' || spec.key === 'Dimensions' ? (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap' }}>
                               <span>{spec.val}</span>
-                              <span
-                                title="Approximate net weight without bulbs or packaging"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '18px',
-                                  height: '18px',
-                                  borderRadius: '50%',
-                                  background: 'rgba(212,175,55,0.15)',
-                                  border: '1px solid var(--gold)',
-                                  color: 'var(--gold)',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  cursor: 'help'
-                                }}
-                              >
-                                ?
-                              </span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                                (approx. net weight without bulbs)
-                              </span>
+                              <ApproxBadge note={spec.key === 'Weight' ? "Approximate net weight without bulbs or packaging. Subject to handcrafting variances." : "Approximate dimensions. Subject to handcrafting and glassblowing variances."} />
                             </div>
                           ) : (
                             spec.val
