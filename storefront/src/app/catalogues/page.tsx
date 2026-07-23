@@ -1,5 +1,4 @@
 import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -213,7 +212,6 @@ export default async function CataloguesPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

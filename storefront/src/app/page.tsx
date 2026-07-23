@@ -6,7 +6,6 @@ import NewArrivalsSection from "@/components/NewArrivalsSection";
 import BestSellersSection from "@/components/BestSellersSection";
 import AboutExcerpt from "@/components/AboutExcerpt";
 import ContactCTA from "@/components/ContactCTA";
-import Footer from "@/components/Footer";
 import { getSpaces, getProducts, getCategories, getNewArrivals, getBestSellers } from "@/lib/products";
 
 export default async function Home() {
@@ -23,12 +22,11 @@ export default async function Home() {
       <Navigation />
       <Hero />
       <SpaceGrid spaces={spaces as any} />
+      <AboutExcerpt />
       <CategoryGrid categories={categories as any} />
       <NewArrivalsSection products={newArrivals} />
       <BestSellersSection products={bestSellers} />
-      <AboutExcerpt />
       <ContactCTA />
-      <Footer />
     </main>
   );
 }

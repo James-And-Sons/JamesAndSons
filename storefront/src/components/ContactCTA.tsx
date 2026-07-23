@@ -58,7 +58,7 @@ export default function ContactCTA() {
           {/* Right: Contact details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Phone */}
-            <a href="tel:+917500000000" style={{ display: 'flex', alignItems: 'center', gap: '16px', textDecoration: 'none', color: 'inherit' }}
+            <a href="tel:+917668829714" style={{ display: 'flex', alignItems: 'center', gap: '16px', textDecoration: 'none', color: 'inherit' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
             >
@@ -67,12 +67,12 @@ export default function ContactCTA() {
               </div>
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>Call Our Concierge</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '17px', color: 'var(--text)' }}>+91 75000 00000</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '17px', color: 'var(--text)' }}>+91 76688 29714</div>
               </div>
             </a>
 
             {/* Email */}
-            <a href="mailto:sales@jamesandsons.in" style={{ display: 'flex', alignItems: 'center', gap: '16px', textDecoration: 'none', color: 'inherit' }}
+            <a href="mailto:connect@jamesandsons.in" style={{ display: 'flex', alignItems: 'center', gap: '16px', textDecoration: 'none', color: 'inherit' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--gold)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
             >
@@ -81,20 +81,21 @@ export default function ContactCTA() {
               </div>
               <div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>Write to Us</div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '17px', color: 'var(--text)' }}>sales@jamesandsons.in</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: '17px', color: 'var(--text)' }}>connect@jamesandsons.in</div>
               </div>
             </a>
 
-            {/* Showroom */}
+            {/* Showroom / HQ Address */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
               <div style={{ width: '44px', height: '44px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="ti ti-map-pin" style={{ fontSize: '18px', color: 'var(--gold)' }} />
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>Showroom</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>Headquarters</div>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--text)', lineHeight: 1.5 }}>
-                  Fatehabad Road, Agra<br />
-                  Uttar Pradesh, India
+                  Mohalla Peer Mattha, Dhobi Wali Gali,<br />
+                  Parav Dubey, Aligarh,<br />
+                  Uttar Pradesh, 202001
                 </div>
               </div>
             </div>
@@ -133,7 +134,7 @@ export default function ContactCTA() {
           </Link>
 
           <a
-            href="https://wa.me/917500000000?text=Hello%20James%20%26%20Sons%2C%20I%20would%20like%20to%20enquire%20about%20your%20collections."
+            href="https://wa.me/917668829714?text=Hello%20James%20%26%20Sons%2C%20I%20would%20like%20to%20enquire%20about%20your%20collections."
             target="_blank"
             rel="noopener noreferrer"
             style={{

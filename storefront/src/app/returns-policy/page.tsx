@@ -92,8 +92,6 @@ export default function ReturnsPolicyPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </main>
   );
 }

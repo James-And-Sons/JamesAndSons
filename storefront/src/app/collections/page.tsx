@@ -1,6 +1,5 @@
 import Navigation from "@/components/Navigation";
 import ProductGrid from "@/components/ProductGrid";
-import Footer from "@/components/Footer";
 import { getProducts } from "@/lib/products";
 
 export default async function CollectionsPage(props: {
@@ -18,7 +17,6 @@ export default async function CollectionsPage(props: {
           initialProducts={initialProducts}
         />
       </main>
-      <Footer />
     </>
   );
 }
