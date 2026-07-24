@@ -99,3 +99,7 @@ We implemented multiple category cover photo uploads, updated storefront queries
 ### Dynamic Modal Overlay Edit Panels
 - **Dynamic Modals**: Replaced the inline edit containers and form blocks inside both the Categories (`CollectionsManager.tsx`) and Spaces (`SpacesManager.tsx`) dashboards with dynamic slide-over/fade overlay modals.
 - **Premium Styling Consistency**: The styling is fully consistent with the Catalogues and Campaign managers. It features a semi-transparent dark backdrop blur (`bg-black/75 backdrop-blur-sm`), gold & muted text accents, a scrollable content layout, and a sticky footer containing standard cancel/save controls.
+
+### Google Analytics & Tag Manager (gtag.js)
+- **Local Environment variable**: Updated the local environment file `.env.local` to point to the correct ID: `NEXT_PUBLIC_GA_ID=GT-NBJMTB56`.
+- **Root Layout Integration**: Configured [layout.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/layout.tsx) to automatically render the tag manager script pointing to `GT-NBJMTB56` by default when no environment variable is loaded, guaranteeing the tracking script operates on client production deployments.
