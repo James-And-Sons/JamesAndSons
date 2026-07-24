@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { addProductToSpace, removeProductFromSpace } from './actions';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
 import { useSidebar } from '@/lib/context/SidebarContext';
@@ -264,18 +265,12 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                       </div>
                     ) : (
                       <>
-                        <button 
-                          onClick={() => openManage(s)} 
-                          className={`font-mono text-[9px] uppercase tracking-[0.1em] ${managingProducts?.id === s.id ? 'text-accent font-semibold' : 'text-muted hover:text-white transition-colors'}`}
+                        <Link 
+                          href={`/spaces/${s.id}/edit`} 
+                          className="font-mono text-[9px] uppercase tracking-[0.1em] text-accent hover:text-accent-hover transition-colors"
                         >
-                          Products
-                        </button>
-                        <button 
-                          onClick={() => openEdit(s)} 
-                          className={`font-mono text-[9px] uppercase tracking-[0.1em] ${editing?.id === s.id ? 'text-accent font-semibold' : 'text-muted hover:text-white transition-colors'}`}
-                        >
-                          Edit
-                        </button>
+                          Edit &amp; Manage
+                        </Link>
                         <button 
                           onClick={() => setDeletingId(s.id)} 
                           className="font-mono text-[9px] uppercase tracking-[0.1em] text-rose-400/80 hover:text-rose-500 transition-colors"
