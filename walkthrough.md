@@ -95,3 +95,7 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **Space Model Schema Push**: Updated the `Space` model in `schema.prisma` to include `images` (string array) and pushed the migration to Supabase on port `5432`.
 - **Spaces Admin API**: Extended the POST/PUT handlers in `admin/src/app/api/spaces/route.ts` and `admin/src/app/api/spaces/[id]/route.ts` to process and persist `image` (first URL) and `images` (complete array).
 - **Spaces Admin UI**: Updated `SpacesManager.tsx` to mount the multi-upload `CloudinaryUpload` component for spaces, allowing admins to add multiple cover photos for each space, sort/reorder them, and preview them inside both the creation and inline editing forms.
+
+### Dynamic Modal Overlay Edit Panels
+- **Dynamic Modals**: Replaced the inline edit containers and form blocks inside both the Categories (`CollectionsManager.tsx`) and Spaces (`SpacesManager.tsx`) dashboards with dynamic slide-over/fade overlay modals.
+- **Premium Styling Consistency**: The styling is fully consistent with the Catalogues and Campaign managers. It features a semi-transparent dark backdrop blur (`bg-black/75 backdrop-blur-sm`), gold & muted text accents, a scrollable content layout, and a sticky footer containing standard cancel/save controls.

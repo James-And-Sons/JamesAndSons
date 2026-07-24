@@ -196,62 +196,95 @@ export default function CategoryManager({ categories, allProducts }: { categorie
       </div>
 
       {showForm && (
-        <div className="premium-card p-8 space-y-6 shadow-[0_8px_32px_rgba(0,0,0,0.25)] border-accent/40 bg-surface/90 backdrop-blur">
-          <h3 className="font-serif text-[22px] text-primary font-light">{editing ? 'Edit Category' : 'Create New Category'}</h3>
-          {error && <p className="text-red-400 font-mono text-[11px]">{error}</p>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Category Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandeliers" />
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-surface border border-accent/30 rounded-lg w-full max-w-[640px] flex flex-col overflow-hidden max-h-[90vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-accent">
+                  {editing ? 'Edit Details' : 'Create New'}
+                </div>
+                <h2 className="font-serif text-[20px] text-primary font-normal m-0">
+                  {editing ? 'Edit Category' : 'Create New Category'}
+                </h2>
+              </div>
+              <button 
+                onClick={handleDiscard}
+                className="text-muted hover:text-primary font-mono text-[16px] cursor-pointer bg-transparent border-none focus:outline-none"
+              >
+                ✕
+              </button>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Technical Subheading</label>
-              <input value={technicalSubheading} onChange={e => setTechnicalSubheading(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandelier / Pendant (LED)" />
+
+            {/* Content */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {error && <p className="text-red-400 font-mono text-[11px] m-0">⚠️ {error}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Category Name *</label>
+                  <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandeliers" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Technical Subheading</label>
+                  <input value={technicalSubheading} onChange={e => setTechnicalSubheading(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandelier / Pendant (LED)" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">8-Digit HSN Code</label>
+                  <input value={hsnCode} onChange={e => setHsnCode(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 94051100" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">GST Rate (%)</label>
+                  <select value={gstRate} onChange={e => setGstRate(parseFloat(e.target.value))} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
+                    <option value={5}>5%</option>
+                    <option value={12}>12%</option>
+                    <option value={18}>18%</option>
+                    <option value={28}>28%</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Applicable BIS Standard</label>
+                  <input value={bisStandard} onChange={e => setBisStandard(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. IS 10322 (Part 5 / Sec 1)" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">BIS Status</label>
+                  <select value={bisStatus} onChange={e => setBisStatus(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
+                    <option value="Pending Application">Pending Application</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Not Available">Not Available</option>
+                  </select>
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>
+                  <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="Brief summary of this category" />
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Category Cover Photos (Multiple)</label>
+                  <CloudinaryUpload 
+                    onUpload={(urls) => setImages(urls)}
+                    defaultImages={images}
+                    multiple={true}
+                    label="Add Category Cover Photo"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">8-Digit HSN Code</label>
-              <input value={hsnCode} onChange={e => setHsnCode(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 94051100" />
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-border bg-surface-muted/40 flex justify-end gap-3">
+              <button
+                onClick={handleDiscard}
+                className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary transition-colors bg-background rounded-sm"
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isPending}
+                className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 rounded-sm"
+              >
+                {isPending ? 'Processing...' : 'Save Category'}
+              </button>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">GST Rate (%)</label>
-              <select value={gstRate} onChange={e => setGstRate(parseFloat(e.target.value))} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
-                <option value={5}>5%</option>
-                <option value={12}>12%</option>
-                <option value={18}>18%</option>
-                <option value={28}>28%</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Applicable BIS Standard</label>
-              <input value={bisStandard} onChange={e => setBisStandard(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. IS 10322 (Part 5 / Sec 1)" />
-            </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">BIS Status</label>
-              <select value={bisStatus} onChange={e => setBisStatus(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
-                <option value="Pending Application">Pending Application</option>
-                <option value="Approved">Approved</option>
-                <option value="Not Available">Not Available</option>
-              </select>
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>
-              <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="Brief summary of this category" />
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Category Cover Photos (Multiple)</label>
-              <CloudinaryUpload 
-                onUpload={(urls) => setImages(urls)}
-                defaultImages={images}
-                multiple={true}
-                label="Add Category Cover Photo"
-              />
-            </div>
-          </div>
-          <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-            <button onClick={handleDiscard} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
-            <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
-              {isPending ? 'Processing...' : 'Save Category'}
-            </button>
           </div>
         </div>
       )}
