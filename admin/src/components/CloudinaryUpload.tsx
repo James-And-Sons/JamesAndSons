@@ -86,6 +86,7 @@ export default function CloudinaryUpload({
               src={url}
               alt="Uploaded product"
               fill
+              sizes="96px"
               className="object-cover"
             />
             {/* Delete button */}
