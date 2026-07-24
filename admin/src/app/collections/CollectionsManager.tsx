@@ -165,6 +165,22 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     });
   };
 
+  const handleRowClick = (e: React.MouseEvent, cat: Category) => {
+    const target = e.target as HTMLElement;
+    const isInteractive = 
+      target.tagName === 'A' || 
+      target.tagName === 'BUTTON' || 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'SELECT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.closest('a') || 
+      target.closest('button');
+
+    if (!isInteractive) {
+      openEdit(cat);
+    }
+  };
+
   const handleAddProduct = async () => {
     if (!managingProducts || !selectedProductId) return;
     const res = await addProductToCollection(managingProducts.id, selectedProductId);
@@ -370,53 +386,72 @@ export default function CategoryManager({ categories, allProducts }: { categorie
         <table className="w-full text-left">
           <thead className="border-b border-border bg-surface-muted/30">
             <tr>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Category Name</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Technical Subheading</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">8-Digit HSN Code</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">GST Rate</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Applicable BIS Standard</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">BIS Status</th>
+              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Category Info</th>
+              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Tax &amp; Compliance</th>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Products</th>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
             {categories.map(cat => (
-              <tr key={cat.id} className="hover:bg-surface-muted/50 transition-colors">
+              <tr 
+                key={cat.id} 
+                onClick={(e) => handleRowClick(e, cat)}
+                className="hover:bg-surface-muted/50 transition-colors cursor-pointer"
+              >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     {cat.image ? (
-                      <div className="relative w-12 h-12 border border-border overflow-hidden bg-background">
+                      <div className="relative w-12 h-12 border border-border overflow-hidden bg-background flex-shrink-0">
                         <img src={cat.image} alt={cat.name} className="object-cover w-full h-full" />
                       </div>
                     ) : (
-                      <div className="w-12 h-12 border border-dashed border-border/60 flex items-center justify-center text-muted font-mono text-[9px] bg-background">
+                      <div className="w-12 h-12 border border-dashed border-border/60 flex items-center justify-center text-muted font-mono text-[9px] bg-background flex-shrink-0">
                         No Img
                       </div>
                     )}
                     <div>
                       <div className="font-serif text-[17px] text-primary">{cat.name}</div>
                       <div className="font-mono text-[10px] text-muted">{cat.slug}</div>
+                      {cat.technicalSubheading && (
+                        <div className="font-mono text-[10px] text-accent mt-1">{cat.technicalSubheading}</div>
+                      )}
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 font-body text-[13px] text-primary">{cat.technicalSubheading || '—'}</td>
-                <td className="px-6 py-4 font-mono text-[12px] text-secondary">{cat.hsnCode || '—'}</td>
-                <td className="px-6 py-4 font-mono text-[12px] text-secondary">{cat.gstRate !== null && cat.gstRate !== undefined ? `${cat.gstRate}%` : '—'}</td>
-                <td className="px-6 py-4 font-body text-[13px] text-primary">{cat.bisStandard || '—'}</td>
-                <td className="px-6 py-4">
-                  <span className={`font-mono text-[10px] uppercase px-2 py-1 rounded-sm border ${
-                    cat.bisStatus?.toLowerCase().includes('pending')
-                      ? 'border-amber-500/30 text-amber-400 bg-amber-500/5'
-                      : cat.bisStatus?.toLowerCase().includes('approved')
-                        ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
-                        : 'border-border text-muted bg-surface-muted/20'
-                  }`}>
-                    {cat.bisStatus || '—'}
-                  </span>
+                <td className="px-6 py-4 space-y-1">
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-secondary">
+                    <span>HSN:</span>
+                    <span className="text-primary font-semibold">{cat.hsnCode || '—'}</span>
+                    <span>|</span>
+                    <span>GST:</span>
+                    <span className="text-primary font-semibold">{cat.gstRate !== null && cat.gstRate !== undefined ? `${cat.gstRate}%` : '—'}</span>
+                  </div>
+                  {(cat.bisStandard || cat.bisStatus) && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {cat.bisStandard && (
+                        <span className="font-mono text-[10px] text-muted tracking-wide max-w-[200px] truncate" title={cat.bisStandard}>
+                          {cat.bisStandard}
+                        </span>
+                      )}
+                      {cat.bisStatus && (
+                        <span className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-sm border ${
+                          cat.bisStatus.toLowerCase().includes('pending')
+                            ? 'border-amber-500/30 text-amber-400 bg-amber-500/5'
+                            : cat.bisStatus.toLowerCase().includes('approved')
+                              ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
+                              : 'border-border text-muted bg-surface-muted/20'
+                        }`}>
+                          {cat.bisStatus}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </td>
-                <td className="px-6 py-4 font-mono text-[13px] text-right text-secondary tabular-nums">{cat._count.products}</td>
-                <td className="px-6 py-4 text-right flex gap-4 justify-end">
+                <td className="px-6 py-4 font-mono text-[13px] text-right text-secondary tabular-nums">
+                  {cat._count.products} Designs
+                </td>
+                <td className="px-6 py-4 text-right flex gap-4 justify-end items-center">
                   <button onClick={() => openManage(cat)} className="font-mono text-[9px] uppercase tracking-[0.1em] text-accent hover:text-white transition-colors">Products</button>
                   <button onClick={() => openEdit(cat)} className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted hover:text-white transition-colors">Edit</button>
                   <button onClick={() => handleDelete(cat.id, cat._count.products)} className="font-mono text-[9px] uppercase tracking-[0.1em] text-rose-400 hover:text-rose-500 transition-colors">Delete</button>
@@ -424,7 +459,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
               </tr>
             ))}
             {categories.length === 0 && (
-              <tr><td colSpan={8} className="px-6 py-12 text-center font-mono text-[11px] text-muted uppercase tracking-widest">No categories yet</td></tr>
+              <tr><td colSpan={4} className="px-6 py-12 text-center font-mono text-[11px] text-muted uppercase tracking-widest">No categories yet</td></tr>
             )}
           </tbody>
         </table>

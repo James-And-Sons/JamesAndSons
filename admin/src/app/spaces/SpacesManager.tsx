@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { addProductToSpace, removeProductFromSpace } from './actions';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
 import { useSidebar } from '@/lib/context/SidebarContext';
+import ClickableRow from '@/components/ClickableRow';
 
 type Space = { 
   id: string; 
@@ -234,7 +235,10 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
           <tbody className="divide-y divide-border/50">
             {spaces.map(s => (
               <React.Fragment key={s.id}>
-                <tr className={`transition-colors ${editing?.id === s.id || managingProducts?.id === s.id ? 'bg-surface-muted border-accent/20' : 'hover:bg-surface-muted/50'}`}>
+                <ClickableRow 
+                  href={`/spaces/${s.id}/edit`}
+                  className={deletingId === s.id ? 'bg-surface-muted border-accent/20' : ''}
+                >
                   <td className="px-6 py-4">
                     <span className="font-serif text-[17px] text-primary">{s.name}</span>
                     <p className="font-mono text-[10px] text-muted mt-1 lowercase tracking-wider">{s.slug}</p>
@@ -280,7 +284,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                       </>
                     )}
                   </td>
-                </tr>
+                </ClickableRow>
                 
 
                 {(managingProducts?.id === s.id) && (

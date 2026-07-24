@@ -107,3 +107,8 @@ We implemented multiple category cover photo uploads, updated storefront queries
 ### Dedicated Space Edit & Product Management Page
 - **Clean Interface separation**: Replaced the inline product allocation tables and layout-shifting forms in the Spaces list view with a dedicated, full-screen edit page under `/spaces/[id]/edit`.
 - **Layout & Structure**: Inside [EditSpaceClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/app/spaces/%5Bid%5D/edit/EditSpaceClient.tsx), space details (metadata edit form, Cloudinary multi-uploader) are rendered in a major column, while product search selection and the assigned product inventory list are rendered side-by-side in a dedicated sidebar card, optimizing workflow usability.
+
+### Category Table Reorganization & Row Clickability
+- **Clickable Row Navigation**: Integrated `ClickableRow` elements inside Category (`CollectionsManager.tsx`) and Spaces (`SpacesManager.tsx`) tables so clicking anywhere on the row automatically launches the corresponding Category edit modal or redirects the user to the dedicated Space edit page.
+- **Category Column Consolidation**: Consolidated the Category list table from 8 sparse columns into 4 data-rich columns (Category Info, Tax & Compliance, Products, Actions) to ensure all fields fit on screen without vertical truncation or clipping.
+- **Vertical Edit Space Stacking**: Redesigned the Space edit page to place the product manager card directly below the metadata/uploader card in a vertical flow (`space-y-6`) instead of a side-by-side column structure.

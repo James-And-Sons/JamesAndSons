@@ -155,154 +155,150 @@ export default function EditSpaceClient({
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column - Space details */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="premium-card p-6 space-y-6">
-            <h3 className="font-serif text-[18px] text-primary border-b border-border/40 pb-3 font-normal">
-              Space Configurations
-            </h3>
+      <div className="space-y-6">
+        {/* Space details card */}
+        <div className="premium-card p-6 space-y-6">
+          <h3 className="font-serif text-[18px] text-primary border-b border-border/40 pb-3 font-normal">
+            Space Configurations
+          </h3>
 
-            {error && (
-              <div className="font-mono text-[11px] text-red-400 bg-red-950/40 border border-red-500/40 px-4 py-2.5 rounded-sm">
-                ⚠️ {error}
-              </div>
-            )}
-            {successMsg && (
-              <div className="font-mono text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 px-4 py-2.5 rounded-sm">
-                ✓ {successMsg}
-              </div>
-            )}
+          {error && (
+            <div className="font-mono text-[11px] text-red-400 bg-red-950/40 border border-red-500/40 px-4 py-2.5 rounded-sm">
+              ⚠️ {error}
+            </div>
+          )}
+          {successMsg && (
+            <div className="font-mono text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 px-4 py-2.5 rounded-sm">
+              ✓ {successMsg}
+            </div>
+          )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1">
-                <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Name *</label>
-                <input 
-                  value={name} 
-                  onChange={e => setName(e.target.value)} 
-                  className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" 
-                  placeholder="e.g. Living Room" 
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description</label>
-                <input 
-                  value={description} 
-                  onChange={e => setDescription(e.target.value)} 
-                  className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" 
-                  placeholder="e.g. Elegant light fixtures suited for bedrooms" 
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
-                <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Space Cover Photos (Multiple)</label>
-                <CloudinaryUpload 
-                  onUpload={(urls) => setImages(urls)}
-                  defaultImages={images}
-                  multiple={true}
-                  label="Update Space Cover Photo"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Name *</label>
+              <input 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" 
+                placeholder="e.g. Living Room" 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description</label>
+              <input 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" 
+                placeholder="e.g. Elegant light fixtures suited for bedrooms" 
+              />
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-border/40">
-              <div className={`flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider ${isDirty ? 'text-amber-500 animate-pulse' : 'text-muted'}`}>
-                <span className={`w-2 h-2 rounded-full ${isDirty ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-                {isDirty ? 'Unsaved Changes' : 'All Changes Saved'}
-              </div>
-              <button 
-                onClick={handleSave} 
-                disabled={isPending || !isDirty} 
-                className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-40 rounded-sm shadow-md"
-              >
-                {isPending ? 'Saving...' : 'Update Details'}
-              </button>
+            <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
+              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Space Cover Photos (Multiple)</label>
+              <CloudinaryUpload 
+                onUpload={(urls) => setImages(urls)}
+                defaultImages={images}
+                multiple={true}
+                label="Update Space Cover Photo"
+              />
             </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t border-border/40">
+            <div className={`flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider ${isDirty ? 'text-amber-500 animate-pulse' : 'text-muted'}`}>
+              <span className={`w-2 h-2 rounded-full ${isDirty ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+              {isDirty ? 'Unsaved Changes' : 'All Changes Saved'}
+            </div>
+            <button 
+              onClick={handleSave} 
+              disabled={isPending || !isDirty} 
+              className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-40 rounded-sm shadow-md"
+            >
+              {isPending ? 'Saving...' : 'Update Details'}
+            </button>
           </div>
         </div>
 
-        {/* Right column - Product assignment */}
-        <div className="space-y-6">
-          <div className="premium-card p-6 space-y-6">
-            <h3 className="font-serif text-[18px] text-primary border-b border-border/40 pb-3 font-normal">
-              Manage Products
-            </h3>
+        {/* Product assignment card */}
+        <div className="premium-card p-6 space-y-6">
+          <h3 className="font-serif text-[18px] text-primary border-b border-border/40 pb-3 font-normal">
+            Manage Products
+          </h3>
 
-            {/* Add product action */}
-            <div className="space-y-2">
+          {/* Add product action */}
+          <div className="space-y-2">
+            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block">
+              Assign Product to Space
+            </label>
+            <div className="flex gap-2">
+              <select 
+                value={selectedProductId}
+                onChange={e => setSelectedProductId(e.target.value)}
+                className="flex-1 bg-background border border-border px-3 py-2 text-[12px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
+              >
+                <option value="">Select a product...</option>
+                {availableProducts.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddProduct}
+                disabled={!selectedProductId}
+                className="px-4 py-2 font-mono text-[9px] uppercase tracking-wider bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-40 rounded-sm"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          {/* List products in space */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
               <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block">
-                Assign Product to Space
+                Assigned Products
               </label>
-              <div className="flex gap-2">
-                <select 
-                  value={selectedProductId}
-                  onChange={e => setSelectedProductId(e.target.value)}
-                  className="flex-1 bg-background border border-border px-3 py-2 text-[12px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
-                >
-                  <option value="">Select a product...</option>
-                  {availableProducts.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAddProduct}
-                  disabled={!selectedProductId}
-                  className="px-4 py-2 font-mono text-[9px] uppercase tracking-wider bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-40 rounded-sm"
-                >
-                  Add
-                </button>
-              </div>
+              <span className="font-mono text-[10px] text-accent tabular-nums bg-accent/15 px-2 py-0.5 rounded-sm">
+                {space.products.length} Designs
+              </span>
             </div>
 
-            {/* List products in space */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block">
-                  Assigned Products
-                </label>
-                <span className="font-mono text-[10px] text-accent tabular-nums bg-accent/15 px-2 py-0.5 rounded-sm">
-                  {space.products.length} Designs
+            {space.products.length === 0 ? (
+              <div className="border border-border/50 rounded p-6 text-center bg-surface-muted/20">
+                <span className="font-mono text-[10px] text-muted uppercase tracking-wider block">
+                  No products assigned
                 </span>
+                <p className="font-body text-[12px] text-muted mt-2">
+                  Use the selector above to add products to this space.
+                </p>
               </div>
-
-              {space.products.length === 0 ? (
-                <div className="border border-border/50 rounded p-6 text-center bg-surface-muted/20">
-                  <span className="font-mono text-[10px] text-muted uppercase tracking-wider block">
-                    No products assigned
-                  </span>
-                  <p className="font-body text-[12px] text-muted mt-2">
-                    Use the selector above to add products to this space.
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/40 max-h-[420px] overflow-y-auto pr-1">
-                  {space.products.map(p => (
-                    <div key={p.id} className="py-3 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-surface-muted border border-border/60 flex items-center justify-center overflow-hidden rounded-sm flex-shrink-0">
-                          {p.images && p.images[0] ? (
-                            <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="font-mono text-[7px] text-muted">No Img</span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-serif text-[14px] text-primary block leading-tight">{p.name}</span>
-                          <span className="font-mono text-[9px] text-muted uppercase mt-0.5 block">{p.sku}</span>
-                        </div>
+            ) : (
+              <div className="divide-y divide-border/40 pr-1">
+                {space.products.map(p => (
+                  <div key={p.id} className="py-3 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-surface-muted border border-border/60 flex items-center justify-center overflow-hidden rounded-sm flex-shrink-0">
+                        {p.images && p.images[0] ? (
+                          <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-mono text-[7px] text-muted">No Img</span>
+                        )}
                       </div>
-                      <button
-                        onClick={() => handleRemoveProduct(p.id)}
-                        className="font-mono text-[8px] uppercase tracking-wider text-rose-400 hover:text-rose-500 transition-colors p-2"
-                        title="Remove from space"
-                      >
-                        Remove
-                      </button>
+                      <div>
+                        <span className="font-serif text-[14px] text-primary block leading-tight">{p.name}</span>
+                        <span className="font-mono text-[9px] text-muted uppercase mt-0.5 block">{p.sku}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <button
+                      onClick={() => handleRemoveProduct(p.id)}
+                      className="font-mono text-[8px] uppercase tracking-wider text-rose-400 hover:text-rose-500 transition-colors p-2"
+                      title="Remove from space"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
