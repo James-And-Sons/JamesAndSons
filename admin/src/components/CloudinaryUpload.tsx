@@ -35,11 +35,9 @@ export default function CloudinaryUpload({
   const handleUpload = (result: any) => {
     if (result.event === 'success') {
       const url = result.info.secure_url;
-      setImages(prev => {
-        const newImages = multiple ? [...prev, url] : [url];
-        onUpload(newImages); // Need to call onUpload with the updated array
-        return newImages;
-      });
+      const newImages = multiple ? [...images, url] : [url];
+      setImages(newImages);
+      onUpload(newImages);
     }
     handleClose();
   };

@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         description,
         technicalSubheading,
         hsnCode,
-        gstRate: gstRate !== undefined && gstRate !== null ? parseFloat(String(gstRate)) : null,
+        gstRate: (gstRate !== undefined && gstRate !== null && !isNaN(parseFloat(String(gstRate)))) ? parseFloat(String(gstRate)) : null,
         bisStandard,
         bisStatus,
         image: image || null,
@@ -22,11 +22,12 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
     });
 
     // Cascade updates to all products in this category
+    const productGst = (gstRate !== undefined && gstRate !== null && !isNaN(parseFloat(String(gstRate)))) ? parseFloat(String(gstRate)) : 18.0;
     await prisma.product.updateMany({
       where: { categoryId: id },
       data: {
         hsnCode: hsnCode || null,
-        gstRate: gstRate !== undefined && gstRate !== null ? parseFloat(String(gstRate)) : 18.0,
+        gstRate: productGst,
         bisCertification: bisStandard || null
       }
     });

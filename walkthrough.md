@@ -112,3 +112,7 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **Clickable Row Navigation**: Integrated `ClickableRow` elements inside Category (`CollectionsManager.tsx`) and Spaces (`SpacesManager.tsx`) tables so clicking anywhere on the row automatically launches the corresponding Category edit modal or redirects the user to the dedicated Space edit page.
 - **Category Column Consolidation**: Consolidated the Category list table from 8 sparse columns into 4 data-rich columns (Category Info, Tax & Compliance, Products, Actions) to ensure all fields fit on screen without vertical truncation or clipping.
 - **Vertical Edit Space Stacking**: Redesigned the Space edit page to place the product manager card directly below the metadata/uploader card in a vertical flow (`space-y-6`) instead of a side-by-side column structure.
+
+### Category Form Performance & Bug Fixes
+- **Cloudinary setState In Render Warn**: Fixed the React warning: `Cannot update a component ('CategoryManager') while rendering a different component ('CloudinaryUpload')` by moving the `onUpload` callback trigger out of the nested functional state updater (`setImages(prev => { ... })`) inside `CloudinaryUpload.tsx`'s upload success handler.
+- **Robust API Type Parsing**: Hardened the API routes for category changes (`/api/collections/[id]`) to prevent database type exceptions. Added validation checks to ensure any invalid `gstRate` values are caught, handled, and default safely.
