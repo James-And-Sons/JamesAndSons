@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import ActionDropdown from '@/components/ActionDropdown';
 import SyncButton from '@/components/SyncButton';
 import ClickableRow from '@/components/ClickableRow';
@@ -34,12 +35,18 @@ export default function ProductsTableClient({
   products: ProductItem[];
   categories: CategoryItem[];
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoryId') || 'ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const [chipFilter, setChipFilter] = useState<'ALL' | 'LOW_STOCK' | 'ANOMALY' | 'OUT_OF_STOCK'>('ALL');
+
+  useEffect(() => {
+    setSearchTerm(searchParams.get('q') || '');
+    setSelectedCategory(searchParams.get('categoryId') || 'ALL');
+  }, [searchParams]);
 
   // Calculate stats for the top summary strip
   const stats = useMemo(() => {

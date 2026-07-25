@@ -122,3 +122,6 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **Direct Space Editing**: Updated the Spaces dropdown items to link to the dedicated edit page (`/spaces/ID/edit`) instead of the filter path (`/spaces?manage=ID`).
 - **Dropdown Auto-expansion**: Added auto-expansion support for the sidebar groups, ensuring the categories and spaces groups expand automatically on page load when their edit views are active.
 
+### Product Catalog Search Bar Fix
+- **URL Parameter Synchronization**: Linked the local state `searchTerm` in [ProductsTableClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/app/products/ProductsTableClient.tsx) to query parameters. The table now detects and filters results based on the search parameter `?q=query` passed from the sidebar search box.
+- **Dynamic Search Listener**: Implemented a synchronization `useEffect` that updates both the search term and the active category filter whenever the URL query parameters change (e.g. from keying a new query into the sidebar search bar while already viewing the catalog).
