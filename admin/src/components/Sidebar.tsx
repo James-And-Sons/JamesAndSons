@@ -31,6 +31,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   });
 
   const currentCategoryId = searchParams.get('categoryId');
+  const currentEditCategoryId = searchParams.get('edit');
   const currentManageId = searchParams.get('manage');
 
   if (pathname === '/login') return null;
@@ -67,17 +68,18 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
   }, [searchParams]);
 
   useEffect(() => {
-    // Auto-expand active groups ONLY if a sub-item query parameter is active, NOT on root pages
-    if (currentCategoryId) {
+    // Auto-expand active groups ONLY if a sub-item query parameter or edit path is active, NOT on root pages
+    if (currentCategoryId || currentEditCategoryId) {
       setOpenDropdowns(prev => ({ ...prev, collections: true }));
     }
-    if (currentManageId) {
+    const isSpaceEditPage = pathname.startsWith('/spaces/') && pathname.endsWith('/edit');
+    if (currentManageId || isSpaceEditPage) {
       setOpenDropdowns(prev => ({ ...prev, spaces: true }));
     }
     if (pathname === '/products/add' || searchParams.get('q')) {
       setOpenDropdowns(prev => ({ ...prev, catalog: true }));
     }
-  }, [currentCategoryId, currentManageId, pathname, searchParams]);
+  }, [currentCategoryId, currentEditCategoryId, currentManageId, pathname, searchParams]);
 
   const renderLink = (name: string, href: string, badge?: number | null, icon?: string) => {
     const isActive = href === '/' 
@@ -600,14 +602,14 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
               {renderDropdown('Categories', 'collections', '/collections', categories.map(c => ({
                 name: `${c.name} (${c._count?.products || 0})`,
-                href: `/products?categoryId=${c.id}`,
-                active: currentCategoryId === c.id
+                href: `/collections?edit=${c.id}`,
+                active: currentEditCategoryId === c.id
               })))}
 
               {renderDropdown('Spaces', 'spaces', '/spaces', spaces.map(s => ({
                 name: `${s.name} (${s._count?.products || 0})`,
-                href: `/spaces?manage=${s.id}`,
-                active: currentManageId === s.id
+                href: `/spaces/${s.id}/edit`,
+                active: pathname === `/spaces/${s.id}/edit`
               })))}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Business</p>

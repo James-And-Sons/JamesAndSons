@@ -116,3 +116,9 @@ We implemented multiple category cover photo uploads, updated storefront queries
 ### Category Form Performance & Bug Fixes
 - **Cloudinary setState In Render Warn**: Fixed the React warning: `Cannot update a component ('CategoryManager') while rendering a different component ('CloudinaryUpload')` by moving the `onUpload` callback trigger out of the nested functional state updater (`setImages(prev => { ... })`) inside `CloudinaryUpload.tsx`'s upload success handler.
 - **Robust API Type Parsing**: Hardened the API routes for category changes (`/api/collections/[id]`) to prevent database type exceptions. Added validation checks to ensure any invalid `gstRate` values are caught, handled, and default safely.
+
+### Sidebar Navigation & Dropdown Targets
+- **Direct Category Editing**: Updated the Sidebar dropdown items for Categories. Instead of leading to the product catalogue `/products?categoryId=ID`, they now lead directly to editing/managing that specific category (`/collections?edit=ID`) where the corresponding edit modal automatically opens.
+- **Direct Space Editing**: Updated the Spaces dropdown items to link to the dedicated edit page (`/spaces/ID/edit`) instead of the filter path (`/spaces?manage=ID`).
+- **Dropdown Auto-expansion**: Added auto-expansion support for the sidebar groups, ensuring the categories and spaces groups expand automatically on page load when their edit views are active.
+
