@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
           phone: user.phone || user.user_metadata?.phone,
           firstName: user.user_metadata?.first_name || user.user_metadata?.name?.split(' ')[0],
           lastName: user.user_metadata?.last_name || user.user_metadata?.name?.split(' ').slice(1).join(' '),
+          externalId: user.id,
           ...userDetails
         };
       }

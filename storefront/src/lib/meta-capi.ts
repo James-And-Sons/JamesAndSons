@@ -19,6 +19,9 @@ export interface MetaCapiEvent {
     state?: string | null;
     zipCode?: string | null;
     country?: string | null;
+    fbp?: string | null;
+    fbc?: string | null;
+    externalId?: string | null;
   };
   customData?: {
     currency?: string;
@@ -62,7 +65,7 @@ export async function sendMetaCapiEvent(event: MetaCapiEvent) {
     };
 
     if (event.rawUserData) {
-      const { email, phone, firstName, lastName, city, state, zipCode, country } = event.rawUserData;
+      const { email, phone, firstName, lastName, city, state, zipCode, country, fbp, fbc, externalId } = event.rawUserData;
       
       if (email) hashedUserData.em = hashValue(email);
       if (phone) hashedUserData.ph = hashValue(phone);
@@ -72,6 +75,9 @@ export async function sendMetaCapiEvent(event: MetaCapiEvent) {
       if (state) hashedUserData.st = hashValue(state);
       if (zipCode) hashedUserData.zp = hashValue(zipCode);
       if (country) hashedUserData.country = hashValue(country);
+      if (fbp) hashedUserData.fbp = fbp;
+      if (fbc) hashedUserData.fbc = fbc;
+      if (externalId) hashedUserData.external_id = hashValue(externalId);
     }
 
     const payload: Record<string, any> = {

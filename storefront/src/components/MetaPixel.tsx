@@ -15,6 +15,14 @@ declare global {
   }
 }
 
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+};
+
 export default function MetaPixel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -59,6 +67,9 @@ export default function MetaPixel() {
       // Read test event code if it exists in sessionStorage
       const testEventCode = typeof window !== 'undefined' ? sessionStorage.getItem('fb_test_code') : null;
 
+      const fbp = getCookie('_fbp');
+      const fbc = getCookie('_fbc');
+
       // B. Track via Server Conversions API (CAPI)
       fetch('/api/meta-capi', {
         method: 'POST',
@@ -68,7 +79,11 @@ export default function MetaPixel() {
           eventId,
           eventSourceUrl: window.location.href,
           customData,
-          rawUserData,
+          rawUserData: {
+            fbp,
+            fbc,
+            ...rawUserData
+          },
           testEventCode
         })
       }).catch(err => {

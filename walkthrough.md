@@ -165,6 +165,12 @@ We implemented multiple category cover photo uploads, updated storefront queries
   * **Contact**: Integrated inside [ContactClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/contact/ContactClient.tsx) to trigger when users click concierge direct phone or email contact lines.
   * **CompleteRegistration**: Tied to [ClientLoginPage.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/login/ClientLoginPage.tsx) to track successful B2B or consumer account registrations.
 
+### Advanced Meta Match Parameters
+- **Cookie Capture**: Added a `getCookie` utility to [MetaPixel.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/MetaPixel.tsx) to dynamically parse Browser ID (`_fbp`) and Click ID (`_fbc`) cookies set by Meta.
+- **Payload Enrichment**: Merged `fbp` and `fbc` properties into the payload forwarded to the CAPI route handler to boost reporting matching capabilities.
+- **External ID Association**: Captured the logged-in user's database ID inside [route.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/api/meta-capi/route.ts) and hashed it as `external_id` (using SHA-256) to link server and client data accurately.
+
+
 
 
 
