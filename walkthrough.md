@@ -151,5 +151,11 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **Token Configuration**: Appended the user's generated Meta access token and active Pixel ID (`2422495261493848`) to [env.local](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/.env.local) to authorize server-to-server CAPI transactions immediately.
 - **Deduplication Verification**: Updated the hardcoded fallback ID inside [MetaPixel.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/MetaPixel.tsx) to align client-side operations under the same dataset.
 
+### Meta CAPI Test Events Integration
+- **Real-Time Test Console**: Added routing and client-side listeners inside [MetaPixel.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/MetaPixel.tsx) to intercept `test_code` or `test_event_code` query parameters.
+- **Session Persistence**: Captured query codes are retained in `sessionStorage` and sent with all consecutive page views and transaction flows.
+- **Verification Delivery**: Forwarded standard test event parameters in [route.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/api/meta-capi/route.ts) directly under the `test_event_code` parameter to let Events Manager instantly capture test-mode events and mark the CAPI setup wizard complete.
+
+
 
 

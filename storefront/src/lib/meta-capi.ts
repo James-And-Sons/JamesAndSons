@@ -28,6 +28,7 @@ export interface MetaCapiEvent {
     content_type?: string;
     contents?: Array<{ id: string; quantity: number; item_price?: number }>;
   };
+  testEventCode?: string | null;
 }
 
 export async function sendMetaCapiEvent(event: MetaCapiEvent) {
@@ -73,7 +74,7 @@ export async function sendMetaCapiEvent(event: MetaCapiEvent) {
       if (country) hashedUserData.country = hashValue(country);
     }
 
-    const payload = {
+    const payload: Record<string, any> = {
       data: [
         {
           event_name: event.eventName,
@@ -86,6 +87,11 @@ export async function sendMetaCapiEvent(event: MetaCapiEvent) {
         }
       ]
     };
+
+    const testCode = event.testEventCode || process.env.META_TEST_EVENT_CODE;
+    if (testCode) {
+      payload.test_event_code = testCode;
+    }
 
     console.log(`[Meta CAPI] Sending event: ${event.eventName} (Event ID: ${event.eventId}) to Meta...`);
 

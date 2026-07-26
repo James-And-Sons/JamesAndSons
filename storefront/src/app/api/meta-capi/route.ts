@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { eventName, eventId, eventSourceUrl, customData, rawUserData } = body;
+    const { eventName, eventId, eventSourceUrl, customData, rawUserData, testEventCode } = body;
 
     if (!eventName || !eventId) {
       return NextResponse.json({ error: 'Missing eventName or eventId' }, { status: 400 });
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       eventSourceUrl: eventSourceUrl || req.headers.get('referer') || '',
       rawUserData: userDetails,
       customData,
+      testEventCode,
     });
 
     return NextResponse.json(result);

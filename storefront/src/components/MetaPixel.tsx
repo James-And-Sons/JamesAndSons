@@ -56,6 +56,9 @@ export default function MetaPixel() {
         window.fbq('track', eventName, customData, { eventID: eventId });
       }
 
+      // Read test event code if it exists in sessionStorage
+      const testEventCode = typeof window !== 'undefined' ? sessionStorage.getItem('fb_test_code') : null;
+
       // B. Track via Server Conversions API (CAPI)
       fetch('/api/meta-capi', {
         method: 'POST',
@@ -65,7 +68,8 @@ export default function MetaPixel() {
           eventId,
           eventSourceUrl: window.location.href,
           customData,
-          rawUserData
+          rawUserData,
+          testEventCode
         })
       }).catch(err => {
         console.warn('[Meta CAPI Client] Failed to send server event:', err);
@@ -76,7 +80,18 @@ export default function MetaPixel() {
 
   }, [pixelId]);
 
-  // 3. Track PageView automatically on route changes
+  // 3. Capture test event code from query params and persist in sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && searchParams) {
+      const code = searchParams.get('test_code') || searchParams.get('test_event_code') || searchParams.get('fb_test');
+      if (code) {
+        sessionStorage.setItem('fb_test_code', code);
+        console.log(`[Meta CAPI] Saved Test Event Code to sessionStorage: ${code}`);
+      }
+    }
+  }, [searchParams]);
+
+  // 4. Track PageView automatically on route changes
   useEffect(() => {
     if (typeof window.trackMetaEvent === 'function') {
       window.trackMetaEvent('PageView');
