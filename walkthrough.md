@@ -125,3 +125,7 @@ We implemented multiple category cover photo uploads, updated storefront queries
 ### Product Catalog Search Bar Fix
 - **URL Parameter Synchronization**: Linked the local state `searchTerm` in [ProductsTableClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/app/products/ProductsTableClient.tsx) to query parameters. The table now detects and filters results based on the search parameter `?q=query` passed from the sidebar search box.
 - **Dynamic Search Listener**: Implemented a synchronization `useEffect` that updates both the search term and the active category filter whenever the URL query parameters change (e.g. from keying a new query into the sidebar search bar while already viewing the catalog).
+
+### Amazon SP-API Price Sync Fix
+- **Offer Pricing Sync**: Added the missing `purchasable_offer` attribute to the Listings Items SP-API request body in [amazon.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/lib/sync/amazon.ts).
+- **Price Resolution**: Instead of only sending the suggested retail price (`list_price`), the sync payload now correctly transmits the active offering price inside the nested `our_price` schedule object, preventing the `INR 0.00` / `Missing Offer` suppression issues on Amazon Seller Central.

@@ -485,6 +485,22 @@ export async function syncToAmazon(product: any) {
         }
       ];
 
+      attributes.purchasable_offer = [
+        {
+          marketplace_id: marketplaceId,
+          currency: 'INR',
+          our_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: price
+                }
+              ]
+            }
+          ]
+        }
+      ];
+
       attributes.fulfillment_availability = [
         {
           fulfillment_channel_code: 'DEFAULT',
