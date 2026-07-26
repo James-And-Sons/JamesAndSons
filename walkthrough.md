@@ -134,3 +134,17 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **B2B Audience Support**: Expanded the `purchasable_offer` attribute array in [amazon.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/lib/sync/amazon.ts) to handle multi-audience offers. It now sends two price offers: one targeting the `ALL` audience (standard D2C price) and one targeting the `B2B` audience (B2B price).
 - **Business Price Match**: Resolves and uploads the business price (`b2bPrice`) from the database product details or variant options, allowing Amazon Business customers to see correct, competitive pricing and removing the `⚠️ Business price` warning banner on Seller Central.
 
+### Facebook Pixel & Conversions API (CAPI) Integration
+- **Hybrid Tracking System**: Designed a dual browser-and-server tracking model inside the storefront using Facebook Pixel and the Meta Conversions API (CAPI) to maximize data collection accuracy and bypass ad blockers.
+- **Client-side helper**: Created [MetaPixel.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/MetaPixel.tsx) which initializes the Meta Pixel script, tracks standard page views (`PageView`) dynamically across routes, and registers a global helper `window.trackMetaEvent(eventName, customData, rawUserData)`.
+- **Deduplication Engine**: Generated unique `eventId` tokens for each event, transmitting the identical ID to both the client-side Pixel and the server-side API Route (`POST /api/meta-capi`) to achieve 100% Rate of Deduplication as recommended by Meta.
+- **Route Handler**: Developed [route.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/api/meta-capi/route.ts) to receive client notifications, extract client metadata (IP Address and User Agent) from Next.js request headers, resolve session information, and forward events to Meta's CAPI endpoint.
+- **Enhanced Match Quality**: Hashed personal identifiers (email, phone, first/last names, city, state, zip) using SHA-256 server-side before submitting to Meta, securing user privacy while boosting Event Match Quality scores.
+- **Critical Flow Integration**: Embedded tracking triggers across all major user journey phases:
+  * `PageView` on layout/pathname changes.
+  * `ViewContent` inside [PDPClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/products/%5Bslug%5D/PDPClient.tsx) when landing on product detail pages.
+  * `AddToCart` inside [PDPClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/products/%5Bslug%5D/PDPClient.tsx) when products are added.
+  * `InitiateCheckout` on checkout clicks inside both [CartDrawer.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/CartDrawer.tsx) and [CartPageClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/cart/CartPageClient.tsx).
+  * `Purchase` inside [CheckoutPageClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/checkout/CheckoutPageClient.tsx) once payment is successfully verified.
+
+

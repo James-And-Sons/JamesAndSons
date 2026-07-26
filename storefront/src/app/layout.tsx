@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Mono, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react"
 import Script from "next/script";
+import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import ScrollToTop from "@/components/ScrollToTop";
+import MetaPixel from "@/components/MetaPixel";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -71,6 +73,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <Suspense fallback={null}>
+            <MetaPixel />
+          </Suspense>
           <ScrollToTop />
           <div className="flex flex-col min-h-screen">
             {children}

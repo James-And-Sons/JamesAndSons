@@ -200,7 +200,22 @@ export default function CartDrawer() {
 
               <Link 
                 href="/checkout" 
-                onClick={closeCart} 
+                onClick={() => {
+                  closeCart();
+                  if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+                    window.trackMetaEvent('InitiateCheckout', {
+                      value: discountedTotal() || total(),
+                      currency: 'INR',
+                      content_ids: items.map(item => item.product.sku),
+                      content_type: 'product',
+                      contents: items.map(item => ({
+                        id: item.product.sku,
+                        quantity: item.quantity,
+                        item_price: item.product.d2cPrice
+                      }))
+                    });
+                  }
+                }} 
                 style={{ 
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
                   background: 'var(--gold)', color: '#0A0905', borderRadius: '8px', 

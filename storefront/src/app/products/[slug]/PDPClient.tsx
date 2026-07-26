@@ -221,6 +221,18 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const hasDiscount = displayMrp && displayMrp > displayPrice;
   const discountPercent = hasDiscount ? Math.round(((displayMrp - displayPrice) / displayMrp) * 100) : 0;
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+      window.trackMetaEvent('ViewContent', {
+        content_name: product.name,
+        content_ids: [product.sku],
+        content_type: 'product',
+        value: displayPrice,
+        currency: 'INR'
+      });
+    }
+  }, [product.sku, displayPrice]);
+
   // Fetch Onsitego plans whenever price changes
   useEffect(() => {
     const fetchWarranties = async () => {
@@ -299,6 +311,24 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     } : null;
 
     addItem(cartProduct, qty, selectedWarrantyPayload);
+    
+    if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+      window.trackMetaEvent('AddToCart', {
+        content_name: cartProduct.name,
+        content_ids: [cartProduct.sku],
+        content_type: 'product',
+        value: displayPrice * qty,
+        currency: 'INR',
+        contents: [
+          {
+            id: cartProduct.sku,
+            quantity: qty,
+            item_price: displayPrice
+          }
+        ]
+      });
+    }
+
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

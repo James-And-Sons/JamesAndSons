@@ -205,7 +205,25 @@ export default function CartPageClient() {
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: '28px', color: '#E2C97A' }}>{formatPrice(grandTotal)}</div>
                 </div>
 
-                <button onClick={() => router.push('/checkout')} style={{ width: '100%', background: 'var(--gold)', color: '#0A0905', border: 'none', borderRadius: '16px', padding: '16px', fontSize: '13px', fontWeight: 600, letterSpacing: '0.15em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <button 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+                      window.trackMetaEvent('InitiateCheckout', {
+                        value: discountedTotal() || total(),
+                        currency: 'INR',
+                        content_ids: items.map(item => item.product.sku),
+                        content_type: 'product',
+                        contents: items.map(item => ({
+                          id: item.product.sku,
+                          quantity: item.quantity,
+                          item_price: item.product.d2cPrice
+                        }))
+                      });
+                    }
+                    router.push('/checkout');
+                  }} 
+                  style={{ width: '100%', background: 'var(--gold)', color: '#0A0905', border: 'none', borderRadius: '16px', padding: '16px', fontSize: '13px', fontWeight: 600, letterSpacing: '0.15em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                >
                   <i className="ti ti-lock"></i> SECURE CHECKOUT
                 </button>
               </div>

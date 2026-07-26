@@ -199,6 +199,34 @@ export default function CheckoutPageInner({
             );
             if (verifyRes.success) {
               setOrderNumber(result.orderNumber!);
+
+              if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+                const nameParts = form.name.trim().split(/\s+/);
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+
+                window.trackMetaEvent('Purchase', {
+                  value: finalSubtotal + gst + (shipping || 0),
+                  currency: 'INR',
+                  content_ids: items.map(i => i.product.sku),
+                  content_type: 'product',
+                  contents: items.map(i => ({
+                    id: i.product.sku,
+                    quantity: i.quantity,
+                    item_price: i.product.d2cPrice
+                  }))
+                }, {
+                  email: form.email,
+                  phone: form.phone,
+                  firstName: firstName,
+                  lastName: lastName,
+                  city: form.city,
+                  state: form.state,
+                  zipCode: form.pincode,
+                  country: 'India'
+                });
+              }
+
               clearCart();
               setStep(3); // Show Success Screen
             } else {
