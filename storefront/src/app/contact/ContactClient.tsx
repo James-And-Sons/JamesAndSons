@@ -3,6 +3,14 @@
 import Link from 'next/link';
 
 export default function ContactClient() {
+  const handleContactClick = (type: string) => {
+    if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+      window.trackMetaEvent('Contact', {
+        contact_type: type
+      });
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '100px 40px 80px' }}>
       
@@ -44,19 +52,19 @@ export default function ContactClient() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '14px' }}>
               <div>
                 <span style={{ color: 'var(--text-dim)' }}>Phone:</span>{' '}
-                <a href="tel:+919045808115" style={{ color: 'var(--gold)', textDecoration: 'none' }}>
+                <a href="tel:+919045808115" onClick={() => handleContactClick('phone')} style={{ color: 'var(--gold)', textDecoration: 'none' }}>
                   +91 9045 808115
                 </a>
               </div>
               <div style={{ marginTop: '12px' }}>
                 <span style={{ color: 'var(--text-dim)' }}>General Inquiry:</span>{' '}
-                <a href="mailto:connect@jamesandsons.in" style={{ color: 'var(--gold)', textDecoration: 'none' }}>
+                <a href="mailto:connect@jamesandsons.in" onClick={() => handleContactClick('email_general')} style={{ color: 'var(--gold)', textDecoration: 'none' }}>
                   connect@jamesandsons.in
                 </a>
               </div>
               <div>
                 <span style={{ color: 'var(--text-dim)' }}>Concierge Support:</span>{' '}
-                <a href="mailto:support@jamesandsons.in" style={{ color: 'var(--gold)', textDecoration: 'none' }}>
+                <a href="mailto:support@jamesandsons.in" onClick={() => handleContactClick('email_support')} style={{ color: 'var(--gold)', textDecoration: 'none' }}>
                   support@jamesandsons.in
                 </a>
               </div>

@@ -333,6 +333,21 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     setTimeout(() => setAdded(false), 2000);
   };
 
+  const handleToggleWishlist = () => {
+    if (!isWishlisted) {
+      if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+        window.trackMetaEvent('AddToWishlist', {
+          content_name: product.name,
+          content_ids: [product.sku],
+          content_type: 'product',
+          value: displayPrice,
+          currency: 'INR'
+        });
+      }
+    }
+    toggleItem(product);
+  };
+
   const renderWarrantySelector = () => {
     if (warranties.length === 0) return null;
     return (
@@ -686,7 +701,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               <i className="ti ti-shopping-bag-plus" style={{ fontSize: '18px' }}></i>
               {availableStock === 0 ? 'Made to Order' : added ? '✓ Added to Cart' : 'Add to Cart'}
             </button>
-            <button onClick={() => toggleItem(product)} style={{ background: 'transparent', border: 'none', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <button onClick={handleToggleWishlist} style={{ background: 'transparent', border: 'none', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '28px', color: isWishlisted ? 'var(--gold)' : 'var(--text)' }}></i>
             </button>
           </div>
@@ -1322,7 +1337,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   </button>
 
                   <button
-                    onClick={() => toggleItem(product)}
+                    onClick={handleToggleWishlist}
                     style={{ background: 'transparent', border: 'none', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: isWishlisted ? 'var(--gold)' : 'var(--text)', transition: 'all 0.3s' }}
                   >
                     <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '28px' }}></i>

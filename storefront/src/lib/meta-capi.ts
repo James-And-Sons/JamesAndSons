@@ -7,7 +7,7 @@ export function hashValue(val?: string | null): string | null {
 }
 
 export interface MetaCapiEvent {
-  eventName: 'PageView' | 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase';
+  eventName: 'PageView' | 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase' | 'Search' | 'AddToWishlist' | 'Lead' | 'Contact' | 'CompleteRegistration';
   eventId: string;
   eventSourceUrl: string;
   rawUserData?: {

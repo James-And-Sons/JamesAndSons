@@ -62,6 +62,15 @@ export default function RFQForm({ products, preselectedProduct, user }: Props) {
     });
 
     if (res.success) {
+      if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+        window.trackMetaEvent('Lead', {
+          content_category: 'B2B RFQ',
+          value: items.reduce((acc, item) => acc + (item.product.d2cPrice * item.quantity), 0),
+          currency: 'INR',
+          content_ids: items.map(item => item.product.sku),
+          content_type: 'product'
+        });
+      }
       setSubmitted(true);
     } else {
       setError(res.error || 'Failed to submit RFQ');

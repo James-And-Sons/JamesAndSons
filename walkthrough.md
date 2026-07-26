@@ -156,6 +156,16 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **Session Persistence**: Captured query codes are retained in `sessionStorage` and sent with all consecutive page views and transaction flows.
 - **Verification Delivery**: Forwarded standard test event parameters in [route.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/api/meta-capi/route.ts) directly under the `test_event_code` parameter to let Events Manager instantly capture test-mode events and mark the CAPI setup wizard complete.
 
+### Expanded Meta Standard Events Coverage
+- **API Types Extended**: Modified [meta-capi.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/lib/meta-capi.ts) and [MetaPixel.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/MetaPixel.tsx) to support and type-validate five additional standard event codes: `Search`, `AddToWishlist`, `Lead`, `Contact`, and `CompleteRegistration`.
+- **Event Integrations**:
+  * **Search**: Integrated into [SearchModal.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/SearchModal.tsx) to record search keywords.
+  * **AddToWishlist**: Integrated into [PDPClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/products/%5Bslug%5D/PDPClient.tsx) when toggling items to the wishlist.
+  * **Lead**: Embedded inside [RFQForm.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/rfq/RFQForm.tsx) to capture B2B requests for quotation (RFQ submissions).
+  * **Contact**: Integrated inside [ContactClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/contact/ContactClient.tsx) to trigger when users click concierge direct phone or email contact lines.
+  * **CompleteRegistration**: Tied to [ClientLoginPage.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/login/ClientLoginPage.tsx) to track successful B2B or consumer account registrations.
+
+
 
 
 

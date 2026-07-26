@@ -8,7 +8,7 @@ declare global {
     fbq: any;
     _fbq: any;
     trackMetaEvent: (
-      eventName: 'PageView' | 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase',
+      eventName: 'PageView' | 'ViewContent' | 'AddToCart' | 'InitiateCheckout' | 'Purchase' | 'Search' | 'AddToWishlist' | 'Lead' | 'Contact' | 'CompleteRegistration',
       customData?: Record<string, any>,
       rawUserData?: Record<string, any>
     ) => string;

@@ -36,6 +36,17 @@ export default function SearchModal({ products, onClose }: Props) {
     }
   }, [mounted]);
 
+  // Meta Pixel Search Event
+  useEffect(() => {
+    if (debouncedQuery.trim().length >= 2) {
+      if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+        window.trackMetaEvent('Search', {
+          search_string: debouncedQuery.trim()
+        });
+      }
+    }
+  }, [debouncedQuery]);
+
   const results = debouncedQuery.trim().length < 2 ? [] : products.filter(p =>
     p.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
     p.collection.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
