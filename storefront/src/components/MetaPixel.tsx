@@ -18,7 +18,7 @@ declare global {
 export default function MetaPixel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || '2105537333695799'; // Falling back to the Pixel ID from screenshot: 2105537333695799
+  const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || '2422495261493848'; // Falling back to the Pixel ID: 2422495261493848
 
   useEffect(() => {
     if (!pixelId) return;

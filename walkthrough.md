@@ -147,4 +147,9 @@ We implemented multiple category cover photo uploads, updated storefront queries
   * `InitiateCheckout` on checkout clicks inside both [CartDrawer.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/CartDrawer.tsx) and [CartPageClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/cart/CartPageClient.tsx).
   * `Purchase` inside [CheckoutPageClient.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/checkout/CheckoutPageClient.tsx) once payment is successfully verified.
 
+### Facebook API Credentials Activated
+- **Token Configuration**: Appended the user's generated Meta access token and active Pixel ID (`2422495261493848`) to [env.local](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/.env.local) to authorize server-to-server CAPI transactions immediately.
+- **Deduplication Verification**: Updated the hardcoded fallback ID inside [MetaPixel.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/components/MetaPixel.tsx) to align client-side operations under the same dataset.
+
+
 
