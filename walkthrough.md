@@ -129,3 +129,8 @@ We implemented multiple category cover photo uploads, updated storefront queries
 ### Amazon SP-API Price Sync Fix
 - **Offer Pricing Sync**: Added the missing `purchasable_offer` attribute to the Listings Items SP-API request body in [amazon.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/lib/sync/amazon.ts).
 - **Price Resolution**: Instead of only sending the suggested retail price (`list_price`), the sync payload now correctly transmits the active offering price inside the nested `our_price` schedule object, preventing the `INR 0.00` / `Missing Offer` suppression issues on Amazon Seller Central.
+
+### Amazon B2B Competitive Pricing Sync
+- **B2B Audience Support**: Expanded the `purchasable_offer` attribute array in [amazon.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/lib/sync/amazon.ts) to handle multi-audience offers. It now sends two price offers: one targeting the `ALL` audience (standard D2C price) and one targeting the `B2B` audience (B2B price).
+- **Business Price Match**: Resolves and uploads the business price (`b2bPrice`) from the database product details or variant options, allowing Amazon Business customers to see correct, competitive pricing and removing the `⚠️ Business price` warning banner on Seller Central.
+

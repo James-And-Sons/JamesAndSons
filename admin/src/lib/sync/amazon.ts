@@ -91,7 +91,8 @@ export async function syncToAmazon(product: any) {
     price: number, 
     quantity: number, 
     v: any | null = null,
-    isParent: boolean = false
+    isParent: boolean = false,
+    b2bPrice: number | null = null
   ) => {
     const marketplaceId = process.env.AMAZON_MARKETPLACE_ID || 'A21TJRUUN4KGV';
     const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
@@ -485,10 +486,11 @@ export async function syncToAmazon(product: any) {
         }
       ];
 
-      attributes.purchasable_offer = [
+      const offers = [
         {
           marketplace_id: marketplaceId,
           currency: 'INR',
+          audience: 'ALL',
           our_price: [
             {
               schedule: [
@@ -500,6 +502,25 @@ export async function syncToAmazon(product: any) {
           ]
         }
       ];
+
+      if (b2bPrice !== null && b2bPrice > 0) {
+        offers.push({
+          marketplace_id: marketplaceId,
+          currency: 'INR',
+          audience: 'B2B',
+          our_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: b2bPrice
+                }
+              ]
+            }
+          ]
+        });
+      }
+
+      attributes.purchasable_offer = offers;
 
       attributes.fulfillment_availability = [
         {
@@ -619,13 +640,15 @@ ${responseBody}
     for (const v of product.variants) {
       const vPrice = v.d2cPrice || product.d2cPrice;
       const vQty = v.stockQuantity;
+      const vB2bPrice = v.b2bPrice || product.b2bPrice || Math.round(vPrice * 0.95);
       console.log(`[Amazon Sync] Syncing Child Variant SKU: ${v.sku}...`);
-      const childRes = await syncListingItem(v.sku, `${product.name} - ${v.name}`, vPrice, vQty, v, false);
+      const childRes = await syncListingItem(v.sku, `${product.name} - ${v.name}`, vPrice, vQty, v, false, vB2bPrice);
       results.push(childRes);
     }
   } else {
     // Single product with no variants
-    const res = await syncListingItem(product.sku, product.name, product.d2cPrice, product.stockQuantity, null, false);
+    const productB2bPrice = product.b2bPrice || Math.round(product.d2cPrice * 0.95);
+    const res = await syncListingItem(product.sku, product.name, product.d2cPrice, product.stockQuantity, null, false, productB2bPrice);
     results.push(res);
   }
 
