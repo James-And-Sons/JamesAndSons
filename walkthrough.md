@@ -170,6 +170,13 @@ We implemented multiple category cover photo uploads, updated storefront queries
 - **Payload Enrichment**: Merged `fbp` and `fbc` properties into the payload forwarded to the CAPI route handler to boost reporting matching capabilities.
 - **External ID Association**: Captured the logged-in user's database ID inside [route.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/storefront/src/app/api/meta-capi/route.ts) and hashed it as `external_id` (using SHA-256) to link server and client data accurately.
 
+### Client-Side Batch Sync Execution (Gateway Timeout Fix)
+- **The Issue**: Bulk-syncing all 40 products sequentially across 6 active API channels exceeded Serverless (Vercel) timeout limits (10-30s), throwing 504 Gateway errors in production.
+- **The Solution**: 
+  * Modified the POST router in [route.ts](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/app/api/admin/sync/route.ts) to support an `action: 'list'` parameter, exposing a rapid endpoint to list product IDs to be processed.
+  * Rewrote [SyncButton.tsx](file:///Users/abhishikt_mac/Skills/Coding/Growth-ho%20clients/JamesAndSons/admin/src/components/SyncButton.tsx) to fetch the list of catalog IDs first, then iterate and trigger single-item sync calls sequentially from the client side. This entirely avoids the 504 timeout limit and updates the button label in real time with the current sync percentage (e.g. `Syncing (5/40) - 13%`).
+
+
 
 
 
