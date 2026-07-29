@@ -1,0 +1,8 @@
+name = "jas-email-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ADMIN_WEBHOOK_URL = "https://admin.jamesandsons.in/api/webhooks/inbound-email"
+# FORWARD_TARGETS is set as a secret via wrangler secret put FORWARD_TARGETS
+# WEBHOOK_SECRET is set as a secret via wrangler secret put WEBHOOK_SECRET
