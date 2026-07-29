@@ -107,32 +107,23 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
           }
         })
 
-        // 2. If the ticket was resolved, automatically reopen it
+        // 2. If the ticket was resolved/closed, automatically reopen it, and flag as unread by admins
         const currentTicket = await tx.ticket.findUnique({ where: { id: params.id } })
-        if (currentTicket && currentTicket.status === 'RESOLVED') {
-          await tx.ticket.update({
-            where: { id: params.id },
-            data: { status: 'OPEN' }
-          })
-        }
+        const nextStatus = currentTicket && (currentTicket.status === 'RESOLVED' || currentTicket.status === 'CLOSED')
+          ? 'OPEN'
+          : currentTicket?.status || 'OPEN';
+
+        await tx.ticket.update({
+          where: { id: params.id },
+          data: { 
+            status: nextStatus,
+            readByAdmin: false
+          }
+        })
       })
     } catch (e) {
       console.error('Error adding reply:', e)
       return { success: false, error: 'Database transaction failed' }
-    }
-
-    // Push reply comment to Zoho Desk (failure-tolerant)
-    try {
-      const ticketRecord = await prisma.ticket.findUnique({
-        where: { id: params.id },
-        select: { zohoId: true }
-      });
-      if (ticketRecord?.zohoId) {
-        await addZohoComment(ticketRecord.zohoId, message);
-        console.log(`Successfully synced reply to Zoho Desk ticket ${ticketRecord.zohoId}`);
-      }
-    } catch (zohoError) {
-      console.error('Failed to sync reply to Zoho Desk:', zohoError);
     }
 
     revalidatePath(`/account/tickets/${params.id}`)

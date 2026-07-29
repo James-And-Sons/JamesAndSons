@@ -10,6 +10,7 @@ export interface EmailPayload {
   to: string;
   subject: string;
   html: string;
+  from?: string;
 }
 
 export interface WhatsAppPayload {
@@ -20,10 +21,10 @@ export interface WhatsAppPayload {
 /**
  * Send an Email via Resend, SMTP, or Webhook Provider
  */
-export async function sendEmail({ to, subject, html }: EmailPayload): Promise<{ success: boolean; id?: string; error?: string }> {
+export async function sendEmail({ to, subject, html, from }: EmailPayload): Promise<{ success: boolean; id?: string; error?: string }> {
   const resendKey = process.env.RESEND_API_KEY;
   const smtpHost = process.env.SMTP_HOST;
-  const fromEmail = process.env.MARKETING_FROM_EMAIL || 'James & Sons <concierge@jamesandsons.in>';
+  const fromEmail = from || process.env.MARKETING_FROM_EMAIL || 'James & Sons <concierge@jamesandsons.in>';
 
   // Provider 1: Resend API
   if (resendKey) {

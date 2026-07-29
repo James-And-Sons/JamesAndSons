@@ -160,6 +160,7 @@ export default async function NewTicketPage() {
             attachments: data.attachments,
             orderItems: data.orderItems || null,
             orderId: data.orderId || null,
+            readByAdmin: false,
             ticketMessages: {
               create: {
                 authorId: user.id,
@@ -190,33 +191,6 @@ export default async function NewTicketPage() {
     } catch (error) {
       console.error("Error creating ticket in Server Action:", error)
       return { success: false, error: 'Database transaction failed' }
-    }
-
-    // Push the ticket to Zoho Desk (failure-tolerant)
-    try {
-      const orderRecord = data.orderId 
-        ? await prisma.order.findUnique({ where: { id: data.orderId } }) 
-        : null;
-
-      const zohoTicketId = await createZohoTicket({
-        subject: data.subject,
-        description: data.description,
-        category: data.category,
-        contactEmail: user.email!,
-        contactName: `${dbUser?.firstName || 'Customer'} ${dbUser?.lastName || ''}`.trim(),
-        orderNumber: orderRecord?.orderNumber || undefined,
-        portalUrl: `https://jamesandsons.in/account/tickets/${ticket.id}`
-      });
-
-      if (zohoTicketId) {
-        await prisma.ticket.update({
-          where: { id: ticket.id },
-          data: { zohoId: zohoTicketId }
-        });
-        console.log(`Successfully synced ticket ${ticket.ticketNumber} to Zoho Desk with ID ${zohoTicketId}`);
-      }
-    } catch (zohoError) {
-      console.error('Failed to sync ticket to Zoho Desk:', zohoError);
     }
 
     revalidatePath('/account/tickets')

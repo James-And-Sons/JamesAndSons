@@ -1,14 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import TicketsInbox from './TicketsInbox';
+import { requireAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TicketsPage() {
+  const currentUser = await requireAdmin();
+
   const tickets = await prisma.ticket.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
       user: true,
       order: true,
+      assignedTo: true,
       _count: { select: { ticketMessages: true } }
     }
   });
@@ -25,7 +29,7 @@ export default async function TicketsPage() {
           </p>
         </div>
       </div>
-      <TicketsInbox tickets={tickets} />
+      <TicketsInbox tickets={tickets as any} currentUser={currentUser} />
     </div>
   );
 }
