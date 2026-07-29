@@ -71,15 +71,11 @@ export default async function Dashboard() {
             Metrics and action items for James &amp; Sons operations.
           </p>
         </div>
-        <div className="live-pill">
-          <span className="live-dot" aria-hidden="true" />
-          <span>Live data · Updated 2 min ago</span>
-        </div>
       </div>
 
       {/* KPI Cards Grid - Clickable & Reflows on Mobile */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" role="list" aria-label="Key metrics">
-        {totalRevenue > 0 && (
+        {totalRevenue >= 1 && (
           <Link 
             href="/orders" 
             role="listitem"
@@ -96,7 +92,7 @@ export default async function Dashboard() {
           </Link>
         )}
 
-        {activeOrders > 0 && (
+        {activeOrders >= 1 && (
           <Link 
             href="/orders" 
             role="listitem"
@@ -113,7 +109,7 @@ export default async function Dashboard() {
           </Link>
         )}
 
-        {pendingRfqs > 0 && (
+        {pendingRfqs >= 1 && (
           <Link 
             href="/rfqs" 
             role="listitem"
@@ -130,7 +126,7 @@ export default async function Dashboard() {
           </Link>
         )}
 
-        {b2bRegistrations > 0 && (
+        {b2bRegistrations >= 1 && (
           <Link 
             href="/b2b" 
             role="listitem"
@@ -148,53 +144,58 @@ export default async function Dashboard() {
         )}
 
         {/* Support Tickets Count Card */}
-        <Link 
-          href="/tickets" 
-          role="listitem"
-          className={`premium-card p-5 block no-underline group transition-all rounded-lg ${
-            openTicketsCount > 0 
-              ? 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70' 
-              : 'hover:border-accent/40'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className={`font-mono text-[10px] tracking-[0.15em] uppercase font-semibold ${
-              openTicketsCount > 0 ? 'text-amber-500' : 'text-muted'
-            }`}>TICKETS ACTIVE</span>
-            <span className={`font-mono text-[14px] ${openTicketsCount > 0 ? 'text-amber-500' : 'text-muted'}`} aria-hidden="true">🎫</span>
-          </div>
-          <p className={`font-serif text-[28px] md:text-[32px] font-normal m-0 leading-tight ${
-            openTicketsCount > 0 ? 'text-amber-500' : 'text-primary'
-          }`}>
-            {openTicketsCount}
-          </p>
-          <p className="font-mono text-[10px] text-muted mt-2 m-0">Support requests</p>
-        </Link>
+        {openTicketsCount >= 1 && (
+          <Link 
+            href="/tickets" 
+            role="listitem"
+            className={`premium-card p-5 block no-underline group transition-all rounded-lg ${
+              openTicketsCount > 0 
+                ? 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70' 
+                : 'hover:border-accent/40'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className={`font-mono text-[10px] tracking-[0.15em] uppercase font-semibold ${
+                openTicketsCount > 0 ? 'text-amber-500' : 'text-muted'
+              }`}>TICKETS ACTIVE</span>
+              <span className={`font-mono text-[14px] ${openTicketsCount > 0 ? 'text-amber-500' : 'text-muted'}`} aria-hidden="true">🎫</span>
+            </div>
+            <p className={`font-serif text-[28px] md:text-[32px] font-normal m-0 leading-tight ${
+              openTicketsCount > 0 ? 'text-amber-500' : 'text-primary'
+            }`}>
+              {openTicketsCount}
+            </p>
+            <p className="font-mono text-[10px] text-muted mt-2 m-0">Support requests</p>
+          </Link>
+        )}
 
         {/* Inquiries Count Card */}
-        <Link 
-          href="/inquiries" 
-          role="listitem"
-          className={`premium-card p-5 block no-underline group transition-all rounded-lg ${
-            newInquiriesCount > 0 
-              ? 'border-sky-500/40 bg-sky-500/5 hover:border-sky-500/70' 
-              : 'hover:border-accent/40'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className={`font-mono text-[10px] tracking-[0.15em] uppercase font-semibold ${
-              newInquiriesCount > 0 ? 'text-sky-400' : 'text-muted'
-            }`}>NEW LEADS</span>
-            <span className={`font-mono text-[14px] ${newInquiriesCount > 0 ? 'text-sky-400' : 'text-muted'}`} aria-hidden="true">✉</span>
-          </div>
-          <p className={`font-serif text-[28px] md:text-[32px] font-normal m-0 leading-tight ${
-            newInquiriesCount > 0 ? 'text-sky-400' : 'text-primary'
-          }`}>
-            {newInquiriesCount}
-          </p>
-          <p className="font-mono text-[10px] text-muted mt-2 m-0">Contact inquiries</p>
-        </Link>
+        {newInquiriesCount >= 1 && (
+          <Link 
+            href="/inquiries" 
+            role="listitem"
+            className={`premium-card p-5 block no-underline group transition-all rounded-lg ${
+              newInquiriesCount > 0 
+                ? 'border-sky-500/40 bg-sky-500/5 hover:border-sky-500/70' 
+                : 'hover:border-accent/40'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className={`font-mono text-[10px] tracking-[0.15em] uppercase font-semibold ${
+                newInquiriesCount > 0 ? 'text-sky-400' : 'text-muted'
+              }`}>NEW LEADS</span>
+              <span className={`font-mono text-[14px] ${newInquiriesCount > 0 ? 'text-sky-400' : 'text-muted'}`} aria-hidden="true">✉</span>
+            </div>
+            <p className={`font-serif text-[28px] md:text-[32px] font-normal m-0 leading-tight ${
+              newInquiriesCount > 0 ? 'text-sky-400' : 'text-primary'
+            }`}>
+              {newInquiriesCount}
+            </p>
+            <p className="font-mono text-[10px] text-muted mt-2 m-0">Contact inquiries</p>
+          </Link>
+        )}
       </div>
+
 
 
       {/* Main Dashboard Panels */}
