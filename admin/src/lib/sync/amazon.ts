@@ -98,6 +98,120 @@ export async function syncToAmazon(product: any) {
     const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
     const url = `${spApiEndpoint}${path}`;
 
+    // check if listing exists using GET
+    let exists = false;
+    try {
+      const getPath = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}&includedData=summaries`;
+      const getUrl = `${spApiEndpoint}${getPath}`;
+      const getRequestOptions = {
+        host: new URL(spApiEndpoint).hostname,
+        path: getPath,
+        method: 'GET',
+        service: 'execute-api',
+        region: process.env.AWS_REGION || 'eu-west-1',
+        headers: {
+          'x-amz-access-token': accessToken
+        }
+      };
+      aws4.sign(getRequestOptions, {
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey
+      });
+      const getResponse = await fetch(getUrl, {
+        method: 'GET',
+        headers: getRequestOptions.headers as any
+      });
+      if (getResponse.status === 200) {
+        exists = true;
+      } else if (getResponse.status === 404) {
+        exists = false;
+      } else {
+        const getBody = await getResponse.text();
+        console.warn(`[Amazon Sync] GET check returned status ${getResponse.status} for SKU ${sku}: ${getBody}`);
+      }
+    } catch (getErr) {
+      console.warn(`[Amazon Sync] Error performing GET check for SKU ${sku}:`, getErr);
+    }
+
+    if (exists) {
+      if (isParent) {
+        console.log(`[Amazon Sync] Parent SKU ${sku} already exists. Skipping parent update.`);
+        return { sku, status: 'ACCEPTED', submissionId: 'SKIPPED_EXISTING_PARENT', issues: [] };
+      }
+
+      console.log(`[Amazon Sync] SKU ${sku} exists on Seller Central. Performing PATCH to update price and inventory...`);
+      const patchPayload = {
+        productType: 'LIGHT_FIXTURE',
+        patches: [
+          {
+            op: 'replace',
+            path: '/attributes/purchasable_offer',
+            value: [
+              {
+                marketplace_id: marketplaceId,
+                currency: 'INR',
+                audience: 'ALL',
+                our_price: [
+                  {
+                    schedule: [
+                      {
+                        value_with_tax: price
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            op: 'replace',
+            path: '/attributes/fulfillment_availability',
+            value: [
+              {
+                fulfillment_channel_code: 'DEFAULT',
+                quantity: quantity
+              }
+            ]
+          }
+        ]
+      };
+
+      const patchRequestOptions = {
+        host: new URL(spApiEndpoint).hostname,
+        path: path,
+        method: 'PATCH',
+        service: 'execute-api',
+        region: process.env.AWS_REGION || 'eu-west-1',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-amz-access-token': accessToken
+        },
+        body: JSON.stringify(patchPayload)
+      };
+
+      aws4.sign(patchRequestOptions, {
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey
+      });
+
+      const patchResponse = await fetch(url, {
+        method: 'PATCH',
+        headers: patchRequestOptions.headers as any,
+        body: patchRequestOptions.body
+      });
+
+      const patchResponseBody = await patchResponse.text();
+      if (!patchResponse.ok) {
+        throw new Error(`Amazon PATCH update error for ${sku}: HTTP ${patchResponse.status} - ${patchResponseBody}`);
+      }
+
+      const result = JSON.parse(patchResponseBody);
+      console.log(`[Amazon Sync] SKU ${sku} PATCH result:`, JSON.stringify(result));
+      return result;
+    }
+
+    console.log(`[Amazon Sync] SKU ${sku} does not exist. Performing PUT request to list it...`);
+
     let brandVal = (v ? v.brand : null) || product.brand || 'James & Sons, Aligarh';
     if (brandVal === 'Generic' || !brandVal || brandVal.toLowerCase().includes('james & sons') || brandVal.toLowerCase().includes('james and sons')) {
       brandVal = 'James & Sons, Aligarh';
@@ -506,8 +620,7 @@ export async function syncToAmazon(product: any) {
             {
               schedule: [
                 {
-                  value_with_tax: Math.round(price * 0.7),
-                  start_at: startAt
+                  value_with_tax: Math.round(price * 0.7)
                 }
               ]
             }
@@ -516,8 +629,7 @@ export async function syncToAmazon(product: any) {
             {
               schedule: [
                 {
-                  value_with_tax: Math.round(price * 2.5),
-                  start_at: startAt
+                  value_with_tax: Math.round(price * 2.5)
                 }
               ]
             }
@@ -525,43 +637,6 @@ export async function syncToAmazon(product: any) {
         }
       ];
 
-      if (b2bPrice !== null && b2bPrice > 0) {
-        offers.push({
-          marketplace_id: marketplaceId,
-          currency: 'INR',
-          audience: 'B2B',
-          our_price: [
-            {
-              schedule: [
-                {
-                  value_with_tax: b2bPrice,
-                  start_at: startAt
-                }
-              ]
-            }
-          ],
-          minimum_seller_allowed_price: [
-            {
-              schedule: [
-                {
-                  value_with_tax: Math.round(b2bPrice * 0.7),
-                  start_at: startAt
-                }
-              ]
-            }
-          ],
-          maximum_seller_allowed_price: [
-            {
-              schedule: [
-                {
-                  value_with_tax: Math.round(b2bPrice * 2.5),
-                  start_at: startAt
-                }
-              ]
-            }
-          ]
-        });
-      }
 
       attributes.purchasable_offer = offers;
 
