@@ -69,12 +69,15 @@ export default function TicketReplyBox({
   return (
     <div className="space-y-3">
       {/* Sleek inline mode switcher & Status Changer */}
-      <div className="flex justify-between items-center border-b border-border/30 pb-2 px-1">
-        <div className="flex gap-4">
+      <div className="flex justify-between items-center border-b border-border/30 pb-2 px-1 relative z-30">
+        <div className="flex gap-4 relative z-30">
           <button
             type="button"
-            onClick={() => setIsInternalNote(false)}
-            className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
+            onClick={() => {
+              console.log('[ReplyBox] Switch to Public Reply');
+              setIsInternalNote(false);
+            }}
+            className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer relative z-30 ${
               !isInternalNote
                 ? 'text-accent border-b border-accent font-semibold'
                 : 'text-muted hover:text-primary'
@@ -84,8 +87,11 @@ export default function TicketReplyBox({
           </button>
           <button
             type="button"
-            onClick={() => setIsInternalNote(true)}
-            className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
+            onClick={() => {
+              console.log('[ReplyBox] Switch to Internal Note');
+              setIsInternalNote(true);
+            }}
+            className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer relative z-30 ${
               isInternalNote
                 ? 'text-amber-500 border-b border-amber-500 font-semibold'
                 : 'text-muted hover:text-primary'
