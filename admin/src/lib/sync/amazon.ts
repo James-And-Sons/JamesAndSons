@@ -570,7 +570,6 @@ export async function syncToAmazon(product: any) {
       });
     }
 
-    const finalBullets = (bulletsVal && bulletsVal.length > 0) ? bulletsVal.slice(0, 5) : generateDefaultBullets(product);
     attributes.bullet_point = finalBullets.map((bp: string) => ({
       marketplace_id: marketplaceId,
       language_tag: 'en_IN',
