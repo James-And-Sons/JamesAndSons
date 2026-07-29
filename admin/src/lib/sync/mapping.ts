@@ -20,7 +20,12 @@ export function getBrowseNode(product: any): string {
 
 export function getFixtureForm(product: any): string {
   const form = product?.amazonFixtureForm;
-  if (form && form.toLowerCase() !== 'light_fixture') {
+  if (
+    form && 
+    form.toLowerCase() !== 'light_fixture' && 
+    form.toLowerCase() !== 'table_lamp' && 
+    form.toLowerCase() !== 'floor_lamp'
+  ) {
     return form;
   }
 
