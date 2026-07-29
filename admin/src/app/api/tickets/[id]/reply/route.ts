@@ -30,49 +30,48 @@ async function sendReplyEmail({
     return { success: false, error: 'RESEND_API_KEY not configured' };
   }
 
-  // Tagged reply-to so inbound webhook can match the ticket without parsing subject
-  const inboundDomain = process.env.INBOUND_EMAIL_DOMAIN || 'inbound.jamesandsons.in';
-  const replyToAddress = `ticket+${ticketNumber}@${inboundDomain}`;
-
-  const subject = `Re: [${ticketNumber}] ${ticketSubject}`;
+  const subject = `Support Update: [${ticketNumber}] ${ticketSubject}`;
+  const noReplyAddress = 'no-reply@jamesandsons.in';
 
   const html = `
-    <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a;line-height:1.6;background:#fff;">
-      <div style="border-bottom:1px solid #eee;padding:20px 0;margin-bottom:24px;">
-        <p style="margin:0;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Support Update</p>
-        <h2 style="margin:6px 0 0;font-weight:300;color:#C4A05A;font-size:22px;letter-spacing:0.05em;">${ticketNumber}</h2>
+    <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a;line-height:1.6;background:#fff;padding:20px;">
+      <div style="border-bottom:1px solid #eee;padding:10px 0 20px;margin-bottom:24px;">
+        <p style="margin:0;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.15em;">James &amp; Sons Concierge</p>
+        <h2 style="margin:6px 0 0;font-weight:300;color:#C4A05A;font-size:22px;letter-spacing:0.05em;">Support Ticket ${ticketNumber}</h2>
       </div>
 
       <p style="font-size:15px;color:#333;">Dear ${customerName || 'Valued Customer'},</p>
-      <p style="font-size:14px;color:#555;">Your support ticket has been updated.</p>
+      <p style="font-size:14px;color:#555;">Our support team has updated your ticket with the following response:</p>
 
       <div style="background:#fdfaf4;border-left:3px solid #C4A05A;padding:18px 20px;margin:24px 0;border-radius:0 4px 4px 0;">
-        <div style="font-size:14px;color:#1a1a1a;white-space:pre-wrap;line-height:1.7;">${messageBody.trim()}</div>
+        <div style="font-size:14.5px;color:#1a1a1a;white-space:pre-wrap;line-height:1.7;font-family:Georgia,serif;">${messageBody.trim()}</div>
       </div>
 
-      <p style="font-size:13px;color:#666;">
-        Simply <strong>reply to this email</strong> to respond — your reply will be automatically added to your support thread.
-        Or click below to view the full conversation:
+      <p style="font-size:13.5px;color:#555;margin-bottom:20px;">
+        To reply, send attachments, or check your ticket status, please click the button below to open your secure customer portal:
       </p>
 
-      <div style="margin:24px 0;">
+      <div style="margin:28px 0; text-align: center;">
         <a href="https://jamesandsons.in/account/tickets/${ticketId}"
-           style="background:#1a1a1a;color:#fff;padding:12px 28px;text-decoration:none;text-transform:uppercase;letter-spacing:0.1em;font-size:11px;display:inline-block;border-radius:2px;">
-          View Ticket Thread
+           style="background:#C4A05A;color:#000;padding:14px 36px;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;font-size:11px;font-weight:bold;display:inline-block;border-radius:4px;box-shadow:0 2px 8px rgba(196,160,90,0.25);transition:all 0.2s;">
+          Reply in Customer Portal
         </a>
       </div>
 
+      <p style="font-size:11px;color:#888;text-align:center;margin-top:28px;font-style:italic;background:#f9f9f9;padding:10px;border-radius:4px;">
+        ⚠️ This is an automated notification. To guarantee your response is delivered and threaded instantly, please do not reply to this email directly. Click the button above to respond in the portal.
+      </p>
+
       <hr style="border:0;border-top:1px solid #eee;margin:32px 0 16px;" />
-      <p style="font-size:11px;color:#bbb;text-align:center;margin:0;">
-        James &amp; Sons &middot; Excellence in every detail &middot;
-        <a href="mailto:support@jamesandsons.in" style="color:#C4A05A;text-decoration:none;">support@jamesandsons.in</a>
+      <p style="font-size:10px;color:#bbb;text-align:center;margin:0;text-transform:uppercase;letter-spacing:0.05em;">
+        James &amp; Sons &middot; Excellence in every detail &middot; support@jamesandsons.in
       </p>
     </div>
   `;
 
   // Build headers for email threading
   const headers: Record<string, string> = {
-    'Reply-To': replyToAddress,
+    'Reply-To': noReplyAddress,
     'X-Ticket-Number': ticketNumber,
     'X-Ticket-ID': ticketId,
   };
@@ -91,7 +90,7 @@ async function sendReplyEmail({
       body: JSON.stringify({
         from: 'James & Sons Support <support@jamesandsons.in>',
         to: [to],
-        reply_to: replyToAddress,
+        reply_to: noReplyAddress,
         subject,
         html,
         headers,

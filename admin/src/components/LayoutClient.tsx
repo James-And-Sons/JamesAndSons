@@ -161,6 +161,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const isLoginPage = pathname?.startsWith('/login');
+  const isChatPage = pathname?.startsWith('/tickets/') && pathname !== '/tickets';
 
   return (
     <ThemeProvider>
@@ -182,7 +183,9 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
         <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 min-w-0 overflow-x-hidden ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
           {!isLoginPage && (
-            <header className="h-[64px] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300">
+            <header className={`h-[64px] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300 ${
+              isChatPage ? 'hidden md:flex' : 'flex'
+            }`}>
               {/* LEFT: Hamburger (desktop only) + Breadcrumb */}
               <div className="flex items-center gap-4">
                 {/* Desktop hamburger — only shown when sidebar is not always-visible */}
@@ -238,17 +241,23 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
             className={
               isLoginPage
                 ? ''
-                : 'p-4 lg:p-10 flex-1 overflow-x-hidden bg-background selection:bg-accent/20 transition-colors duration-300 has-bottom-nav lg:pb-10'
+                : isChatPage
+                  ? 'p-0 md:p-10 flex-1 flex flex-col bg-background selection:bg-accent/20 transition-colors duration-300 min-h-0'
+                  : 'p-4 lg:p-10 flex-1 overflow-x-hidden bg-background selection:bg-accent/20 transition-colors duration-300 has-bottom-nav lg:pb-10'
             }
           >
-            <div className={isLoginPage ? '' : 'max-w-[1200px] mx-auto w-full min-w-0 overflow-x-hidden'}>
+            <div className={isLoginPage || isChatPage ? 'h-full flex flex-col min-h-0' : 'max-w-[1200px] mx-auto w-full min-w-0 overflow-x-hidden'}>
               {children}
             </div>
           </main>
         </div>
 
         {/* Mobile Bottom Navigation — rendered outside the scrollable column */}
-        {!isLoginPage && <BottomNav />}
+        {!isLoginPage && (
+          <div className={isChatPage ? 'hidden md:block' : 'block'}>
+            <BottomNav />
+          </div>
+        )}
 
       </SidebarProvider>
     </ThemeProvider>

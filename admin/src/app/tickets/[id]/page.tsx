@@ -70,46 +70,30 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
     <div className="animate-in fade-in duration-300">
 
       {/* ── Mobile Layout (<md) ─────────────────────────────────────────────── */}
-      <div className="flex md:hidden flex-col" style={{ height: 'calc(100dvh - var(--bottom-nav-height) - 56px)' }}>
+      <div className="flex md:hidden flex-col h-[100dvh] relative overflow-hidden bg-background">
 
-        {/* Mobile Header Bar */}
-        <div className="shrink-0 bg-surface/95 backdrop-blur-md border-b border-border">
-          <div className="flex items-center justify-between px-4 py-3 gap-3">
-            <Link
-              href="/tickets"
-              className="font-mono text-[10px] uppercase tracking-wider text-accent flex items-center gap-1 shrink-0"
-            >
-              ← Back
-            </Link>
+        {/* Sleek Single-Line Mobile Header Bar */}
+        <div className="shrink-0 bg-surface/90 backdrop-blur-md border-b border-border/40 px-4 py-3 flex items-center justify-between gap-3">
+          <Link
+            href="/tickets"
+            className="font-mono text-[10px] uppercase tracking-wider text-accent flex items-center gap-1 shrink-0"
+          >
+            ← Back
+          </Link>
 
-            <div className="flex-1 min-w-0 text-center">
-              <div className="font-mono text-[10px] text-muted uppercase tracking-wider leading-none">{ticket.ticketNumber}</div>
-              <div className="font-serif text-[13px] text-primary truncate mt-0.5">{ticket.subject}</div>
+          <div className="flex-1 min-w-0 text-center">
+            <h2 className="font-serif text-[13px] text-primary truncate leading-tight">
+              {ticket.user.firstName} {ticket.user.lastName}
+            </h2>
+            <div className="font-mono text-[9px] text-muted uppercase tracking-wider leading-none mt-0.5">
+              {ticket.ticketNumber} · {ticket.subject}
             </div>
-
-            <TicketStatusChanger
-              ticketId={ticket.id}
-              currentStatus={ticket.status}
-            />
           </div>
 
-          {/* Customer context strip */}
-          <div className="flex items-center gap-3 px-4 py-2 border-t border-border/40 bg-background/30">
-            <div className="w-6 h-6 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center shrink-0">
-              <span className="font-mono text-[9px] text-accent font-bold">
-                {(ticket.user.firstName?.[0] || '?').toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="font-serif text-[12px] text-primary">{ticket.user.firstName} {ticket.user.lastName}</span>
-              <span className="font-mono text-[10px] text-muted ml-2 truncate">{ticket.user.email}</span>
-            </div>
-            {ticket.order && (
-              <span className="font-mono text-[9px] text-accent border border-accent/30 bg-accent/5 px-2 py-0.5 rounded-[3px] shrink-0">
-                #{ticket.order.orderNumber}
-              </span>
-            )}
-          </div>
+          <TicketStatusChanger
+            ticketId={ticket.id}
+            currentStatus={ticket.status}
+          />
         </div>
 
         {/* Scrollable Message Thread */}
@@ -190,8 +174,8 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
           </div>
         </div>
 
-        {/* Sticky Reply Composer at bottom */}
-        <div className="shrink-0 bg-surface/95 backdrop-blur-md border-t border-border p-3">
+        {/* Floating Reply Composer at bottom */}
+        <div className="shrink-0 p-3 bg-background/80 backdrop-blur-sm">
           <TicketReplyBox ticketId={ticket.id} />
         </div>
       </div>
