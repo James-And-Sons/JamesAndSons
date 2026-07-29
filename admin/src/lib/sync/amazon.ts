@@ -486,7 +486,7 @@ export async function syncToAmazon(product: any) {
         }
       ];
 
-      const startAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+      const startAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().replace(/\.\d+Z$/, 'Z');
       const offers = [
         {
           marketplace_id: marketplaceId,
