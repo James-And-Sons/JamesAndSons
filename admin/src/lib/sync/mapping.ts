@@ -20,11 +20,12 @@ export function getBrowseNode(product: any): string {
 
 export function getFixtureForm(product: any): string {
   const form = product?.amazonFixtureForm;
+  const normalized = (form || '').toLowerCase().replace(/[\s_-]+/g, '');
   if (
     form && 
-    form.toLowerCase() !== 'light_fixture' && 
-    form.toLowerCase() !== 'table_lamp' && 
-    form.toLowerCase() !== 'floor_lamp'
+    normalized !== 'lightfixture' && 
+    normalized !== 'tablelamp' && 
+    normalized !== 'floorlamp'
   ) {
     return form;
   }
