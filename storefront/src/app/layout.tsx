@@ -47,6 +47,9 @@ export const metadata: Metadata = {
     ],
     apple: "/icons/icon-192x192.png",
   },
+  other: {
+    "p:domain_verify": "05e17f9bd7917ad9a8dd38bdc291baf3",
+  },
 };
 
 export const viewport = {
