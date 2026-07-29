@@ -98,6 +98,30 @@ export async function syncToAmazon(product: any) {
     const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
     const url = `${spApiEndpoint}${path}`;
 
+    // Common listing metadata variables
+    let brandVal = (v ? v.brand : null) || product.brand || 'James & Sons, Aligarh';
+    if (brandVal === 'Generic' || !brandVal || brandVal.toLowerCase().includes('james & sons') || brandVal.toLowerCase().includes('james and sons')) {
+      brandVal = 'James & Sons, Aligarh';
+    }
+    const descVal = product.description || name;
+    const bulletsVal = (v ? v.bulletPoints : null) || product.bulletPoints || [];
+    const finalBullets = (bulletsVal && bulletsVal.length > 0) ? bulletsVal.slice(0, 5) : generateDefaultBullets(product);
+    const materialVal = (v ? v.material : null) || product.material || (product.materialAndFinish && product.materialAndFinish.length > 0 ? product.materialAndFinish[0] : null);
+    const originVal = (v ? v.countryOfOrigin : null) || product.countryOfOrigin || 'India';
+
+    const vImages = (v && v.whiteBackgroundImages && v.whiteBackgroundImages.length > 0)
+      ? v.whiteBackgroundImages
+      : (product.whiteBackgroundImages && product.whiteBackgroundImages.length > 0)
+        ? product.whiteBackgroundImages
+        : (v && v.images && v.images.length > 0)
+          ? v.images
+          : (product.images || []);
+
+    const vWeight = (v ? v.weight : null) || product.weight || 0.5;
+    const vLength = (v ? v.actualDepth : null) || (v ? v.actualLength : null) || product.actualDepth || product.actualLength || (v ? v.length : null) || product.length || 15;
+    const vWidth = (v ? v.actualWidth : null) || product.actualWidth || (v ? v.breadth : null) || product.breadth || 20;
+    const vHeight = (v ? v.actualHeight : null) || product.actualHeight || (v ? v.height : null) || product.height || 53;
+
     // check if listing exists using GET
     let exists = false;
     try {
@@ -139,41 +163,123 @@ export async function syncToAmazon(product: any) {
         return { sku, status: 'ACCEPTED', submissionId: 'SKIPPED_EXISTING_PARENT', issues: [] };
       }
 
-      console.log(`[Amazon Sync] SKU ${sku} exists on Seller Central. Performing PATCH to update price and inventory...`);
-      const patchPayload = {
-        productType: 'LIGHT_FIXTURE',
-        patches: [
-          {
+      console.log(`[Amazon Sync] SKU ${sku} exists on Seller Central. Performing PATCH to update listing details...`);
+      const patches: any[] = [
+        {
+          op: 'replace',
+          path: '/attributes/purchasable_offer',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              currency: 'INR',
+              audience: 'ALL',
+              our_price: [
+                {
+                  schedule: [
+                    {
+                      value_with_tax: price
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/fulfillment_availability',
+          value: [
+            {
+              fulfillment_channel_code: 'DEFAULT',
+              quantity: quantity
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/item_name',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: name.substring(0, 200)
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/model_name',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: name.substring(0, 200)
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/brand',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: brandVal
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/product_description',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: descVal
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/bullet_point',
+          value: finalBullets.map((bp: string) => ({
+            marketplace_id: marketplaceId,
+            language_tag: 'en_IN',
+            value: bp
+          }))
+        }
+      ];
+
+      // Add image patches if images exist
+      if (vImages && vImages.length > 0) {
+        patches.push({
+          op: 'replace',
+          path: '/attributes/main_product_image_locator',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              media_location: vImages[0]
+            }
+          ]
+        });
+
+        vImages.slice(1, 9).forEach((img: string, idx: number) => {
+          patches.push({
             op: 'replace',
-            path: '/attributes/purchasable_offer',
+            path: `/attributes/other_product_image_locator_${idx + 1}`,
             value: [
               {
                 marketplace_id: marketplaceId,
-                currency: 'INR',
-                audience: 'ALL',
-                our_price: [
-                  {
-                    schedule: [
-                      {
-                        value_with_tax: price
-                      }
-                    ]
-                  }
-                ]
+                media_location: img
               }
             ]
-          },
-          {
-            op: 'replace',
-            path: '/attributes/fulfillment_availability',
-            value: [
-              {
-                fulfillment_channel_code: 'DEFAULT',
-                quantity: quantity
-              }
-            ]
-          }
-        ]
+          });
+        });
+      }
+
+      const patchPayload = {
+        productType: 'LIGHT_FIXTURE',
+        patches: patches
       };
 
       const patchRequestOptions = {
@@ -211,28 +317,6 @@ export async function syncToAmazon(product: any) {
     }
 
     console.log(`[Amazon Sync] SKU ${sku} does not exist. Performing PUT request to list it...`);
-
-    let brandVal = (v ? v.brand : null) || product.brand || 'James & Sons, Aligarh';
-    if (brandVal === 'Generic' || !brandVal || brandVal.toLowerCase().includes('james & sons') || brandVal.toLowerCase().includes('james and sons')) {
-      brandVal = 'James & Sons, Aligarh';
-    }
-    const descVal = product.description || name;
-    const bulletsVal = (v ? v.bulletPoints : null) || product.bulletPoints || [];
-    const materialVal = (v ? v.material : null) || product.material || (product.materialAndFinish && product.materialAndFinish.length > 0 ? product.materialAndFinish[0] : null);
-    const originVal = (v ? v.countryOfOrigin : null) || product.countryOfOrigin || 'India';
-
-    const vImages = (v && v.whiteBackgroundImages && v.whiteBackgroundImages.length > 0)
-      ? v.whiteBackgroundImages
-      : (product.whiteBackgroundImages && product.whiteBackgroundImages.length > 0)
-        ? product.whiteBackgroundImages
-        : (v && v.images && v.images.length > 0)
-          ? v.images
-          : (product.images || []);
-
-    const vWeight = (v ? v.weight : null) || product.weight || 0.5;
-    const vLength = (v ? v.actualDepth : null) || (v ? v.actualLength : null) || product.actualDepth || product.actualLength || (v ? v.length : null) || product.length || 15;
-    const vWidth = (v ? v.actualWidth : null) || product.actualWidth || (v ? v.breadth : null) || product.breadth || 20;
-    const vHeight = (v ? v.actualHeight : null) || product.actualHeight || (v ? v.height : null) || product.height || 53;
 
     const wattVal = extractNumber((v ? v.power : null) || product.power);
     const voltVal = extractNumber((v ? v.voltage : null) || product.voltage);
