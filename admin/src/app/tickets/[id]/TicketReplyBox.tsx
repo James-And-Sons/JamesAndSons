@@ -66,40 +66,30 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
 
   return (
     <div className="space-y-3">
-      {/* Sleek floating mode switcher */}
-      <div className="flex justify-between items-center px-1">
-        <div className="bg-surface-muted/90 border border-border/80 p-0.5 rounded-full inline-flex">
-          <button
-            type="button"
-            onClick={() => setIsInternalNote(false)}
-            className={`px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-widest rounded-full transition-all cursor-pointer ${
-              !isInternalNote
-                ? 'bg-accent text-background font-bold shadow-sm'
-                : 'text-muted hover:text-primary'
-            }`}
-          >
-            Public Reply
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsInternalNote(true)}
-            className={`px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-widest rounded-full transition-all cursor-pointer ${
-              isInternalNote
-                ? 'bg-amber-500 text-background font-bold shadow-sm'
-                : 'text-muted hover:text-primary'
-            }`}
-          >
-            Internal Note
-          </button>
-        </div>
-
-        <div className="font-mono text-[8px] uppercase tracking-widest text-muted/60">
-          {isInternalNote ? (
-            <span className="text-amber-500/80 font-semibold">⚠️ Team Only</span>
-          ) : (
-            <span className="text-accent/80 font-semibold">✉️ Sends Email</span>
-          )}
-        </div>
+      {/* Sleek inline mode switcher */}
+      <div className="flex gap-4 border-b border-border/30 pb-1.5 px-1">
+        <button
+          type="button"
+          onClick={() => setIsInternalNote(false)}
+          className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
+            !isInternalNote
+              ? 'text-accent border-b border-accent font-semibold'
+              : 'text-muted hover:text-primary'
+          }`}
+        >
+          Public Reply
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsInternalNote(true)}
+          className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
+            isInternalNote
+              ? 'text-amber-500 border-b border-amber-500 font-semibold'
+              : 'text-muted hover:text-primary'
+          }`}
+        >
+          Internal Note
+        </button>
       </div>
 
       {/* Unified composer card */}
