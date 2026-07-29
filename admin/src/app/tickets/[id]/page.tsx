@@ -72,7 +72,7 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
     <div className="max-w-5xl mx-auto animate-in fade-in duration-300">
       
       {/* ── Mobile Layout (< md) ────────────────────────────────────────── */}
-      <div className="block md:hidden flex flex-col h-[calc(100vh-140px)] min-h-0 relative pb-[120px]">
+      <div className="block md:hidden flex flex-col h-[calc(100dvh-160px)] min-h-0 relative">
         {/* Sticky Mobile Chat Header */}
         <div className="sticky top-[64px] z-30 bg-surface/95 backdrop-blur-md border-b border-border flex items-center justify-between p-4 shrink-0">
           <Link href="/tickets" className="font-mono text-[10px] uppercase tracking-wider text-accent flex items-center gap-1">
@@ -133,10 +133,11 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
         </div>
 
         {/* Sticky Mobile Input Form (Pinned above PWA Bottom Nav) */}
-        <div className="fixed bottom-[var(--bottom-nav-height,64px)] inset-x-0 bg-surface/90 backdrop-blur-md p-3 border-t border-border z-30">
+        <div className="bg-surface/90 backdrop-blur-md p-3 border-t border-border shrink-0 z-20">
           <TicketReplyBox ticketId={ticket.id} />
         </div>
       </div>
+
 
       {/* ── Desktop Layout (>= md) ──────────────────────────────────────── */}
       <div className="hidden md:block space-y-6 max-w-5xl mx-auto pb-12">
