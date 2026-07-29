@@ -111,67 +111,82 @@ export default function TicketsInbox({
             No tickets in this view
           </div>
         )}
-        {filteredTickets.map(ticket => (
-          <Link 
-            key={ticket.id} 
-            href={`/tickets/${ticket.id}`}
-            className="premium-card p-4 block space-y-3 hover:border-accent/40 transition-colors"
-          >
-            {/* Header: ticket number, status, unread indicator */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[12px] text-accent font-semibold">
-                  {ticket.ticketNumber}
-                </span>
-                {!ticket.readByAdmin && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Unread customer message" />
-                )}
-              </div>
-              <span className={`font-mono text-[8px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full border ${STATUS_COLORS[ticket.status]}`}>
-                {STATUS_LABELS[ticket.status]}
-              </span>
-            </div>
+        {filteredTickets.map(ticket => {
+          const handleCardClick = (e: React.MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const isInteractive = 
+              target.tagName === 'SELECT' || 
+              target.tagName === 'OPTION' ||
+              target.closest('select');
 
-            {/* Subject */}
-            <h3 className="font-serif text-[16px] text-primary leading-snug">{ticket.subject}</h3>
+            if (!isInteractive) {
+              router.push(`/tickets/${ticket.id}`);
+            }
+          };
 
-            {/* Details */}
-            <div className="grid grid-cols-2 gap-2 text-[11px] border-t border-border/30 pt-3 font-mono text-muted">
-              <div>
-                <span className="text-[9px] uppercase tracking-wider block text-muted/60">Customer</span>
-                <span className="text-secondary font-serif text-[13px]">{ticket.user.firstName} {ticket.user.lastName}</span>
-              </div>
-              <div>
-                <span className="text-[9px] uppercase tracking-wider block text-muted/60">Assignee</span>
-                <span className="text-secondary">
-                  {ticket.assignedTo ? `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName.charAt(0)}.` : 'Unassigned'}
+          return (
+            <div 
+              key={ticket.id} 
+              onClick={handleCardClick}
+              className="premium-card p-4 block space-y-3 hover:border-accent/40 transition-colors cursor-pointer"
+            >
+              {/* Header: ticket number, status, unread indicator */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[12px] text-accent font-semibold">
+                    {ticket.ticketNumber}
+                  </span>
+                  {!ticket.readByAdmin && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title="Unread customer message" />
+                  )}
+                </div>
+                <span className={`font-mono text-[8px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full border ${STATUS_COLORS[ticket.status]}`}>
+                  {STATUS_LABELS[ticket.status]}
                 </span>
               </div>
-            </div>
 
-            {/* Inline interactive select: wrapped in click interceptor to stop propagation */}
-            <div className="flex items-center justify-between pt-2 border-t border-border/20" onClick={(e) => e.stopPropagation()}>
-              <span className="font-mono text-[9px] uppercase tracking-wider text-muted/60">Messages: {ticket._count.ticketMessages}</span>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-muted/60">Status:</span>
-                <select
-                  defaultValue={ticket.status}
-                  disabled={isPending && updatingId === ticket.id}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={e => {
-                    e.stopPropagation();
-                    handleStatusChange(ticket.id, e.target.value);
-                  }}
-                  className="bg-background border border-border text-muted font-mono text-[10px] uppercase tracking-wider px-2 py-1 focus:outline-none focus:border-accent focus:text-primary transition-colors disabled:opacity-50 cursor-pointer min-h-[36px]"
-                >
-                  {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                    <option key={val} value={val}>{val === 'IN_PROGRESS' ? 'In Prog' : label}</option>
-                  ))}
-                </select>
+              {/* Subject */}
+              <h3 className="font-serif text-[16px] text-primary leading-snug">{ticket.subject}</h3>
+
+              {/* Details */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] border-t border-border/30 pt-3 font-mono text-muted">
+                <div>
+                  <span className="text-[9px] uppercase tracking-wider block text-muted/60">Customer</span>
+                  <span className="text-secondary font-serif text-[13px]">{ticket.user.firstName} {ticket.user.lastName}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] uppercase tracking-wider block text-muted/60">Assignee</span>
+                  <span className="text-secondary">
+                    {ticket.assignedTo ? `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName.charAt(0)}.` : 'Unassigned'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Inline interactive select: wrapped in click interceptor to stop propagation */}
+              <div className="flex items-center justify-between pt-2 border-t border-border/20" onClick={(e) => e.stopPropagation()}>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-muted/60">Messages: {ticket._count.ticketMessages}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-muted/60">Status:</span>
+                  <select
+                    defaultValue={ticket.status}
+                    disabled={isPending && updatingId === ticket.id}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={e => {
+                      e.stopPropagation();
+                      handleStatusChange(ticket.id, e.target.value);
+                    }}
+                    className="bg-background border border-border text-muted font-mono text-[10px] uppercase tracking-wider px-2 py-1 focus:outline-none focus:border-accent focus:text-primary transition-colors disabled:opacity-50 cursor-pointer min-h-[36px]"
+                  >
+                    {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>{val === 'IN_PROGRESS' ? 'In Prog' : label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-          </Link>
-        ))}
+          );
+        })}
+
       </div>
 
       {/* Desktop Table View (>= md) */}
