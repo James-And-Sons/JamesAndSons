@@ -53,11 +53,11 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
 
   return (
     <div className="space-y-6">
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-border space-x-1">
+      {/* Navigation Tabs - Scrollable on mobile */}
+      <div className="flex border-b border-border space-x-1 overflow-x-auto flex-nowrap scrollbar-none">
         <button
           onClick={() => setActiveTab('NEW')}
-          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === 'NEW'
               ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-muted hover:text-primary'
@@ -73,7 +73,7 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
 
         <button
           onClick={() => setActiveTab('CONTACTED')}
-          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === 'CONTACTED'
               ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-muted hover:text-primary'
@@ -85,7 +85,7 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
 
         <button
           onClick={() => setActiveTab('ARCHIVED')}
-          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === 'ARCHIVED'
               ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-muted hover:text-primary'
@@ -97,7 +97,7 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
 
         <button
           onClick={() => setActiveTab('ALL')}
-          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-3 font-mono text-[11px] uppercase tracking-wider transition-colors border-b-2 cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === 'ALL'
               ? 'border-accent text-accent font-semibold'
               : 'border-transparent text-muted hover:text-primary'
@@ -119,15 +119,25 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
             const isExpanded = expandedId === inquiry.id;
             const isSales = inquiry.recipient.includes('sales');
 
+            const handleCardClick = (e: React.MouseEvent) => {
+              // Don't toggle expansion if clicking standard action buttons
+              const target = e.target as HTMLElement;
+              const isAction = target.tagName === 'BUTTON' || target.closest('button');
+              if (!isAction) {
+                setExpandedId(isExpanded ? null : inquiry.id);
+              }
+            };
+
             return (
               <div
                 key={inquiry.id}
-                className={`premium-card transition-all ${
+                onClick={handleCardClick}
+                className={`premium-card cursor-pointer transition-all ${
                   inquiry.status === 'NEW' ? 'border-l-4 border-l-[#f59e0b]' : ''
                 }`}
               >
                 <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1.5 flex-1 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : inquiry.id)}>
+                  <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`font-mono text-[9px] px-2 py-0.5 rounded-sm uppercase tracking-wider font-medium ${
                         isSales ? 'bg-purple-950/40 text-purple-300 border border-purple-800/40' : 'bg-blue-950/40 text-blue-300 border border-blue-800/40'
@@ -161,7 +171,7 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
                   <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 border-border">
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : inquiry.id)}
-                      className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider border border-border text-muted hover:text-primary hover:border-muted rounded-sm transition-colors cursor-pointer"
+                      className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider border border-border text-muted hover:text-primary hover:border-muted rounded-sm transition-colors cursor-pointer min-h-[36px]"
                     >
                       {isExpanded ? 'Collapse ▲' : 'View Message ▼'}
                     </button>
@@ -170,7 +180,7 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
                       <button
                         disabled={updatingId === inquiry.id}
                         onClick={() => handleStatusUpdate(inquiry.id, 'CONTACTED')}
-                        className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 hover:bg-emerald-900/50 rounded-sm transition-colors cursor-pointer disabled:opacity-50"
+                        className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 hover:bg-emerald-900/50 rounded-sm transition-colors cursor-pointer disabled:opacity-50 min-h-[36px]"
                       >
                         Mark Contacted
                       </button>
@@ -180,13 +190,14 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
                       <button
                         disabled={updatingId === inquiry.id}
                         onClick={() => handleStatusUpdate(inquiry.id, 'ARCHIVED')}
-                        className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-zinc-200 rounded-sm transition-colors cursor-pointer disabled:opacity-50"
+                        className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-zinc-200 rounded-sm transition-colors cursor-pointer disabled:opacity-50 min-h-[36px]"
                       >
                         Archive
                       </button>
                     )}
                   </div>
                 </div>
+
 
                 {/* Expanded Message View */}
                 {isExpanded && (

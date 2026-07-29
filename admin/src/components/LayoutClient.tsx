@@ -98,6 +98,8 @@ function HeaderTitle() {
   );
 }
 
+import PushNotificationManager from '@/components/PushNotificationManager';
+
 function UnsavedChangesListener() {
   const sidebar = useSidebar();
   const pathname = usePathname();
@@ -134,6 +136,26 @@ function ServiceWorkerRegistrar() {
   return null;
 }
 
+// Clear badge count when visiting key notification pages
+function AppBadgeManager() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'clearAppBadge' in navigator) {
+      const targetPaths = ['/tickets', '/orders', '/rfqs', '/inquiries'];
+      const matched = targetPaths.some(p => pathname?.startsWith(p));
+      
+      if (matched) {
+        (navigator as any).clearAppBadge().catch((err: any) => {
+          console.warn('Failed to clear app badge:', err);
+        });
+      }
+    }
+  }, [pathname]);
+
+  return null;
+}
+
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -145,6 +167,8 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
       <SidebarProvider>
         <a className="skip-link" href="#main">Skip to content</a>
         <ServiceWorkerRegistrar />
+        <PushNotificationManager />
+        <AppBadgeManager />
         <UnsavedChangesListener />
 
         {!isLoginPage && (

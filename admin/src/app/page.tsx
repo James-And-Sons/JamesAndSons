@@ -18,7 +18,16 @@ function formatTimeAgo(date: Date): string {
 }
 
 export default async function Dashboard() {
-  const [orders, rfqs, b2bRegistrations, pendingB2B] = await Promise.all([
+  const [
+    orders, 
+    rfqs, 
+    b2bRegistrations, 
+    pendingB2B,
+    tickets,
+    inquiries,
+    openTicketsCount,
+    newInquiriesCount
+  ] = await Promise.all([
     prisma.order.findMany({
       include: { user: true },
       orderBy: { createdAt: 'desc' },
@@ -30,7 +39,20 @@ export default async function Dashboard() {
       take: 5
     }),
     prisma.user.count({ where: { role: 'B2B_BUYER' } }),
-    prisma.user.count({ where: { role: 'B2B_APPROVER' } })
+    prisma.user.count({ where: { role: 'B2B_APPROVER' } }),
+    prisma.ticket.findMany({
+      where: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }),
+    prisma.inquiry.findMany({
+      where: { status: 'NEW' },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }),
+    prisma.ticket.count({ where: { status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
+    prisma.inquiry.count({ where: { status: 'NEW' } })
   ]);
 
   const totalRevenue = orders.reduce((acc, order) => acc + order.totalAmount, 0) || 0;
@@ -56,7 +78,7 @@ export default async function Dashboard() {
       </div>
 
       {/* KPI Cards Grid - Clickable & Reflows on Mobile */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" role="list" aria-label="Key metrics">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" role="list" aria-label="Key metrics">
         {totalRevenue > 0 && (
           <Link 
             href="/orders" 
@@ -67,10 +89,10 @@ export default async function Dashboard() {
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">TOTAL REVENUE</span>
               <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">₹</span>
             </div>
-            <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+            <p className="font-serif text-[28px] md:text-[32px] font-normal text-primary m-0 leading-tight">
               ₹{Math.round(totalRevenue).toLocaleString('en-IN')}
             </p>
-            <p className="font-mono text-[11px] text-muted mt-2 m-0">All time</p>
+            <p className="font-mono text-[10px] text-muted mt-2 m-0">All time</p>
           </Link>
         )}
 
@@ -84,10 +106,10 @@ export default async function Dashboard() {
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">RECENT ORDERS</span>
               <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">📦</span>
             </div>
-            <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+            <p className="font-serif text-[28px] md:text-[32px] font-normal text-primary m-0 leading-tight">
               {activeOrders}
             </p>
-            <p className="font-mono text-[11px] text-muted mt-2 m-0">D2C &amp; B2B flow active</p>
+            <p className="font-mono text-[10px] text-muted mt-2 m-0">D2C &amp; B2B active</p>
           </Link>
         )}
 
@@ -101,10 +123,10 @@ export default async function Dashboard() {
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-[#D6A24A] font-semibold">RFQS PENDING</span>
               <span className="font-mono text-[14px] text-[#D6A24A]" aria-hidden="true">⚠</span>
             </div>
-            <p className="font-serif text-[32px] font-normal text-[#D6A24A] m-0 leading-tight">
+            <p className="font-serif text-[28px] md:text-[32px] font-normal text-[#D6A24A] m-0 leading-tight">
               {pendingRfqs}
             </p>
-            <p className="font-mono text-[11px] text-[#D6A24A]/80 mt-2 m-0">Needs review today</p>
+            <p className="font-mono text-[10px] text-[#D6A24A]/80 mt-2 m-0">Needs review today</p>
           </Link>
         )}
 
@@ -115,16 +137,65 @@ export default async function Dashboard() {
             className="premium-card p-5 block no-underline group hover:border-accent/40 transition-all rounded-lg"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B REGISTRATIONS</span>
+              <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">B2B ACCOUNTS</span>
               <span className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors" aria-hidden="true">👥</span>
             </div>
-            <p className="font-serif text-[32px] font-normal text-primary m-0 leading-tight">
+            <p className="font-serif text-[28px] md:text-[32px] font-normal text-primary m-0 leading-tight">
               {b2bRegistrations}
             </p>
-            <p className="font-mono text-[11px] text-muted mt-2 m-0">{pendingB2B} pending approval</p>
+            <p className="font-mono text-[10px] text-muted mt-2 m-0">{pendingB2B} pending</p>
           </Link>
         )}
+
+        {/* Support Tickets Count Card */}
+        <Link 
+          href="/tickets" 
+          role="listitem"
+          className={`premium-card p-5 block no-underline group transition-all rounded-lg ${
+            openTicketsCount > 0 
+              ? 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70' 
+              : 'hover:border-accent/40'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className={`font-mono text-[10px] tracking-[0.15em] uppercase font-semibold ${
+              openTicketsCount > 0 ? 'text-amber-500' : 'text-muted'
+            }`}>TICKETS ACTIVE</span>
+            <span className={`font-mono text-[14px] ${openTicketsCount > 0 ? 'text-amber-500' : 'text-muted'}`} aria-hidden="true">🎫</span>
+          </div>
+          <p className={`font-serif text-[28px] md:text-[32px] font-normal m-0 leading-tight ${
+            openTicketsCount > 0 ? 'text-amber-500' : 'text-primary'
+          }`}>
+            {openTicketsCount}
+          </p>
+          <p className="font-mono text-[10px] text-muted mt-2 m-0">Support requests</p>
+        </Link>
+
+        {/* Inquiries Count Card */}
+        <Link 
+          href="/inquiries" 
+          role="listitem"
+          className={`premium-card p-5 block no-underline group transition-all rounded-lg ${
+            newInquiriesCount > 0 
+              ? 'border-sky-500/40 bg-sky-500/5 hover:border-sky-500/70' 
+              : 'hover:border-accent/40'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className={`font-mono text-[10px] tracking-[0.15em] uppercase font-semibold ${
+              newInquiriesCount > 0 ? 'text-sky-400' : 'text-muted'
+            }`}>NEW LEADS</span>
+            <span className={`font-mono text-[14px] ${newInquiriesCount > 0 ? 'text-sky-400' : 'text-muted'}`} aria-hidden="true">✉</span>
+          </div>
+          <p className={`font-serif text-[28px] md:text-[32px] font-normal m-0 leading-tight ${
+            newInquiriesCount > 0 ? 'text-sky-400' : 'text-primary'
+          }`}>
+            {newInquiriesCount}
+          </p>
+          <p className="font-mono text-[10px] text-muted mt-2 m-0">Contact inquiries</p>
+        </Link>
       </div>
+
 
       {/* Main Dashboard Panels */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -255,7 +326,131 @@ export default async function Dashboard() {
           </div>
         </section>
 
+        {/* Panel 3: Active Support Tickets */}
+        <section className="premium-card flex flex-col overflow-hidden rounded-lg" aria-labelledby="ticketsTitle">
+          <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-surface-muted/40">
+            <h2 className="font-serif text-[20px] text-primary font-normal m-0" id="ticketsTitle">
+              Active tickets · {openTicketsCount}
+            </h2>
+            <Link 
+              href="/tickets" 
+              className="btn-ghost font-mono text-[10px] uppercase tracking-[0.12em]"
+            >
+              Open Inbox
+            </Link>
+          </div>
+          
+          <div className="table-responsive flex-1">
+            <table className="w-full text-left border-collapse">
+              <caption className="sr-only">Active support tickets</caption>
+              <thead className="border-b border-border bg-surface-muted/20">
+                <tr>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Ticket</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
+                  <th scope="col" className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Age</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {tickets.map((t: any) => {
+                  const s = (t.status || '').toUpperCase();
+                  const isPending = s === 'OPEN';
+                  const isProcessing = s === 'IN_PROGRESS';
+                  const pillClass = isPending ? 'status-processing' : isProcessing ? 'status-paid' : 'status-pending';
+
+                  return (
+                    <ClickableRow key={t.id} href={`/tickets/${t.id}`} className="hover:bg-surface-muted/40 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-[12px] text-accent hover:underline font-semibold">
+                          {t.ticketNumber}
+                        </span>
+                        <div className="text-[12px] text-primary font-serif truncate max-w-[150px] mt-0.5">{t.subject}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-serif text-[14px] text-primary">{t.user?.firstName} {t.user?.lastName}</div>
+                        <div className="font-mono text-[10px] text-muted">{t.user?.email}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`status-pill ${pillClass}`}>
+                          <span className="dot" aria-hidden="true" />
+                          <span>{s.replace('_', ' ')}</span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-[11px] text-secondary">
+                        {formatTimeAgo(t.createdAt)}
+                      </td>
+                    </ClickableRow>
+                  );
+                })}
+                {tickets.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-muted font-mono text-[10px] uppercase tracking-widest">
+                      No active tickets.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Panel 4: New Inquiries Leads */}
+        <section className="premium-card flex flex-col overflow-hidden rounded-lg" aria-labelledby="inquiriesTitle">
+          <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-surface-muted/40">
+            <h2 className="font-serif text-[20px] text-primary font-normal m-0" id="inquiriesTitle">
+              New Leads · {newInquiriesCount}
+            </h2>
+            <Link 
+              href="/inquiries" 
+              className="btn-ghost font-mono text-[10px] uppercase tracking-[0.12em]"
+            >
+              Open Inquiries
+            </Link>
+          </div>
+
+          <div className="divide-y divide-border/40 p-2">
+            {inquiries.map((inq: any) => {
+              const initials = getInitials(inq.name || inq.email, '');
+              const timeAgo = formatTimeAgo(inq.createdAt);
+
+              return (
+                <Link 
+                  key={inq.id} 
+                  href={`/inquiries`}
+                  className="p-4 flex items-center gap-3.5 hover:bg-surface-muted/40 transition-colors rounded-sm no-underline block group"
+                >
+                  <div className="w-9 h-9 rounded-full border border-sky-400/40 bg-sky-400/5 flex items-center justify-center font-serif text-[13px] text-sky-400 shrink-0" aria-hidden="true">
+                    {initials}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-[15px] text-primary m-0 font-normal leading-snug truncate">
+                      {inq.name || inq.email}
+                    </p>
+                    <p className="font-mono text-[10px] text-muted m-0 mt-0.5 tracking-wide truncate">
+                      {inq.subject} · {inq.recipient} · {timeAgo}
+                    </p>
+                  </div>
+
+                  <span 
+                    className="px-3 py-1.5 border border-sky-400/50 text-sky-400 group-hover:bg-sky-400 group-hover:text-black transition-all font-mono text-[9px] uppercase tracking-[0.12em] rounded-sm font-semibold shrink-0"
+                  >
+                    View
+                  </span>
+                </Link>
+              );
+            })}
+
+            {inquiries.length === 0 && (
+              <div className="p-8 text-center text-muted font-mono text-[10px] uppercase tracking-widest">
+                No new inquiries.
+              </div>
+            )}
+          </div>
+        </section>
+
       </div>
     </div>
   );
 }
+

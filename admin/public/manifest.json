@@ -21,5 +21,10 @@
       "type": "image/png",
       "purpose": "maskable any"
     }
-  ]
+  ],
+  "periodic_sync_quota_hints": {
+    "check-new-items": {
+      "min_interval": 300000
+    }
+  }
 }

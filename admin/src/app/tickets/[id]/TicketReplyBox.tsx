@@ -43,14 +43,14 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
   return (
     <form 
       onSubmit={handleSubmit}
-      className={`premium-card p-6 space-y-4 border transition-all duration-300 ${
+      className={`premium-card p-3 md:p-6 space-y-3 md:space-y-4 border transition-all duration-300 ${
         isInternalNote 
           ? 'bg-amber-500/5 border-amber-500/30' 
           : 'bg-surface/90 border-border/50'
       }`}
     >
-      <div className="flex justify-between items-center border-b border-border/30 pb-3">
-        <div className="flex gap-4">
+      <div className="flex justify-between items-center border-b border-border/30 pb-2 md:pb-3">
+        <div className="flex gap-3 md:gap-4">
           <button
             type="button"
             onClick={() => setIsInternalNote(false)}
@@ -74,11 +74,11 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
             Internal Note
           </button>
         </div>
-        <div className="font-mono text-[9px] text-muted">
+        <div className="font-mono text-[8px] md:text-[9px] text-muted">
           {isInternalNote ? (
-            <span className="text-amber-500/80">⚠️ Internal note (hidden from customer)</span>
+            <span className="text-amber-500/80">⚠️ Internal</span>
           ) : (
-            <span>Sends email notification to customer</span>
+            <span>Sends email</span>
           )}
         </div>
       </div>
@@ -90,11 +90,11 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
           onChange={(e) => setMessage(e.target.value)}
           placeholder={
             isInternalNote 
-              ? "Type internal note here... (Visible only to the support team)" 
-              : "Type public response here... (Customer will receive an email notification)"
+              ? "Type internal note..." 
+              : "Type public response... (Sends email)"
           }
-          rows={5}
-          className="w-full bg-background border border-border text-primary font-body text-[13px] leading-relaxed p-4 focus:outline-none focus:border-accent transition-all resize-y"
+          rows={2}
+          className="w-full bg-background border border-border text-primary font-body text-[13px] leading-relaxed p-3 focus:outline-none focus:border-accent transition-all resize-y min-h-[44px]"
         />
       </div>
 
@@ -108,15 +108,16 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
         <button
           type="submit"
           disabled={isPending || !message.trim()}
-          className={`font-mono text-[10px] uppercase tracking-widest px-6 py-3 transition-all cursor-pointer disabled:opacity-50 ${
+          className={`font-mono text-[10px] uppercase tracking-widest px-4 py-2.5 md:px-6 md:py-3 transition-all cursor-pointer disabled:opacity-50 min-h-[44px] ${
             isInternalNote
               ? 'bg-amber-500 text-background hover:bg-amber-600 font-bold'
               : 'bg-accent text-background hover:bg-accent/90 font-bold'
           }`}
         >
-          {isPending ? 'Submitting...' : isInternalNote ? 'Save Internal Note' : 'Send Reply'}
+          {isPending ? 'Submitting...' : isInternalNote ? 'Save Note' : 'Reply'}
         </button>
       </div>
     </form>
+
   );
 }

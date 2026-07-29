@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -58,6 +59,45 @@ export default function BottomNav() {
     return pathname.startsWith(href);
   };
 
+  const [badges, setBadges] = useState({ orders: 0, tickets: 0, rfqs: 0, inquiries: 0 });
+
+  useEffect(() => {
+    const fetchBadges = async () => {
+      try {
+        const response = await fetch('/api/notifications/summary');
+        if (response.ok) {
+          const data = await response.json();
+          setBadges({
+            orders: data.orders || 0,
+            tickets: data.tickets || 0,
+            rfqs: data.rfqs || 0,
+            inquiries: data.inquiries || 0,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching badges for bottom nav:', err);
+      }
+    };
+
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const getBadgeCountForTab = (label: string) => {
+    if (label === 'Orders') return badges.orders;
+    if (label === 'Tickets') return badges.tickets;
+    return 0;
+  };
+
+  const getBadgeCountForMoreLink = (label: string) => {
+    if (label === 'RFQ Inbox') return badges.rfqs;
+    if (label === 'Inquiries') return badges.inquiries;
+    return 0;
+  };
+
+  const totalMoreBadges = badges.rfqs + badges.inquiries;
+
   const handleLogout = async () => {
     setIsMobileNavOpen(false);
     await logoutAction();
@@ -111,6 +151,7 @@ export default function BottomNav() {
           {MORE_LINKS.map((link) => {
             const Icon = link.icon;
             const active = isTabActive(link.href);
+            const count = getBadgeCountForMoreLink(link.label);
             return (
               <Link
                 key={link.href}
@@ -123,7 +164,14 @@ export default function BottomNav() {
                 }`}
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon size={18} strokeWidth={1.5} />
+                <div className="relative">
+                  <Icon size={18} strokeWidth={1.5} />
+                  {count > 0 && (
+                    <span className="absolute -top-2.5 -right-2.5 bg-[#f59e0b] text-black text-[8px] font-mono font-bold px-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center">
+                      {count}
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono text-[9px] uppercase tracking-wider text-center leading-tight">
                   {link.label}
                 </span>
@@ -156,6 +204,7 @@ export default function BottomNav() {
           {PRIMARY_TABS.map((tab) => {
             const Icon = tab.icon;
             const active = isTabActive(tab.href, tab.exact);
+            const count = getBadgeCountForTab(tab.label);
             return (
               <Link
                 key={tab.href}
@@ -173,7 +222,14 @@ export default function BottomNav() {
                   }`}
                   aria-hidden="true"
                 />
-                <Icon size={20} strokeWidth={active ? 2 : 1.5} />
+                <div className="relative">
+                  <Icon size={20} strokeWidth={active ? 2 : 1.5} />
+                  {count > 0 && (
+                    <span className="absolute -top-2 -right-2.5 bg-[#f59e0b] text-black text-[9px] font-mono font-bold px-1 min-w-[15px] h-[15px] rounded-full flex items-center justify-center">
+                      {count}
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono text-[9px] uppercase tracking-wider">{tab.label}</span>
               </Link>
             );
@@ -195,7 +251,14 @@ export default function BottomNav() {
               }`}
               aria-hidden="true"
             />
-            <Menu size={20} strokeWidth={isMobileNavOpen ? 2 : 1.5} />
+            <div className="relative">
+              <Menu size={20} strokeWidth={isMobileNavOpen ? 2 : 1.5} />
+              {totalMoreBadges > 0 && (
+                <span className="absolute -top-2 -right-2.5 bg-[#f59e0b] text-black text-[9px] font-mono font-bold px-1 min-w-[15px] h-[15px] rounded-full flex items-center justify-center">
+                  {totalMoreBadges}
+                </span>
+              )}
+            </div>
             <span className="font-mono text-[9px] uppercase tracking-wider">More</span>
           </button>
         </div>

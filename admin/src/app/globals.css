@@ -227,6 +227,13 @@ select:focus-visible {
   .p-10 { padding: 1.5rem !important; }
 }
 
+/* Prevent iOS Zoom on focus by forcing 16px text size */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* ── Touch Targets (Apple HIG: 44pt, Material: 48dp) ────────────────────── */
 @utility touch-target {
   min-height: 44px;
