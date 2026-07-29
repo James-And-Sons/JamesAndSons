@@ -49,13 +49,38 @@ export default function TicketDetailClient({
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'OPEN': return 'color: var(--gold); border-color: var(--border-gold); background: rgba(196,160,90,0.05);';
-      case 'IN_PROGRESS': return 'color: #60a5fa; border-color: rgba(96,165,250,0.4); background: rgba(96,165,250,0.05);';
-      case 'RESOLVED': return 'color: #4ade80; border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.05);';
-      case 'CLOSED': return 'color: var(--text-muted); border-color: var(--border); background: rgba(255,255,255,0.02);';
-      default: return 'color: var(--text); border-color: var(--border);';
+      case 'OPEN':
+        return {
+          color: 'var(--gold)',
+          borderColor: 'var(--border-gold)',
+          background: 'rgba(196,160,90,0.05)',
+        };
+      case 'IN_PROGRESS':
+        return {
+          color: '#60a5fa',
+          borderColor: 'rgba(96,165,250,0.4)',
+          background: 'rgba(96,165,250,0.05)',
+        };
+      case 'RESOLVED':
+        return {
+          color: '#4ade80',
+          borderColor: 'rgba(74,222,128,0.4)',
+          background: 'rgba(74,222,128,0.05)',
+        };
+      case 'CLOSED':
+        return {
+          color: 'var(--text-muted)',
+          borderColor: 'var(--border)',
+          background: 'rgba(255,255,255,0.02)',
+        };
+      default:
+        return {
+          color: 'var(--text)',
+          borderColor: 'var(--border)',
+          background: 'transparent',
+        };
     }
   };
 
@@ -218,11 +243,7 @@ export default function TicketDetailClient({
               padding: '6px 12px', 
               border: '1px solid', 
               borderRadius: '4px',
-              ...({
-                color: getStatusColor(ticket.status).split('color:')[1].split(';')[0].trim(),
-                borderColor: getStatusColor(ticket.status).split('border-color:')[1].split(';')[0].trim(),
-                background: getStatusColor(ticket.status).split('background:')[1].split(';')[0].trim()
-              } as any)
+              ...getStatusStyle(ticket.status)
             }}>
               {ticket.status.replace('_', ' ')}
             </span>
