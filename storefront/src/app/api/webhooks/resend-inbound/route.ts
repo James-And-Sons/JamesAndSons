@@ -40,6 +40,18 @@ function extractEmail(fromString: string): string {
   return match ? match[1].trim().toLowerCase() : fromString.trim().toLowerCase();
 }
 
+// Helper to extract recipient emails array from Resend payload ('to' field)
+function extractRecipients(payloadData: any): string[] {
+  const toRaw = payloadData.to;
+  if (!toRaw) return [];
+  const list = Array.isArray(toRaw) ? toRaw : [toRaw];
+  return list.map((item: any) => {
+    if (typeof item === 'string') return extractEmail(item);
+    if (item && item.email) return item.email.trim().toLowerCase();
+    return '';
+  }).filter(Boolean);
+}
+
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
@@ -53,9 +65,45 @@ export async function POST(request: Request) {
 
     const fromRaw = emailData.from;
     const senderEmail = extractEmail(fromRaw);
+    const recipients = extractRecipients(emailData);
     const subject = emailData.subject || '';
     const textContent = emailData.text || '';
     const cleanBody = cleanEmailBody(textContent) || 'Empty reply message.';
+
+    // Define inbox routing groups
+    const supportInboxes = ['support@jamesandsons.in', 'order@jamesandsons.in'];
+    const inquiryInboxes = ['sales@jamesandsons.in', 'connect@jamesandsons.in'];
+
+    const isSupportRecipient = recipients.some(r => supportInboxes.includes(r));
+    const isInquiryRecipient = recipients.some(r => inquiryInboxes.includes(r));
+
+    // 1. OUT OF SCOPE GUARD: If not matching support or inquiry inboxes (e.g. operations@), ignore
+    if (!isSupportRecipient && !isInquiryRecipient) {
+      console.log(`Webhook: Ignored email sent to out-of-scope recipient(s): [${recipients.join(', ')}]. Zero DB operations performed.`);
+      return NextResponse.json({ success: true, message: 'Ignored out-of-scope recipient' }, { status: 200 });
+    }
+
+    // 2. INQUIRY FLOW: sent to sales@ or connect@
+    if (isInquiryRecipient && !isSupportRecipient) {
+      const recipientMatched = recipients.find(r => inquiryInboxes.includes(r)) || 'sales@jamesandsons.in';
+      const name = fromRaw.includes('<') ? fromRaw.split('<')[0].trim() : null;
+
+      const inquiry = await prisma.inquiry.create({
+        data: {
+          email: senderEmail,
+          name,
+          subject: subject || 'New Inquiry',
+          message: cleanBody,
+          recipient: recipientMatched,
+          status: 'NEW'
+        }
+      });
+
+      console.log(`Webhook: Saved new Inquiry (${inquiry.id}) sent to ${recipientMatched} from ${senderEmail}`);
+      return NextResponse.json({ success: true, inquiryId: inquiry.id });
+    }
+
+    // 3. SUPPORT FLOW: sent to support@ or order@
 
     // Look for ticket number pattern: [TKT-XXXXXX] in subject
     const ticketMatch = subject.match(/\[TKT-([A-Z0-9]{6})\]/i);

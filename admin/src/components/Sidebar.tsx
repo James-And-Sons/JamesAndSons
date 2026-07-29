@@ -21,6 +21,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     }
   };
   const [openTickets, setOpenTickets] = useState<number | null>(null);
+  const [openInquiries, setOpenInquiries] = useState<number | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [searchVal, setSearchVal] = useState(searchParams.get('q') || '');
@@ -40,6 +41,11 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     fetch('/api/tickets/count')
       .then(r => r.json())
       .then(d => setOpenTickets(d.count))
+      .catch(() => {});
+
+    fetch('/api/inquiries')
+      .then(r => r.json())
+      .then(d => setOpenInquiries(d.newCount))
       .catch(() => {});
 
     // Fetch collections (categories)
@@ -621,6 +627,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {renderLink('Catalogues', '/catalogues', null, '📚')}
               {renderLink('Affiliates', '/affiliates', null, '👥')}
               {renderLink('Tickets', '/tickets', openTickets, '🎫')}
+              {renderLink('Inquiries', '/inquiries', openInquiries, '📥')}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
               {renderLink('Customers', '/customers', null, '👥')}
