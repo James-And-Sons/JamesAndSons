@@ -100,8 +100,8 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
       {/* Main Table Container */}
       <div className="premium-card flex flex-col overflow-hidden rounded-lg">
         {/* Controls: Search and Filters */}
-        <div className="p-4 md:p-6 border-b border-border flex flex-wrap gap-3 bg-surface-muted/40 items-center justify-between">
-          <div className="flex-1 min-w-[260px] flex items-center gap-2 border border-border bg-background px-3 py-2 rounded-sm focus-within:border-accent">
+        <div className="p-4 md:p-6 border-b border-border flex flex-col sm:flex-row gap-3 bg-surface-muted/40 items-stretch sm:items-center justify-between">
+          <div className="flex-1 flex items-center gap-2 border border-border bg-background px-3 py-2.5 rounded-sm focus-within:border-accent min-h-[44px]">
             <span className="text-muted text-xs" aria-hidden="true">🔍</span>
             <input
               type="text"
@@ -125,7 +125,7 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
               value={statusFilter}
               aria-label="Filter by Status"
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-wider focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
+              className="w-full sm:w-auto px-3 py-2.5 min-h-[44px] border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-wider focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
             >
               <option value="ALL">All Statuses ({records.length})</option>
               <option value="PAID">Paid / Delivered / Shipped</option>
@@ -135,30 +135,18 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
           </div>
         </div>
 
-        {/* Responsive Table */}
-        <div className="table-responsive flex-1">
+        {/* Desktop Table (md+) */}
+        <div className="hidden md:block table-responsive flex-1">
           <table className="w-full text-left border-collapse">
             <caption className="sr-only">List of customer orders</caption>
             <thead className="border-b border-border bg-surface-muted/20">
               <tr>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
-                  Order ID
-                </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
-                  Date
-                </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
-                  Customer / Company
-                </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">
-                  Total Amount
-                </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
-                  Status
-                </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">
-                  Action
-                </th>
+                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Order ID</th>
+                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Date</th>
+                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer / Company</th>
+                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Total Amount</th>
+                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
+                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -166,62 +154,83 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
                 const s = (record.status || '').toUpperCase();
                 const isPaid = ['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s);
                 const isProcessing = ['PENDING', 'PROCESSING'].includes(s);
-
                 const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
                 const href = `/orders/${record.id}`;
-
                 return (
                   <ClickableRow key={record.id} href={href} className="hover:bg-surface-muted/40 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="font-mono text-[12px] text-accent hover:underline font-semibold">
-                        {record.displayId}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-[11px] text-muted">
-                      {new Date(record.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-serif text-[15px] text-primary">
-                        {record.company || record.customerName}
-                      </div>
-                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">
-                        {record.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">
-                      ₹{Math.round(record.totalValue).toLocaleString('en-IN')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`status-pill ${pillClass}`}>
-                        <span className="dot" aria-hidden="true" />
-                        <span>{s.replace(/_/g, ' ')}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Link
-                        href={href}
-                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors"
-                      >
-                        View Details →
-                      </Link>
-                    </td>
+                    <td className="px-6 py-4"><span className="font-mono text-[12px] text-accent hover:underline font-semibold">{record.displayId}</span></td>
+                    <td className="px-6 py-4 font-mono text-[11px] text-muted">{new Date(record.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                    <td className="px-6 py-4"><div className="font-serif text-[15px] text-primary">{record.company || record.customerName}</div><div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{record.email}</div></td>
+                    <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">₹{Math.round(record.totalValue).toLocaleString('en-IN')}</td>
+                    <td className="px-6 py-4"><span className={`status-pill ${pillClass}`}><span className="dot" aria-hidden="true" /><span>{s.replace(/_/g, ' ')}</span></span></td>
+                    <td className="px-6 py-4 text-right"><Link href={href} className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors">View Details →</Link></td>
                   </ClickableRow>
                 );
               })}
-
               {filteredRecords.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest">
-                    No matching customer orders found.
-                  </td>
-                </tr>
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest">No matching customer orders found.</td></tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View (< md) */}
+        <div className="block md:hidden p-4 space-y-3">
+          {filteredRecords.map((record) => {
+            const s = (record.status || '').toUpperCase();
+            const isPaid = ['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s);
+            const isProcessing = ['PENDING', 'PROCESSING'].includes(s);
+            const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
+            const href = `/orders/${record.id}`;
+            return (
+              <div key={record.id} className="bg-surface border border-border rounded-lg overflow-hidden">
+                {/* Card Header */}
+                <div className="flex items-center justify-between px-4 py-3 bg-surface-muted/30 border-b border-border/40">
+                  <span className="font-mono text-[13px] text-accent font-semibold tracking-wide">{record.displayId}</span>
+                  <span className={`status-pill ${pillClass}`}>
+                    <span className="dot" aria-hidden="true" />
+                    <span>{s.replace(/_/g, ' ')}</span>
+                  </span>
+                </div>
+
+                {/* Card Body */}
+                <div className="px-4 py-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-serif text-[15px] text-primary leading-snug">{record.company || record.customerName}</div>
+                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{record.email}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono text-[12px] text-muted">Amount</div>
+                      <div className="font-mono text-[15px] text-primary font-semibold tabular-nums">
+                        ₹{Math.round(record.totalValue).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="font-mono text-[10px] text-muted/60">
+                    {new Date(record.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+
+                {/* Card Footer CTA */}
+                <div className="px-4 pb-4">
+                  <Link
+                    href={href}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 min-h-[44px] bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 transition-colors font-mono text-[10px] uppercase tracking-[0.12em] rounded-sm"
+                  >
+                    View Order Details
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredRecords.length === 0 && (
+            <div className="p-8 text-center text-muted font-mono text-[11px] uppercase tracking-widest bg-surface border border-border rounded-lg">
+              No matching orders found.
+            </div>
+          )}
         </div>
       </div>
     </div>

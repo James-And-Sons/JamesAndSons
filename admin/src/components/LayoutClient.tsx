@@ -2,7 +2,9 @@
 import { useState, Suspense, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Search } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import BottomNav from '@/components/BottomNav';
 import ThemeToggle from '@/components/ThemeToggle';
 import GlobalSearch from '@/components/GlobalSearch';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -120,16 +122,31 @@ function UnsavedChangesListener() {
   return null;
 }
 
+/** Registers the service worker once on mount */
+function ServiceWorkerRegistrar() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .catch(() => {/* silent — dev environments may block SW */});
+    }
+  }, []);
+  return null;
+}
+
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const isLoginPage = pathname?.startsWith('/login');
 
   return (
     <ThemeProvider>
       <SidebarProvider>
         <a className="skip-link" href="#main">Skip to content</a>
+        <ServiceWorkerRegistrar />
         <UnsavedChangesListener />
+
         {!isLoginPage && (
           <Suspense fallback={<div className="w-[260px] fixed inset-y-0 left-0 bg-surface border-r border-border" />}>
             <Sidebar 
@@ -138,36 +155,77 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
             />
           </Suspense>
         )}
+
         <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 min-w-0 overflow-x-hidden ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
           {!isLoginPage && (
             <header className="h-[64px] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300">
+              {/* LEFT: Hamburger (desktop only) + Breadcrumb */}
               <div className="flex items-center gap-4">
+                {/* Desktop hamburger — only shown when sidebar is not always-visible */}
                 <button 
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="lg:hidden p-2 text-muted hover:text-accent cursor-pointer"
+                  className="lg:hidden p-2 text-muted hover:text-accent cursor-pointer touch-target"
                   aria-label="Open navigation"
                   aria-expanded={isSidebarOpen}
                   aria-controls="sidebar"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
                 </button>
                 <HeaderTitle />
               </div>
-              <div className="flex items-center gap-4">
-                <GlobalSearch />
+
+              {/* RIGHT: Desktop = GlobalSearch + ThemeToggle + badge; Mobile = search icon + theme toggle */}
+              <div className="flex items-center gap-2 lg:gap-4">
+                {/* Desktop search */}
+                <div className="hidden lg:flex">
+                  <GlobalSearch />
+                </div>
+
+                {/* Mobile search toggle */}
+                <button
+                  className="lg:hidden touch-target text-muted hover:text-accent transition-colors"
+                  onClick={() => setMobileSearchOpen(s => !s)}
+                  aria-label="Toggle search"
+                >
+                  <Search size={18} />
+                </button>
+
                 <ThemeToggle />
-                <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-accent bg-accent/5 px-3 py-1.5 border border-accent/30 rounded-sm">
+
+                {/* Super admin badge — desktop only */}
+                <span className="hidden lg:inline font-mono text-[9px] tracking-[0.15em] uppercase text-accent bg-accent/5 px-3 py-1.5 border border-accent/30 rounded-sm">
                   Super Admin
                 </span>
               </div>
             </header>
           )}
-          <main id="main" className={isLoginPage ? '' : 'p-4 lg:p-10 flex-1 overflow-x-hidden bg-background selection:bg-accent/20 transition-colors duration-300'}>
+
+          {/* Mobile expandable search bar */}
+          {!isLoginPage && mobileSearchOpen && (
+            <div className="lg:hidden px-4 py-3 bg-background border-b border-border z-30 sticky top-[64px]">
+              <GlobalSearch autoFocus onClose={() => setMobileSearchOpen(false)} />
+            </div>
+          )}
+
+          <main
+            id="main"
+            className={
+              isLoginPage
+                ? ''
+                : 'p-4 lg:p-10 flex-1 overflow-x-hidden bg-background selection:bg-accent/20 transition-colors duration-300 has-bottom-nav lg:pb-10'
+            }
+          >
             <div className={isLoginPage ? '' : 'max-w-[1200px] mx-auto w-full min-w-0 overflow-x-hidden'}>
               {children}
             </div>
           </main>
         </div>
+
+        {/* Mobile Bottom Navigation — rendered outside the scrollable column */}
+        {!isLoginPage && <BottomNav />}
+
       </SidebarProvider>
     </ThemeProvider>
   );

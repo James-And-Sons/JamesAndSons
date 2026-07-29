@@ -46,6 +46,8 @@ interface SidebarContextType {
   setProductFormState: (state: ProductFormSidebarState | null) => void;
   isPageDirty: boolean;
   setIsPageDirty: (dirty: boolean) => void;
+  isMobileNavOpen: boolean;
+  setIsMobileNavOpen: (open: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
@@ -53,9 +55,10 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [productFormState, setProductFormState] = useState<ProductFormSidebarState | null>(null);
   const [isPageDirty, setIsPageDirty] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
-    <SidebarContext.Provider value={{ productFormState, setProductFormState, isPageDirty, setIsPageDirty }}>
+    <SidebarContext.Provider value={{ productFormState, setProductFormState, isPageDirty, setIsPageDirty, isMobileNavOpen, setIsMobileNavOpen }}>
       {children}
     </SidebarContext.Provider>
   );

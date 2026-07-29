@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ── Service Worker Registration ───────────────────────────────────────────── */
+/* Registered imperatively in LayoutClient.tsx via useEffect */
+
 @theme {
   --color-primary: #f0ead8;
   --color-secondary: #d4cfc4;
@@ -28,10 +31,22 @@
   --color-muted: #8a8880;
 }
 
+/* ── iOS / Android Safe Area Variables ─────────────────────────────────────── */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  /* Height of mobile bottom nav bar: 64px base + safe area */
+  --bottom-nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-secondary);
   font-family: var(--font-body);
+  /* Prevent pull-to-refresh interfering with our bottom nav */
+  overscroll-behavior-y: contain;
 }
 
 /* Accessibility Skip Link */
@@ -210,6 +225,42 @@ select:focus-visible {
   h2 { font-size: 24px !important; }
   .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
   .p-10 { padding: 1.5rem !important; }
+}
+
+/* ── Touch Targets (Apple HIG: 44pt, Material: 48dp) ────────────────────── */
+@utility touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Bottom Nav & Safe Area ─────────────────────────────────────────────── */
+/* Applied to main content so it's not obscured by the fixed bottom nav */
+.has-bottom-nav {
+  padding-bottom: var(--bottom-nav-height);
+}
+
+/* The sticky bar itself sits above the iOS home indicator */
+.bottom-nav-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Sticky CTA bars inside forms/sheets */
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 30;
+}
+
+/* Mobile FAB placement: above bottom nav + safe area */
+.mobile-fab {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + 16px);
+  right: 1.25rem;
+  z-index: 45;
 }
 
 /* Logo dark/light mode switching */

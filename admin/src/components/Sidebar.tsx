@@ -5,6 +5,25 @@ import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
 import { useSidebar } from '@/lib/context/SidebarContext';
 import SyncButton from '@/components/SyncButton';
+import {
+  LayoutDashboard,
+  Package,
+  MessageSquare,
+  Grid3x3,
+  BookMarked,
+  Building2,
+  FileText,
+  BookOpen,
+  Megaphone,
+  Tag,
+  BookCopy,
+  Users,
+  TicketCheck,
+  HelpCircle,
+  Settings,
+  Image,
+  LogOut,
+} from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
@@ -87,7 +106,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     }
   }, [currentCategoryId, currentEditCategoryId, currentManageId, pathname, searchParams]);
 
-  const renderLink = (name: string, href: string, badge?: number | null, icon?: string) => {
+  const renderLink = (name: string, href: string, badge?: number | null, Icon?: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>) => {
     const isActive = href === '/' 
       ? pathname === '/' 
       : pathname.startsWith(href) && 
@@ -112,8 +131,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         `}
       >
         <span className="group-hover:translate-x-1 transition-transform duration-200 flex items-center gap-2.5">
-          {icon ? (
-            <span className={`text-[12px] ${isActive ? 'text-accent' : 'text-muted/70 group-hover:text-accent'}`} aria-hidden="true">{icon}</span>
+          {Icon ? (
+            <Icon size={14} strokeWidth={isActive ? 2 : 1.5} className={isActive ? 'text-accent' : 'text-muted/70 group-hover:text-accent'} aria-hidden="true" />
           ) : isActive ? (
             <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" aria-hidden="true"></span>
           ) : null}
@@ -599,9 +618,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             renderProductFormOutline()
           ) : (
             <>
-              {renderLink('Dashboard', '/', null, '◈')}
-              {renderLink('Orders', '/orders', null, '📦')}
-              {renderLink('RFQ Inbox', '/rfqs', null, '✉')}
+              {renderLink('Dashboard', '/', null, LayoutDashboard)}
+              {renderLink('Orders', '/orders', null, Package)}
+              {renderLink('RFQ Inbox', '/rfqs', null, MessageSquare)}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Catalog</p>
               {renderCatalogDropdown()}
@@ -619,19 +638,19 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               })))}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Business</p>
-              {renderLink('B2B Workspace', '/b2b', null, '🏢')}
-              {renderLink('Pages / CMS', '/pages', null, '📄')}
-              {renderLink('Blog', '/blog', null, '✎')}
-              {renderLink('Marketing', '/campaigns', null, '🪔')}
-              {renderLink('Coupons', '/promotions', null, '🏷')}
-              {renderLink('Catalogues', '/catalogues', null, '📚')}
-              {renderLink('Affiliates', '/affiliates', null, '👥')}
-              {renderLink('Tickets', '/tickets', openTickets, '🎫')}
-              {renderLink('Inquiries', '/inquiries', openInquiries, '📥')}
+              {renderLink('B2B Workspace', '/b2b', null, Building2)}
+              {renderLink('Pages / CMS', '/pages', null, FileText)}
+              {renderLink('Blog', '/blog', null, BookOpen)}
+              {renderLink('Marketing', '/campaigns', null, Megaphone)}
+              {renderLink('Coupons', '/promotions', null, Tag)}
+              {renderLink('Catalogues', '/catalogues', null, BookCopy)}
+              {renderLink('Affiliates', '/affiliates', null, Users)}
+              {renderLink('Tickets', '/tickets', openTickets, TicketCheck)}
+              {renderLink('Inquiries', '/inquiries', openInquiries, HelpCircle)}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
-              {renderLink('Customers', '/customers', null, '👥')}
-              {renderLink('Admin Settings', '/account', null, '⚙')}
+              {renderLink('Customers', '/customers', null, Users)}
+              {renderLink('Admin Settings', '/account', null, Settings)}
             </>
           )}
         </nav>
