@@ -19,8 +19,9 @@ export function getBrowseNode(product: any): string {
 }
 
 export function getFixtureForm(product: any): string {
-  if (product?.amazonFixtureForm) {
-    return product.amazonFixtureForm;
+  const form = product?.amazonFixtureForm;
+  if (form && form.toLowerCase() !== 'light_fixture') {
+    return form;
   }
 
   // Fallback to dynamic classification

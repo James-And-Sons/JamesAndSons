@@ -486,6 +486,7 @@ export async function syncToAmazon(product: any) {
         }
       ];
 
+      const startAt = new Date().toISOString();
       const offers = [
         {
           marketplace_id: marketplaceId,
@@ -495,7 +496,28 @@ export async function syncToAmazon(product: any) {
             {
               schedule: [
                 {
-                  value_with_tax: price
+                  value_with_tax: price,
+                  start_at: startAt
+                }
+              ]
+            }
+          ],
+          minimum_seller_allowed_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: Math.round(price * 0.7),
+                  start_at: startAt
+                }
+              ]
+            }
+          ],
+          maximum_seller_allowed_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: Math.round(price * 2.5),
+                  start_at: startAt
                 }
               ]
             }
@@ -512,7 +534,28 @@ export async function syncToAmazon(product: any) {
             {
               schedule: [
                 {
-                  value_with_tax: b2bPrice
+                  value_with_tax: b2bPrice,
+                  start_at: startAt
+                }
+              ]
+            }
+          ],
+          minimum_seller_allowed_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: Math.round(b2bPrice * 0.7),
+                  start_at: startAt
+                }
+              ]
+            }
+          ],
+          maximum_seller_allowed_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: Math.round(b2bPrice * 2.5),
+                  start_at: startAt
                 }
               ]
             }
