@@ -65,40 +65,48 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-0">
-      {/* Mode Switcher — full-width segmented control */}
-      <div className={`flex rounded-t-[6px] border border-b-0 overflow-hidden transition-colors ${
-        isInternalNote ? 'border-amber-500/40' : 'border-border'
-      }`}>
-        <button
-          type="button"
-          onClick={() => setIsInternalNote(false)}
-          className={`flex-1 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            !isInternalNote
-              ? 'bg-accent/15 text-accent font-semibold border-r border-accent/20'
-              : 'bg-surface text-muted hover:text-primary border-r border-border'
-          }`}
-        >
-          <span className="text-[12px]">✉</span> Public Reply
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsInternalNote(true)}
-          className={`flex-1 py-2.5 font-mono text-[10px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            isInternalNote
-              ? 'bg-amber-500/15 text-amber-400 font-semibold'
-              : 'bg-surface text-muted hover:text-primary'
-          }`}
-        >
-          <span className="text-[12px]">🔒</span> Internal Note
-        </button>
+    <div className="space-y-3">
+      {/* Sleek floating mode switcher */}
+      <div className="flex justify-between items-center px-1">
+        <div className="bg-surface-muted/90 border border-border/80 p-0.5 rounded-full inline-flex">
+          <button
+            type="button"
+            onClick={() => setIsInternalNote(false)}
+            className={`px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-widest rounded-full transition-all cursor-pointer ${
+              !isInternalNote
+                ? 'bg-accent text-background font-bold shadow-sm'
+                : 'text-muted hover:text-primary'
+            }`}
+          >
+            Public Reply
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsInternalNote(true)}
+            className={`px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-widest rounded-full transition-all cursor-pointer ${
+              isInternalNote
+                ? 'bg-amber-500 text-background font-bold shadow-sm'
+                : 'text-muted hover:text-primary'
+            }`}
+          >
+            Internal Note
+          </button>
+        </div>
+
+        <div className="font-mono text-[8px] uppercase tracking-widest text-muted/60">
+          {isInternalNote ? (
+            <span className="text-amber-500/80 font-semibold">⚠️ Team Only</span>
+          ) : (
+            <span className="text-accent/80 font-semibold">✉️ Sends Email</span>
+          )}
+        </div>
       </div>
 
-      {/* Composer Body */}
-      <div className={`relative border border-t-0 rounded-b-[6px] transition-colors ${
+      {/* Unified composer card */}
+      <div className={`group relative rounded-xl border transition-all duration-300 ${
         isInternalNote
-          ? 'border-amber-500/40 bg-amber-500/[0.03]'
-          : 'border-border bg-background'
+          ? 'bg-amber-500/[0.02] border-amber-500/30 focus-within:border-amber-500/60 focus-within:ring-1 focus-within:ring-amber-500/20'
+          : 'bg-surface/40 backdrop-blur-md border-border/80 focus-within:border-accent/40 focus-within:ring-1 focus-within:ring-accent/15'
       }`}>
         <textarea
           ref={textareaRef}
@@ -108,53 +116,58 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
           onKeyDown={handleKeyDown}
           placeholder={
             isInternalNote
-              ? 'Write an internal note — not visible to the customer…'
-              : 'Write a reply — this will be sent to the customer via email…'
+              ? 'Write a private team note (not visible to customer)...'
+              : 'Write a message to send to the customer...'
           }
-          rows={3}
-          className={`w-full bg-transparent text-primary font-body text-[13px] leading-relaxed px-4 pt-3 pb-12 focus:outline-none transition-all resize-none min-h-[80px] placeholder:text-muted/50 ${
-            isInternalNote ? 'placeholder:text-amber-500/30' : ''
-          }`}
+          className="w-full bg-transparent text-primary font-body text-[13.5px] leading-relaxed px-4 pt-3.5 pb-14 focus:outline-none transition-all resize-none min-h-[90px] placeholder:text-muted/40"
           style={{ fontSize: '16px' }} // Prevents iOS zoom
         />
 
-        {/* Bottom toolbar inside textarea */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 pb-2.5">
-          <span className="font-mono text-[9px] text-muted/50">
-            {isInternalNote
-              ? '🔒 Only visible to your team'
-              : '⌘↵ to send'}
-          </span>
-
-          <button
-            type="submit"
-            disabled={isPending || !message.trim()}
-            className={`font-mono text-[10px] uppercase tracking-widest px-4 py-2 transition-all cursor-pointer disabled:opacity-40 min-h-[36px] rounded-[4px] flex items-center gap-2 ${
-              isInternalNote
-                ? 'bg-amber-500 text-background hover:bg-amber-400 font-bold disabled:hover:bg-amber-500'
-                : 'bg-accent text-background hover:bg-accent/90 font-bold disabled:hover:bg-accent'
-            }`}
-          >
-            {isPending ? (
-              <>
-                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Sending…
-              </>
+        {/* Footer toolbar inside the card */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-3 pb-3 pt-2 bg-gradient-to-t from-background/10 to-transparent pointer-events-none">
+          <div className="font-mono text-[9px] text-muted/40 flex items-center gap-1.5 pointer-events-auto">
+            {isInternalNote ? (
+              <span className="text-amber-500/40">🔒 Internal Note</span>
             ) : (
-              isInternalNote ? 'Save Note' : 'Send Reply'
+              <span>⌘↵ to send</span>
             )}
-          </button>
+          </div>
+
+          <div className="pointer-events-auto">
+            <button
+              type="button"
+              disabled={isPending || !message.trim()}
+              onClick={submitReply}
+              className={`font-mono text-[9px] uppercase tracking-widest px-4 py-2 transition-all cursor-pointer disabled:opacity-30 rounded-lg flex items-center gap-1.5 font-bold ${
+                isInternalNote
+                  ? 'bg-amber-500 text-background hover:bg-amber-400 disabled:hover:bg-amber-500 shadow-sm'
+                  : 'bg-accent text-background hover:bg-accent/90 disabled:hover:bg-accent shadow-sm'
+              }`}
+            >
+              {isPending ? (
+                <>
+                  <svg className="animate-spin w-2.5 h-2.5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Sending
+                </>
+              ) : (
+                <>
+                  <span>{isInternalNote ? 'Save Note' : 'Send'}</span>
+                  <span className="opacity-80">→</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="font-mono text-[10px] text-rose-400 uppercase tracking-wider mt-2 px-1">
+        <div className="font-mono text-[9px] text-rose-400 uppercase tracking-widest mt-1.5 px-1 animate-pulse">
           ⚠ {error}
         </div>
       )}
-    </form>
+    </div>
   );
 }

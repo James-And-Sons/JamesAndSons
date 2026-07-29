@@ -6,7 +6,7 @@
  *   - Page navigations: Stale-While-Revalidate with offline shell
  */
 
-const CACHE_NAME = 'jas-admin-1785356269865';
+const CACHE_NAME = 'jas-admin-1785360454068';
 const STATIC_CACHE = 'jas-admin-static-v1';
 const OFFLINE_URL = '/login';
 
