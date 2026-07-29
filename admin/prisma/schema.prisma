@@ -397,17 +397,18 @@ model Ticket {
 }
 
 model TicketMessage {
-  id             String   @id @default(uuid())
-  ticketId       String
-  authorId       String
-  message        String
-  isAdmin        Boolean  @default(false)
-  isInternalNote Boolean  @default(false)
-  attachments    String[]
-  zohoId         String?  @unique
-  
+  id                  String   @id @default(uuid())
+  ticketId            String
+  authorId            String
+  message             String
+  isAdmin             Boolean  @default(false)
+  isInternalNote      Boolean  @default(false)
+  attachments         String[]
+  zohoId              String?  @unique
+  externalMessageId   String?  @unique  // Stores outbound email Message-ID or inbound email Message-ID for dedup
+
   createdAt DateTime @default(now())
- 
+
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id])
 }

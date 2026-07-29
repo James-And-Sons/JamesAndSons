@@ -201,17 +201,48 @@ export default function InquiriesDashboard({ initialInquiries }: { initialInquir
 
                 {/* Expanded Message View */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 pt-2 border-t border-border/40 space-y-4">
-                    <div className="bg-background/80 p-4 border border-border/50 rounded-sm">
-                      <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Message Body</p>
-                      <div className="text-[13px] text-primary whitespace-pre-wrap font-sans leading-relaxed">
-                        {inquiry.message}
+                  <div className="border-t border-border/40">
+                    {/* Message reading panel */}
+                    <div className="px-5 pt-4 pb-3">
+                      <p className="font-mono text-[9px] uppercase tracking-widest text-muted mb-3 flex items-center gap-2">
+                        <span className="w-4 h-[1px] bg-border inline-block" />
+                        Message from {inquiry.name || inquiry.email}
+                        <span className="w-4 h-[1px] bg-border inline-block" />
+                      </p>
+                      <div className="bg-background/60 border border-border/50 rounded-[6px] p-4">
+                        <div className="text-[13.5px] text-primary whitespace-pre-wrap font-body leading-relaxed">
+                          {inquiry.message}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-muted font-mono text-[10px] flex-wrap gap-2">
-                      <span>Reply directly via email to: <a href={`mailto:${inquiry.email}?subject=Re: ${encodeURIComponent(inquiry.subject)}`} className="text-accent underline">{inquiry.email}</a></span>
-                      <span className="uppercase">Recipient Inbox: {inquiry.recipient}</span>
+                    {/* Reply / action footer */}
+                    <div className="px-5 pb-4 pt-1 flex flex-col sm:flex-row items-start sm:items-center gap-3 border-t border-border/20">
+                      <div className="flex-1 font-mono text-[10px] text-muted">
+                        Sent to: <span className="text-secondary">{inquiry.recipient}</span>
+                        <span className="mx-2 opacity-40">·</span>
+                        From: <span className="text-secondary">{inquiry.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => {
+                            const subject = encodeURIComponent(`Re: ${inquiry.subject}`);
+                            const body = encodeURIComponent(`\n\n---\nYour original message:\n${inquiry.message}`);
+                            window.open(`mailto:${inquiry.email}?subject=${subject}&body=${body}`, '_blank');
+                          }}
+                          className="flex items-center gap-1.5 px-4 py-2 font-mono text-[10px] uppercase tracking-wider bg-accent text-background hover:bg-accent/90 transition-colors rounded-[4px] cursor-pointer font-bold min-h-[36px]"
+                        >
+                          ✉ Reply via Email
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(inquiry.email);
+                          }}
+                          className="px-3 py-2 font-mono text-[10px] uppercase tracking-wider border border-border text-muted hover:text-primary hover:border-muted rounded-[4px] transition-colors cursor-pointer min-h-[36px]"
+                        >
+                          Copy Email
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
