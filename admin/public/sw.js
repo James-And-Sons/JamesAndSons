@@ -6,7 +6,7 @@
  *   - Page navigations: Stale-While-Revalidate with offline shell
  */
 
-const CACHE_NAME = 'jas-admin-1785353905487';
+const CACHE_NAME = 'jas-admin-1785354286971';
 const STATIC_CACHE = 'jas-admin-static-v1';
 const OFFLINE_URL = '/login';
 
@@ -59,8 +59,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Cache-First: _next/static (hashed filenames never change)
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/images/')) {
+  // 1. Cache-First: _next/static, images, and pre-cached root assets
+  if (
+    url.pathname.startsWith('/_next/static/') || 
+    url.pathname.startsWith('/images/') ||
+    STATIC_ASSETS.includes(url.pathname)
+  ) {
     event.respondWith(cacheFirst(request));
     return;
   }
@@ -82,7 +86,8 @@ async function cacheFirst(request) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Only cache actual successful same-url responses (avoid caching login redirects)
+    if (response.ok && !response.redirected && response.url === request.url) {
       const cache = await caches.open(STATIC_CACHE);
       cache.put(request, response.clone());
     }
@@ -98,7 +103,7 @@ async function networkFirstWithTimeout(request, timeoutMs) {
   try {
     const response = await fetch(request, { signal: controller.signal });
     clearTimeout(timeout);
-    if (response.ok) {
+    if (response.ok && !response.redirected) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
@@ -122,15 +127,19 @@ async function staleWhileRevalidate(request) {
 
   const fetchPromise = fetch(request)
     .then((response) => {
-      if (response.ok) {
+      // Avoid caching redirect responses as page HTML
+      if (response.ok && !response.redirected && response.url === request.url) {
         cache.put(request, response.clone());
       }
       return response;
     })
-    .catch(() => cached);
+    .catch(() => {
+      return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/html' } });
+    });
 
   return cached || fetchPromise;
 }
+
 
 // ── Web Push Event: Receives server push notifications ──────────────────────
 self.addEventListener('push', (event) => {
