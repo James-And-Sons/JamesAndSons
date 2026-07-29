@@ -2,6 +2,7 @@
 import { CldUploadWidget } from 'next-cloudinary';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { pickImageFiles } from '@/lib/fileSystemAccess';
 
 interface CloudinaryUploadProps {
   onUpload: (urls: string[]) => void;
@@ -17,6 +18,14 @@ export default function CloudinaryUpload({
   label = "Upload Image"
 }: CloudinaryUploadProps) {
   const [images, setImages] = useState<string[]>(defaultImages);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [hasFSA, setHasFSA] = useState(false);
+
+  // Detect File System Access API support (Chrome desktop)
+  useEffect(() => {
+    setHasFSA(typeof window !== 'undefined' && 'showOpenFilePicker' in window);
+  }, []);
 
   // Sync state if defaultImages changes (e.g., when switching active variant)
   useEffect(() => {
@@ -42,6 +51,65 @@ export default function CloudinaryUpload({
     handleClose();
   };
 
+  /**
+   * FSA-powered upload: pick files natively → upload directly to Cloudinary
+   * without showing the Cloudinary widget UI.
+   */
+  const handleNativePick = async () => {
+    const files = await pickImageFiles({ multiple });
+    if (!files.length) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+
+    const uploadedUrls: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Get a signed timestamp from our backend
+      const timestamp = Math.round(Date.now() / 1000);
+      const paramsToSign = { timestamp, upload_preset: uploadPreset };
+
+      const sigRes = await fetch('/api/sign-cloudinary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paramsToSign }),
+      });
+      const { signature } = await sigRes.json();
+
+      // Upload directly to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey!);
+      formData.append('timestamp', String(timestamp));
+      formData.append('signature', signature);
+      formData.append('upload_preset', uploadPreset!);
+
+      const uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: 'POST', body: formData }
+      );
+
+      if (uploadRes.ok) {
+        const data = await uploadRes.json();
+        uploadedUrls.push(data.secure_url);
+      }
+
+      setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+    }
+
+    const newImages = multiple ? [...images, ...uploadedUrls] : uploadedUrls.slice(-1);
+    setImages(newImages);
+    onUpload(newImages);
+    setUploading(false);
+    setUploadProgress(0);
+  };
+
   const removeImage = async (urlToRemove: string) => {
     const newImages = images.filter(url => url !== urlToRemove);
     setImages(newImages);
@@ -56,8 +124,6 @@ export default function CloudinaryUpload({
       });
       if (!res.ok) {
         console.error('Failed to delete image from Cloudinary:', await res.text());
-      } else {
-        console.log('Successfully deleted image from Cloudinary:', urlToRemove);
       }
     } catch (err) {
       console.error('Failed to delete image from Cloudinary:', err);
@@ -126,7 +192,33 @@ export default function CloudinaryUpload({
           </div>
         ))}
 
-        {(multiple || images.length === 0) && (
+        {/* Native FSA upload button — shown on Chrome desktop */}
+        {hasFSA && (multiple || images.length === 0) && (
+          <button
+            type="button"
+            onClick={handleNativePick}
+            disabled={uploading}
+            className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest disabled:opacity-50 relative overflow-hidden"
+          >
+            {uploading ? (
+              <>
+                <span className="text-[11px] text-accent font-mono">{uploadProgress}%</span>
+                <div
+                  className="absolute bottom-0 left-0 h-[2px] bg-accent transition-all"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </>
+            ) : (
+              <>
+                <span className="text-xl">+</span>
+                {label}
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Cloudinary widget button — used on iOS / Firefox or when FSA is unavailable */}
+        {!hasFSA && (multiple || images.length === 0) && (
           <CldUploadWidget
             signatureEndpoint="/api/sign-cloudinary"
             uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}

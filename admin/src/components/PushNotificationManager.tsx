@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 
 // Helper to convert base64 VAPID key to Uint8Array for subscribe options
 function urlBase64ToUint8Array(base64String: string) {
@@ -14,11 +15,65 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+// Sections that "clear" badge count when visited
+const BADGE_CLEAR_PATHS: Record<string, string[]> = {
+  '/tickets': ['tickets'],
+  '/orders': ['orders'],
+  '/rfqs': ['rfqs'],
+  '/inquiries': ['inquiries'],
+};
+
 export default function PushNotificationManager() {
   const [isSupported, setIsSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const pathname = usePathname();
 
+  // ── Badging API ────────────────────────────────────────────────────────────
+  const updateAppBadge = useCallback(async () => {
+    if (typeof navigator === 'undefined') return;
+    if (!('setAppBadge' in navigator)) return;
+    try {
+      const res = await fetch('/api/notifications/summary');
+      if (!res.ok) return;
+      const data = await res.json();
+      const total = (data.tickets || 0) + (data.orders || 0) + (data.rfqs || 0) + (data.inquiries || 0);
+      if (total > 0) {
+        await (navigator as any).setAppBadge(total);
+      } else {
+        await (navigator as any).clearAppBadge();
+      }
+    } catch {
+      // Badge API is best-effort — swallow errors silently
+    }
+  }, []);
+
+  // Update badge on page focus and every 60 seconds
+  useEffect(() => {
+    updateAppBadge();
+
+    const handleFocus = () => updateAppBadge();
+    document.addEventListener('visibilitychange', handleFocus);
+    const interval = setInterval(updateAppBadge, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', handleFocus);
+      clearInterval(interval);
+    };
+  }, [updateAppBadge]);
+
+  // Clear badge for the specific category when user navigates to it
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('clearAppBadge' in navigator)) return;
+    for (const [prefix] of Object.entries(BADGE_CLEAR_PATHS)) {
+      if (pathname?.startsWith(prefix)) {
+        // Re-fetch the badge count (minus the visited section) rather than just clearing to 0
+        updateAppBadge();
+        break;
+      }
+    }
+  }, [pathname, updateAppBadge]);
+
+  // ── Service Worker + Push ──────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
       setIsSupported(true);
