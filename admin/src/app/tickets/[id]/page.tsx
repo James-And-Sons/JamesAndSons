@@ -70,14 +70,14 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
     <div className="animate-in fade-in duration-300">
 
       {/* ── Mobile Layout (<md) ─────────────────────────────────────────────── */}
-      <div className="flex md:hidden flex-col h-[100dvh] relative overflow-hidden bg-background">
+      <div className="fixed inset-0 z-50 flex md:hidden flex-col overflow-hidden bg-background">
 
         {/* Scrollable Message Thread */}
-        <div className="flex-1 overflow-y-auto overscroll-contain" id="mobile-thread">
-          <div className="flex flex-col gap-3 p-4 pb-2">
+        <div className="flex-1 overflow-y-auto overscroll-contain pb-2" id="mobile-thread">
+          <div className="flex flex-col gap-3.5 p-4">
 
             {/* Category pill at top of thread */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mb-1">
               <span className="font-mono text-[9px] uppercase tracking-wider text-muted border border-border/50 bg-surface px-3 py-1 rounded-full">
                 {CATEGORY_LABELS[ticket.category] || ticket.category}
               </span>
@@ -102,7 +102,7 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
               if (isNote) {
                 return (
                   <div key={msg.id} className="flex justify-center">
-                    <div className="max-w-[85%] bg-amber-500/5 border border-amber-500/20 rounded-[6px] p-3">
+                    <div className="max-w-[85%] bg-amber-500/5 border border-amber-500/20 rounded-[14px] p-3">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <span className="text-[8px] font-mono uppercase tracking-wider bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-[3px] font-bold">
                           Internal Note
@@ -119,11 +119,11 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
 
               return (
                 <div key={msg.id} className={`flex flex-col ${msg.isAdmin ? 'items-end' : 'items-start'}`}>
-                  <div className="font-mono text-[9px] text-muted/70 mb-1 px-1">
+                  <div className="font-mono text-[9px] text-muted/70 mb-1 px-1.5">
                     {displayName} · {timeStr}
                   </div>
                   <div className={`
-                    px-3.5 py-2.5 rounded-[14px] font-body text-[13px] leading-relaxed max-w-[80%] whitespace-pre-wrap
+                    px-4 py-3 rounded-[20px] font-body text-[13px] leading-relaxed max-w-[80%] whitespace-pre-wrap
                     ${msg.isAdmin
                       ? 'bg-accent/15 border border-accent/20 text-primary rounded-tr-[4px]'
                       : 'bg-surface border border-border text-secondary rounded-tl-[4px]'
@@ -150,9 +150,9 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
           </div>
         </div>
 
-        {/* Floating Reply Composer at bottom */}
-        <div className="shrink-0 p-3 bg-background/80 backdrop-blur-sm">
-          <TicketReplyBox ticketId={ticket.id} />
+        {/* Floating Reply Composer at bottom (WhatsApp Style) */}
+        <div className="shrink-0 p-3 bg-background/90 backdrop-blur-md border-t border-border/20 pb-[calc(env(safe-area-inset-bottom,12px)+8px)]">
+          <TicketReplyBox ticketId={ticket.id} currentStatus={ticket.status} />
         </div>
       </div>
 
@@ -286,7 +286,7 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
 
           {/* Reply Box — Desktop */}
           <div className="border-t border-border/40 bg-surface-muted/30 p-6">
-            <TicketReplyBox ticketId={ticket.id} />
+            <TicketReplyBox ticketId={ticket.id} currentStatus={ticket.status} />
           </div>
         </div>
 

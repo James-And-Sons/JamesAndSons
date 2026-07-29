@@ -1,8 +1,15 @@
 'use client';
-import { useState, useTransition, useRef, useEffect } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import TicketStatusChanger from './TicketStatusChanger';
 
-export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
+export default function TicketReplyBox({
+  ticketId,
+  currentStatus,
+}: {
+  ticketId: string;
+  currentStatus: string;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState('');
@@ -59,41 +66,41 @@ export default function TicketReplyBox({ ticketId }: { ticketId: string }) {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitReply();
-  };
-
   return (
     <div className="space-y-3">
-      {/* Sleek inline mode switcher */}
-      <div className="flex gap-4 border-b border-border/30 pb-1.5 px-1">
-        <button
-          type="button"
-          onClick={() => setIsInternalNote(false)}
-          className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
-            !isInternalNote
-              ? 'text-accent border-b border-accent font-semibold'
-              : 'text-muted hover:text-primary'
-          }`}
-        >
-          Public Reply
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsInternalNote(true)}
-          className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
-            isInternalNote
-              ? 'text-amber-500 border-b border-amber-500 font-semibold'
-              : 'text-muted hover:text-primary'
-          }`}
-        >
-          Internal Note
-        </button>
+      {/* Sleek inline mode switcher & Status Changer */}
+      <div className="flex justify-between items-center border-b border-border/30 pb-2 px-1">
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => setIsInternalNote(false)}
+            className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
+              !isInternalNote
+                ? 'text-accent border-b border-accent font-semibold'
+                : 'text-muted hover:text-primary'
+            }`}
+          >
+            Public Reply
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsInternalNote(true)}
+            className={`font-mono text-[9px] uppercase tracking-widest pb-1 transition-all cursor-pointer ${
+              isInternalNote
+                ? 'text-amber-500 border-b border-amber-500 font-semibold'
+                : 'text-muted hover:text-primary'
+            }`}
+          >
+            Internal Note
+          </button>
+        </div>
+
+        {/* Status drop-down picker inline */}
+        <TicketStatusChanger ticketId={ticketId} currentStatus={currentStatus} />
       </div>
 
-      {/* Unified composer card */}
-      <div className={`group relative rounded-xl border transition-all duration-300 ${
+      {/* Unified composer card with softer corners (rounded-2xl) */}
+      <div className={`group relative rounded-2xl border transition-all duration-300 ${
         isInternalNote
           ? 'bg-amber-500/[0.02] border-amber-500/30 focus-within:border-amber-500/60 focus-within:ring-1 focus-within:ring-amber-500/20'
           : 'bg-surface/40 backdrop-blur-md border-border/80 focus-within:border-accent/40 focus-within:ring-1 focus-within:ring-accent/15'
