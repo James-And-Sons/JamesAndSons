@@ -56,7 +56,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
   return (
     <>
-            <main className="pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
+            <main className="pdp-main pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
 
         <PDPClient product={product as any} variants={product.variants as any} isB2B={isB2B} />
 

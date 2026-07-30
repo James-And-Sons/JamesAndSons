@@ -633,7 +633,6 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
         {/* ── MOBILE LAYOUT (md:hidden) ── */}
         <div className="md:hidden" style={{ width: '100%', paddingBottom: '90px' }}>
-          <div style={{ height: '16px' }}></div>
 
           {/* Product Image Gallery */}
           <div
