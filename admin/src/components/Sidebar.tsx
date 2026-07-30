@@ -650,7 +650,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
               {renderLink('Customers', '/customers', null, Users)}
-              {renderLink('Shipping Rules', '/settings/shipping', null, Settings)}
               {renderLink('Settings', '/account', null, Settings)}
             </>
           )}
