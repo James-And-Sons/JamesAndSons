@@ -11,7 +11,7 @@ import { createClient } from '@/utils/supabase/server';
 
 export default async function ProductPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
-  
+
   // Determine B2B status
   let isB2B = false;
   try {
@@ -39,7 +39,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
     });
   } catch (error) {
     console.error(`Error fetching product with slug ${params.slug}:`, error);
-    product = null; 
+    product = null;
   }
 
   if (!product) return notFound();
@@ -56,7 +56,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
   return (
     <>
-            <main className="pdp-main pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
+      <main className="pdp-main pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
 
         <PDPClient product={product as any} variants={product.variants as any} isB2B={isB2B} />
 
@@ -97,7 +97,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     display: 'block',
                     padding: '4px',
                     boxSizing: 'border-box',
-                    border: '0.5px solid rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '16px',
                   }}
                 >
@@ -129,9 +129,9 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                         <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <svg className="prod-chandelier-svg" width="120" height="160" viewBox="0 0 100 120" stroke="#C4A05A" fill="none">
-                          <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3"/>
-                          <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7"/>
-                          <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none"/>
+                          <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
+                          <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
+                          <circle cx="50" cy="95" r="4" fill="#F5E9C8" stroke="none" />
                         </svg>
                       )}
                     </div>
