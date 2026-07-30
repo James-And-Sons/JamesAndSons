@@ -97,6 +97,8 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     display: 'block',
                     padding: '4px',
                     boxSizing: 'border-box',
+                    border: '0.5px solid rgba(255,255,255,0.08)',
+                    borderRadius: '16px',
                   }}
                 >
                   <div style={{ aspectRatio: '3/4', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '10px', background: 'var(--surface)', border: '0.5px solid var(--border)' }}>
