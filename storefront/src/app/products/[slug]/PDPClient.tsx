@@ -789,7 +789,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           </div>
 
           {/* Primary Actions */}
-          <div style={{ padding: '24px 24px 0', display: 'flex', gap: '12px' }}>
+          <div ref={mainBtnRef} style={{ padding: '24px 24px 0', display: 'flex', gap: '12px' }}>
             {cartItem ? (
               <div style={{ flex: 1 }}>{renderQtySelector(cartItem, '54px')}</div>
             ) : (
@@ -1440,7 +1440,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
               {/* Actions Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div ref={mainBtnRef} style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                   {!cartItem && (
                     <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
                       <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '50px', height: '50px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>−</button>
