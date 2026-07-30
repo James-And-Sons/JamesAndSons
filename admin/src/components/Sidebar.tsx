@@ -638,7 +638,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Business</p>
               {renderLink('B2B Workspace', '/b2b', null, Building2)}
-              {renderLink('Pages / CMS', '/pages', null, FileText)}
               {renderLink('Blog', '/blog', null, BookOpen)}
               {renderLink('Marketing', '/campaigns', null, Megaphone)}
               {renderLink('Coupons', '/promotions', null, Tag)}

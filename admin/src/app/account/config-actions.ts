@@ -67,3 +67,13 @@ export async function adminSaveSystemConfig(key: string, data: any) {
   revalidatePath('/account');
   return { success: true };
 }
+
+export async function adminTogglePagePublishStatus(id: string, currentStatus: boolean) {
+  const p = prisma as any;
+  await p.page.update({
+    where: { id },
+    data: { isPublished: !currentStatus }
+  });
+  revalidatePath('/account');
+  return { success: true };
+}
