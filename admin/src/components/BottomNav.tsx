@@ -41,7 +41,6 @@ const MORE_LINKS = [
   { label: 'Marketing', href: '/campaigns', icon: Megaphone },
   { label: 'Coupons', href: '/promotions', icon: Tag },
   { label: 'Customers', href: '/customers', icon: Users },
-  { label: 'Catalogues', href: '/catalogues', icon: BookOpen },
   { label: 'Settings', href: '/account', icon: Settings },
 ];
 

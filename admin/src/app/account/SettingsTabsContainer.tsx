@@ -5,6 +5,7 @@ import Link from 'next/link';
 import PWAInstallButton from '@/components/PWAInstallButton';
 import BrandSettingsForm from './BrandSettingsForm';
 import { adminTogglePagePublishStatus } from './config-actions';
+import CataloguesClient from '../catalogues/CataloguesClient';
 
 interface PageItem {
   id: string;
@@ -31,7 +32,7 @@ export default function SettingsTabsContainer({
   brandConfig,
   initialPages,
 }: SettingsTabsContainerProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'brand' | 'pages'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'brand' | 'pages' | 'catalogues'>('general');
   const [pages, setPages] = useState<PageItem[]>(initialPages);
   const [isPending, startTransition] = useTransition();
 
@@ -106,6 +107,16 @@ export default function SettingsTabsContainer({
           }`}
         >
           📄 Pages / CMS
+        </button>
+        <button
+          onClick={() => setActiveTab('catalogues')}
+          className={`font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
+            activeTab === 'catalogues'
+              ? 'border-accent text-accent font-semibold'
+              : 'border-transparent text-muted hover:text-primary'
+          }`}
+        >
+          📖 Catalogues
         </button>
       </div>
 
@@ -326,6 +337,10 @@ export default function SettingsTabsContainer({
             )}
           </div>
         </div>
+      )}
+      {/* Catalogues Tab Content */}
+      {activeTab === 'catalogues' && (
+        <CataloguesClient />
       )}
     </div>
   );
