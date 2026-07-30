@@ -7,6 +7,7 @@ import { loginAction } from './action'
 function LoginForm() {
   const searchParams = useSearchParams()
   const urlMessage = searchParams.get('message')
+  const redirectTo = searchParams.get('redirectTo') || '/'
   
   const [error, setError] = useState<string | null>(urlMessage || null)
   const [loading, setLoading] = useState(false)
@@ -26,6 +27,7 @@ function LoginForm() {
       setLoading(false)
     }
   }
+
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0A0905] overflow-y-auto">
@@ -51,6 +53,7 @@ function LoginForm() {
           </div>
 
           <form action={handleSubmit} className="space-y-6">
+            <input type="hidden" name="redirectTo" value={redirectTo} />
             {error && (
               <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444] text-[12px] p-4 rounded-xl text-center">
                 {error}
