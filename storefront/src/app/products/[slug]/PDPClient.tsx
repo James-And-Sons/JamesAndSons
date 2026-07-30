@@ -2,7 +2,7 @@
 import { useCartStore } from '@/store/cart';
 import type { Product } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatPrice } from '@/lib/utils';
 import Link from 'next/link';
 import { useWishlistStore } from '@/store/wishlist';
@@ -49,6 +49,33 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+
+  const mainBtnRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show sticky bar only when the main add-to-cart section is out of view
+        setShowStickyBar(!entry.isIntersecting);
+      },
+      {
+        threshold: 0,
+        rootMargin: '-60px 0px 0px 0px',
+      }
+    );
+
+    const currentRef = mainBtnRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, []);
 
   const ApproxBadge = ({ note }: { note?: string }) => {
     const [open, setOpen] = useState(false);
@@ -1015,7 +1042,14 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           )}
 
           {/* Mobile Sticky Add to Cart Bar */}
-          <div className="mobile-sticky-cart-bar">
+          <div 
+            className="mobile-sticky-cart-bar"
+            style={{
+              transform: showStickyBar ? 'translateY(0)' : 'translateY(135%)',
+              opacity: showStickyBar ? 1 : 0,
+              transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
+            }}
+          >
             <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '55%' }}>
               <div style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
               <div style={{ fontSize: '15.5px', color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', marginTop: '2px' }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
@@ -1408,7 +1442,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
               {/* Actions Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div ref={mainBtnRef} style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                   {!cartItem && (
                     <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
                       <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '50px', height: '50px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>−</button>
