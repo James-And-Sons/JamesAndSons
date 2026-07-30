@@ -6,7 +6,7 @@
  *   - Page navigations: Stale-While-Revalidate with offline shell
  */
 
-const CACHE_NAME = 'jas-admin-1785417392236';
+const CACHE_NAME = 'jas-admin-1785417699511';
 const STATIC_CACHE = 'jas-admin-static-v1';
 const OFFLINE_URL = '/login';
 
@@ -44,13 +44,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: Routing strategies ────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET, non-same-origin, and Next.js HMR requests
+  // Skip dev environments, non-GET, non-same-origin, and Next.js HMR requests
   if (
+    self.location.hostname === 'localhost' ||
+    self.location.hostname === '127.0.0.1' ||
     request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     url.pathname.startsWith('/_next/webpack-hmr') ||
@@ -59,7 +60,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Cache-First: _next/static, images, and pre-cached root assets
+  // 1. Cache-First: static assets ONLY (JS, CSS, static images, fonts)
   if (
     url.pathname.startsWith('/_next/static/') || 
     url.pathname.startsWith('/images/') ||
@@ -69,14 +70,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Network-First: API routes (fresh data is always preferred)
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstWithTimeout(request, 4000));
-    return;
-  }
-
-  // 3. Stale-While-Revalidate: HTML pages (shell loads instantly, updates in bg)
-  event.respondWith(staleWhileRevalidate(request));
+  // 2. Network-Only: Let the browser handle pages, APIs, and RSC payloads directly
+  // This prevents caching unauthenticated redirect states that cause infinite login loops.
+  return;
 });
 
 // ── Strategy Helpers ─────────────────────────────────────────────────────────

@@ -1,6 +1,11 @@
 import PWAInstallButton from '@/components/PWAInstallButton';
+import { requireAdmin } from '@/lib/auth';
 
-export default function AccountPage() {
+export default async function AccountPage() {
+  const user = await requireAdmin();
+  const email = user.email || '';
+  const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-surface p-6 border border-border">
@@ -27,11 +32,11 @@ export default function AccountPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-2xl">
           <div className="space-y-2">
             <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">Full Name</label>
-            <input type="text" defaultValue="Super Admin" className="w-full bg-background border border-border px-4 py-3 text-primary font-body text-[14px] focus:outline-none focus:border-accent" disabled />
+            <input type="text" defaultValue={fullName} className="w-full bg-background border border-border px-4 py-3 text-primary font-body text-[14px] focus:outline-none focus:border-accent" disabled />
           </div>
           <div className="space-y-2">
             <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">Email Address</label>
-            <input type="email" defaultValue="admin@jamesandsons.com" className="w-full bg-background border border-border px-4 py-3 text-primary font-body text-[14px] focus:outline-none focus:border-accent" disabled />
+            <input type="email" defaultValue={email} className="w-full bg-background border border-border px-4 py-3 text-primary font-body text-[14px] focus:outline-none focus:border-accent" disabled />
           </div>
           <div className="space-y-2 col-span-2">
             <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">Role</label>
