@@ -18,7 +18,6 @@ import {
   BookOpen,
   BookMarked,
   MessageSquare,
-  HelpCircle,
   Building2,
   Image,
   LogOut,
