@@ -19,7 +19,6 @@ import {
   BookCopy,
   Users,
   TicketCheck,
-  HelpCircle,
   Settings,
   Image,
   LogOut,
