@@ -56,12 +56,21 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Show sticky bar only when the main add-to-cart section is out of view
-        setShowStickyBar(!entry.isIntersecting);
+        if (entry.isIntersecting) {
+          setShowStickyBar(false);
+        } else {
+          // If the element went off the top of the screen (top < 0), show sticky bar.
+          // If it's below the fold (top > 0), keep it hidden.
+          if (entry.boundingClientRect.top < 0) {
+            setShowStickyBar(true);
+          } else {
+            setShowStickyBar(false);
+          }
+        }
       },
       {
         threshold: 0,
-        rootMargin: '-60px 0px 0px 0px',
+        rootMargin: '0px',
       }
     );
 
@@ -1051,28 +1060,32 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '55%' }}>
-              <div style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
-              <div style={{ fontSize: '15.5px', color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', marginTop: '2px' }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
+              <div style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
+              <div style={{ fontSize: '13.5px', color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', marginTop: '1px' }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
             </div>
             {cartItem ? (
-              renderQtySelector(cartItem, '44px')
+              renderQtySelector(cartItem, '38px')
             ) : (
               <button
                 onClick={handleAddToCart}
                 disabled={availableStock === 0}
                 style={{
-                  padding: '14px 28px',
+                  height: '38px',
+                  padding: '0 20px',
                   background: 'var(--gold)',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   color: 'var(--obsidian)',
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '12px',
+                  fontSize: '10.5px',
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(196,160,90,0.3)'
+                  boxShadow: '0 4px 10px rgba(196,160,90,0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 Add to Cart
