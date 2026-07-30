@@ -95,14 +95,11 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                     textDecoration: 'none',
                     scrollSnapAlign: 'start',
                     display: 'block',
-                    background: 'var(--surface)',
-                    border: '0.5px solid var(--border)',
-                    borderRadius: '16px',
-                    padding: '8px',
+                    padding: '4px',
                     boxSizing: 'border-box',
                   }}
                 >
-                  <div style={{ aspectRatio: '3/4', borderRadius: '10px', overflow: 'hidden', position: 'relative', marginBottom: '10px', background: 'var(--void)' }}>
+                  <div style={{ aspectRatio: '3/4', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '10px', background: 'var(--surface)', border: '0.5px solid var(--border)' }}>
                     {p.images?.[0] ? (
                       <Image src={p.images[0]} alt={p.name} fill style={{ objectFit: 'cover' }} />
                     ) : (
