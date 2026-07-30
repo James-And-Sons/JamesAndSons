@@ -1,10 +1,23 @@
+import PWAInstallButton from '@/components/PWAInstallButton';
+
 export default function AccountPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-surface p-6 border border-border">
-        <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Admin Settings</h1>
+        <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Settings</h1>
         <div className="flex gap-4">
           <button className="btn-primary">Save Changes</button>
+        </div>
+      </div>
+
+      {/* PWA App Installation Section */}
+      <div className="bg-surface border border-border shadow-sm p-8">
+        <h2 className="font-serif text-[20px] text-primary mb-2">Install App</h2>
+        <p className="font-body text-[13px] text-muted mb-6">
+          Install the James & Sons Admin portal on your device for quick access, offline mode, and push notifications.
+        </p>
+        <div className="max-w-sm">
+          <PWAInstallButton />
         </div>
       </div>
 

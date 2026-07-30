@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { logoutAction } from '@/app/actions';
 import { useEffect, useState } from 'react';
-import PWAInstallButton from '@/components/PWAInstallButton';
 import { useSidebar } from '@/lib/context/SidebarContext';
 import SyncButton from '@/components/SyncButton';
 import {
@@ -652,13 +651,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
               {renderLink('Customers', '/customers', null, Users)}
               {renderLink('Shipping Rules', '/settings/shipping', null, Settings)}
-              {renderLink('Admin Settings', '/account', null, Settings)}
+              {renderLink('Settings', '/account', null, Settings)}
             </>
           )}
         </nav>
 
         <div className="p-4 border-t border-border bg-background/50 space-y-1.5">
-          <PWAInstallButton />
           <button
             onClick={handleLogout}
             className="w-full px-4 py-2.5 text-[10px] font-mono tracking-[0.14em] uppercase text-[#C97E6A] bg-[#C97E6A]/10 border border-[#C97E6A]/30 hover:bg-[#C97E6A]/20 transition-all rounded-sm flex items-center justify-between cursor-pointer font-medium"
