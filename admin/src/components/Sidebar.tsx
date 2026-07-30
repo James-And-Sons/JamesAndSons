@@ -22,6 +22,7 @@ import {
   Settings,
   Image,
   LogOut,
+  Truck,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
@@ -646,6 +647,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
               {renderLink('Customers', '/customers', null, Users)}
+              {renderLink('Logistics', '/logistics', null, Truck)}
               {renderLink('Settings', '/account', null, Settings)}
             </>
           )}

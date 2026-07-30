@@ -471,6 +471,100 @@ export async function calculateShipping(deliveryPincode: string, weight: number,
 }
 
 /**
+ * Fetches the Shiprocket Wallet Balance details
+ */
+export async function getWalletBalance(config: IShiprocketConfig = {}) {
+  const token = await getShiprocketToken(config);
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch('https://apiv2.shiprocket.in/v1/external/settings/wallet/balance', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (res.ok && data.status !== 'error') {
+      return {
+        success: true,
+        balance: data.data?.wallet_balance || 0,
+        data: data.data
+      };
+    }
+    return { success: false, message: data.message || 'Failed to fetch wallet balance' };
+  } catch (err: any) {
+    console.error('getWalletBalance Error:', err);
+    return { success: false, message: err.message || 'API Call Failed' };
+  }
+}
+
+/**
+ * Fetches list of pickup locations/warehouses from Shiprocket
+ */
+export async function getPickupLocations(config: IShiprocketConfig = {}) {
+  const token = await getShiprocketToken(config);
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/address/pickup/list', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (res.ok && data.shipping_address) {
+      return {
+        success: true,
+        locations: data.shipping_address
+      };
+    }
+    return { success: false, message: data.message || 'Failed to fetch pickup locations' };
+  } catch (err: any) {
+    console.error('getPickupLocations Error:', err);
+    return { success: false, message: err.message || 'API Call Failed' };
+  }
+}
+
+/**
+ * Adds a new pickup location (warehouse) in Shiprocket
+ */
+export async function addPickupLocation(params: any, config: IShiprocketConfig = {}) {
+  const token = await getShiprocketToken(config);
+  if (!token) return { success: false, message: 'Logistics service unavailable' };
+
+  try {
+    const res = await fetch('https://apiv2.shiprocket.in/v1/external/courier/address/pickup/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(params),
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+    if (res.ok && (data.success || data.address_id)) {
+      return {
+        success: true,
+        addressId: data.address_id,
+        message: data.message || 'Pickup location added successfully'
+      };
+    }
+    return { success: false, message: data.message || 'Failed to add pickup location' };
+  } catch (err: any) {
+    console.error('addPickupLocation Error:', err);
+    return { success: false, message: err.message || 'API Call Failed' };
+  }
+}
+
+/**
  * Implement IShippingProvider interface for white-label, swappable configuration
  */
 export class ShiprocketProvider implements IShippingProvider {

@@ -11,5 +11,8 @@ export {
   createShiprocketReturnOrder,
   trackShipment,
   calculateShipping,
-  ShiprocketProvider
+  ShiprocketProvider,
+  getWalletBalance,
+  getPickupLocations,
+  addPickupLocation
 } from '@james-andsons/shiprocket';

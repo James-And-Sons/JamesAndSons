@@ -293,6 +293,9 @@ model Order {
   amazonOrderId        String?  @unique                      // e.g. 403-1234567-1234567
   amazonOrderStatus    String?                               // Unshipped | Shipped | Cancelled
   amazonShipmentFeedId String?                               // Feed submission ID after confirm-shipment
+  amazonReviewSolicited   Boolean   @default(false)
+  amazonReviewSolicitedAt DateTime?
+
   
   b2bFlag             Boolean   @default(false)
   zohoPricebookId     String?
@@ -332,16 +335,22 @@ model OrderItem {
 }
 
 model ReturnRequest {
-  id        String       @id @default(uuid())
-  orderId   String
-  reason    String
-  status    ReturnStatus @default(PENDING)
-  adminNote String?
+  id               String       @id @default(uuid())
+  orderId          String
+  reason           String
+  status           ReturnStatus @default(PENDING)
+  adminNote        String?
   
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  // New Shiprocket fields for reverse logistics
+  awbNumber        String?      // AWB code assigned to return pickup
+  shipmentId       String?      // Shiprocket Shipment ID for return
+  labelUrl         String?      // URL of the generated return label PDF
+  fulfillmentError String?      // Logs error if return sync/label creation fails
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
  
-  order     Order        @relation(fields: [orderId], references: [id])
+  order            Order        @relation(fields: [orderId], references: [id])
 }
 
 model RFQ {
