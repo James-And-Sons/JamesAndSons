@@ -147,3 +147,36 @@ export async function adminGetAffiliateDetail(id: string) {
   });
 }
 
+export async function adminDeleteCoupon(couponId: string) {
+  return (prisma as any).coupon.delete({
+    where: { id: couponId }
+  });
+}
+
+export async function adminUpdateCoupon(
+  couponId: string,
+  data: {
+    code: string;
+    description?: string;
+    type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+    value: number;
+    minOrderAmount?: number;
+    maxDiscountCap?: number;
+    usageLimit?: number;
+    usageLimitPerUser?: number;
+    startsAt?: Date;
+    expiresAt?: Date;
+    source?: string;
+    status?: 'ACTIVE' | 'PAUSED' | 'EXPIRED' | 'EXHAUSTED';
+  }
+) {
+  return (prisma as any).coupon.update({
+    where: { id: couponId },
+    data: {
+      ...data,
+      code: data.code.trim().toUpperCase(),
+    }
+  });
+}
+
+
