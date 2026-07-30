@@ -54,35 +54,20 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [showStickyBar, setShowStickyBar] = useState(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setShowStickyBar(false);
-        } else {
-          // If the element went off the top of the screen (top < 0), show sticky bar.
-          // If it's below the fold (top > 0), keep it hidden.
-          if (entry.boundingClientRect.top < 0) {
-            setShowStickyBar(true);
-          } else {
-            setShowStickyBar(false);
-          }
-        }
-      },
-      {
-        threshold: 0,
-        rootMargin: '0px',
-      }
-    );
+    const handleScroll = () => {
+      const mainBtn = mainBtnRef.current;
+      if (!mainBtn) return;
 
-    const currentRef = mainBtnRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
+      const rect = mainBtn.getBoundingClientRect();
+      const shouldShow = rect.bottom < 0;
+      setShowStickyBar(prev => prev !== shouldShow ? shouldShow : prev);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
 
     return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
