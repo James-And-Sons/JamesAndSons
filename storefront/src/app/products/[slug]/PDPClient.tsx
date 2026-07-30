@@ -1044,8 +1044,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '55%' }}>
-              <div style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
-              <div style={{ fontSize: '13.5px', color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', marginTop: '1px' }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
+              <div style={{ fontSize: '18px', color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', marginTop: '2px', lineHeight: 1 }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
             </div>
             {cartItem ? (
               renderQtySelector(cartItem, '38px')

@@ -99,8 +99,10 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                       </div>
                     )}
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '3px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--gold-light)', opacity: 0.8 }}>{formatPrice(p.d2cPrice)}</div>
+                  <div style={{ padding: '0 4px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--gold-light)', opacity: 0.8 }}>{formatPrice(p.d2cPrice)}</div>
+                  </div>
                 </Link>
               ))}
             </div>
