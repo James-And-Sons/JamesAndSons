@@ -96,6 +96,30 @@ export async function adminUpdateAffiliateStatus(affiliateId: string, status: 'A
   return (prisma as any).affiliate.update({ where: { id: affiliateId }, data: { status } });
 }
 
+export async function adminUpdateAffiliate(
+  affiliateId: string,
+  data: {
+    name: string;
+    email: string;
+    phone?: string;
+    affiliateCode: string;
+    commissionRate?: number;
+    notes?: string;
+    status?: 'ACTIVE' | 'SUSPENDED';
+  }
+) {
+  return (prisma as any).affiliate.update({
+    where: { id: affiliateId },
+    data: { ...data, affiliateCode: data.affiliateCode.trim().toUpperCase() },
+  });
+}
+
+export async function adminDeleteAffiliate(affiliateId: string) {
+  return (prisma as any).affiliate.delete({
+    where: { id: affiliateId }
+  });
+}
+
 export async function adminMarkConversionsPaid(conversionIds: string[]) {
   return (prisma as any).affiliateConversion.updateMany({
     where: { id: { in: conversionIds } },
