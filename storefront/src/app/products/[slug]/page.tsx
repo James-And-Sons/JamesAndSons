@@ -88,9 +88,21 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                 <Link
                   key={p.id}
                   href={`/products/${p.slug}`}
-                  style={{ flexShrink: 0, width: '56vw', maxWidth: '220px', textDecoration: 'none', scrollSnapAlign: 'start' }}
+                  style={{
+                    flexShrink: 0,
+                    width: '56vw',
+                    maxWidth: '220px',
+                    textDecoration: 'none',
+                    scrollSnapAlign: 'start',
+                    display: 'block',
+                    background: 'var(--surface)',
+                    border: '0.5px solid var(--border)',
+                    borderRadius: '16px',
+                    padding: '8px',
+                    boxSizing: 'border-box',
+                  }}
                 >
-                  <div style={{ aspectRatio: '3/4', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '10px' }}>
+                  <div style={{ aspectRatio: '3/4', borderRadius: '10px', overflow: 'hidden', position: 'relative', marginBottom: '10px', background: 'var(--void)' }}>
                     {p.images?.[0] ? (
                       <Image src={p.images[0]} alt={p.name} fill style={{ objectFit: 'cover' }} />
                     ) : (
@@ -99,7 +111,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
                       </div>
                     )}
                   </div>
-                  <div style={{ padding: '0 4px' }}>
+                  <div style={{ padding: '0 4px 4px' }}>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
                     <div style={{ fontSize: '12px', color: 'var(--gold-light)', opacity: 0.8 }}>{formatPrice(p.d2cPrice)}</div>
                   </div>
