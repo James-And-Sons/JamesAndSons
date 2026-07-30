@@ -27,26 +27,53 @@ const DEFAULT_CONFIGS: Record<string, any> = {
  */
 export async function adminGetSystemConfig(key: string) {
   const p = prisma as any;
-  if (!p.systemConfig) {
-    console.error('SystemConfig Prisma model is not initialized');
+
+  // Try standard Prisma client model loader
+  if (p.systemConfig) {
+    try {
+      let config = await p.systemConfig.findUnique({
+        where: { key },
+      });
+      if (!config) {
+        const defaultVal = DEFAULT_CONFIGS[key] || {};
+        config = await p.systemConfig.create({
+          data: {
+            key,
+            value: defaultVal,
+          },
+        });
+      }
+      return config.value as any;
+    } catch (err) {
+      console.warn('Prisma model load failed, falling back to raw query:', err);
+    }
+  }
+
+  // Fallback to raw SQL queries to bypass stale in-memory Prisma client schemas
+  try {
+    const rawResult: any[] = await prisma.$queryRawUnsafe(
+      `SELECT value FROM system_configs WHERE key = $1 LIMIT 1`,
+      key
+    );
+    if (rawResult && rawResult.length > 0) {
+      return rawResult[0].value;
+    }
+
+    // Upsert default values using raw SQL if empty
+    const defaultVal = DEFAULT_CONFIGS[key] || {};
+    const defaultValJson = JSON.stringify(defaultVal);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO system_configs (key, value, "createdAt", "updatedAt")
+       VALUES ($1, $2::json, NOW(), NOW())
+       ON CONFLICT (key) DO NOTHING`,
+      key,
+      defaultValJson
+    );
+    return defaultVal;
+  } catch (err) {
+    console.error('Raw queries read failed:', err);
     return DEFAULT_CONFIGS[key] || {};
   }
-
-  let config = await p.systemConfig.findUnique({
-    where: { key },
-  });
-
-  if (!config) {
-    const defaultVal = DEFAULT_CONFIGS[key] || {};
-    config = await p.systemConfig.create({
-      data: {
-        key,
-        value: defaultVal,
-      },
-    });
-  }
-
-  return config.value as any;
 }
 
 /**
@@ -54,18 +81,39 @@ export async function adminGetSystemConfig(key: string) {
  */
 export async function adminSaveSystemConfig(key: string, data: any) {
   const p = prisma as any;
-  if (!p.systemConfig) {
-    throw new Error('SystemConfig Prisma model is not initialized');
+
+  // Try standard Prisma client model upsert
+  if (p.systemConfig) {
+    try {
+      await p.systemConfig.upsert({
+        where: { key },
+        update: { value: data },
+        create: { key, value: data },
+      });
+      revalidatePath('/account');
+      return { success: true };
+    } catch (err) {
+      console.warn('Prisma model upsert failed, falling back to raw query:', err);
+    }
   }
 
-  await p.systemConfig.upsert({
-    where: { key },
-    update: { value: data },
-    create: { key, value: data },
-  });
-
-  revalidatePath('/account');
-  return { success: true };
+  // Fallback to raw SQL queries to bypass stale in-memory Prisma client schemas
+  try {
+    const valueJson = JSON.stringify(data);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO system_configs (key, value, "createdAt", "updatedAt")
+       VALUES ($1, $2::json, NOW(), NOW())
+       ON CONFLICT (key) 
+       DO UPDATE SET value = $2::json, "updatedAt" = NOW()`,
+      key,
+      valueJson
+    );
+    revalidatePath('/account');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Raw query upsert failed:', err);
+    throw new Error(err.message || 'Failed to save configuration');
+  }
 }
 
 export async function adminTogglePagePublishStatus(id: string, currentStatus: boolean) {
