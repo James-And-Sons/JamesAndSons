@@ -16,9 +16,9 @@ const DEFAULT_CONFIGS: Record<string, any> = {
     currencySymbol: '₹',
     currencyCode: 'INR',
     defaultGstRate: 18.0,
-    phone: '+91 9999999999',
-    address: 'CNI Church Compound, Civil Lines, Aligarh, UP 202001',
-    gstin: '09ABCDE1234F1Z1',
+    phone: '+91 9045 808115',
+    address: 'Mohalla Peer Mattha, Dhobi Wali Gali, Parav Dubey, Aligarh, Uttar Pradesh, 202001',
+    gstin: '09AABCJ8243A1ZX',
   },
 };
 
