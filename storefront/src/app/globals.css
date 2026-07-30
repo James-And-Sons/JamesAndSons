@@ -452,7 +452,8 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 12px 8px calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 8px 0;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
     border-top: 1px solid var(--border);
     background: rgba(10,9,5,0.96);
     backdrop-filter: blur(20px);
@@ -512,7 +513,7 @@ body {
   }
   .mobile-sticky-cart-bar {
     position: fixed;
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
     left: 16px;
     right: 16px;
     z-index: 45;

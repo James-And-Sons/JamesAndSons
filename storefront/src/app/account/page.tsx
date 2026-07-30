@@ -169,7 +169,7 @@ export default async function AccountPage() {
                   <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.2 }}>Appearance</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Customize your theme</div>
                 </div>
-                <ThemeToggle />
+                <ThemeToggle compact />
               </div>
             </div>
           </div>
