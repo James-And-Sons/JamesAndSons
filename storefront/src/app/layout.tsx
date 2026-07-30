@@ -7,6 +7,8 @@ import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import ScrollToTop from "@/components/ScrollToTop";
 import MetaPixel from "@/components/MetaPixel";
+import ThemeColorSync from "@/components/ThemeColorSync";
+import Navigation from "@/components/Navigation";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -76,11 +78,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <ThemeColorSync />
           <Suspense fallback={null}>
             <MetaPixel />
           </Suspense>
           <ScrollToTop />
           <div className="flex flex-col min-h-screen">
+            <Navigation />
             {children}
             <Footer />
           </div>

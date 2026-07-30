@@ -72,6 +72,19 @@ export default async function AdminTicketDetailPage(props: { params: Promise<{ i
       {/* ── Mobile Layout (<md) ─────────────────────────────────────────────── */}
       <div className="fixed inset-0 z-50 flex md:hidden flex-col overflow-hidden bg-background">
 
+        {/* Mobile Header Bar */}
+        <div className="shrink-0 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 py-3 flex items-center justify-between gap-3 relative z-30">
+          <Link href="/tickets" className="font-mono text-[10px] uppercase tracking-wider text-accent flex items-center gap-1">
+            ← Back
+          </Link>
+          <div className="flex-1 min-w-0 text-center">
+            <div className="font-mono text-[9px] text-muted uppercase tracking-wider leading-none">
+              {ticket.ticketNumber} <span className="opacity-45 text-[8px]">({ticket.id})</span>
+            </div>
+            <div className="font-serif text-[13px] text-primary truncate mt-0.5">{ticket.subject}</div>
+          </div>
+        </div>
+
         {/* Scrollable Message Thread */}
         <div className="flex-1 overflow-y-auto overscroll-contain pb-2" id="mobile-thread">
           <div className="flex flex-col gap-3.5 p-4">

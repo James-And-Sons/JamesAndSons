@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { BRAND_CONFIG } from '@james-andsons/config';
@@ -11,8 +10,7 @@ export const metadata = {
 export default function ReturnsPolicyPage() {
   return (
     <main style={{ minHeight: '100vh', background: 'var(--obsidian)', color: 'var(--cream)' }}>
-      <Navigation />
-
+      
       <section style={{ padding: '140px 24px 80px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--gold)', marginBottom: '12px' }}>
           Legal & Compliance

@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 import { formatPrice } from '@/lib/utils';
-import Navigation from '@/components/Navigation';
 import PDPClient from './PDPClient';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -57,8 +56,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
   return (
     <>
-      <Navigation />
-      <main className="pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
+            <main className="pt-14 md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
 
         <PDPClient product={product as any} variants={product.variants as any} isB2B={isB2B} />
 

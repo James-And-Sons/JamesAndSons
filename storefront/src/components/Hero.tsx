@@ -46,7 +46,7 @@ export default function Hero() {
           </div>
           <div className="hero-stat">
             <div className="hero-stat-num">100%</div>
-            <div className="hero-stat-label">BIS Certified</div>
+            <div className="hero-stat-label">Handcrafted</div>
           </div>
         </div>
       </section>
@@ -88,10 +88,10 @@ export default function Hero() {
             </div>
           </div>
           <div className="mobile-stat-chip">
-            <i className="ti ti-shield-check mobile-stat-icon" aria-hidden="true"></i>
+            <i className="ti ti-award mobile-stat-icon" aria-hidden="true"></i>
             <div>
               <div className="mobile-stat-num">100%</div>
-              <div className="mobile-stat-label">BIS Certified</div>
+              <div className="mobile-stat-label">Handcrafted</div>
             </div>
           </div>
         </div>

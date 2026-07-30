@@ -1,5 +1,4 @@
 import { getSpaces } from "@/lib/products";
-import Navigation from "@/components/Navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -10,8 +9,7 @@ export default async function SpacesPage() {
 
   return (
     <>
-      <Navigation />
-      <main className="min-h-screen bg-[var(--obsidian)] text-[var(--text)] md:pt-16">
+            <main className="min-h-screen bg-[var(--obsidian)] text-[var(--text)] md:pt-16">
         {/* Mobile Layout */}
         <div className="md:hidden" style={{ paddingTop: '20px', paddingBottom: '40px' }}>
           <div className="mobile-section-intro" style={{ paddingBottom: '16px' }}>

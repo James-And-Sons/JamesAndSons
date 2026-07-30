@@ -25,6 +25,28 @@ export default function CartDrawer() {
     return () => window.removeEventListener('keydown', handler);
   }, [closeCart]);
 
+  // Back button history interceptor to close cart on mobile back navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Push dummy state to capture back navigation
+    window.history.pushState({ cartOpen: true }, '');
+
+    const handlePopState = (e: PopStateEvent) => {
+      closeCart();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Remove the dummy history state if cart was closed by user action
+      if (window.history.state && window.history.state.cartOpen) {
+        window.history.back();
+      }
+    };
+  }, [isOpen, closeCart]);
+
   // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
@@ -98,10 +120,23 @@ export default function CartDrawer() {
             onClick={closeCart}
             aria-label="Close cart"
             style={{ 
-              background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '8px'
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--gold)', 
+              cursor: 'pointer', 
+              padding: '8px',
+              transition: 'color 0.2s ease, transform 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = 'var(--gold-pale)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = 'var(--gold)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            <i className="ti ti-x" style={{ fontSize: '18px' }}></i>
+            <i className="ti ti-x" style={{ fontSize: '20px', fontWeight: 'bold' }}></i>
           </button>
         </div>
 

@@ -1,4 +1,3 @@
-import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import SpaceGrid from "@/components/SpaceGrid";
 import CategoryGrid from "@/components/CategoryGrid";
@@ -18,9 +17,8 @@ export default async function Home() {
   ]);
 
   return (
-    <main>
-      <Navigation />
-      <Hero />
+    <main className="home-main">
+            <Hero />
       <SpaceGrid spaces={spaces as any} />
       <AboutExcerpt />
       <CategoryGrid categories={categories as any} products={products} />

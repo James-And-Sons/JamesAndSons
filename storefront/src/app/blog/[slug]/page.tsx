@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -92,8 +91,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <>
-      <Navigation />
-      <main style={{ minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ minHeight: '100vh', background: 'var(--obsidian)' }}>
         
         {/* Inject JSON-LD Schema markup */}
         <script

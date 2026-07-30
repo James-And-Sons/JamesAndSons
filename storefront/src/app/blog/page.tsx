@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -18,8 +17,7 @@ export default async function BlogListPage() {
 
   return (
     <>
-      <Navigation />
-      <main className="md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
+            <main className="md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
         {/* Mobile Layout */}
         <div className="md:hidden" style={{ paddingBottom: '40px' }}>
           <div className="mobile-section-intro">

@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils'
@@ -25,8 +24,7 @@ export default async function OrdersPage() {
 
   return (
     <>
-      <Navigation />
-      <main className="md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
+            <main className="md:pt-16 min-h-screen" style={{ background: 'var(--obsidian)' }}>
         
         {/* Page Header */}
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '48px 40px' }} className="hidden md:block">

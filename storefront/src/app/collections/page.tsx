@@ -1,4 +1,3 @@
-import Navigation from "@/components/Navigation";
 import ProductGrid from "@/components/ProductGrid";
 import { getProducts } from "@/lib/products";
 
@@ -9,8 +8,7 @@ export default async function CollectionsPage(props: {
   const initialProducts = await getProducts();
   return (
     <>
-      <Navigation />
-      <main className="md:pt-16 min-h-screen">
+            <main className="md:pt-16 min-h-screen">
         <ProductGrid
           initialFilter={searchParams.space}
           initialCategory={searchParams.category}

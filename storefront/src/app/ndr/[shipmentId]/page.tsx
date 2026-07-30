@@ -1,5 +1,4 @@
 import NDRSlotPickerClient from './NDRSlotPickerClient';
-import Navigation from '@/components/Navigation';
 
 export default async function NDRPage({ 
   params,
@@ -13,8 +12,7 @@ export default async function NDRPage({
   
   return (
     <>
-      <Navigation />
-      <NDRSlotPickerClient shipmentId={shipmentId} orderNumber={orderNumber} />
+            <NDRSlotPickerClient shipmentId={shipmentId} orderNumber={orderNumber} />
     </>
   );
 }

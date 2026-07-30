@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import NewTicketForm from './NewTicketForm'
@@ -199,8 +198,7 @@ export default async function NewTicketPage() {
 
   return (
     <>
-      <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '40px' }}>
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             <Link href="/account/tickets" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-muted)', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>

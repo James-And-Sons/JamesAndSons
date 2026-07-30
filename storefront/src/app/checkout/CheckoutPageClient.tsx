@@ -69,6 +69,8 @@ export default function CheckoutPageInner({
     setLastPincode(''); // Reset lastPincode to force the useEffect to trigger
   };
   const [shipping, setShipping] = useState<number | null>(null);
+  const [shippingDiscount, setShippingDiscount] = useState(0);
+  const [applyShippingSavings, setApplyShippingSavings] = useState(false);
   const [shippingCalculated, setShippingCalculated] = useState(false);
   const [etd, setEtd] = useState('');
 
@@ -118,7 +120,7 @@ export default function CheckoutPageInner({
   }, [form.pincode]);
 
   const installationFee = bookInstallation ? (subtotal > 50000 ? 0 : 1499) : 0;
-  const grandTotal = finalSubtotal + gst + (shipping || 0) + installationFee;
+  const grandTotal = finalSubtotal + gst + (shipping || 0) + installationFee - (applyShippingSavings && shippingDiscount > 0 ? shippingDiscount : 0);
 
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
@@ -129,12 +131,23 @@ export default function CheckoutPageInner({
     if (form.pincode.length === 6 && form.pincode !== lastPincode) {
       const autofill = async () => {
         setOrderError('');
-        const res = await calculateShippingRateAction(form.pincode, totalWeight, subtotal);
+        const res = await calculateShippingRateAction(
+          form.pincode,
+          totalWeight,
+          subtotal,
+          items.map(i => ({ productId: i.product.id, quantity: i.quantity }))
+        );
         if (res) {
           if (res.city && res.state) {
             setForm(prev => ({ ...prev, city: res.city, state: res.state }));
           }
           setShipping(res.rate);
+          setShippingDiscount(res.shippingDiscount || 0);
+          if (res.shippingDiscount > 0) {
+            setApplyShippingSavings(true);
+          } else {
+            setApplyShippingSavings(false);
+          }
           setShippingCalculated(true);
           if (res.etd) setEtd(res.etd);
           setLastPincode(form.pincode);
@@ -162,9 +175,9 @@ export default function CheckoutPageInner({
       const result = await createOrder(
         {
           ...form,
-          couponCode: appliedCoupon?.code,
-          couponId: appliedCoupon?.couponId,
-          discountAmount: appliedCoupon?.discountAmount,
+          couponCode: (appliedCoupon?.code || '') + (applyShippingSavings && shippingDiscount > 0 ? (appliedCoupon ? ' + SHIPPING' : 'SHIPPING') : ''),
+          couponId: appliedCoupon?.couponId || (applyShippingSavings && shippingDiscount > 0 ? 'SHIPPING_SAVINGS' : undefined),
+          discountAmount: (appliedCoupon?.discountAmount || 0) + (applyShippingSavings && shippingDiscount > 0 ? shippingDiscount : 0),
           affiliateCode: affiliateCode,
           bookInstallation,
           ucSlotDate: selectedUcSlot || undefined,
@@ -488,14 +501,26 @@ export default function CheckoutPageInner({
                   const check = await validatePincodeDelivery(form.pincode);
                   if (check.serviceable) {
                     // Fetch dynamic shipping rate
-                    const rateData = await calculateShippingRateAction(form.pincode, totalWeight, subtotal);
+                    const rateData = await calculateShippingRateAction(
+                      form.pincode,
+                      totalWeight,
+                      subtotal,
+                      items.map(i => ({ productId: i.product.id, quantity: i.quantity }))
+                    );
                     if (rateData) {
                       setShipping(rateData.rate);
+                      setShippingDiscount(rateData.shippingDiscount || 0);
+                      if (rateData.shippingDiscount > 0) {
+                        setApplyShippingSavings(true);
+                      } else {
+                        setApplyShippingSavings(false);
+                      }
                       setEtd(rateData.etd);
                       setShippingCalculated(true);
                     } else {
-                      // Fallback if Shiprocket fails but pincode is serviceable
                       setShipping(subtotal > 50000 ? 0 : 2500);
+                      setShippingDiscount(0);
+                      setApplyShippingSavings(false);
                       setShippingCalculated(true);
                     }
                     setStep(2);
@@ -692,6 +717,47 @@ export default function CheckoutPageInner({
                 {appliedCoupon?.freeShipping ? 'FREE' : (shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : formatPrice(shipping)))}
               </span>
             </div>
+
+            {shippingDiscount > 0 && (
+              <div 
+                style={{ 
+                  margin: '8px 0', 
+                  padding: '12px 14px', 
+                  background: 'rgba(201,168,76,0.06)', 
+                  border: '1px solid rgba(201,168,76,0.3)', 
+                  borderRadius: '8px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 600, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    🎉 Shipping Savings!
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>
+                    You qualify for a stackable discount of <strong>{formatPrice(shippingDiscount)}</strong>.
+                  </div>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <input 
+                    type="checkbox" 
+                    checked={applyShippingSavings} 
+                    onChange={e => setApplyShippingSavings(e.target.checked)} 
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--gold)', cursor: 'pointer' }}
+                  />
+                </label>
+              </div>
+            )}
+
+            {applyShippingSavings && shippingDiscount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)' }}>
+                <span>Shipping Savings</span>
+                <span>- {formatPrice(shippingDiscount)}</span>
+              </div>
+            )}
 
             {bookInstallation && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>

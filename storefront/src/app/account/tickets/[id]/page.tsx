@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import TicketDetailClient from './TicketDetailClient'
@@ -153,8 +152,7 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
 
   return (
     <>
-      <Navigation />
-      <TicketDetailClient
+            <TicketDetailClient
         ticket={ticket as any}
         userId={user.id}
         addReplyAction={addReplyAction}

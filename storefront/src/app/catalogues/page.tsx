@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -23,8 +22,7 @@ export default async function CataloguesPage() {
 
   return (
     <>
-      <Navigation />
-      <main style={{ paddingTop: '80px', minHeight: '80vh', background: 'var(--background)' }}>
+            <main style={{ paddingTop: '80px', minHeight: '80vh', background: 'var(--background)' }}>
 
         {/* Hero */}
         <section style={{

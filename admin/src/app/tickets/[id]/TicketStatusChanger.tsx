@@ -39,15 +39,28 @@ export default function TicketStatusChanger({
   const current = STATUS_OPTIONS.find((s) => s.value === status);
 
   return (
-    <select
-      value={status}
-      disabled={isPending}
-      onChange={(e) => handleChange(e.target.value)}
-      className={`bg-surface/80 border border-border text-[9px] font-mono uppercase tracking-wider px-2 py-1 focus:outline-none focus:border-accent transition-all rounded-[4px] cursor-pointer disabled:opacity-50 shrink-0 ${current?.color ?? 'text-muted'}`}
-    >
-      {STATUS_OPTIONS.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+    <div className="relative inline-block shrink-0">
+      <select
+        value={status}
+        disabled={isPending}
+        onChange={(e) => handleChange(e.target.value)}
+        className={`
+          appearance-none bg-surface border border-border/80 text-[9.5px] font-mono uppercase tracking-wider pl-3 pr-7 py-1.5
+          focus:outline-none focus:border-accent transition-all rounded-[6px] cursor-pointer disabled:opacity-50
+          ${current?.color ?? 'text-muted'}
+        `}
+      >
+        {STATUS_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value} className="bg-surface text-primary font-mono text-[10px] uppercase">
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-muted/60">
+        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+          <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round"></path>
+        </svg>
+      </div>
+    </div>
   );
 }

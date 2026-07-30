@@ -264,9 +264,64 @@ export async function validatePincodeDelivery(pincode: string) {
   }
 }
 
-export async function calculateShippingRateAction(pincode: string, weightKg: number, subtotal: number) {
+export async function calculateShippingRateAction(
+  pincode: string,
+  weightKg: number,
+  subtotal: number,
+  cartItems: { productId: string; quantity: number }[] = []
+) {
   try {
-    return await getShippingRates(pincode, weightKg, subtotal);
+    const rawRateObj = await getShippingRates(pincode, weightKg, subtotal);
+    if (!rawRateObj) return null;
+
+    const productIds = cartItems.map(item => item.productId);
+    const dbProducts = productIds.length > 0 ? await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      include: { category: true }
+    }) : [];
+
+    const globalRule = await prisma.shippingRule.findUnique({
+      where: { id: 'GLOBAL' }
+    }) || { baseShippingLimit: 280.0, freeShippingThreshold: 380.0 };
+
+    let totalBaseLimit = 0;
+    let totalFreeThreshold = 0;
+
+    for (const item of cartItems) {
+      const prod = dbProducts.find(p => p.id === item.productId);
+      const cat = prod?.category;
+
+      const baseLimit = cat?.baseShippingLimit ?? globalRule.baseShippingLimit;
+      const freeThreshold = cat?.freeShippingThreshold ?? globalRule.freeShippingThreshold;
+
+      totalBaseLimit += baseLimit * item.quantity;
+      totalFreeThreshold += freeThreshold * item.quantity;
+    }
+
+    const rawShippingRate = rawRateObj.rate || 0;
+
+    let adjustedRate = 0;
+    let shippingDiscount = 0;
+
+    if (rawShippingRate < totalBaseLimit) {
+      adjustedRate = 0;
+      shippingDiscount = totalBaseLimit - rawShippingRate;
+    } else if (rawShippingRate > totalFreeThreshold) {
+      adjustedRate = rawShippingRate - totalFreeThreshold;
+      shippingDiscount = 0;
+    } else {
+      adjustedRate = 0;
+      shippingDiscount = 0;
+    }
+
+    return {
+      ...rawRateObj,
+      rawRate: rawShippingRate,
+      rate: adjustedRate,
+      shippingDiscount,
+      totalBaseLimit,
+      totalFreeThreshold
+    };
   } catch (error: any) {
     console.error('Shipping rate action error:', error);
     return null;

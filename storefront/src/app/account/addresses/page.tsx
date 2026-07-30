@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import Navigation from '@/components/Navigation'
 import { prisma } from '@/lib/prisma'
 import AddressListClient from './AddressListClient'
 
@@ -17,8 +16,7 @@ export default async function AddressesPage() {
 
   return (
     <>
-      <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '48px 40px' }}>
           <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
             <div className="section-label">Account</div>

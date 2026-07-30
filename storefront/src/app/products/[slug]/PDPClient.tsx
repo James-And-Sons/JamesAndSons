@@ -44,50 +44,86 @@ type Variant = {
 };
 
 export default function PDPClient({ product, variants, isB2B }: { product: any; variants: Variant[]; isB2B: boolean }) {
-  const { addItem } = useCartStore();
+  const { addItem, items, updateQty, removeItem } = useCartStore();
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
 
-  const ApproxBadge = ({ note }: { note?: string }) => (
-    <span
-      title={note || "Approximate value subject to hand-craftsmanship and manufacturing variances."}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '14px',
-        height: '14px',
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        color: 'var(--text-muted)',
-        fontSize: '9px',
-        fontFamily: 'var(--font-mono)',
-        fontWeight: 600,
-        opacity: 0.6,
-        cursor: 'help',
-        marginLeft: '6px',
-        verticalAlign: 'middle',
-        transition: 'all 0.2s ease',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.opacity = '1';
-        e.currentTarget.style.borderColor = 'var(--gold)';
-        e.currentTarget.style.color = 'var(--gold)';
-        e.currentTarget.style.background = 'rgba(201,168,76,0.15)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.opacity = '0.6';
-        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-        e.currentTarget.style.color = 'var(--text-muted)';
-        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-      }}
-    >
-      ?
-    </span>
-  );
+  const ApproxBadge = ({ note }: { note?: string }) => {
+    const [open, setOpen] = useState(false);
+    return (
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        <button
+          type="button"
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(!open);
+          }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '14px',
+            height: '14px',
+            borderRadius: '50%',
+            background: open ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.06)',
+            border: open ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.2)',
+            color: open ? 'var(--gold)' : 'var(--text-muted)',
+            fontSize: '9px',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            opacity: open ? 1 : 0.6,
+            cursor: 'help',
+            marginLeft: '6px',
+            verticalAlign: 'middle',
+            transition: 'all 0.2s ease',
+            padding: 0
+          }}
+        >
+          ?
+        </button>
+        {open && (
+          <div style={{
+            position: 'absolute',
+            bottom: '135%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            width: '200px',
+            padding: '10px 12px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            color: 'var(--text-muted)',
+            fontSize: '11px',
+            fontFamily: 'var(--font-body)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            lineHeight: '1.4',
+            pointerEvents: 'none',
+            whiteSpace: 'normal',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '0',
+              height: '0',
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid var(--border)'
+            }} />
+            {note || "Approximate value subject to hand-craftsmanship and manufacturing variances."}
+          </div>
+        )}
+      </span>
+    );
+  };
 
   // Synthesize original/parent product option
   const parentOption: Variant = {
@@ -218,6 +254,65 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const displayMrp = selectedVariant?.mrp ?? product.mrp;
   const availableStock = selectedVariant?.stockQuantity ?? product.stockQuantity;
 
+  const currentVariantSku = selectedVariant?.sku || product.sku;
+  const cartItem = items.find(i => 
+    i.product.id === product.id && 
+    i.product.sku === currentVariantSku &&
+    ((i.warranty?.planSku || null) === (selectedWarranty?.onsitegoPlanSku || null))
+  );
+
+  const renderQtySelector = (item: any, customHeight = '48px') => (
+    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', borderRadius: '8px', border: '1px solid var(--gold-pale)', padding: '2px 4px', height: customHeight, boxSizing: 'border-box' }}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          updateQty(product.id, item.quantity - 1, item.warranty?.planSku);
+        }}
+        style={{
+          width: '36px',
+          height: '100%',
+          background: 'none',
+          border: 'none',
+          color: 'var(--gold)',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        −
+      </button>
+      <span style={{ fontSize: '14px', color: 'var(--cream)', fontWeight: 600, padding: '0 8px', minWidth: '32px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+        {item.quantity}
+      </span>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          updateQty(product.id, item.quantity + 1, item.warranty?.planSku);
+        }}
+        style={{
+          width: '36px',
+          height: '100%',
+          background: 'none',
+          border: 'none',
+          color: 'var(--gold)',
+          fontSize: '18px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        +
+      </button>
+    </div>
+  );
+
   const hasDiscount = displayMrp && displayMrp > displayPrice;
   const discountPercent = hasDiscount ? Math.round(((displayMrp - displayPrice) / displayMrp) * 100) : 0;
 
@@ -287,8 +382,8 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
     ? mergeImages(selectedVariant.images, (product as any).whiteBackgroundImages)
     : mergeImages(product.images, (product as any).whiteBackgroundImages);
 
-  const items = useWishlistStore(state => state.items);
-  const isWishlisted = items.some(i => i.id === product.id);
+  const wishlistItems = useWishlistStore(state => state.items);
+  const isWishlisted = wishlistItems.some(i => i.id === product.id);
   const { toggleItem } = useWishlistStore();
 
   const handleAddToCart = () => {
@@ -483,9 +578,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
       // 8. Compliance & Tax
       {
         key: 'Compliance & Tax',
-        val: isValidBis 
-          ? `BIS Certified (${cert}) · GST ${product.gstRate || 18}%` 
-          : `GST ${product.gstRate || 18}%`
+        val: `GST ${product.gstRate || 18}%`
       },
       { key: 'HSN Code', val: product.hsnCode || null },
     ];
@@ -655,17 +748,19 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           )}
 
           {/* Quantity Row */}
-          <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Qty</div>
-            <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '40px', height: '40px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px' }}>−</button>
-              <div style={{ width: '36px', textAlign: 'center', fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-mono)' }}>{qty}</div>
-              <button onClick={() => setQty(q => Math.min(availableStock || 999, q + 1))} style={{ width: '40px', height: '40px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px' }}>+</button>
+          {!cartItem && (
+            <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Qty</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
+                <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '40px', height: '40px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px' }}>−</button>
+                <div style={{ width: '36px', textAlign: 'center', fontSize: '14px', color: 'var(--cream)', fontFamily: 'var(--font-mono)' }}>{qty}</div>
+                <button onClick={() => setQty(q => Math.min(availableStock || 999, q + 1))} style={{ width: '40px', height: '40px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px' }}>+</button>
+              </div>
+              <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                Total: <span style={{ color: 'var(--gold-light)', fontSize: '13px' }}>{formatPrice(displayPrice * qty)}</span>
+              </div>
             </div>
-            <div style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-              Total: <span style={{ color: 'var(--gold-light)', fontSize: '13px' }}>{formatPrice(displayPrice * qty)}</span>
-            </div>
-          </div>
+          )}
 
           {/* Warranty Selector */}
           <div style={{ padding: '0 24px' }}>
@@ -674,33 +769,37 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
           {/* Primary Actions */}
           <div style={{ padding: '24px 24px 0', display: 'flex', gap: '12px' }}>
-            <button
-              onClick={handleAddToCart}
-              disabled={availableStock === 0}
-              style={{
-                flex: 1,
-                height: '54px',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                padding: '0 32px',
-                fontSize: '14px',
-                background: 'var(--gold)',
-                color: 'var(--obsidian)',
-                border: 'none',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 6px 20px rgba(196,160,90,0.25)'
-              }}
-            >
-              <i className="ti ti-shopping-bag-plus" style={{ fontSize: '18px' }}></i>
-              {availableStock === 0 ? 'Made to Order' : added ? '✓ Added to Cart' : 'Add to Cart'}
-            </button>
+            {cartItem ? (
+              <div style={{ flex: 1 }}>{renderQtySelector(cartItem, '54px')}</div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={availableStock === 0}
+                style={{
+                  flex: 1,
+                  height: '54px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  padding: '0 32px',
+                  fontSize: '14px',
+                  background: 'var(--gold)',
+                  color: 'var(--obsidian)',
+                  border: 'none',
+                  fontFamily: 'var(--font-mono)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 6px 20px rgba(196,160,90,0.25)'
+                }}
+              >
+                <i className="ti ti-shopping-bag-plus" style={{ fontSize: '18px' }}></i>
+                {availableStock === 0 ? 'Made to Order' : 'Add to Cart'}
+              </button>
+            )}
             <button onClick={handleToggleWishlist} style={{ background: 'transparent', border: 'none', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <i className={isWishlisted ? "ti ti-heart-filled" : "ti ti-heart"} style={{ fontSize: '28px', color: isWishlisted ? 'var(--gold)' : 'var(--text)' }}></i>
             </button>
@@ -711,7 +810,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             {[
               { icon: 'ti-award', label: 'Heritage Craftsmanship' },
               { icon: 'ti-truck-delivery', label: 'Pan-India Delivery' },
-              { icon: 'ti-shield-check', label: '2-Year Warranty' },
+              { icon: 'ti-shield-check', label: 'Authentic Product' },
               { icon: 'ti-sparkles', label: 'Curated Brilliance' }
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', minHeight: '36px' }}>
@@ -916,31 +1015,35 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
           )}
 
           {/* Mobile Sticky Add to Cart Bar */}
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(13,11,6,0.95)', backdropFilter: 'blur(12px)', borderTop: '0.5px solid var(--border)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 -10px 30px rgba(0,0,0,0.8)' }}>
+          <div className="mobile-sticky-cart-bar">
             <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '55%' }}>
-              <div style={{ fontSize: '12px', color: 'var(--cream)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
-              <div style={{ fontSize: '13px', color: 'var(--gold-light)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
+              <div style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedVariant?.name || product.name}</div>
+              <div style={{ fontSize: '15.5px', color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic', marginTop: '2px' }}>{displayPrice ? formatPrice(displayPrice) : '₹ —'}</div>
             </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={availableStock === 0}
-              style={{
-                padding: '12px 32px',
-                background: 'var(--gold)',
-                border: 'none',
-                borderRadius: '12px',
-                color: 'var(--obsidian)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(196,160,90,0.3)'
-              }}
-            >
-              {added ? '✓ Added' : 'Add to Cart'}
-            </button>
+            {cartItem ? (
+              renderQtySelector(cartItem, '44px')
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={availableStock === 0}
+                style={{
+                  padding: '14px 28px',
+                  background: 'var(--gold)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'var(--obsidian)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(196,160,90,0.3)'
+                }}
+              >
+                Add to Cart
+              </button>
+            )}
           </div>
 
         </div>
@@ -1306,35 +1409,41 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
               {/* Actions Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
-                    <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '50px', height: '50px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>−</button>
-                    <div style={{ width: '40px', textAlign: 'center', fontSize: '16px', color: 'var(--cream)', fontFamily: 'var(--font-mono)' }}>{qty}</div>
-                    <button onClick={() => setQty(q => Math.min(availableStock || 999, q + 1))} style={{ width: '50px', height: '50px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>+</button>
-                  </div>
+                  {!cartItem && (
+                    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+                      <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: '50px', height: '50px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>−</button>
+                      <div style={{ width: '40px', textAlign: 'center', fontSize: '16px', color: 'var(--cream)', fontFamily: 'var(--font-mono)' }}>{qty}</div>
+                      <button onClick={() => setQty(q => Math.min(availableStock || 999, q + 1))} style={{ width: '50px', height: '50px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>+</button>
+                    </div>
+                  )}
 
-                  <button
-                    style={{
-                      flex: 1,
-                      height: '54px',
-                      borderRadius: '12px',
-                      padding: '0 40px',
-                      fontSize: '14px',
-                      whiteSpace: 'nowrap',
-                      background: 'var(--gold)',
-                      color: 'var(--obsidian)',
-                      border: 'none',
-                      fontFamily: 'var(--font-mono)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      boxShadow: '0 6px 20px rgba(196,160,90,0.3)'
-                    }}
-                    onClick={handleAddToCart}
-                    disabled={availableStock === 0}
-                  >
-                    {availableStock === 0 ? 'Notify Availability' : added ? '✓ Added to Cart' : 'Add to Cart'}
-                  </button>
+                  {cartItem ? (
+                    <div style={{ flex: 1 }}>{renderQtySelector(cartItem, '54px')}</div>
+                  ) : (
+                    <button
+                      style={{
+                        flex: 1,
+                        height: '54px',
+                        borderRadius: '12px',
+                        padding: '0 40px',
+                        fontSize: '14px',
+                        whiteSpace: 'nowrap',
+                        background: 'var(--gold)',
+                        color: 'var(--obsidian)',
+                        border: 'none',
+                        fontFamily: 'var(--font-mono)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.12em',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        boxShadow: '0 6px 20px rgba(196,160,90,0.3)'
+                      }}
+                      onClick={handleAddToCart}
+                      disabled={availableStock === 0}
+                    >
+                      {availableStock === 0 ? 'Notify Availability' : 'Add to Cart'}
+                    </button>
+                  )}
 
                   <button
                     onClick={handleToggleWishlist}
@@ -1377,7 +1486,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                   {[
                     { icon: 'ti-award', label: 'Heritage Craftsmanship' },
                     { icon: 'ti-truck-delivery', label: 'Pan-India Delivery' },
-                    { icon: 'ti-shield-check', label: '2-Year Warranty' },
+                    { icon: 'ti-shield-check', label: 'Authentic Product' },
                     { icon: 'ti-sparkles', label: 'Curated Brilliance' }
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '11px', color: 'var(--text-muted)' }}>

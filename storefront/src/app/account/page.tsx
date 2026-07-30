@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import ThemeToggle from '@/components/ThemeToggle'
 import { prisma } from '@/lib/prisma'
@@ -68,8 +67,7 @@ export default async function AccountPage() {
 
   return (
     <>
-      <Navigation />
-
+      
       <style>{`
         .account-link:hover { color: var(--gold) !important; }
       `}</style>

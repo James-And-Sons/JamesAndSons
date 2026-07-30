@@ -17,6 +17,8 @@ type Category = {
   bisStatus: string | null;
   image: string | null;
   images: string[];
+  baseShippingLimit: number | null;
+  freeShippingThreshold: number | null;
   _count: { products: number };
   products: { id: string; name: string; images: string[] }[];
 };
@@ -35,6 +37,8 @@ export default function CategoryManager({ categories, allProducts }: { categorie
   const [bisStandard, setBisStandard] = useState('');
   const [bisStatus, setBisStatus] = useState('Pending Application');
   const [images, setImages] = useState<string[]>([]);
+  const [baseShippingLimit, setBaseShippingLimit] = useState<number | ''>('');
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | ''>('');
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
 
@@ -42,7 +46,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
 
   const isDirty = showForm && (
     editing === null 
-      ? (name !== '' || description !== '' || technicalSubheading !== '' || hsnCode !== '' || gstRate !== 18 || bisStandard !== '' || bisStatus !== '' || images.length > 0)
+      ? (name !== '' || description !== '' || technicalSubheading !== '' || hsnCode !== '' || gstRate !== 18 || bisStandard !== '' || bisStatus !== '' || images.length > 0 || baseShippingLimit !== '' || freeShippingThreshold !== '')
       : (name !== editing.name || 
          description !== (editing.description || '') ||
          technicalSubheading !== (editing.technicalSubheading || '') ||
@@ -50,6 +54,8 @@ export default function CategoryManager({ categories, allProducts }: { categorie
          gstRate !== (editing.gstRate !== null && editing.gstRate !== undefined ? editing.gstRate : 18) ||
          bisStandard !== (editing.bisStandard || '') ||
          bisStatus !== (editing.bisStatus || '') ||
+         baseShippingLimit !== (editing.baseShippingLimit !== null && editing.baseShippingLimit !== undefined ? editing.baseShippingLimit : '') ||
+         freeShippingThreshold !== (editing.freeShippingThreshold !== null && editing.freeShippingThreshold !== undefined ? editing.freeShippingThreshold : '') ||
          JSON.stringify(images) !== JSON.stringify(editing.images || []))
   );
 
@@ -91,6 +97,8 @@ export default function CategoryManager({ categories, allProducts }: { categorie
           setBisStandard(cat.bisStandard || '');
           setBisStatus(cat.bisStatus || '');
           setImages(cat.images || []);
+          setBaseShippingLimit(cat.baseShippingLimit !== null && cat.baseShippingLimit !== undefined ? cat.baseShippingLimit : '');
+          setFreeShippingThreshold(cat.freeShippingThreshold !== null && cat.freeShippingThreshold !== undefined ? cat.freeShippingThreshold : '');
           setShowForm(true);
           setManagingProducts(null);
         }
@@ -108,6 +116,8 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setBisStandard('');
     setBisStatus('Pending Application');
     setImages([]);
+    setBaseShippingLimit('');
+    setFreeShippingThreshold('');
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -122,6 +132,8 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setBisStandard(cat.bisStandard || '');
     setBisStatus(cat.bisStatus || '');
     setImages(cat.images || []);
+    setBaseShippingLimit(cat.baseShippingLimit !== null && cat.baseShippingLimit !== undefined ? cat.baseShippingLimit : '');
+    setFreeShippingThreshold(cat.freeShippingThreshold !== null && cat.freeShippingThreshold !== undefined ? cat.freeShippingThreshold : '');
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -146,6 +158,8 @@ export default function CategoryManager({ categories, allProducts }: { categorie
           gstRate: parseFloat(String(gstRate)) || 18,
           bisStandard,
           bisStatus,
+          baseShippingLimit: baseShippingLimit !== '' ? parseFloat(String(baseShippingLimit)) : null,
+          freeShippingThreshold: freeShippingThreshold !== '' ? parseFloat(String(freeShippingThreshold)) : null,
           image: images[0] || null,
           images
         }),
@@ -268,6 +282,14 @@ export default function CategoryManager({ categories, allProducts }: { categorie
                     <option value="Approved">Approved</option>
                     <option value="Not Available">Not Available</option>
                   </select>
+                </div>
+                 <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Base Shipping Included (₹)</label>
+                  <input type="number" value={baseShippingLimit} onChange={e => setBaseShippingLimit(e.target.value !== '' ? parseFloat(e.target.value) : '')} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 280 (Default fallback if empty)" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Free Shipping Threshold (₹)</label>
+                  <input type="number" value={freeShippingThreshold} onChange={e => setFreeShippingThreshold(e.target.value !== '' ? parseFloat(e.target.value) : '')} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 380 (Default fallback if empty)" />
                 </div>
                 <div className="space-y-1 md:col-span-2">
                   <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>

@@ -1,12 +1,10 @@
 import { Suspense } from 'react'
-import Navigation from '@/components/Navigation'
 import ForgotPasswordForm from './ForgotPasswordForm'
 
 export default function ForgotPasswordPage() {
   return (
     <>
-      <Navigation />
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--obsidian)', padding: '20px', paddingTop: '80px' }}>
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--obsidian)', padding: '20px', paddingTop: '80px' }}>
         <div style={{ maxWidth: '440px', width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', padding: '48px' }}>
           
           <div style={{ marginBottom: '32px', textAlign: 'center' }}>
