@@ -28,7 +28,7 @@ function HeaderTitle() {
 
     if (pathname === '/') return [{ label: 'Dashboard', href: '/' }];
     if (pathname === '/orders') return [{ label: 'Orders', href: '/orders' }];
-    if (pathname === '/rfqs') return [{ label: 'RFQ Inbox', href: '/rfqs' }];
+    if (pathname === '/rfqs') return [{ label: 'Inquiries', href: '/rfqs' }];
     if (pathname === '/products') return [{ label: 'Catalog & Pricing', href: '/products' }];
     if (pathname === '/products/add') {
       return [
@@ -46,7 +46,7 @@ function HeaderTitle() {
     if (pathname === '/affiliates') return [{ label: 'Affiliates', href: '/affiliates' }];
     if (pathname === '/tickets') return [{ label: 'Support Tickets', href: '/tickets' }];
     if (pathname === '/customers') return [{ label: 'Customers', href: '/customers' }];
-    if (pathname === '/account') return [{ label: 'Admin Settings', href: '/account' }];
+    if (pathname === '/account') return [{ label: 'Settings', href: '/account' }];
 
     // Dynamic builder for arbitrary paths
     const segments = pathname.split('/').filter(Boolean);

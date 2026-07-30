@@ -40,7 +40,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
     }
   };
   const [openTickets, setOpenTickets] = useState<number | null>(null);
-  const [openInquiries, setOpenInquiries] = useState<number | null>(null);
+  const [openRfqs, setOpenRfqs] = useState<number | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [spaces, setSpaces] = useState<{ id: string; name: string; _count?: { products: number } }[]>([]);
   const [searchVal, setSearchVal] = useState(searchParams.get('q') || '');
@@ -62,9 +62,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       .then(d => setOpenTickets(d.count))
       .catch(() => {});
 
-    fetch('/api/inquiries')
+    fetch('/api/rfqs/count')
       .then(r => r.json())
-      .then(d => setOpenInquiries(d.newCount))
+      .then(d => setOpenRfqs(d.count))
       .catch(() => {});
 
     // Fetch collections (categories)
@@ -620,7 +620,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
             <>
               {renderLink('Dashboard', '/', null, LayoutDashboard)}
               {renderLink('Orders', '/orders', null, Package)}
-              {renderLink('RFQ Inbox', '/rfqs', null, MessageSquare)}
+              {renderLink('Inquiries', '/rfqs', openRfqs, MessageSquare)}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">Catalog</p>
               {renderCatalogDropdown()}
@@ -646,7 +646,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               {renderLink('Catalogues', '/catalogues', null, BookCopy)}
               {renderLink('Affiliates', '/affiliates', null, Users)}
               {renderLink('Tickets', '/tickets', openTickets, TicketCheck)}
-              {renderLink('Inquiries', '/inquiries', openInquiries, HelpCircle)}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">System</p>
               {renderLink('Customers', '/customers', null, Users)}

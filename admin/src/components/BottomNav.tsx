@@ -34,18 +34,17 @@ const PRIMARY_TABS = [
 ];
 
 const MORE_LINKS = [
-  { label: 'RFQ Inbox', href: '/rfqs', icon: MessageSquare },
+  { label: 'Inquiries', href: '/rfqs', icon: MessageSquare },
   { label: 'B2B Workspace', href: '/b2b', icon: Building2 },
   { label: 'Collections', href: '/collections', icon: BookMarked },
   { label: 'Spaces', href: '/spaces', icon: Image },
   { label: 'Blog', href: '/blog', icon: BookOpen },
   { label: 'Marketing', href: '/campaigns', icon: Megaphone },
   { label: 'Coupons', href: '/promotions', icon: Tag },
-  { label: 'Inquiries', href: '/inquiries', icon: HelpCircle },
   { label: 'Customers', href: '/customers', icon: Users },
   { label: 'CMS Pages', href: '/pages', icon: FileText },
   { label: 'Catalogues', href: '/catalogues', icon: BookOpen },
-  { label: 'Admin Settings', href: '/account', icon: Settings },
+  { label: 'Settings', href: '/account', icon: Settings },
 ];
 
 export default function BottomNav() {
@@ -59,7 +58,7 @@ export default function BottomNav() {
     return pathname.startsWith(href);
   };
 
-  const [badges, setBadges] = useState({ orders: 0, tickets: 0, rfqs: 0, inquiries: 0 });
+  const [badges, setBadges] = useState({ orders: 0, tickets: 0, rfqs: 0 });
 
   useEffect(() => {
     const fetchBadges = async () => {
@@ -71,7 +70,6 @@ export default function BottomNav() {
             orders: data.orders || 0,
             tickets: data.tickets || 0,
             rfqs: data.rfqs || 0,
-            inquiries: data.inquiries || 0,
           });
         }
       } catch (err) {
@@ -91,12 +89,11 @@ export default function BottomNav() {
   };
 
   const getBadgeCountForMoreLink = (label: string) => {
-    if (label === 'RFQ Inbox') return badges.rfqs;
-    if (label === 'Inquiries') return badges.inquiries;
+    if (label === 'Inquiries') return badges.rfqs;
     return 0;
   };
 
-  const totalMoreBadges = badges.rfqs + badges.inquiries;
+  const totalMoreBadges = badges.rfqs;
 
   const handleLogout = async () => {
     setIsMobileNavOpen(false);

@@ -65,7 +65,7 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
       <div className="flex flex-wrap items-center justify-between gap-4 premium-card p-6 rounded-lg">
         <div>
           <h1 className="font-serif text-[28px] font-normal text-primary tracking-wide m-0">
-            RFQ &amp; Trade Inbox
+            Inquiries
           </h1>
           <p className="font-body text-muted text-[13px] mt-1 m-0">
             Commercial quotation requests, IndiaMART lead sync, and trade inquiries ({pendingCount} pending review).
