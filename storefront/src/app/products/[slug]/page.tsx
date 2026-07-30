@@ -62,7 +62,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
 
         {/* Related Products */}
         {related.length > 0 && (
-          <section className="section" style={{ borderTop: '1px solid var(--border)', padding: '40px 0' }}>
+          <section className="section" style={{ borderTop: '1px solid var(--border)', padding: '40px 0 0' }}>
             <div className="section-header" style={{ padding: '0 16px', marginBottom: '20px' }}>
               <div>
                 <div className="section-label">From the Same Collection</div>
@@ -72,19 +72,34 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
             </div>
 
             {/* Mobile Scroll — Edge-to-Edge Experience */}
-            <div className="flex md:hidden" style={{ gap: '12px', overflowX: 'auto', padding: '0 16px 24px', scrollbarWidth: 'none' }}>
+            <div
+              className="flex md:hidden"
+              style={{
+                gap: '12px',
+                overflowX: 'auto',
+                scrollSnapType: 'x mandatory',
+                WebkitOverflowScrolling: 'touch',
+                padding: '0 16px 28px 16px',
+                margin: '0 -16px',
+                scrollbarWidth: 'none',
+              }}
+            >
               {related.map((p: any) => (
-                <Link key={p.id} href={`/products/${p.slug}`} style={{ flexShrink: 0, width: '160px', textDecoration: 'none' }}>
-                  <div style={{ height: '200px', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '12px' }}>
+                <Link
+                  key={p.id}
+                  href={`/products/${p.slug}`}
+                  style={{ flexShrink: 0, width: '56vw', maxWidth: '220px', textDecoration: 'none', scrollSnapAlign: 'start' }}
+                >
+                  <div style={{ aspectRatio: '3/4', background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '12px', overflow: 'hidden', position: 'relative', marginBottom: '10px' }}>
                     {p.images?.[0] ? (
                       <Image src={p.images[0]} alt={p.name} fill style={{ objectFit: 'cover' }} />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.2 }}></i>
+                        <i className="ti ti-lamp" style={{ fontSize: '32px', color: 'var(--gold)', opacity: 0.2 }} />
                       </div>
                     )}
                   </div>
-                  <div style={{ fontSize: '12px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '2px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--cream)', lineHeight: 1.3, marginBottom: '3px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
                   <div style={{ fontSize: '12px', color: 'var(--gold-light)', opacity: 0.8 }}>{formatPrice(p.d2cPrice)}</div>
                 </Link>
               ))}
