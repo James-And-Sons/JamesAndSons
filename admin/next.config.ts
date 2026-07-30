@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import fs from 'fs';
 import path from 'path';
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Generate public/sw.js from template on load (dev and build)
 try {
@@ -28,4 +29,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "your-sentry-org-slug",
+  project: "your-sentry-project-slug",
+  silent: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+});
+
