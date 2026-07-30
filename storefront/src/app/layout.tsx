@@ -167,7 +167,15 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    navigator.serviceWorker.getRegistrations().then(function(regs) {
+                      for (var i = 0; i < regs.length; i++) {
+                        regs[i].unregister();
+                      }
+                    });
+                  } else {
+                    navigator.serviceWorker.register('/sw.js');
+                  }
                 });
               }
             `,

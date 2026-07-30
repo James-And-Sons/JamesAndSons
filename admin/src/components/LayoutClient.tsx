@@ -128,9 +128,24 @@ function UnsavedChangesListener() {
 function ServiceWorkerRegistrar() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .catch(() => {/* silent — dev environments may block SW */});
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const reg of registrations) {
+            reg.unregister();
+          }
+        });
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            for (const key of keys) {
+              caches.delete(key);
+            }
+          });
+        }
+      } else {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .catch(() => {/* silent — dev environments may block SW */});
+      }
     }
   }, []);
   return null;
