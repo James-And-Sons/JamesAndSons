@@ -13,6 +13,7 @@ interface OrderItem {
   email: string;
   totalValue: number;
   status: string;
+  channel?: string | null;
 }
 
 export default function OrdersTableClient({ records }: { records: OrderItem[] }) {
@@ -49,7 +50,7 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
       return;
     }
 
-    const headers = ['Order ID', 'Date', 'Customer Name', 'Company', 'Email', 'Total Value', 'Status'];
+    const headers = ['Order ID', 'Date', 'Customer Name', 'Company', 'Email', 'Total Value', 'Status', 'Channel'];
     const rows = filteredRecords.map((r) => [
       r.displayId,
       new Date(r.date).toISOString().split('T')[0],
@@ -58,6 +59,7 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
       r.email,
       r.totalValue,
       r.status,
+      r.channel || 'JNS_STOREFRONT',
     ]);
 
     const csvContent = [
@@ -158,7 +160,16 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
                 const href = `/orders/${record.id}`;
                 return (
                   <ClickableRow key={record.id} href={href} className="hover:bg-surface-muted/40 transition-colors">
-                    <td className="px-6 py-4"><span className="font-mono text-[12px] text-accent hover:underline font-semibold">{record.displayId}</span></td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[12px] text-accent hover:underline font-semibold">{record.displayId}</span>
+                        {record.channel && record.channel !== 'JNS_STOREFRONT' && (
+                          <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
+                            {record.channel.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 font-mono text-[11px] text-muted">{new Date(record.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                     <td className="px-6 py-4"><div className="font-serif text-[15px] text-primary">{record.company || record.customerName}</div><div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{record.email}</div></td>
                     <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">₹{Math.round(record.totalValue).toLocaleString('en-IN')}</td>
@@ -186,7 +197,14 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
               <div key={record.id} className="bg-surface border border-border rounded-lg overflow-hidden">
                 {/* Card Header */}
                 <div className="flex items-center justify-between px-4 py-3 bg-surface-muted/30 border-b border-border/40">
-                  <span className="font-mono text-[13px] text-accent font-semibold tracking-wide">{record.displayId}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[13px] text-accent font-semibold tracking-wide">{record.displayId}</span>
+                    {record.channel && record.channel !== 'JNS_STOREFRONT' && (
+                      <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
+                        {record.channel.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                  </div>
                   <span className={`status-pill ${pillClass}`}>
                     <span className="dot" aria-hidden="true" />
                     <span>{s.replace(/_/g, ' ')}</span>

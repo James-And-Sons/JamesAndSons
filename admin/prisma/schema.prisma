@@ -287,6 +287,12 @@ model Order {
   razorpaySignature String?
   
   fulfillmentError  String?  // Logs errors from Shiprocket/Logistics
+
+  // Amazon Marketplace fields
+  channel              String?  @default("JNS_STOREFRONT")  // JNS_STOREFRONT | AMAZON | FLIPKART
+  amazonOrderId        String?  @unique                      // e.g. 403-1234567-1234567
+  amazonOrderStatus    String?                               // Unshipped | Shipped | Cancelled
+  amazonShipmentFeedId String?                               // Feed submission ID after confirm-shipment
   
   b2bFlag             Boolean   @default(false)
   zohoPricebookId     String?
