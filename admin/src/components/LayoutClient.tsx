@@ -198,7 +198,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
         <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 min-w-0 overflow-x-hidden ${isLoginPage ? 'ml-0' : 'lg:ml-[260px] ml-0'}`}>
           {!isLoginPage && (
-            <header className={`h-[64px] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300 ${
+            <header className={`pt-[env(safe-area-inset-top,0px)] h-[calc(64px+env(safe-area-inset-top,0px))] bg-background/90 backdrop-blur-md border-b border-border flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40 transition-colors duration-300 ${
               isChatPage ? 'hidden md:flex' : 'flex'
             }`}>
               {/* LEFT: Hamburger (desktop only) + Breadcrumb */}

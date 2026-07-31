@@ -54,6 +54,44 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const mainBtnRef = useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
 
+  const lastWheelTimeRef = useRef<number>(0);
+  const dragStartXRef = useRef<number | null>(null);
+
+  const handleImageFrameWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!activeImages || activeImages.length <= 1) return;
+    const now = Date.now();
+    if (now - lastWheelTimeRef.current < 200) return;
+
+    if (e.deltaY > 0 || e.deltaX > 0) {
+      if (activeImg < activeImages.length - 1) {
+        lastWheelTimeRef.current = now;
+        setActiveImg(i => i + 1);
+      }
+    } else if (e.deltaY < 0 || e.deltaX < 0) {
+      if (activeImg > 0) {
+        lastWheelTimeRef.current = now;
+        setActiveImg(i => i - 1);
+      }
+    }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragStartXRef.current = e.clientX;
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragStartXRef.current === null || !activeImages || activeImages.length <= 1) return;
+    const diffX = e.clientX - dragStartXRef.current;
+    dragStartXRef.current = null;
+    if (Math.abs(diffX) > 30) {
+      if (diffX < 0 && activeImg < activeImages.length - 1) {
+        setActiveImg(i => i + 1);
+      } else if (diffX > 0 && activeImg > 0) {
+        setActiveImg(i => i - 1);
+      }
+    }
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       const mainBtn = mainBtnRef.current;
@@ -1128,9 +1166,12 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* Main Active Image Container */}
                   <div
-                    className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center relative cursor-zoom-in"
-                    style={{ width: '85%', aspectRatio: '1 / 1', margin: '0 auto' }}
+                    className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center relative cursor-zoom-in select-none"
+                    style={{ width: '85%', aspectRatio: '1 / 1', margin: '0 auto', touchAction: 'pan-y' }}
                     onClick={() => setLightboxOpen(true)}
+                    onWheel={handleImageFrameWheel}
+                    onPointerDown={handlePointerDown}
+                    onPointerUp={handlePointerUp}
                   >
                     <div style={{ position: 'absolute', inset: 0 }}>
                       {activeImages.map((img: string, idx: number) => {
@@ -1183,14 +1224,14 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                       <>
                         <button
                           onClick={e => { e.stopPropagation(); setActiveImg(i => Math.max(0, i - 1)); }}
-                          style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: activeImg === 0 ? 0.3 : 1 }}
+                          style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: activeImg === 0 ? 0.3 : 1, zIndex: 10 }}
                           disabled={activeImg === 0}
                         >
                           <i className="ti ti-chevron-left" style={{ fontSize: '20px' }}></i>
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); setActiveImg(i => Math.min(activeImages.length - 1, i + 1)); }}
-                          style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: activeImg === activeImages.length - 1 ? 0.3 : 1 }}
+                          style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', opacity: activeImg === activeImages.length - 1 ? 0.3 : 1, zIndex: 10 }}
                           disabled={activeImg === activeImages.length - 1}
                         >
                           <i className="ti ti-chevron-right" style={{ fontSize: '20px' }}></i>
@@ -1201,7 +1242,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
                   {/* Thumbnails Row */}
                   {activeImages.length > 1 && (
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '6px 4px', maxWidth: '100%', scrollbarWidth: 'none', justifyContent: activeImages.length > 5 ? 'flex-start' : 'center' }}>
                       {activeImages.map((img: string, idx: number) => (
                         <div
                           key={idx}

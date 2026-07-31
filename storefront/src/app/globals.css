@@ -502,8 +502,8 @@ body {
     background: rgba(10,9,5,0.96);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
-    padding: 8px 16px;
-    height: 56px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px;
+    height: calc(56px + env(safe-area-inset-top, 0px));
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -875,12 +875,15 @@ body {
 /* Global Mobile Main Padding Override */
 @media (max-width: 767px) {
   main:not(.home-main):not(.pdp-main) {
-    padding-top: 56px !important;
+    padding-top: calc(56px + env(safe-area-inset-top, 0px)) !important;
     padding-bottom: 80px !important;
   }
   main.pdp-main {
-    padding-top: 20px !important;
+    padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
     padding-bottom: 80px !important;
+  }
+  #collections.section {
+    padding-top: 4px !important;
   }
 }
 
