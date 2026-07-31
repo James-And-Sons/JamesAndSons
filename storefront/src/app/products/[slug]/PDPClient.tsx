@@ -10,6 +10,7 @@ import { checkPincode, getSavedPincode } from "../actions";
 import Image from "next/image";
 import { AdaptiveImageFrame } from "@james-andsons/media";
 import InquiryModal from "@/components/InquiryModal";
+import ProductZoomModal from "./ProductZoomModal";
 
 type Variant = {
   id: string;
@@ -65,6 +66,22 @@ export default function PDPClient({
 
   const lastWheelTimeRef = useRef<number>(0);
   const dragStartXRef = useRef<number | null>(null);
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [hoverPos, setHoverPos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMoveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(
+      0,
+      Math.min(100, ((e.clientX - rect.left) / rect.width) * 100),
+    );
+    const y = Math.max(
+      0,
+      Math.min(100, ((e.clientY - rect.top) / rect.height) * 100),
+    );
+    setHoverPos({ x, y });
+  };
 
   const handleImageFrameWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (!activeImages || activeImages.length <= 1) return;
@@ -2200,7 +2217,7 @@ export default function PDPClient({
                 >
                   {/* Main Active Image Container */}
                   <div
-                    className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center relative cursor-zoom-in select-none"
+                    className="bg-[var(--surface2)] rounded-2xl border border-[var(--border)] overflow-hidden flex items-center justify-center relative cursor-zoom-in select-none group"
                     style={{
                       width: "85%",
                       margin: "0 auto",
@@ -2210,14 +2227,25 @@ export default function PDPClient({
                     onWheel={handleImageFrameWheel}
                     onPointerDown={handlePointerDown}
                     onPointerUp={handlePointerUp}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    onMouseMove={handleMouseMoveFrame}
                   >
                     {activeImages.length > 0 && activeImages[activeImg] ? (
-                      <AdaptiveImageFrame
-                        src={activeImages[activeImg]}
-                        alt={`${product.name} - view ${activeImg + 1}`}
-                        objectFit="cover"
-                        priority={activeImg === 0}
-                      />
+                      <div
+                        className="w-full h-full transition-transform duration-150 ease-out"
+                        style={{
+                          transform: isHovered ? "scale(2.2)" : "scale(1)",
+                          transformOrigin: `${hoverPos.x}% ${hoverPos.y}%`,
+                        }}
+                      >
+                        <AdaptiveImageFrame
+                          src={activeImages[activeImg]}
+                          alt={`${product.name} - view ${activeImg + 1}`}
+                          objectFit="cover"
+                          priority={activeImg === 0}
+                        />
+                      </div>
                     ) : (
                       <div
                         style={{
@@ -3908,149 +3936,15 @@ export default function PDPClient({
           )}
         </section>
 
-        {/* Lightbox Overlay */}
-        {lightboxOpen && (
-          <div
-            onClick={() => setLightboxOpen(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 9999,
-              background: "rgba(0,0,0,0.95)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <button
-              onClick={() => setLightboxOpen(false)}
-              style={{
-                position: "absolute",
-                top: "20px",
-                right: "20px",
-                background: "rgba(255,255,255,0.1)",
-                border: "none",
-                color: "#fff",
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                fontSize: "20px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <i className="ti ti-x"></i>
-            </button>
-            <div
-              onClick={(e) => e.stopPropagation()}
-              onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
-              onTouchEnd={(e) => handleSwipe(e.changedTouches[0].clientX)}
-              style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: "800px",
-                aspectRatio: "4/3",
-                margin: "0 auto",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                src={activeImages[activeImg]}
-                alt={product.name}
-                fill
-                sizes="(max-width: 800px) 100vw, 800px"
-                style={{ objectFit: "contain" }}
-                priority
-              />
-              {activeImages.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setActiveImg((i) => Math.max(0, i - 1))}
-                    style={{
-                      position: "absolute",
-                      left: "8px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                      background: "rgba(255,255,255,0.15)",
-                      border: "none",
-                      color: "#fff",
-                      fontSize: "20px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: activeImg === 0 ? 0.3 : 1,
-                    }}
-                  >
-                    <i className="ti ti-chevron-left"></i>
-                  </button>
-                  <button
-                    onClick={() =>
-                      setActiveImg((i) =>
-                        Math.min(activeImages.length - 1, i + 1),
-                      )
-                    }
-                    style={{
-                      position: "absolute",
-                      right: "8px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                      background: "rgba(255,255,255,0.15)",
-                      border: "none",
-                      color: "#fff",
-                      fontSize: "20px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: activeImg === activeImages.length - 1 ? 0.3 : 1,
-                    }}
-                  >
-                    <i className="ti ti-chevron-right"></i>
-                  </button>
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "-32px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      display: "flex",
-                      gap: "8px",
-                    }}
-                  >
-                    {activeImages.map((_: any, idx: number) => (
-                      <div
-                        key={idx}
-                        style={{
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          background:
-                            idx === activeImg
-                              ? "var(--gold)"
-                              : "rgba(255,255,255,0.2)",
-                          transition: "all 0.3s ease",
-                          transform:
-                            idx === activeImg ? "scale(1.3)" : "scale(1)",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Interactive Native Gestures & Desktop Zoom Lightbox Modal */}
+        <ProductZoomModal
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          images={activeImages}
+          activeIndex={activeImg}
+          onIndexChange={setActiveImg}
+          productName={product.name}
+        />
 
         {/* Review Submission Modal */}
         {reviewModalOpen && (
