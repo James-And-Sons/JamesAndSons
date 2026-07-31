@@ -144,7 +144,8 @@ export async function createOrder(
       where: {
         userId: user.id,
         street: form.address,
-        pincode: form.pincode
+        pincode: form.pincode,
+        phone: form.phone
       }
     });
 

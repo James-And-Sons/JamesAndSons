@@ -64,11 +64,13 @@ export default function CheckoutPageInner({
       address: addr.street,
       city: addr.city,
       state: addr.state,
-      pincode: addr.pincode
+      pincode: addr.pincode,
+      phone: addr.phone || prev.phone
     }));
     // The useEffect for form.pincode will handle the calculation
     setLastPincode(''); // Reset lastPincode to force the useEffect to trigger
   };
+
   const [shipping, setShipping] = useState<number | null>(null);
   const [shippingDiscount, setShippingDiscount] = useState(0);
   const [applyShippingSavings, setApplyShippingSavings] = useState(false);
@@ -359,14 +361,14 @@ export default function CheckoutPageInner({
       <div className="checkout-main" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
 
         {/* Step indicators */}
-        <div style={{ display: 'flex', gap: '0', marginBottom: '4px', border: '1px solid var(--border)', background: 'var(--surface)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0', marginBottom: '16px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: '12px', overflow: 'hidden', flexWrap: 'wrap' }}>
           {[{ n: 1, label: 'Delivery Details' }, { n: 2, label: 'Payment' }].map(s => (
-            <div key={s.n} style={{ flex: '1 1 200px', padding: '14px 20px', background: step === s.n ? 'rgba(196,160,90,0.08)' : 'transparent', borderRight: s.n === 1 ? '1px solid var(--border)' : 'none', borderBottom: s.n === 1 && step === 1 ? 'none' : 'none', cursor: step > s.n ? 'pointer' : 'default' }} onClick={() => step > s.n && setStep(s.n as 1 | 2)}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: `1px solid ${step >= s.n ? 'var(--gold)' : 'var(--border)'}`, background: step > s.n ? 'var(--gold)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px', color: step > s.n ? 'var(--obsidian)' : step === s.n ? 'var(--gold)' : 'var(--text-dim)', flexShrink: 0 }}>
+            <div key={s.n} style={{ flex: '1 1 200px', padding: '18px 24px', background: step === s.n ? 'rgba(201,168,76,0.08)' : 'transparent', borderRight: s.n === 1 ? '1px solid var(--border)' : 'none', cursor: step > s.n ? 'pointer' : 'default', transition: 'all 0.3s ease' }} onClick={() => step > s.n && setStep(s.n as 1 | 2)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${step >= s.n ? 'var(--gold)' : 'var(--border)'}`, background: step > s.n ? 'var(--gold)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: '13px', color: step > s.n ? 'var(--obsidian)' : step === s.n ? 'var(--gold)' : 'var(--text-dim)', flexShrink: 0 }}>
                   {step > s.n ? '✓' : s.n}
                 </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: step === s.n ? 'var(--gold)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s.label}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: step === s.n ? 'var(--gold)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s.label}</span>
               </div>
             </div>
           ))}
@@ -380,30 +382,31 @@ export default function CheckoutPageInner({
 
         {/* Step 1 — Address */}
         {step === 1 && (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '28px' }}>
-            <div className="section-label" style={{ marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--border)' }}>Delivery Details</div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '36px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 300, color: 'var(--cream)', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>Delivery Details</div>
             
             {savedAddresses.length > 0 && (
-              <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--border)' }}>
-                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '12px' }}>Choose from Saved Addresses</label>
-                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+              <div style={{ paddingBottom: '24px', borderBottom: '1px solid var(--border)' }}>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '14px' }}>Choose from Saved Addresses</label>
+                <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', paddingBottom: '8px' }}>
                   {savedAddresses.map(addr => (
                     <button 
                       key={addr.id}
                       onClick={() => selectSavedAddress(addr)}
                       style={{ 
-                        flex: '0 0 200px', 
+                        flex: '0 0 240px', 
                         textAlign: 'left', 
-                        padding: '14px', 
-                        background: form.address === addr.street ? 'rgba(196,160,90,0.1)' : 'var(--obsidian)', 
+                        padding: '16px 20px', 
+                        borderRadius: '8px',
+                        background: form.address === addr.street ? 'rgba(201,168,76,0.1)' : 'var(--obsidian)', 
                         border: `1px solid ${form.address === addr.street ? 'var(--gold)' : 'var(--border)'}`,
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.3s ease'
                       }}
                     >
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--gold)', marginBottom: '4px' }}>{addr.name}</div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--cream)', lineHeight: 1.4 }}>{addr.street}</div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '10px', color: 'var(--text-muted)' }}>{addr.city}, {addr.state} - {addr.pincode}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--gold)', fontWeight: 600, marginBottom: '6px' }}>{addr.name}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--cream)', lineHeight: 1.4, marginBottom: '4px' }}>{addr.street}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>{addr.city}, {addr.state} - {addr.pincode}</div>
                     </button>
                   ))}
                 </div>
@@ -417,25 +420,25 @@ export default function CheckoutPageInner({
                 { key: 'phone', label: 'Phone Number' },
               ].map(f => (
                 <div key={f.key} style={{ gridColumn: f.key === 'phone' ? 'auto' : 'auto' }}>
-                  <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{f.label} <span style={{ color: 'var(--red)' }}>*</span></label>
-                  <input required value={(form as any)[f.key]} onChange={e => update(f.key, e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%', transition: 'border-color 0.2s' }} />
+                  <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>{f.label} <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input required value={(form as any)[f.key]} onChange={e => update(f.key, e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '14px 16px', outline: 'none', width: '100%', transition: 'all 0.3s ease' }} />
                 </div>
               ))}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Street Address <span style={{ color: 'var(--red)' }}>*</span></label>
-                <input required placeholder="House No, Street, Area" value={form.address} onChange={e => update('address', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>Street Address <span style={{ color: 'var(--red)' }}>*</span></label>
+                <input required placeholder="House No, Street, Area" value={form.address} onChange={e => update('address', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '14px 16px', outline: 'none', width: '100%', transition: 'all 0.3s ease' }} />
               </div>
               <div>
-                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>City <span style={{ color: 'var(--red)' }}>*</span></label>
-                <input required placeholder="City Name" value={form.city} onChange={e => update('city', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>City <span style={{ color: 'var(--red)' }}>*</span></label>
+                <input required placeholder="City Name" value={form.city} onChange={e => update('city', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '14px 16px', outline: 'none', width: '100%', transition: 'all 0.3s ease' }} />
               </div>
               <div>
-                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>State <span style={{ color: 'var(--red)' }}>*</span></label>
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>State <span style={{ color: 'var(--red)' }}>*</span></label>
                 <select 
                   required 
                   value={form.state} 
                   onChange={e => update('state', e.target.value)} 
-                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '8px 12px', outline: 'none', width: '100%', height: '39px' }}
+                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '12px 16px', outline: 'none', width: '100%', height: '49px', transition: 'all 0.3s ease' }}
                 >
                   <option value="">Select State</option>
                   {["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"].map(s => (
@@ -444,26 +447,26 @@ export default function CheckoutPageInner({
                 </select>
               </div>
               <div>
-                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Pincode <span style={{ color: 'var(--red)' }}>*</span></label>
-                <input required placeholder="6 Digits" maxLength={6} value={form.pincode} onChange={e => update('pincode', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>Pincode <span style={{ color: 'var(--red)' }}>*</span></label>
+                <input required placeholder="6 Digits" maxLength={6} value={form.pincode} onChange={e => update('pincode', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '14px 16px', outline: 'none', width: '100%', transition: 'all 0.3s ease' }} />
               </div>
             </div>
 
-            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                <input type="checkbox" checked={showGst} onChange={e => setShowGst(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: 'var(--gold)' }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--cream)' }}>Add GST Details (Optional)</span>
+            <div style={{ padding: '8px 0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={showGst} onChange={e => setShowGst(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: 'var(--gold)' }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cream)' }}>Add GST Details (Optional)</span>
               </label>
 
               {showGst && (
                 <div className="form-grid" style={{ marginTop: '20px', animation: 'fadeIn 0.3s ease' }}>
                   <div>
-                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>GSTIN</label>
-                    <input placeholder="15-digit GST Number" value={form.gstin} onChange={e => update('gstin', e.target.value.toUpperCase())} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>GSTIN</label>
+                    <input placeholder="15-digit GST Number" value={form.gstin} onChange={e => update('gstin', e.target.value.toUpperCase())} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '14px 16px', outline: 'none', width: '100%', transition: 'all 0.3s ease' }} />
                   </div>
                   <div>
-                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Registered Company Name</label>
-                    <input placeholder="As per GST records" value={form.companyName} onChange={e => update('companyName', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)', fontFamily: 'var(--font-body)', fontSize: '13px', padding: '9px 12px', outline: 'none', width: '100%' }} />
+                    <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold-light)', display: 'block', marginBottom: '8px' }}>Registered Company Name</label>
+                    <input placeholder="As per GST records" value={form.companyName} onChange={e => update('companyName', e.target.value)} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--cream)', fontFamily: 'var(--font-body)', fontSize: '15px', padding: '14px 16px', outline: 'none', width: '100%', transition: 'all 0.3s ease' }} />
                   </div>
                 </div>
               )}
@@ -536,7 +539,7 @@ export default function CheckoutPageInner({
               }} 
               disabled={loading}
               className="btn-primary" 
-              style={{ marginTop: '24px', padding: '14px 32px', letterSpacing: '0.15em', width: '100%', whiteSpace: 'nowrap', opacity: loading ? 0.7 : 1 }}
+              style={{ marginTop: '24px', padding: '16px 32px', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.15em', width: '100%', whiteSpace: 'nowrap', opacity: loading ? 0.7 : 1, transition: 'all 0.3s ease' }}
             >
               {loading ? 'Verifying Area...' : 'Continue to Payment →'}
             </button>
@@ -545,70 +548,71 @@ export default function CheckoutPageInner({
 
         {/* Step 2 — Final Review & Pay */}
         {step === 2 && (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '28px' }}>
-            <div className="section-label" style={{ marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--border)' }}>Final Review</div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '36px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 300, color: 'var(--cream)', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>Final Review</div>
             
-            <div style={{ marginBottom: '28px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Shipping To</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text)' }}>
-                    <strong>{form.name}</strong><br />
+            <div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ padding: '16px 20px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '8px', letterSpacing: '0.08em' }}>Shipping To</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--cream)', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#fff' }}>{form.name}</strong><br />
                     {form.address}, {form.city}, {form.state} - {form.pincode}
                   </div>
                 </div>
 
                 {showGst && form.gstin && (
-                  <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>GST Details</div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text)' }}>
-                      <strong>{form.companyName || 'Company Name Not Provided'}</strong><br />
-                      GSTIN: <span style={{ fontFamily: 'var(--font-mono)' }}>{form.gstin}</span>
+                  <div style={{ padding: '16px 20px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '8px', letterSpacing: '0.08em' }}>GST Details</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--cream)', lineHeight: 1.5 }}>
+                      <strong style={{ color: '#fff' }}>{form.companyName || 'Company Name Not Provided'}</strong><br />
+                      GSTIN: <span style={{ fontFamily: 'var(--font-mono)', color: '#fff' }}>{form.gstin}</span>
                     </div>
                   </div>
                 )}
                 
-                <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px' }}>Delivery Estimate</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--green)' }}>
+                <div style={{ padding: '16px 20px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '8px', letterSpacing: '0.08em' }}>Delivery Estimate</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--green)', fontWeight: 500 }}>
                     {etd ? `Arriving by ${etd}` : 'Ships within 24-48 hours'}
                   </div>
                 </div>
 
                 {/* Urban Company Installation Section */}
-                {ucServiceable === true && (
-                  <div style={{ padding: '16px', background: 'var(--surface2)', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                {false && ucServiceable === true && (
+                  <div style={{ padding: '20px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                       <input
                         type="checkbox"
                         id="uc-installation-checkbox"
                         checked={bookInstallation}
                         onChange={(e) => setBookInstallation(e.target.checked)}
-                        style={{ accentColor: 'var(--gold)', cursor: 'pointer' }}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--gold)', cursor: 'pointer' }}
                       />
-                      <label htmlFor="uc-installation-checkbox" style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', cursor: 'pointer', fontWeight: 400 }}>
+                      <label htmlFor="uc-installation-checkbox" style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--cream)', cursor: 'pointer', fontWeight: 400 }}>
                         Professional Chandelier Installation
                       </label>
                     </div>
                     {bookInstallation && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', paddingLeft: '24px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px', paddingLeft: '30px' }}>
                         <div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Select Date</div>
-                          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>Select Date</div>
+                          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
                             {ucSlots.map(slot => (
                               <button
                                 key={slot.date}
                                 onClick={() => setSelectedUcSlot(slot.date)}
                                 style={{
-                                  padding: '8px 12px',
-                                  fontSize: '11px',
+                                  padding: '10px 14px',
+                                  fontSize: '12px',
                                   background: selectedUcSlot === slot.date ? 'var(--gold)' : 'var(--void)',
-                                  color: selectedUcSlot === slot.date ? 'var(--obsidian)' : 'var(--text)',
+                                  color: selectedUcSlot === slot.date ? 'var(--obsidian)' : 'var(--cream)',
                                   border: '1px solid var(--border)',
                                   borderRadius: '8px',
                                   cursor: 'pointer',
                                   fontWeight: selectedUcSlot === slot.date ? 600 : 400,
-                                  whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap',
+                                  transition: 'all 0.3s ease'
                                 }}
                               >
                                 {slot.displayDate}
@@ -619,7 +623,7 @@ export default function CheckoutPageInner({
 
                         {selectedUcSlot && (
                           <div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Select Time Window</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>Select Time Window</div>
                             <select
                               value={selectedUcTime || ''}
                               onChange={(e) => setSelectedUcTime(e.target.value)}
@@ -627,11 +631,12 @@ export default function CheckoutPageInner({
                                 width: '100%',
                                 background: 'var(--void)',
                                 border: '1px solid var(--border)',
-                                color: 'var(--text)',
-                                padding: '8px 12px',
+                                color: 'var(--cream)',
+                                padding: '12px 16px',
                                 borderRadius: '8px',
-                                fontSize: '12px',
-                                outline: 'none'
+                                fontSize: '14px',
+                                outline: 'none',
+                                transition: 'all 0.3s ease'
                               }}
                             >
                               {ucSlots.find(s => s.date === selectedUcSlot)?.times.map((time: string) => (
@@ -640,7 +645,7 @@ export default function CheckoutPageInner({
                             </select>
                           </div>
                         )}
-                        <div style={{ fontSize: '10px', color: 'var(--gold)', marginTop: '4px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 500 }}>
                           {subtotal > 50000 ? '✨ Free Premium Installation Applied' : '⚡ ₹1,499 service charge will apply'}
                         </div>
                       </div>
@@ -648,9 +653,9 @@ export default function CheckoutPageInner({
                   </div>
                 )}
 
-                {ucServiceable === false && (
-                  <div style={{ padding: '16px', background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.1)' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {false && ucServiceable === false && (
+                  <div style={{ padding: '16px 20px', background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.1)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--gold)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span>⚠️</span>
                       <span>Chandelier Installation is not available at pincode {form.pincode}.</span>
                     </div>
@@ -659,17 +664,17 @@ export default function CheckoutPageInner({
               </div>
             </div>
 
-            <div style={{ padding: '14px 18px', background: 'rgba(196,160,90,0.04)', border: '1px solid var(--border-gold)', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '20px' }}>
+            <div style={{ padding: '16px 20px', background: 'rgba(201,168,76,0.04)', border: '1px solid var(--border)', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.08em', color: 'var(--text-muted)', lineHeight: 1.5 }}>
               🔒 Secure payment powered by Razorpay. All major UPI, Cards, and Net Banking apps are supported.
             </div>
             
-            <button onClick={handlePayment} disabled={loading} className="btn-primary" style={{ width: '100%', padding: '14px 32px', letterSpacing: '0.15em', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap' }}>
+            <button onClick={handlePayment} disabled={loading} className="btn-primary" style={{ width: '100%', padding: '16px 32px', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, letterSpacing: '0.15em', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap', transition: 'all 0.3s ease' }}>
               {loading ? 'Opening Gateway...' : `Complete Secure Payment →`}
             </button>
             
             <button 
               onClick={() => setStep(1)} 
-              style={{ width: '100%', marginTop: '12px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+              style={{ width: '100%', marginTop: '12px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.12em', transition: 'all 0.3s ease' }}
             >
               ← Edit Delivery Details
             </button>
@@ -678,43 +683,43 @@ export default function CheckoutPageInner({
       </div>
 
       {/* Right — Order Summary */}
-      <div className="checkout-aside" style={{ display: 'flex', flexDirection: 'column', gap: '2px', position: 'sticky', top: '80px', height: 'fit-content' }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '24px' }}>
-          <div className="section-label" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>Order Summary</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+      <div className="checkout-aside" style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '80px', height: 'fit-content' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>Order Summary</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {items.map(item => (
-              <div key={`${item.product.id}-${item.warranty?.planSku || 'none'}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+              <div key={`${item.product.id}-${item.warranty?.planSku || 'none'}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--cream)', marginBottom: '2px' }}>{item.product.name}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Qty {item.quantity}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--cream)', marginBottom: '4px' }}>{item.product.name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Qty {item.quantity}</div>
                   {item.warranty && (
-                    <div style={{ fontSize: '10px', color: 'var(--gold)', marginTop: '2px' }}>
-                      🛡️ {item.warranty.planName}
+                    <div style={{ fontSize: '12px', color: 'var(--gold)', marginTop: '4px', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px' }}>🛡️</span> {item.warranty.planName}
                     </div>
                   )}
                 </div>
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--gold-light)', flexShrink: 0 }}>
+                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--gold-light)', flexShrink: 0 }}>
                   {formatPrice((item.product.d2cPrice + (item.warranty?.price || 0)) * item.quantity)}
                 </span>
               </div>
             ))}
           </div>
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              <span>Subtotal (excl. GST)</span><span>{formatPrice(finalSubtotal)}</span>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <span>Subtotal (excl. GST)</span><span style={{ color: 'var(--cream)' }}>{formatPrice(finalSubtotal)}</span>
             </div>
             {appliedCoupon && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gold)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gold)' }}>
                 <span>Promo: {appliedCoupon.code}</span>
                 <span>{appliedCoupon.freeShipping ? 'FREE SHIP' : `- ${formatPrice(appliedCoupon.discountAmount)}`}</span>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              <span>GST (18% Included)</span><span>{formatPrice(gst)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <span>GST (18% Included)</span><span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
               <span>Shipping</span>
-              <span style={{ color: (shipping === 0 || appliedCoupon?.freeShipping) ? 'var(--green)' : 'inherit' }}>
+              <span style={{ color: (shipping === 0 || appliedCoupon?.freeShipping) ? 'var(--green)' : 'var(--cream)', fontWeight: (shipping === 0 || appliedCoupon?.freeShipping) ? 600 : 400 }}>
                 {appliedCoupon?.freeShipping ? 'FREE' : (shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : formatPrice(shipping)))}
               </span>
             </div>
@@ -723,9 +728,9 @@ export default function CheckoutPageInner({
               <div 
                 style={{ 
                   margin: '8px 0', 
-                  padding: '12px 14px', 
+                  padding: '14px 16px', 
                   background: 'rgba(201,168,76,0.06)', 
-                  border: '1px solid rgba(201,168,76,0.3)', 
+                  border: '1px solid rgba(201,168,76,0.2)', 
                   borderRadius: '8px', 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -735,11 +740,11 @@ export default function CheckoutPageInner({
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 600, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    🎉 Shipping Savings!
+                  <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 600, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    ✨ Patron Order Reward!
                   </div>
-                  <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>
-                    You qualify for a stackable discount of <strong>{formatPrice(shippingDiscount)}</strong>.
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>
+                    You qualify for an exclusive reward credit of <strong>{formatPrice(shippingDiscount)}</strong>.
                   </div>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
@@ -747,43 +752,43 @@ export default function CheckoutPageInner({
                     type="checkbox" 
                     checked={applyShippingSavings} 
                     onChange={e => setApplyShippingSavings(e.target.checked)} 
-                    style={{ width: '18px', height: '18px', accentColor: 'var(--gold)', cursor: 'pointer' }}
+                    style={{ width: '20px', height: '20px', accentColor: 'var(--gold)', cursor: 'pointer' }}
                   />
                 </label>
               </div>
             )}
 
             {applyShippingSavings && shippingDiscount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)' }}>
-                <span>Shipping Savings</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)' }}>
+                <span>Patron Reward</span>
                 <span>- {formatPrice(shippingDiscount)}</span>
               </div>
             )}
 
             {bookInstallation && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 <span>UC Installation</span>
-                <span style={{ color: installationFee === 0 ? 'var(--green)' : 'inherit' }}>
+                <span style={{ color: installationFee === 0 ? 'var(--green)' : 'var(--cream)', fontWeight: installationFee === 0 ? 600 : 400 }}>
                   {installationFee === 0 ? 'FREE' : formatPrice(installationFee)}
                 </span>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-serif)', fontSize: '26px', fontWeight: 300, color: 'var(--cream)', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '8px' }}>
               <span>Total</span>
-              <span style={{ color: 'var(--gold-light)' }}>{formatPrice(grandTotal)}</span>
+              <span style={{ color: 'var(--gold)', fontWeight: 400 }}>{formatPrice(grandTotal)}</span>
             </div>
             {etd && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--green)', textAlign: 'right', marginTop: '4px' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--green)', textAlign: 'right', marginTop: '6px', fontWeight: 500 }}>
                 Estimated Delivery: {etd}
               </div>
             )}
           </div>
         </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '16px 20px' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {['GST Invoice Included', 'Heritage Craftsmanship', 'Pan-India Delivery', 'Secure Transit'].map(t => (
-            <div key={t} style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0' }}>
-              <span style={{ color: 'var(--gold)' }}>✓</span>{t}
+            <div key={t} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0' }}>
+              <span style={{ color: 'var(--gold)', fontSize: '12px' }}>✓</span>{t}
             </div>
           ))}
         </div>

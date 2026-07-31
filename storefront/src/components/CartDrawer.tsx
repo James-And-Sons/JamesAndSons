@@ -228,6 +228,7 @@ export default function CartDrawer() {
             <div style={{ display: 'flex', gap: '12px' }}>
               <Link 
                 href="/cart" 
+                className="hidden md:flex"
                 style={{ 
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
                   border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
@@ -239,7 +240,7 @@ export default function CartDrawer() {
               </Link>
 
               <Link 
-                href="/checkout" 
+                href="/checkout"
                 onClick={() => {
                   if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
                     window.trackMetaEvent('InitiateCheckout', {
