@@ -68,15 +68,22 @@ export default function PDPClient({
 
   const handleImageFrameWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (!activeImages || activeImages.length <= 1) return;
-    const now = Date.now();
-    if (now - lastWheelTimeRef.current < 200) return;
 
-    if (e.deltaY > 0 || e.deltaX > 0) {
+    // Filter out micro-scroll drifts and unintentional touches
+    const mainDelta =
+      Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (Math.abs(mainDelta) < 20) return;
+
+    const now = Date.now();
+    // 450ms cooldown prevents trackpad inertial coasting from skipping multiple photos
+    if (now - lastWheelTimeRef.current < 450) return;
+
+    if (mainDelta > 0) {
       if (activeImg < activeImages.length - 1) {
         lastWheelTimeRef.current = now;
         setActiveImg((i) => i + 1);
       }
-    } else if (e.deltaY < 0 || e.deltaX < 0) {
+    } else if (mainDelta < 0) {
       if (activeImg > 0) {
         lastWheelTimeRef.current = now;
         setActiveImg((i) => i - 1);

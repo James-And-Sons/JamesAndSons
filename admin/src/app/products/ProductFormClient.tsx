@@ -406,6 +406,17 @@ export default function ProductFormClient({
     }
   };
 
+  const handleGenerateAltText = async (dataUrl: string): Promise<string> => {
+    const res = await fetch("/api/admin/generate-alt-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Failed to generate alt text");
+    return json.altText as string;
+  };
+
   // activeTab: 'parent' or number (index of active variant)
   const [activeTab, setActiveTab] = useState<"parent" | number>("parent");
 
@@ -3927,6 +3938,7 @@ export default function ProductFormClient({
             setEditingImageUrl(null);
             setEditingImageTarget(null);
           }}
+          onGenerateAltText={handleGenerateAltText}
         />
       )}
     </form>

@@ -7,14 +7,12 @@ interface ActionDropdownProps {
   productId: string;
   sku: string;
   slug: string;
-  onEditImage?: () => void;
 }
 
 export default function ActionDropdown({
   productId,
   sku,
   slug,
-  onEditImage,
 }: ActionDropdownProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -132,19 +130,6 @@ export default function ActionDropdown({
           >
             Edit Product
           </a>
-          {onEditImage && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setIsOpen(false);
-                onEditImage();
-              }}
-              className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-amber-400 hover:bg-surface-muted hover:text-amber-300 border-t border-border/30 transition-colors"
-            >
-              Edit Image ✎
-            </button>
-          )}
           <button
             onClick={(e) => {
               e.stopPropagation();

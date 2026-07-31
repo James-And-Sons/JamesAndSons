@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import ActionDropdown from "@/components/ActionDropdown";
 import SyncButton from "@/components/SyncButton";
 import ClickableRow from "@/components/ClickableRow";
-import { ProductImageEditor } from "@james-andsons/media";
 
 interface ProductItem {
   id: string;
@@ -49,9 +48,6 @@ export default function ProductsTableClient({
   const [chipFilter, setChipFilter] = useState<
     "ALL" | "LOW_STOCK" | "ANOMALY" | "OUT_OF_STOCK"
   >("ALL");
-  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(
-    null,
-  );
 
   useEffect(() => {
     setProductsList(initialProducts);
@@ -61,69 +57,6 @@ export default function ProductsTableClient({
     setSearchTerm(searchParams.get("q") || "");
     setSelectedCategory(searchParams.get("categoryId") || "ALL");
   }, [searchParams]);
-
-  const handleSaveEditedProductImage = async (
-    product: ProductItem,
-    blob: Blob,
-  ) => {
-    try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-      const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
-
-      const timestamp = Math.round(Date.now() / 1000);
-      const paramsToSign = { timestamp, upload_preset: uploadPreset };
-
-      const sigRes = await fetch("/api/sign-cloudinary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paramsToSign }),
-      });
-      const { signature } = await sigRes.json();
-
-      const file = new File([blob], `edited-${product.sku}-${Date.now()}.jpg`, {
-        type: "image/jpeg",
-      });
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("api_key", apiKey!);
-      formData.append("timestamp", String(timestamp));
-      formData.append("signature", signature);
-      formData.append("upload_preset", uploadPreset!);
-
-      const uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: formData },
-      );
-
-      if (!uploadRes.ok) {
-        throw new Error("Cloudinary upload failed");
-      }
-
-      const data = await uploadRes.json();
-      const newImageUrl = data.secure_url;
-      const updatedImages = [newImageUrl, ...(product.images?.slice(1) || [])];
-
-      const patchRes = await fetch(`/api/products/${product.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images: updatedImages }),
-      });
-
-      if (!patchRes.ok) {
-        throw new Error("Database update failed");
-      }
-
-      setProductsList((prev) =>
-        prev.map((p) =>
-          p.id === product.id ? { ...p, images: updatedImages } : p,
-        ),
-      );
-    } catch (err: any) {
-      console.error("Failed to save edited product image:", err);
-      alert(`Failed to save image: ${err.message}`);
-    }
-  };
 
   // Calculate stats for the top summary strip
   const stats = useMemo(() => {
@@ -570,7 +503,7 @@ export default function ProductsTableClient({
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3.5">
-                        <div className="relative group w-10 h-12 bg-background border border-border flex items-center justify-center font-mono text-[8px] text-muted tracking-widest text-center shrink-0 overflow-hidden rounded-sm cursor-pointer">
+                        <div className="relative w-10 h-12 bg-background border border-border flex items-center justify-center font-mono text-[8px] text-muted tracking-widest text-center shrink-0 overflow-hidden rounded-sm">
                           {product.images?.[0] ||
                           product.whiteBackgroundImages?.[0] ? (
                             <img
@@ -584,18 +517,6 @@ export default function ProductsTableClient({
                           ) : (
                             "IMG"
                           )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              setEditingProduct(product);
-                            }}
-                            className="absolute inset-0 bg-black/80 text-amber-400 text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Edit Product Image"
-                          >
-                            ✎ Edit
-                          </button>
                         </div>
                         <div>
                           <div className="font-serif text-[16px] text-primary flex items-center gap-2">
@@ -667,27 +588,11 @@ export default function ProductsTableClient({
                           <span>Edit</span>
                         </Link>
 
-                        {/* Direct Action: EDIT IMAGE */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setEditingProduct(product);
-                          }}
-                          className="px-3 py-1.5 border border-amber-500/40 text-amber-400 hover:bg-amber-500/15 transition-all font-mono text-[10px] uppercase tracking-wider rounded-sm font-semibold flex items-center gap-1 cursor-pointer"
-                          title="Edit Product Image"
-                        >
-                          <span aria-hidden="true">🖼️</span>
-                          <span>Edit Image</span>
-                        </button>
-
                         {/* Secondary Options */}
                         <ActionDropdown
                           productId={product.id}
                           sku={product.sku}
                           slug={product.slug}
-                          onEditImage={() => setEditingProduct(product)}
                         />
                       </div>
                     </td>
@@ -725,7 +630,7 @@ export default function ProductsTableClient({
               >
                 {/* Top: Image + Name + SKU */}
                 <div className="flex items-start gap-3">
-                  <div className="relative group w-12 h-14 bg-background border border-border flex items-center justify-center font-mono text-[9px] text-muted shrink-0 overflow-hidden rounded-sm cursor-pointer">
+                  <div className="relative w-12 h-14 bg-background border border-border flex items-center justify-center font-mono text-[9px] text-muted shrink-0 overflow-hidden rounded-sm">
                     {product.images?.[0] ||
                     product.whiteBackgroundImages?.[0] ? (
                       <img
@@ -739,18 +644,6 @@ export default function ProductsTableClient({
                     ) : (
                       "IMG"
                     )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        setEditingProduct(product);
-                      }}
-                      className="absolute inset-0 bg-black/80 text-amber-400 text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Edit Product Image"
-                    >
-                      ✎ Edit
-                    </button>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="font-serif text-[16px] text-primary m-0 truncate">
@@ -825,19 +718,10 @@ export default function ProductsTableClient({
                     >
                       Edit Product
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => setEditingProduct(product)}
-                      className="px-3 py-2 border border-amber-500/40 text-amber-400 hover:bg-amber-500/15 font-mono text-[10px] uppercase tracking-wider rounded-sm font-bold cursor-pointer min-h-[44px] flex items-center gap-1"
-                    >
-                      <span aria-hidden="true">🖼️</span>
-                      <span>Edit Image</span>
-                    </button>
                     <ActionDropdown
                       productId={product.id}
                       sku={product.sku}
                       slug={product.slug}
-                      onEditImage={() => setEditingProduct(product)}
                     />
                   </div>
                 </div>
@@ -881,23 +765,6 @@ export default function ProductsTableClient({
           </div>
         </div>
       </div>
-
-      {/* Product Image Editor Modal */}
-      {editingProduct && (
-        <ProductImageEditor
-          isOpen={!!editingProduct}
-          imageUrl={
-            editingProduct.images?.[0] ||
-            editingProduct.whiteBackgroundImages?.[0] ||
-            ""
-          }
-          onClose={() => setEditingProduct(null)}
-          onSave={async (blob: Blob) => {
-            await handleSaveEditedProductImage(editingProduct, blob);
-            setEditingProduct(null);
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -1,55 +1,55 @@
-import { prisma } from '../../lib/prisma';
-import { getWalletBalance, getPickupLocations } from '../../lib/shiprocket';
-import LogisticsDashboardClient from './LogisticsDashboardClient';
+import { prisma } from "../../lib/prisma";
+import { getWalletBalance, getPickupLocations } from "../../lib/shiprocket";
+import LogisticsDashboardClient from "./LogisticsDashboardClient";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function LogisticsPage() {
   // Fetch return requests from DB
   const returnRequests = await prisma.returnRequest.findMany({
-    include: { 
-      order: { 
-        include: { 
+    include: {
+      order: {
+        include: {
           user: true,
           items: {
-            include: { product: true }
-          }
-        } 
-      } 
+            include: { product: true },
+          },
+        },
+      },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
   // Fetch orders that are processing or shipped to allow NDR testing
   const activeOrders = await prisma.order.findMany({
     where: {
       status: {
-        in: ['PROCESSING', 'SHIPPED', 'DELIVERED', 'RETURNED']
-      }
+        in: ["PROCESSING", "SHIPPED", "DELIVERED", "RETURNED"],
+      },
     },
     include: { user: true },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: "desc" },
   });
 
   // Fetch from Shiprocket (using safe defaults if API credentials are mock or missing)
   let walletBalance = 0;
   let pickupLocations: any[] = [];
-  let connectionStatus = 'DISCONNECTED';
+  let connectionStatus = "DISCONNECTED";
 
   try {
     const balanceRes = await getWalletBalance();
     if (balanceRes.success) {
-      walletBalance = balanceRes.balance;
-      connectionStatus = 'CONNECTED';
+      walletBalance = balanceRes.balance ?? 0;
+      connectionStatus = "CONNECTED";
     }
-    
+
     const locationsRes = await getPickupLocations();
     if (locationsRes.success) {
       pickupLocations = locationsRes.locations || [];
-      connectionStatus = 'CONNECTED';
+      connectionStatus = "CONNECTED";
     }
   } catch (err) {
-    console.error('Failed to load Shiprocket logistics info:', err);
+    console.error("Failed to load Shiprocket logistics info:", err);
   }
 
   // Format return requests for client components
@@ -60,18 +60,18 @@ export default async function LogisticsPage() {
     customerName: `${r.order.user.firstName} ${r.order.user.lastName}`,
     reason: r.reason,
     status: r.status,
-    adminNote: r.adminNote || '',
-    awbNumber: r.awbNumber || '',
-    shipmentId: r.shipmentId || '',
-    labelUrl: r.labelUrl || '',
-    fulfillmentError: r.fulfillmentError || '',
+    adminNote: r.adminNote || "",
+    awbNumber: r.awbNumber || "",
+    shipmentId: r.shipmentId || "",
+    labelUrl: r.labelUrl || "",
+    fulfillmentError: r.fulfillmentError || "",
     createdAt: r.createdAt,
     items: r.order.items.map((i: any) => ({
       name: i.product.name,
       sku: i.product.sku,
       quantity: i.quantity,
-      price: i.unitPrice
-    }))
+      price: i.unitPrice,
+    })),
   }));
 
   const formattedOrders = activeOrders.map((o: any) => ({
@@ -79,11 +79,11 @@ export default async function LogisticsPage() {
     orderNumber: o.orderNumber,
     customerName: `${o.user.firstName} ${o.user.lastName}`,
     status: o.status,
-    awbNumber: o.awbNumber || '',
-    trackingNumber: o.trackingNumber || '',
-    fulfillmentError: o.fulfillmentError || '',
+    awbNumber: o.awbNumber || "",
+    trackingNumber: o.trackingNumber || "",
+    fulfillmentError: o.fulfillmentError || "",
     shippingAddress: o.shippingAddress,
-    updatedAt: o.updatedAt
+    updatedAt: o.updatedAt,
   }));
 
   return (
@@ -94,14 +94,15 @@ export default async function LogisticsPage() {
           Logistics Control Center
         </h1>
         <p className="font-body text-muted text-[13px] m-0">
-          Manage return shipments, NDR re-attempts, warehouse addresses, and real-time Shiprocket rates.
+          Manage return shipments, NDR re-attempts, warehouse addresses, and
+          real-time Shiprocket rates.
         </p>
       </div>
 
-      <LogisticsDashboardClient 
-        returns={formattedReturns} 
-        orders={formattedOrders} 
-        walletBalance={walletBalance} 
+      <LogisticsDashboardClient
+        returns={formattedReturns}
+        orders={formattedOrders}
+        walletBalance={walletBalance}
         pickupLocations={pickupLocations}
         connectionStatus={connectionStatus}
       />
