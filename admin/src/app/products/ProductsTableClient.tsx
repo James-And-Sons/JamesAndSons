@@ -667,7 +667,20 @@ export default function ProductsTableClient({
                           <span>Edit</span>
                         </Link>
 
-                        {/* Direct Action: SYNC */}
+                        {/* Direct Action: EDIT IMAGE */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setEditingProduct(product);
+                          }}
+                          className="px-3 py-1.5 border border-amber-500/40 text-amber-400 hover:bg-amber-500/15 transition-all font-mono text-[10px] uppercase tracking-wider rounded-sm font-semibold flex items-center gap-1 cursor-pointer"
+                          title="Edit Product Image"
+                        >
+                          <span aria-hidden="true">🖼️</span>
+                          <span>Edit Image</span>
+                        </button>
 
                         {/* Secondary Options */}
                         <ActionDropdown
@@ -812,6 +825,14 @@ export default function ProductsTableClient({
                     >
                       Edit Product
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => setEditingProduct(product)}
+                      className="px-3 py-2 border border-amber-500/40 text-amber-400 hover:bg-amber-500/15 font-mono text-[10px] uppercase tracking-wider rounded-sm font-bold cursor-pointer min-h-[44px] flex items-center gap-1"
+                    >
+                      <span aria-hidden="true">🖼️</span>
+                      <span>Edit Image</span>
+                    </button>
                     <ActionDropdown
                       productId={product.id}
                       sku={product.sku}
