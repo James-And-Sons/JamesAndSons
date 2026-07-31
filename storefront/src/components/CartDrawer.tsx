@@ -8,15 +8,22 @@ import { createPortal } from 'react-dom';
 import { useWishlistStore } from '@/store/wishlist';
 import CouponInput from '@/components/CouponInput';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, total, itemCount, appliedCoupon, discountedTotal } = useCartStore();
   const { toggleItem } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close cart when navigating to another page
+  useEffect(() => {
+    closeCart();
+  }, [pathname, closeCart]);
 
   // Keyboard close
   useEffect(() => {
@@ -67,9 +74,9 @@ export default function CartDrawer() {
   const currentItems = items;
   const currentCount = itemCount();
   const cartTotal = total();
-  const finalSubtotal = discountedTotal();
-  const gst = finalSubtotal * 0.18;
-  const grandTotal = finalSubtotal + gst;
+  const grandTotal = discountedTotal(); // Prices are inclusive of GST
+  const gst = grandTotal - (grandTotal / 1.18);
+  const finalSubtotal = grandTotal - gst;
 
   return createPortal(
     <>
@@ -199,8 +206,8 @@ export default function CartDrawer() {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
-                <span>Subtotal</span>
-                <span style={{ color: 'var(--cream)' }}>{formatPrice(cartTotal)}</span>
+                <span>Subtotal (excl. GST)</span>
+                <span style={{ color: 'var(--cream)' }}>{formatPrice(finalSubtotal)}</span>
               </div>
               {appliedCoupon && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--gold)' }}>
@@ -209,11 +216,11 @@ export default function CartDrawer() {
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
-                <span>GST (18%)</span>
+                <span>GST (18% Included)</span>
                 <span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--cream)', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-                <span>Total</span>
+                <span>Total (incl. GST)</span>
                 <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{formatPrice(grandTotal)}</span>
               </div>
             </div>
@@ -221,10 +228,8 @@ export default function CartDrawer() {
             <div style={{ display: 'flex', gap: '12px' }}>
               <Link 
                 href="/cart" 
-                onClick={closeCart} 
-                className="hidden md:flex"
                 style={{ 
-                  flex: 1, alignItems: 'center', justifyContent: 'center', 
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
                   border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
                   height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
                   letterSpacing: '0.12em', transition: 'all 0.2s' 
@@ -236,7 +241,6 @@ export default function CartDrawer() {
               <Link 
                 href="/checkout" 
                 onClick={() => {
-                  closeCart();
                   if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
                     window.trackMetaEvent('InitiateCheckout', {
                       value: discountedTotal() || total(),

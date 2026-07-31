@@ -32,7 +32,7 @@ export default function ProductGridMobile({ products = [] }: { products: any[] }
                 <div className="mobile-product-name">{product.name}</div>
               </div>
               <div className="mobile-product-footer">
-                <div className="mobile-product-price">₹{product.d2cPrice?.toLocaleString()} <span>+ GST</span></div>
+                <div className="mobile-product-price">₹{product.d2cPrice?.toLocaleString()} <span>incl. GST</span></div>
                 <button className="mobile-add-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addItem(product); }}>
                   <i className="ti ti-plus"></i>
                 </button>

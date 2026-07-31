@@ -68,7 +68,6 @@ export async function syncOrderToZoho(orderId: string) {
   const shippingState = shippingParts.pop() || order.shippingState || '';
   const shippingCity = shippingParts.pop() || order.shippingCity || '';
   const shippingAddr = shippingParts.join(', ') || order.shippingAddress;
-
   const customerId = order.b2bFlag 
     ? (process.env.ZOHO_B2B_CONTACT_ID || '3919589000000083001')
     : (process.env.ZOHO_RETAIL_CONTACT_ID || '3919589000000083001');
@@ -79,7 +78,7 @@ export async function syncOrderToZoho(orderId: string) {
     salesorder_number: order.orderNumber,
     date: new Date(order.createdAt).toISOString().split('T')[0],
     shipment_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    
+    is_inclusive_tax: true,
     custom_fields: [
       { label: "Channel Origin", value: "Storefront Web" },
       { label: "B2B flag", value: String(order.b2bFlag) },

@@ -46,11 +46,12 @@ export default function CartPageClient() {
   if (!mounted) return <div style={{ minHeight: '80vh', background: 'var(--bg)' }} />;
 
   const subtotal = total();
-  const finalSubtotal = discountedTotal();
-  const gst = finalSubtotal * 0.18; // Standard 18% for luxury goods
+  const grandTotalItems = discountedTotal(); // Prices are inclusive of GST
+  const gst = grandTotalItems - (grandTotalItems / 1.18);
+  const finalSubtotal = grandTotalItems - gst; // Base subtotal before GST
   const isShippingCalculated = !!shippingRes?.success;
   const shipping = appliedCoupon?.freeShipping ? 0 : (isShippingCalculated ? shippingRes.rate : (subtotal > 50000 ? 0 : null));
-  const grandTotal = finalSubtotal + gst + (shipping || 0);
+  const grandTotal = grandTotalItems + (shipping || 0);
 
   if (items.length === 0) {
     return (
@@ -183,7 +184,7 @@ export default function CartPageClient() {
               
               <div style={{ padding: '24px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                  <SummaryRow label="Subtotal" value={formatPrice(subtotal)} />
+                  <SummaryRow label="Subtotal (excl. GST)" value={formatPrice(finalSubtotal)} />
                   {appliedCoupon && (
                     <SummaryRow 
                       label={`Promo: ${appliedCoupon.code}`} 
@@ -191,7 +192,7 @@ export default function CartPageClient() {
                       highlight 
                     />
                   )}
-                  <SummaryRow label="GST (18%)" value={formatPrice(gst)} />
+                  <SummaryRow label="GST (18% Included)" value={formatPrice(gst)} />
                   <SummaryRow 
                     label="Shipping" 
                     value={appliedCoupon?.freeShipping ? 'Free' : (shipping === null ? 'At next step' : (shipping === 0 ? 'Complimentary' : formatPrice(shipping)))} 

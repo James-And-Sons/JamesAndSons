@@ -38,8 +38,9 @@ export default function CheckoutPageInner({
   const [bookInstallation, setBookInstallation] = useState<boolean>(false);
 
   const subtotal = total();
-  const finalSubtotal = discountedTotal();
-  const gst = finalSubtotal * 0.18;
+  const grandTotalItems = discountedTotal(); // Prices are inclusive of GST
+  const gst = grandTotalItems - (grandTotalItems / 1.18);
+  const finalSubtotal = grandTotalItems - gst; // Base subtotal before GST
 
   const totalWeight = items.reduce((acc, item) => acc + (item.product.weight || 0.5) * item.quantity, 0);
 
@@ -120,7 +121,7 @@ export default function CheckoutPageInner({
   }, [form.pincode]);
 
   const installationFee = bookInstallation ? (subtotal > 50000 ? 0 : 1499) : 0;
-  const grandTotal = finalSubtotal + gst + (shipping || 0) + installationFee - (applyShippingSavings && shippingDiscount > 0 ? shippingDiscount : 0);
+  const grandTotal = grandTotalItems + (shipping || 0) + installationFee - (applyShippingSavings && shippingDiscount > 0 ? shippingDiscount : 0);
 
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
@@ -700,7 +701,7 @@ export default function CheckoutPageInner({
           </div>
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
+              <span>Subtotal (excl. GST)</span><span>{formatPrice(finalSubtotal)}</span>
             </div>
             {appliedCoupon && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gold)' }}>
@@ -709,7 +710,7 @@ export default function CheckoutPageInner({
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              <span>GST (18%)</span><span>{formatPrice(gst)}</span>
+              <span>GST (18% Included)</span><span>{formatPrice(gst)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
               <span>Shipping</span>
