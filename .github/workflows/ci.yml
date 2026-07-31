@@ -36,6 +36,7 @@ jobs:
           npm run build --workspace=@james-andsons/config
           npm run build --workspace=@james-andsons/db
           npm run build --workspace=@james-andsons/interfaces
+          npm run build --workspace=@james-andsons/media
           npm run build --workspace=@james-andsons/razorpay
           npm run build --workspace=@james-andsons/shiprocket
           npm run build --workspace=@james-andsons/ui

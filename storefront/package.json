@@ -12,6 +12,7 @@
   "dependencies": {
     "@james-andsons/config": "*",
     "@james-andsons/db": "*",
+    "@james-andsons/media": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",
     "@james-andsons/ui": "*",

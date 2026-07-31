@@ -16,6 +16,7 @@
     "@google/generative-ai": "^0.24.1",
     "@james-andsons/config": "*",
     "@james-andsons/db": "*",
+    "@james-andsons/media": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",
     "@james-andsons/ui": "*",

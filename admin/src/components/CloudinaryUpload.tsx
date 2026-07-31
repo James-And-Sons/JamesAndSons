@@ -1,8 +1,9 @@
-'use client';
-import { CldUploadWidget } from 'next-cloudinary';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { pickImageFiles } from '@/lib/fileSystemAccess';
+"use client";
+import { CldUploadWidget } from "next-cloudinary";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { pickImageFiles } from "@/lib/fileSystemAccess";
+import { ProductImageEditor } from "@james-andsons/media";
 
 interface CloudinaryUploadProps {
   onUpload: (urls: string[]) => void;
@@ -15,16 +16,18 @@ export default function CloudinaryUpload({
   onUpload,
   defaultImages = [],
   multiple = false,
-  label = "Upload Image"
+  label = "Upload Image",
 }: CloudinaryUploadProps) {
   const [images, setImages] = useState<string[]>(defaultImages);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [hasFSA, setHasFSA] = useState(false);
+  const [editingUrl, setEditingUrl] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number>(-1);
 
   // Detect File System Access API support (Chrome desktop)
   useEffect(() => {
-    setHasFSA(typeof window !== 'undefined' && 'showOpenFilePicker' in window);
+    setHasFSA(typeof window !== "undefined" && "showOpenFilePicker" in window);
   }, []);
 
   // Sync state if defaultImages changes (e.g., when switching active variant)
@@ -35,20 +38,59 @@ export default function CloudinaryUpload({
   }, [defaultImages]);
 
   const handleClose = () => {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
   };
 
   const handleUpload = (result: any) => {
-    if (result.event === 'success') {
+    if (result.event === "success") {
       const url = result.info.secure_url;
       const newImages = multiple ? [...images, url] : [url];
       setImages(newImages);
       onUpload(newImages);
     }
     handleClose();
+  };
+
+  const handleSaveEditedImage = async (blob: Blob, indexToReplace: number) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+
+    const timestamp = Math.round(Date.now() / 1000);
+    const paramsToSign = { timestamp, upload_preset: uploadPreset };
+
+    const sigRes = await fetch("/api/sign-cloudinary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paramsToSign }),
+    });
+    const { signature } = await sigRes.json();
+
+    const file = new File([blob], `edited-${Date.now()}.jpg`, {
+      type: "image/jpeg",
+    });
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", apiKey!);
+    formData.append("timestamp", String(timestamp));
+    formData.append("signature", signature);
+    formData.append("upload_preset", uploadPreset!);
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: formData },
+    );
+
+    if (uploadRes.ok) {
+      const data = await uploadRes.json();
+      const newImages = [...images];
+      newImages[indexToReplace] = data.secure_url;
+      setImages(newImages);
+      onUpload(newImages);
+    }
   };
 
   /**
@@ -75,24 +117,24 @@ export default function CloudinaryUpload({
       const timestamp = Math.round(Date.now() / 1000);
       const paramsToSign = { timestamp, upload_preset: uploadPreset };
 
-      const sigRes = await fetch('/api/sign-cloudinary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const sigRes = await fetch("/api/sign-cloudinary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paramsToSign }),
       });
       const { signature } = await sigRes.json();
 
       // Upload directly to Cloudinary
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', apiKey!);
-      formData.append('timestamp', String(timestamp));
-      formData.append('signature', signature);
-      formData.append('upload_preset', uploadPreset!);
+      formData.append("file", file);
+      formData.append("api_key", apiKey!);
+      formData.append("timestamp", String(timestamp));
+      formData.append("signature", signature);
+      formData.append("upload_preset", uploadPreset!);
 
       const uploadRes = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: 'POST', body: formData }
+        { method: "POST", body: formData },
       );
 
       if (uploadRes.ok) {
@@ -103,7 +145,9 @@ export default function CloudinaryUpload({
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
 
-    const newImages = multiple ? [...images, ...uploadedUrls] : uploadedUrls.slice(-1);
+    const newImages = multiple
+      ? [...images, ...uploadedUrls]
+      : uploadedUrls.slice(-1);
     setImages(newImages);
     onUpload(newImages);
     setUploading(false);
@@ -111,22 +155,25 @@ export default function CloudinaryUpload({
   };
 
   const removeImage = async (urlToRemove: string) => {
-    const newImages = images.filter(url => url !== urlToRemove);
+    const newImages = images.filter((url) => url !== urlToRemove);
     setImages(newImages);
     onUpload(newImages);
 
     // Trigger deletion from Cloudinary in the background
     try {
-      const res = await fetch('/api/cloudinary/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlToRemove })
+      const res = await fetch("/api/cloudinary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlToRemove }),
       });
       if (!res.ok) {
-        console.error('Failed to delete image from Cloudinary:', await res.text());
+        console.error(
+          "Failed to delete image from Cloudinary:",
+          await res.text(),
+        );
       }
     } catch (err) {
-      console.error('Failed to delete image from Cloudinary:', err);
+      console.error("Failed to delete image from Cloudinary:", err);
     }
   };
 
@@ -147,7 +194,10 @@ export default function CloudinaryUpload({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
         {images.map((url, idx) => (
-          <div key={idx} className="relative w-24 h-24 border border-border group overflow-hidden">
+          <div
+            key={idx}
+            className="relative w-24 h-24 border border-border group overflow-hidden rounded-md"
+          >
             <Image
               src={url}
               alt="Uploaded product"
@@ -155,6 +205,19 @@ export default function CloudinaryUpload({
               sizes="96px"
               className="object-cover"
             />
+            {/* Edit button */}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingUrl(url);
+                setEditingIndex(idx);
+              }}
+              className="absolute top-1 left-1 bg-black/80 text-amber-400 hover:text-amber-300 rounded px-1.5 py-0.5 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              title="Edit image (Crop, Rotate, Adjust)"
+            >
+              ✎ Edit
+            </button>
+
             {/* Delete button */}
             <button
               type="button"
@@ -177,7 +240,9 @@ export default function CloudinaryUpload({
                 >
                   ←
                 </button>
-                <span className="text-[8px] font-mono text-muted">{idx + 1}</span>
+                <span className="text-[8px] font-mono text-muted">
+                  {idx + 1}
+                </span>
                 <button
                   type="button"
                   disabled={idx === images.length - 1}
@@ -198,11 +263,13 @@ export default function CloudinaryUpload({
             type="button"
             onClick={handleNativePick}
             disabled={uploading}
-            className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest disabled:opacity-50 relative overflow-hidden"
+            className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest disabled:opacity-50 relative overflow-hidden rounded-md"
           >
             {uploading ? (
               <>
-                <span className="text-[11px] text-accent font-mono">{uploadProgress}%</span>
+                <span className="text-[11px] text-accent font-mono">
+                  {uploadProgress}%
+                </span>
                 <div
                   className="absolute bottom-0 left-0 h-[2px] bg-accent transition-all"
                   style={{ width: `${uploadProgress}%` }}
@@ -224,7 +291,7 @@ export default function CloudinaryUpload({
             uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
             options={{
               multiple: multiple,
-              apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY
+              apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
             }}
             onSuccess={handleUpload}
             onClose={handleClose}
@@ -233,7 +300,7 @@ export default function CloudinaryUpload({
               <button
                 type="button"
                 onClick={() => open()}
-                className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest"
+                className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest rounded-md"
               >
                 <span className="text-xl">+</span>
                 {label}
@@ -245,6 +312,23 @@ export default function CloudinaryUpload({
 
       {images.length === 0 && !multiple && (
         <p className="text-[11px] text-muted italic">No image uploaded yet.</p>
+      )}
+
+      {/* Product Image Editor Modal */}
+      {editingUrl && editingIndex >= 0 && (
+        <ProductImageEditor
+          isOpen={!!editingUrl}
+          imageUrl={editingUrl}
+          onClose={() => {
+            setEditingUrl(null);
+            setEditingIndex(-1);
+          }}
+          onSave={async (blob: Blob) => {
+            await handleSaveEditedImage(blob, editingIndex);
+            setEditingUrl(null);
+            setEditingIndex(-1);
+          }}
+        />
       )}
     </div>
   );

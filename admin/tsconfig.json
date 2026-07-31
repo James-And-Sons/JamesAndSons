@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@james-andsons/media": ["../packages/media/src/index.ts"]
     }
   },
   "include": [
