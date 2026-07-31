@@ -28,6 +28,10 @@
   --font-base: 16px;
 }
 
+html {
+  background: var(--obsidian);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -880,9 +884,14 @@ body {
   }
 }
 
-
-
-
+.cart-drawer-view-cart-btn {
+  display: none !important;
+}
+@media (min-width: 768px) {
+  .cart-drawer-view-cart-btn {
+    display: flex !important;
+  }
+}
 
 
 

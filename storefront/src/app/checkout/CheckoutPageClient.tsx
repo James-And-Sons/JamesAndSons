@@ -4,7 +4,7 @@ import { getCookie } from 'cookies-next';
 import { useCartStore } from '@/store/cart';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, renderPrice } from '@/lib/utils';
 
 export default function CheckoutPageInner({ 
   initialData 
@@ -146,11 +146,7 @@ export default function CheckoutPageInner({
           }
           setShipping(res.rate);
           setShippingDiscount(res.shippingDiscount || 0);
-          if (res.shippingDiscount > 0) {
-            setApplyShippingSavings(true);
-          } else {
-            setApplyShippingSavings(false);
-          }
+          setApplyShippingSavings(false);
           setShippingCalculated(true);
           if (res.etd) setEtd(res.etd);
           setLastPincode(form.pincode);
@@ -514,11 +510,7 @@ export default function CheckoutPageInner({
                     if (rateData) {
                       setShipping(rateData.rate);
                       setShippingDiscount(rateData.shippingDiscount || 0);
-                      if (rateData.shippingDiscount > 0) {
-                        setApplyShippingSavings(true);
-                      } else {
-                        setApplyShippingSavings(false);
-                      }
+                      setApplyShippingSavings(false);
                       setEtd(rateData.etd);
                       setShippingCalculated(true);
                     } else {
@@ -699,28 +691,28 @@ export default function CheckoutPageInner({
                   )}
                 </div>
                 <span style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--gold-light)', flexShrink: 0 }}>
-                  {formatPrice((item.product.d2cPrice + (item.warranty?.price || 0)) * item.quantity)}
+                  {renderPrice((item.product.d2cPrice + (item.warranty?.price || 0)) * item.quantity)}
                 </span>
               </div>
             ))}
           </div>
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              <span>Subtotal (excl. GST)</span><span style={{ color: 'var(--cream)' }}>{formatPrice(finalSubtotal)}</span>
+              <span>Subtotal (excl. GST)</span><span style={{ color: 'var(--cream)' }}>{renderPrice(finalSubtotal)}</span>
             </div>
             {appliedCoupon && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--gold)' }}>
                 <span>Promo: {appliedCoupon.code}</span>
-                <span>{appliedCoupon.freeShipping ? 'FREE SHIP' : `- ${formatPrice(appliedCoupon.discountAmount)}`}</span>
+                <span>{appliedCoupon.freeShipping ? 'FREE SHIP' : <>- {renderPrice(appliedCoupon.discountAmount)}</>}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              <span>GST (18% Included)</span><span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
+              <span>GST (18% Included)</span><span style={{ color: 'var(--cream)' }}>{renderPrice(gst)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
               <span>Shipping</span>
               <span style={{ color: (shipping === 0 || appliedCoupon?.freeShipping) ? 'var(--green)' : 'var(--cream)', fontWeight: (shipping === 0 || appliedCoupon?.freeShipping) ? 600 : 400 }}>
-                {appliedCoupon?.freeShipping ? 'FREE' : (shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : formatPrice(shipping)))}
+                {appliedCoupon?.freeShipping ? 'FREE' : (shipping === null ? (subtotal > 50000 ? 'FREE' : 'Calculated next') : (shipping === 0 ? 'FREE' : renderPrice(shipping)))}
               </span>
             </div>
 
@@ -729,39 +721,76 @@ export default function CheckoutPageInner({
                 style={{ 
                   margin: '8px 0', 
                   padding: '14px 16px', 
-                  background: 'rgba(201,168,76,0.06)', 
-                  border: '1px solid rgba(201,168,76,0.2)', 
+                  background: applyShippingSavings ? 'rgba(90,196,122,0.06)' : 'rgba(201,168,76,0.06)', 
+                  border: applyShippingSavings ? '1px solid rgba(90,196,122,0.2)' : '1px solid rgba(201,168,76,0.2)', 
                   borderRadius: '8px', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'space-between',
-                  gap: '8px',
+                  gap: '12px',
                   boxSizing: 'border-box'
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '12px', color: 'var(--gold)', fontWeight: 600, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    ✨ Patron Order Reward!
+                  <div style={{ fontSize: '11px', color: applyShippingSavings ? 'var(--green)' : 'var(--gold)', fontWeight: 600, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {applyShippingSavings ? '✓ Special Discount Applied' : '✨ Special Discount Available'}
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.3 }}>
-                    You qualify for an exclusive reward credit of <strong>{formatPrice(shippingDiscount)}</strong>.
+                  <div style={{ fontSize: '12px', color: 'var(--cream)', marginTop: '2px', lineHeight: 1.3, fontFamily: 'var(--font-serif)' }}>
+                    {applyShippingSavings ? (
+                      <>You saved <strong>{formatPrice(shippingDiscount)}</strong> on this order.</>
+                    ) : (
+                      <>You have a special discount of <strong>{formatPrice(shippingDiscount)}</strong>.</>
+                    )}
                   </div>
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    checked={applyShippingSavings} 
-                    onChange={e => setApplyShippingSavings(e.target.checked)} 
-                    style={{ width: '20px', height: '20px', accentColor: 'var(--gold)', cursor: 'pointer' }}
-                  />
-                </label>
+                {applyShippingSavings ? (
+                  <button
+                    type="button"
+                    onClick={() => setApplyShippingSavings(false)}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '11px',
+                      background: 'rgba(255, 90, 90, 0.1)',
+                      color: 'var(--red)',
+                      border: '1px solid rgba(255, 90, 90, 0.2)',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      letterSpacing: '0.05em',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    REMOVE
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setApplyShippingSavings(true)}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '11px',
+                      background: 'var(--gold)',
+                      color: 'var(--obsidian)',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-mono)',
+                      letterSpacing: '0.05em',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    APPLY
+                  </button>
+                )}
               </div>
             )}
 
             {applyShippingSavings && shippingDiscount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)' }}>
-                <span>Patron Reward</span>
-                <span>- {formatPrice(shippingDiscount)}</span>
+                <span>Special Discount</span>
+                <span>- {renderPrice(shippingDiscount)}</span>
               </div>
             )}
 
@@ -769,14 +798,14 @@ export default function CheckoutPageInner({
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 <span>UC Installation</span>
                 <span style={{ color: installationFee === 0 ? 'var(--green)' : 'var(--cream)', fontWeight: installationFee === 0 ? 600 : 400 }}>
-                  {installationFee === 0 ? 'FREE' : formatPrice(installationFee)}
+                  {installationFee === 0 ? 'FREE' : renderPrice(installationFee)}
                 </span>
               </div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-serif)', fontSize: '26px', fontWeight: 300, color: 'var(--cream)', paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '8px' }}>
               <span>Total</span>
-              <span style={{ color: 'var(--gold)', fontWeight: 400 }}>{formatPrice(grandTotal)}</span>
+              <span style={{ color: 'var(--gold)', fontWeight: 400 }}>{renderPrice(grandTotal)}</span>
             </div>
             {etd && (
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--green)', textAlign: 'right', marginTop: '6px', fontWeight: 500 }}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCartStore } from '@/store/cart';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, renderPrice } from '@/lib/utils';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -165,12 +165,12 @@ export default function CartDrawer() {
                     <div>
                       <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--cream)', margin: '0 0 2px', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.product.name}</h3>
                       <div style={{ fontSize: '13px', color: 'var(--gold-light)', opacity: 0.9 }}>
-                        {formatPrice(item.product.d2cPrice)}
+                        {renderPrice(item.product.d2cPrice)}
                       </div>
                       {item.warranty && (
                         <div style={{ fontSize: '11px', color: 'var(--gold)', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <i className="ti ti-shield-check" style={{ fontSize: '13px' }}></i>
-                          <span>{item.warranty.planName} (+{formatPrice(item.warranty.price)})</span>
+                          <span>{item.warranty.planName} (+{renderPrice(item.warranty.price)})</span>
                         </div>
                       )}
                     </div>
@@ -203,37 +203,35 @@ export default function CartDrawer() {
             <div style={{ marginBottom: '24px' }}>
               <CouponInput />
             </div>
-            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
                 <span>Subtotal (excl. GST)</span>
-                <span style={{ color: 'var(--cream)' }}>{formatPrice(finalSubtotal)}</span>
+                <span style={{ color: 'var(--cream)' }}>{renderPrice(finalSubtotal)}</span>
               </div>
               {appliedCoupon && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--gold)' }}>
                   <span>Promo: {appliedCoupon.code}</span>
-                  <span>{appliedCoupon.freeShipping ? 'Free' : `- ${formatPrice(appliedCoupon.discountAmount)}`}</span>
+                  <span>{appliedCoupon.freeShipping ? 'Free' : <>- {renderPrice(appliedCoupon.discountAmount)}</>}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
                 <span>GST (18% Included)</span>
-                <span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
+                <span style={{ color: 'var(--cream)' }}>{renderPrice(gst)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--cream)', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
                 <span>Total (incl. GST)</span>
-                <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{formatPrice(grandTotal)}</span>
+                <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{renderPrice(grandTotal)}</span>
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '12px' }}>
               <Link 
                 href="/cart" 
-                className="hidden md:flex"
+                className="cart-drawer-view-cart-btn"
                 style={{ 
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  flex: 1, alignItems: 'center', justifyContent: 'center', 
                   border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
                   height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
-                  letterSpacing: '0.12em', transition: 'all 0.2s' 
+                  letterSpacing: '0.12em', transition: 'all 0.2s'
                 }}
               >
                 VIEW CART

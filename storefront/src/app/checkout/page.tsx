@@ -28,7 +28,7 @@ export default async function CheckoutPage() {
   const initialData = {
     name: dbUser ? `${dbUser.firstName} ${dbUser.lastName}`.trim() : '',
     email: dbUser?.email || user.email || '',
-    phone: dbUser?.phone || '',
+    phone: dbUser?.phone || defaultAddr?.phone || '',
     pincode: defaultAddr?.pincode || dbUser?.lastPincode || '',
     address: defaultAddr?.street || '',
     city: defaultAddr?.city || '',
