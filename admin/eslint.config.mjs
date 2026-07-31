@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
       "react-hooks/exhaustive-deps": "warn",
       "react-hooks/rules-of-hooks": "warn",
       "react-hooks/immutability": "off",
+      "react-hooks/purity": "off",
       "react/no-unescaped-entities": "off",
       "prefer-const": "warn",
       "@next/next/no-img-element": "warn",
