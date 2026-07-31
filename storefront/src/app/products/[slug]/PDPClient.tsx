@@ -994,6 +994,12 @@ export default function PDPClient({
               cursor: activeImages.length > 0 ? "zoom-in" : "default",
             }}
           >
+            {/* Top-Right Tap to Zoom Helper Badge */}
+            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md text-white/90 font-mono text-[10px] tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/20 shadow-lg pointer-events-none z-10">
+              <i className="ti ti-zoom-in text-xs text-[var(--gold)]" />
+              <span>Tap to zoom</span>
+            </div>
+
             {activeImages.length > 0 && activeImages[activeImg] ? (
               <AdaptiveImageFrame
                 src={activeImages[activeImg]}
@@ -1021,6 +1027,7 @@ export default function PDPClient({
               </div>
             )}
 
+            {/* Mobile Image Helper Navigation Arrows */}
             {activeImages.length > 1 && (
               <>
                 <button
@@ -1030,25 +1037,28 @@ export default function PDPClient({
                   }}
                   style={{
                     position: "absolute",
-                    left: "12px",
+                    left: "10px",
                     top: "50%",
                     transform: "translateY(-50%)",
-                    width: "32px",
-                    height: "32px",
+                    width: "36px",
+                    height: "36px",
                     borderRadius: "50%",
-                    background: "rgba(0,0,0,0.55)",
-                    border: "none",
+                    background: "rgba(0,0,0,0.7)",
+                    backdropFilter: "blur(6px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
                     color: "#fff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
+                    zIndex: 10,
                     opacity: activeImg === 0 ? 0.3 : 1,
                   }}
+                  aria-label="Previous product image"
                 >
                   <i
                     className="ti ti-chevron-left"
-                    style={{ fontSize: "16px" }}
+                    style={{ fontSize: "18px" }}
                   ></i>
                 </button>
                 <button
@@ -1060,35 +1070,41 @@ export default function PDPClient({
                   }}
                   style={{
                     position: "absolute",
-                    right: "12px",
+                    right: "10px",
                     top: "50%",
                     transform: "translateY(-50%)",
-                    width: "32px",
-                    height: "32px",
+                    width: "36px",
+                    height: "36px",
                     borderRadius: "50%",
-                    background: "rgba(0,0,0,0.55)",
-                    border: "none",
+                    background: "rgba(0,0,0,0.7)",
+                    backdropFilter: "blur(6px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
                     color: "#fff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
+                    zIndex: 10,
                     opacity: activeImg === activeImages.length - 1 ? 0.3 : 1,
                   }}
+                  aria-label="Next product image"
                 >
                   <i
                     className="ti ti-chevron-right"
-                    style={{ fontSize: "16px" }}
+                    style={{ fontSize: "18px" }}
                   ></i>
                 </button>
+
+                {/* Mobile Dots Indicator */}
                 <div
                   style={{
                     position: "absolute",
-                    bottom: "14px",
+                    bottom: "12px",
                     left: "50%",
                     transform: "translateX(-50%)",
                     display: "flex",
                     gap: "6px",
+                    zIndex: 10,
                   }}
                 >
                   {activeImages.map((_: any, i: number) => (
@@ -1099,13 +1115,13 @@ export default function PDPClient({
                         setActiveImg(i);
                       }}
                       style={{
-                        width: i === activeImg ? "16px" : "6px",
+                        width: i === activeImg ? "18px" : "6px",
                         height: "6px",
                         borderRadius: i === activeImg ? "3px" : "50%",
                         background:
                           i === activeImg
                             ? "var(--gold)"
-                            : "rgba(255,255,255,0.5)",
+                            : "rgba(255,255,255,0.6)",
                         transition: "all 0.3s ease",
                         cursor: "pointer",
                       }}
@@ -1115,6 +1131,38 @@ export default function PDPClient({
               </>
             )}
           </div>
+
+          {/* Mobile Thumbnail Strip Helper Icons */}
+          {activeImages.length > 1 && (
+            <div
+              className="flex items-center gap-2.5 overflow-x-auto py-3 px-6 no-scrollbar"
+              style={{
+                width: "85%",
+                margin: "8px auto 0",
+              }}
+            >
+              {activeImages.map((imgUrl: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImg(idx)}
+                  className={`relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border transition-all cursor-pointer ${
+                    idx === activeImg
+                      ? "border-[var(--gold)] ring-2 ring-[var(--gold)]/30 scale-105"
+                      : "border-[var(--border)] opacity-60 hover:opacity-100"
+                  }`}
+                  aria-label={`View photo ${idx + 1}`}
+                >
+                  <Image
+                    src={imgUrl}
+                    alt={`${product.name} thumbnail ${idx + 1}`}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Product Info Header */}
           <div style={{ padding: "20px 24px 0" }}>
