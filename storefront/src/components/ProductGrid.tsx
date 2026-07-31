@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { formatPrice, Product } from "@/lib/utils";
 import Link from "next/link";
 import { useCartStore } from "@/store/cart";
+import Image from "next/image";
 import { AdaptiveImageFrame } from "@james-andsons/media";
 import InquiryModal from "./InquiryModal";
 import FilterPanel from "./FilterPanel";
@@ -726,57 +727,65 @@ export default function ProductGrid({
                   </button>
                 </div>
 
-                {thumbnail ? (
-                  <AdaptiveImageFrame
-                    src={thumbnail}
-                    alt={product.name}
-                    objectFit="cover"
-                    className="product-img"
-                    style={{ borderRadius: "16px 16px 0 0" }}
-                  />
-                ) : (
-                  <div className="product-img" style={{ position: "relative" }}>
-                    <div className="product-img-bg" />
-                    <div
+                <div className="product-img" style={{ position: "relative" }}>
+                  <div className="product-img-bg" />
+
+                  {/* Placeholder SVG */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 0,
+                    }}
+                  >
+                    <svg
+                      className="prod-chandelier-svg"
+                      width="120"
+                      height="150"
+                      viewBox="0 0 100 120"
+                      stroke="#C4A05A"
+                      fill="none"
+                      style={{ opacity: 0.3 }}
+                    >
+                      <path
+                        d="M50 10 L50 40"
+                        strokeWidth="1"
+                        strokeDasharray="3 3"
+                      />
+                      <path
+                        d="M20 70 Q50 30 80 70"
+                        strokeWidth="2"
+                        opacity="0.7"
+                      />
+                      <circle
+                        cx="50"
+                        cy="95"
+                        r="4"
+                        fill="#F5E9C8"
+                        stroke="none"
+                      />
+                    </svg>
+                  </div>
+
+                  {thumbnail ? (
+                    <Image
+                      src={thumbnail}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 1024px) 33vw, 25vw"
+                      className="prod-actual-img"
                       style={{
+                        objectFit: "cover",
                         position: "absolute",
                         inset: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        zIndex: 0,
+                        zIndex: 1,
                       }}
-                    >
-                      <svg
-                        className="prod-chandelier-svg"
-                        width="120"
-                        height="150"
-                        viewBox="0 0 100 120"
-                        stroke="#C4A05A"
-                        fill="none"
-                        style={{ opacity: 0.3 }}
-                      >
-                        <path
-                          d="M50 10 L50 40"
-                          strokeWidth="1"
-                          strokeDasharray="3 3"
-                        />
-                        <path
-                          d="M20 70 Q50 30 80 70"
-                          strokeWidth="2"
-                          opacity="0.7"
-                        />
-                        <circle
-                          cx="50"
-                          cy="95"
-                          r="4"
-                          fill="#F5E9C8"
-                          stroke="none"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                )}
+                    />
+                  ) : null}
+                </div>
 
                 <div
                   className="product-info"
