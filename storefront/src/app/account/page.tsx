@@ -123,18 +123,21 @@ export default async function AccountPage() {
           <div style={{ padding: '24px 16px 0' }}>
             <div style={{ fontSize: '12px', color: 'var(--gold)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Recent Orders</div>
             {orders.length > 0 ? (
-              <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', padding: '16px' }}>
+              <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '20px', overflow: 'hidden' }}>
                 {orders.map((order, i) => (
-                  <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: i === orders.length - 1 ? 'none' : '0.5px dashed var(--border)' }}>
+                  <Link key={order.id} href={`/account/orders/${order.orderNumber}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', textDecoration: 'none', borderBottom: i === orders.length - 1 ? 'none' : '0.5px dashed var(--border)', transition: 'background 0.2s' }}>
                     <div>
                       <div style={{ fontSize: '13px', color: 'var(--cream)', fontWeight: 500 }}>{order.orderNumber}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(order.createdAt).toLocaleDateString()}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '14px', color: 'var(--gold-light)' }}>₹{order.totalAmount.toLocaleString()}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--green)', textTransform: 'uppercase', marginTop: '2px' }}>{order.status}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', color: 'var(--gold-light)' }}>₹{order.totalAmount.toLocaleString()}</div>
+                        <div style={{ fontSize: '11px', color: order.status === 'DELIVERED' ? 'var(--green)' : 'var(--gold)', textTransform: 'uppercase', marginTop: '2px' }}>{order.status}</div>
+                      </div>
+                      <i className="ti ti-chevron-right" style={{ fontSize: '14px', color: 'var(--border)' }}></i>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -285,18 +288,21 @@ export default async function AccountPage() {
                 {orders.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {orders.map(order => (
-                      <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                      <Link key={order.id} href={`/account/orders/${order.orderNumber}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)', textDecoration: 'none' }}>
                         <div>
                           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{order.orderNumber}</div>
                           <div style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--cream)', marginTop: '4px' }}>
-                            {new Date(order.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} • {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--gold-light)' }}>₹{order.totalAmount.toLocaleString('en-IN')}</div>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: order.status === 'DELIVERED' ? 'var(--green)' : 'var(--accent)', marginTop: '4px', textTransform: 'uppercase' }}>{order.status}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', color: 'var(--gold-light)' }}>₹{order.totalAmount.toLocaleString('en-IN')}</div>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: order.status === 'DELIVERED' ? 'var(--green)' : 'var(--accent)', marginTop: '4px', textTransform: 'uppercase' }}>{order.status}</div>
+                          </div>
+                          <i className="ti ti-chevron-right" style={{ color: 'var(--border)', fontSize: '14px' }}></i>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                     <Link href="/account/orders" style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)', textDecoration: 'none', textAlign: 'center', marginTop: '10px' }}>
                       View All Orders →

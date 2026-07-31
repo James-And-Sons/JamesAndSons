@@ -110,7 +110,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
     <section className="section" id="collections" style={{ padding: 0 }}>
       {/* Mobile Layout */}
       <div className="md:hidden">
-        <div className="mobile-section-intro">
+        <div style={{ padding: '8px 12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <div className="section-label" style={{ marginBottom: '2px' }}>{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
             <div className="section-title" style={{ fontSize: '22px' }}>

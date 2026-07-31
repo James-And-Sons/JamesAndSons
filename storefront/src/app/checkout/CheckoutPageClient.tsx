@@ -381,10 +381,17 @@ export default function CheckoutPageInner({
       </div>
     );
   }
-
   return (
-    <div className="checkout-layout">
-
+    <div 
+      className="checkout-layout"
+      style={{
+        gridTemplateColumns: step === 1 ? '1fr' : undefined,
+        maxWidth: step === 1 ? '850px' : undefined,
+        margin: step === 1 ? '0 auto' : undefined,
+        paddingLeft: step === 1 ? '20px' : undefined,
+        paddingRight: step === 1 ? '20px' : undefined
+      }}
+    >
       {/* Left — steps */}
       <div className="checkout-main" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
 
@@ -708,8 +715,9 @@ export default function CheckoutPageInner({
       </div>
 
       {/* Right — Order Summary */}
-      <div className="checkout-aside" style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '80px', height: 'fit-content' }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {step === 2 && (
+        <div className="checkout-aside" style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'sticky', top: '80px', height: 'fit-content' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>Order Summary</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {items.map(item => (
@@ -855,6 +863,7 @@ export default function CheckoutPageInner({
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
