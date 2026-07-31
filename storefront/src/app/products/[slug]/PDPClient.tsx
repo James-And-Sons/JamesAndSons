@@ -2277,20 +2277,35 @@ export default function PDPClient({
                     onMouseMove={handleMouseMoveFrame}
                   >
                     {activeImages.length > 0 && activeImages[activeImg] ? (
-                      <div
-                        className="w-full h-full transition-transform duration-150 ease-out"
-                        style={{
-                          transform: isHovered ? "scale(2.2)" : "scale(1)",
-                          transformOrigin: `${hoverPos.x}% ${hoverPos.y}%`,
-                        }}
-                      >
-                        <AdaptiveImageFrame
+                      activeImages[activeImg].toLowerCase().includes(".mp4") ||
+                      activeImages[activeImg].toLowerCase().includes(".webm") ||
+                      activeImages[activeImg]
+                        .toLowerCase()
+                        .includes("/video/upload/") ? (
+                        <video
                           src={activeImages[activeImg]}
-                          alt={`${product.name} - view ${activeImg + 1}`}
-                          objectFit="cover"
-                          priority={activeImg === 0}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover rounded-2xl"
                         />
-                      </div>
+                      ) : (
+                        <div
+                          className="w-full h-full transition-transform duration-150 ease-out"
+                          style={{
+                            transform: isHovered ? "scale(2.2)" : "scale(1)",
+                            transformOrigin: `${hoverPos.x}% ${hoverPos.y}%`,
+                          }}
+                        >
+                          <AdaptiveImageFrame
+                            src={activeImages[activeImg]}
+                            alt={`${product.name} - view ${activeImg + 1}`}
+                            objectFit="cover"
+                            priority={activeImg === 0}
+                          />
+                        </div>
+                      )
                     ) : (
                       <div
                         style={{

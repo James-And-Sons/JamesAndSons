@@ -211,3 +211,30 @@ export async function processCanvasImage(
 
   return { blob, dataUrl };
 }
+
+/**
+ * Injects Cloudinary optimization transformations (f_auto, q_auto, w_X)
+ * into Cloudinary URLs to reduce payload sizes and boost load speed.
+ */
+export function getOptimizedCloudinaryUrl(
+  url: string,
+  options: {
+    width?: number;
+    height?: number;
+    crop?: "limit" | "fill" | "fit" | "thumb";
+    quality?: string;
+  } = {},
+): string {
+  if (!url || typeof url !== "string") return url;
+  if (!url.includes("res.cloudinary.com") || url.includes("f_auto")) return url;
+
+  const width = options.width || 800;
+  const crop = options.crop || "limit";
+  const quality = options.quality || "auto";
+  const transformStr = `f_auto,q_${quality},w_${width},c_${crop}`;
+
+  if (url.includes("/upload/")) {
+    return url.replace("/upload/", `/upload/${transformStr}/`);
+  }
+  return url;
+}

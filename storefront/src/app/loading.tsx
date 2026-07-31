@@ -1,38 +1,36 @@
-'use client'
+"use client";
 
 import React from "react";
 
 export default function Loading() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full bg-transparent">
-      <div className="relative w-24 h-24">
-        {/* Outer Ring */}
-        <div className="absolute inset-0 border-t-2 border-r-2 border-[#D4AF37] rounded-full animate-spin"></div>
-        
-        {/* Inner Pulsing Circle */}
-        <div className="absolute inset-4 border border-[#B8860B]/30 rounded-full animate-pulse flex items-center justify-center">
-            <span className="text-[#D4AF37] font-serif text-xl italic font-light tracking-widest ml-1">J&S</span>
-        </div>
-      </div>
-      
-      <div className="mt-8 text-center">
-        <h2 className="text-[#D4AF37] font-serif text-2xl tracking-[0.2em] uppercase font-light animate-pulse">
-          Illuminating
-        </h2>
-        <p className="text-secondary/60 font-mono text-[10px] mt-2 tracking-[0.3em] uppercase">
-          Curating Your Brilliance
-        </p>
+    <div className="w-full min-h-[70vh] px-6 py-12 max-w-7xl mx-auto space-y-12 animate-in fade-in duration-300">
+      {/* Top Floating Soft Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#C4A05A] to-transparent z-[99999] animate-pulse" />
+
+      {/* Hero / Header Skeleton Shimmer */}
+      <div className="space-y-4">
+        <div className="h-4 w-32 bg-white/5 rounded-full animate-pulse" />
+        <div className="h-10 w-3/4 max-w-md bg-white/10 rounded-lg animate-pulse" />
+        <div className="h-4 w-1/2 max-w-sm bg-white/5 rounded-md animate-pulse" />
       </div>
 
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin {
-          animation: spin 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-      `}</style>
+      {/* Grid Skeleton Cards Shimmer */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-4 overflow-hidden relative"
+          >
+            <div className="aspect-[4/5] rounded-xl bg-white/5 animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-3 w-20 bg-white/5 rounded" />
+              <div className="h-5 w-full bg-white/10 rounded" />
+              <div className="h-4 w-24 bg-white/10 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

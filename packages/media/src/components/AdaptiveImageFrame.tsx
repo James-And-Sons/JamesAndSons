@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { getOptimizedCloudinaryUrl } from "../utils/imageUtils";
 
 export interface AdaptiveImageFrameProps extends React.HTMLAttributes<HTMLDivElement> {
   src: string;
@@ -94,7 +95,7 @@ export function AdaptiveImageFrame({
       {/* Render HTML Image with fallback and smooth opacity transition */}
       {src && (
         <img
-          src={src}
+          src={getOptimizedCloudinaryUrl(src, { width: 800 })}
           alt={alt}
           onLoad={handleImageLoad}
           loading={priority ? "eager" : "lazy"}

@@ -5,25 +5,32 @@ import NewArrivalsSection from "@/components/NewArrivalsSection";
 import BestSellersSection from "@/components/BestSellersSection";
 import AboutExcerpt from "@/components/AboutExcerpt";
 import ContactCTA from "@/components/ContactCTA";
-import { getSpaces, getProducts, getCategories, getNewArrivals, getBestSellers } from "@/lib/products";
+import {
+  getSpaces,
+  getProducts,
+  getCategories,
+  getNewArrivals,
+  getBestSellers,
+} from "@/lib/products";
 
 export default async function Home() {
-  const [spaces, products, categories, newArrivals, bestSellers] = await Promise.all([
-    getSpaces(),
-    getProducts(),
-    getCategories(),
-    getNewArrivals(8),
-    getBestSellers(6),
-  ]);
+  const [spaces, products, categories, newArrivals, bestSellers] =
+    await Promise.all([
+      getSpaces(),
+      getProducts(),
+      getCategories(),
+      getNewArrivals(8),
+      getBestSellers(6),
+    ]);
 
   return (
     <main className="home-main">
-            <Hero />
+      <Hero />
+      <BestSellersSection products={bestSellers} />
       <SpaceGrid spaces={spaces as any} />
       <AboutExcerpt />
       <CategoryGrid categories={categories as any} products={products} />
       <NewArrivalsSection products={newArrivals} />
-      <BestSellersSection products={bestSellers} />
       <ContactCTA />
     </main>
   );

@@ -190,72 +190,134 @@ export default function CloudinaryUpload({
     onUpload(newImages);
   };
 
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [showVideoInput, setShowVideoInput] = useState(false);
+
+  const handleAddVideoUrl = () => {
+    if (!videoUrlInput.trim()) return;
+    const url = videoUrlInput.trim();
+    const newImages = multiple ? [...images, url] : [url];
+    setImages(newImages);
+    onUpload(newImages);
+    setVideoUrlInput("");
+    setShowVideoInput(false);
+  };
+
+  const isVideoUrl = (url: string) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return (
+      lower.includes(".mp4") ||
+      lower.includes(".webm") ||
+      lower.includes(".mov") ||
+      lower.includes("/video/upload/") ||
+      lower.includes("instagram.com/reel") ||
+      lower.includes("facebook.com/reel") ||
+      lower.includes("youtube.com/shorts")
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
-        {images.map((url, idx) => (
-          <div
-            key={idx}
-            className="relative w-24 h-24 border border-border group overflow-hidden rounded-md"
-          >
-            <Image
-              src={url}
-              alt="Uploaded product"
-              fill
-              sizes="96px"
-              className="object-cover"
-            />
-            {/* Edit button */}
-            <button
-              type="button"
-              onClick={() => {
-                setEditingUrl(url);
-                setEditingIndex(idx);
-              }}
-              className="absolute top-1 left-1 bg-black/80 text-amber-400 hover:text-amber-300 rounded px-1.5 py-0.5 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity z-10"
-              title="Edit image (Crop, Rotate, Adjust)"
+        {images.map((url, idx) => {
+          const isVid = isVideoUrl(url);
+          return (
+            <div
+              key={idx}
+              className="relative w-24 h-24 border border-border group overflow-hidden rounded-md bg-black/40"
             >
-              ✎ Edit
-            </button>
+              {isVid ? (
+                <div className="w-full h-full relative flex items-center justify-center bg-black">
+                  {url.endsWith(".mp4") ||
+                  url.endsWith(".webm") ||
+                  url.includes("/video/") ? (
+                    <video
+                      src={url}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-2 text-center">
+                      <span className="text-amber-400 text-xs font-mono font-bold">
+                        REEL
+                      </span>
+                      <span className="text-[8px] text-muted-foreground truncate w-20">
+                        {url}
+                      </span>
+                    </div>
+                  )}
+                  <span className="absolute bottom-1 left-1 bg-amber-500/90 text-black px-1 rounded text-[8px] font-bold font-mono">
+                    VIDEO
+                  </span>
+                </div>
+              ) : (
+                <Image
+                  src={url}
+                  alt="Uploaded product"
+                  fill
+                  sizes="96px"
+                  className="object-cover"
+                />
+              )}
 
-            {/* Delete button */}
-            <button
-              type="button"
-              onClick={() => removeImage(url)}
-              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
-              title="Delete from Cloudinary"
-            >
-              ×
-            </button>
-
-            {/* Reordering Overlay */}
-            {multiple && images.length > 1 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              {/* Edit button (for images) */}
+              {!isVid && (
                 <button
                   type="button"
-                  disabled={idx === 0}
-                  onClick={() => moveImage(idx, -1)}
-                  className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
-                  title="Move left"
+                  onClick={() => {
+                    setEditingUrl(url);
+                    setEditingIndex(idx);
+                  }}
+                  className="absolute top-1 left-1 bg-black/80 text-amber-400 hover:text-amber-300 rounded px-1.5 py-0.5 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  title="Edit image (Crop, Rotate, Adjust)"
                 >
-                  ←
+                  ✎ Edit
                 </button>
-                <span className="text-[8px] font-mono text-muted">
-                  {idx + 1}
-                </span>
-                <button
-                  type="button"
-                  disabled={idx === images.length - 1}
-                  onClick={() => moveImage(idx, 1)}
-                  className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
-                  title="Move right"
-                >
-                  →
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+
+              {/* Delete button */}
+              <button
+                type="button"
+                onClick={() => removeImage(url)}
+                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
+                title="Delete item"
+              >
+                ×
+              </button>
+
+              {/* Reordering Overlay */}
+              {multiple && images.length > 1 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => moveImage(idx, -1)}
+                    className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
+                    title="Move left"
+                  >
+                    ←
+                  </button>
+                  <span className="text-[8px] font-mono text-muted">
+                    {idx + 1}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={idx === images.length - 1}
+                    onClick={() => moveImage(idx, 1)}
+                    className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
+                    title="Move right"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Native FSA upload button — shown on Chrome desktop */}
         {hasFSA && (multiple || images.length === 0) && (
@@ -308,7 +370,37 @@ export default function CloudinaryUpload({
             )}
           </CldUploadWidget>
         )}
+
+        {/* Add Reel / Video URL Button */}
+        <button
+          type="button"
+          onClick={() => setShowVideoInput(!showVideoInput)}
+          className="w-24 h-24 border border-dashed border-amber-500/40 flex flex-col items-center justify-center gap-1 hover:border-amber-400 hover:text-amber-400 transition-colors text-amber-500/80 text-[9px] uppercase font-mono tracking-wider rounded-md bg-amber-500/5"
+        >
+          <span className="text-lg">🎬</span>
+          <span>Add Video / Reel</span>
+        </button>
       </div>
+
+      {/* Video / Reel URL Input Popup */}
+      {showVideoInput && (
+        <div className="flex gap-2 items-center bg-background border border-amber-500/30 p-2.5 rounded-lg max-w-md">
+          <input
+            type="url"
+            value={videoUrlInput}
+            onChange={(e) => setVideoUrlInput(e.target.value)}
+            placeholder="Paste MP4, Instagram Reel, FB Reel URL..."
+            className="flex-1 bg-surface border border-border px-3 py-1.5 rounded text-xs font-mono text-text outline-none focus:border-amber-500"
+          />
+          <button
+            type="button"
+            onClick={handleAddVideoUrl}
+            className="bg-amber-500 text-black px-3 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider hover:bg-amber-400"
+          >
+            Add
+          </button>
+        </div>
+      )}
 
       {images.length === 0 && !multiple && (
         <p className="text-[11px] text-muted italic">No image uploaded yet.</p>

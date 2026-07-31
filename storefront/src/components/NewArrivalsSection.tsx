@@ -94,16 +94,18 @@ export default function NewArrivalsSection({
               <div
                 key={product.id}
                 style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "8px",
+                  background:
+                    "linear-gradient(145deg, rgba(20,17,14,0.85) 0%, rgba(10,9,7,0.95) 100%)",
+                  border: "1px solid rgba(201,168,76,0.2)",
+                  borderRadius: "12px",
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
                   transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
                   position: "relative",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
                 }}
-                className="group hover:border-[var(--gold)] hover:shadow-[0_16px_36px_rgba(196,160,90,0.12)]"
+                className="group hover:border-[var(--gold)] hover:shadow-[0_20px_40px_rgba(201,168,76,0.14)] hover:-translate-y-1"
               >
                 {/* Floating "NEW RELEASE" Badge */}
                 <div
@@ -112,16 +114,17 @@ export default function NewArrivalsSection({
                     top: "14px",
                     left: "14px",
                     zIndex: 10,
-                    background: "var(--gold)",
+                    background:
+                      "linear-gradient(135deg, var(--gold) 0%, #b89343 100%)",
                     color: "var(--obsidian)",
                     fontFamily: "var(--font-mono)",
-                    fontSize: "9px",
-                    fontWeight: 700,
-                    letterSpacing: "0.16em",
+                    fontSize: "8.5px",
+                    fontWeight: 800,
+                    letterSpacing: "0.18em",
                     textTransform: "uppercase",
                     padding: "4px 10px",
-                    borderRadius: "2px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                    borderRadius: "4px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
                   }}
                 >
                   New Release
@@ -133,6 +136,7 @@ export default function NewArrivalsSection({
                   style={{
                     position: "relative",
                     width: "100%",
+                    aspectRatio: "1/1",
                     background:
                       "linear-gradient(145deg, #181410 0%, #110d09 100%)",
                     overflow: "hidden",
@@ -144,7 +148,7 @@ export default function NewArrivalsSection({
                       src={thumbnail}
                       alt={product.name}
                       objectFit="cover"
-                      imgClassName="transition-transform duration-700 ease-out group-hover:scale-105"
+                      imgClassName="transition-transform duration-700 ease-out group-hover:scale-108"
                     />
                   ) : (
                     <div
@@ -166,13 +170,13 @@ export default function NewArrivalsSection({
                       />
                     </div>
                   )}
-                  {/* Subtle Gradient Overlay */}
+                  {/* Subtle Luxury Vignette Overlay */}
                   <div
                     style={{
                       position: "absolute",
                       inset: 0,
                       background:
-                        "linear-gradient(to top, rgba(10,9,5,0.6) 0%, transparent 40%)",
+                        "linear-gradient(to top, rgba(10,9,5,0.7) 0%, transparent 45%)",
                       pointerEvents: "none",
                     }}
                   />
@@ -193,7 +197,7 @@ export default function NewArrivalsSection({
                       style={{
                         fontFamily: "var(--font-mono)",
                         fontSize: "9px",
-                        letterSpacing: "0.18em",
+                        letterSpacing: "0.2em",
                         textTransform: "uppercase",
                         color: "var(--gold)",
                         marginBottom: "6px",
@@ -210,7 +214,7 @@ export default function NewArrivalsSection({
                         style={{
                           fontFamily: "var(--font-serif)",
                           fontSize: "18px",
-                          fontWeight: 400,
+                          fontWeight: 300,
                           color: "var(--text)",
                           lineHeight: 1.3,
                           marginBottom: "12px",
@@ -238,8 +242,8 @@ export default function NewArrivalsSection({
                       <span
                         style={{
                           fontFamily: "var(--font-mono)",
-                          fontSize: "15px",
-                          fontWeight: 500,
+                          fontSize: "16px",
+                          fontWeight: 600,
                           color: "var(--gold-light)",
                         }}
                       >
@@ -262,9 +266,10 @@ export default function NewArrivalsSection({
                               fontFamily: "var(--font-mono)",
                               fontSize: "9px",
                               background: "rgba(201,168,76,0.15)",
+                              border: "1px solid rgba(201,168,76,0.3)",
                               color: "var(--gold)",
-                              padding: "2px 6px",
-                              borderRadius: "2px",
+                              padding: "2px 7px",
+                              borderRadius: "3px",
                               fontWeight: 600,
                             }}
                           >
@@ -288,10 +293,11 @@ export default function NewArrivalsSection({
                         border: "1px solid var(--border-gold)",
                         color: "var(--gold)",
                         fontFamily: "var(--font-mono)",
-                        fontSize: "10px",
+                        fontSize: "9.5px",
+                        fontWeight: 700,
                         letterSpacing: "0.18em",
                         textTransform: "uppercase",
-                        borderRadius: "3px",
+                        borderRadius: "4px",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -299,7 +305,7 @@ export default function NewArrivalsSection({
                         gap: "8px",
                         transition: "all 0.25s ease",
                       }}
-                      className="hover:!bg-[var(--gold)] hover:!text-[var(--obsidian)]"
+                      className="hover:!bg-[var(--gold)] hover:!text-[var(--obsidian)] active:scale-95"
                     >
                       <i className="ti ti-plus" style={{ fontSize: "12px" }} />
                       Add to Bag

@@ -226,6 +226,22 @@ export default function ProductGrid({
           </div>
         </div>
 
+        {/* Mobile Sticky Floating Filter Pill Bar */}
+        <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-black/85 backdrop-blur-md border border-[var(--gold)]/40 text-[var(--gold)] shadow-[0_12px_32px_rgba(0,0,0,0.6)] font-mono text-xs uppercase tracking-wider font-semibold active:scale-95 transition-all"
+          >
+            <i className="ti ti-adjustments-horizontal text-sm" />
+            <span>Filter Catalog</span>
+            {activeFilters.length > 0 && (
+              <span className="w-5 h-5 rounded-full bg-[var(--gold)] text-[var(--obsidian)] text-[10px] font-bold flex items-center justify-center">
+                {activeFilters.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         <div
           className="mobile-filter-bar"
           style={{ position: "relative", margin: "16px 24px 0", zIndex: 50 }}
