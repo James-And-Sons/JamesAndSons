@@ -1,15 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface ActionDropdownProps {
   productId: string;
   sku: string;
   slug: string;
+  onEditImage?: () => void;
 }
 
-export default function ActionDropdown({ productId, sku, slug }: ActionDropdownProps) {
+export default function ActionDropdown({
+  productId,
+  sku,
+  slug,
+  onEditImage,
+}: ActionDropdownProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -18,23 +24,29 @@ export default function ActionDropdown({ productId, sku, slug }: ActionDropdownP
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleAction = async (e: React.MouseEvent, target: 'amazon' | 'platform' | 'both') => {
+  const handleAction = async (
+    e: React.MouseEvent,
+    target: "amazon" | "platform" | "both",
+  ) => {
     e.stopPropagation();
     e.preventDefault();
     setIsOpen(false);
 
-    let confirmMsg = '';
-    if (target === 'amazon') {
+    let confirmMsg = "";
+    if (target === "amazon") {
       confirmMsg = `Are you sure you want to delete listing SKU ${sku} (and its variants) from Amazon Seller Central? This will NOT delete it from the website.`;
-    } else if (target === 'platform') {
+    } else if (target === "platform") {
       confirmMsg = `Are you sure you want to delete product SKU ${sku} from the local website database? This will NOT delete it from Amazon.`;
     } else {
       confirmMsg = `WARNING: Are you sure you want to delete product SKU ${sku} from BOTH the website database and Amazon Seller Central? This action is permanent.`;
@@ -45,24 +57,27 @@ export default function ActionDropdown({ productId, sku, slug }: ActionDropdownP
     setDeleting(true);
 
     try {
-      const res = await fetch(`/api/admin/sync?productId=${productId}&target=${target}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `/api/admin/sync?productId=${productId}&target=${target}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to complete deletion request');
+        throw new Error(data.error || "Failed to complete deletion request");
       }
 
-      alert(data.message || 'Deletion completed successfully!');
-      
+      alert(data.message || "Deletion completed successfully!");
+
       // If we deleted it from the website, refresh/reload the page to update the catalog list
-      if (target === 'platform' || target === 'both') {
+      if (target === "platform" || target === "both") {
         router.refresh();
       }
     } catch (err: any) {
-      console.error('[ActionDropdown] Delete error:', err);
+      console.error("[ActionDropdown] Delete error:", err);
       alert(`Deletion Failed: ${err.message}`);
     } finally {
       setDeleting(false);
@@ -97,12 +112,12 @@ export default function ActionDropdown({ productId, sku, slug }: ActionDropdownP
       </div>
 
       {isOpen && (
-        <div 
-          onClick={(e) => e.stopPropagation()} 
+        <div
+          onClick={(e) => e.stopPropagation()}
           className="absolute right-0 mt-1 w-48 bg-background border border-border shadow-lg z-50 py-1"
         >
           <a
-            href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || 'http://localhost:3001'}/products/${slug}`}
+            href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "http://localhost:3001"}/products/${slug}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setIsOpen(false)}
@@ -117,25 +132,39 @@ export default function ActionDropdown({ productId, sku, slug }: ActionDropdownP
           >
             Edit Product
           </a>
+          {onEditImage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setIsOpen(false);
+                onEditImage();
+              }}
+              className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-amber-400 hover:bg-surface-muted hover:text-amber-300 border-t border-border/30 transition-colors"
+            >
+              Edit Image ✎
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
               // Sync action similar to SyncButton
               (async () => {
-                const confirmMsg = 'Sync this product to all marketplaces (Amazon, Meta, Pinterest, etc.)?';
+                const confirmMsg =
+                  "Sync this product to all marketplaces (Amazon, Meta, Pinterest, etc.)?";
                 if (!window.confirm(confirmMsg)) return;
                 try {
-                  const res = await fetch('/api/admin/sync', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                  const res = await fetch("/api/admin/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ productId: productId }),
                   });
                   const data = await res.json();
-                  if (!res.ok) throw new Error(data.error || 'Sync failed');
-                  alert(data.message || 'Sync completed successfully!');
+                  if (!res.ok) throw new Error(data.error || "Sync failed");
+                  alert(data.message || "Sync completed successfully!");
                 } catch (err: any) {
-                  console.error('Sync error:', err);
+                  console.error("Sync error:", err);
                   alert(`Sync Failed: ${err.message}`);
                 }
               })();
@@ -145,19 +174,19 @@ export default function ActionDropdown({ productId, sku, slug }: ActionDropdownP
             Sync to Marketplaces
           </button>
           <button
-            onClick={(e) => handleAction(e, 'amazon')}
+            onClick={(e) => handleAction(e, "amazon")}
             className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-[#eab308] hover:bg-surface-muted hover:text-[#eab308] border-t border-border/30 transition-colors"
           >
             Delete from Amazon
           </button>
           <button
-            onClick={(e) => handleAction(e, 'platform')}
+            onClick={(e) => handleAction(e, "platform")}
             className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-[#ef4444] hover:bg-surface-muted hover:text-[#ef4444] border-t border-border/30 transition-colors"
           >
             Delete from Website
           </button>
           <button
-            onClick={(e) => handleAction(e, 'both')}
+            onClick={(e) => handleAction(e, "both")}
             className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-[#ef4444] font-bold hover:bg-surface-muted hover:text-[#ef4444] border-t border-border/30 transition-colors"
           >
             Delete Everywhere
