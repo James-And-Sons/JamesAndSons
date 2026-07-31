@@ -11,7 +11,7 @@
     "dev:storefront": "npm run dev --workspace=@james-andsons/storefront",
     "build": "npm run build --workspace=@james-andsons/assets && npm run build --workspaces",
     "lint": "npm run lint --workspace=@james-andsons/admin && npm run lint --workspace=@james-andsons/storefront",
-    "type-check": "npm run build --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/utils && npm run build --workspace=@james-andsons/razorpay && npm run build --workspace=@james-andsons/shiprocket",
+    "type-check": "npm run type-check --workspace=@james-andsons/admin && npm run type-check --workspace=@james-andsons/storefront",
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",

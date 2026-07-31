@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "node ../packages/assets/copy-assets.js && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@james-andsons/config": "*",
