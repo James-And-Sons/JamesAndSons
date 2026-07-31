@@ -50,12 +50,12 @@ export default function ProductZoomModal({
       if (e.key === "Escape") {
         onClose();
       } else if (e.key === "ArrowRight" || e.key === "Right") {
-        if (scale === 1 && activeIndex < images.length - 1) {
-          onIndexChange(activeIndex + 1);
+        if (scale === 1) {
+          onIndexChange((activeIndex + 1) % images.length);
         }
       } else if (e.key === "ArrowLeft" || e.key === "Left") {
-        if (scale === 1 && activeIndex > 0) {
-          onIndexChange(activeIndex - 1);
+        if (scale === 1) {
+          onIndexChange((activeIndex - 1 + images.length) % images.length);
         }
       } else if (e.key === "+" || e.key === "=") {
         setScale((s) => Math.min(4, Number((s + 0.5).toFixed(1))));
@@ -226,10 +226,10 @@ export default function ProductZoomModal({
     ) {
       const diffX = e.changedTouches[0].clientX - touchStartPosRef.current.x;
       if (Math.abs(diffX) > 40) {
-        if (diffX < 0 && activeIndex < images.length - 1) {
-          onIndexChange(activeIndex + 1);
-        } else if (diffX > 0 && activeIndex > 0) {
-          onIndexChange(activeIndex - 1);
+        if (diffX < 0) {
+          onIndexChange((activeIndex + 1) % images.length);
+        } else if (diffX > 0) {
+          onIndexChange((activeIndex - 1 + images.length) % images.length);
         }
       }
     }
@@ -317,11 +317,11 @@ export default function ProductZoomModal({
         </div>
 
         {/* Left Arrow Navigation */}
-        {images.length > 1 && activeIndex > 0 && scale === 1 && (
+        {images.length > 1 && scale === 1 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onIndexChange(activeIndex - 1);
+              onIndexChange((activeIndex - 1 + images.length) % images.length);
             }}
             className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/10 transition-all z-20 cursor-pointer"
             aria-label="Previous image"
@@ -343,32 +343,30 @@ export default function ProductZoomModal({
         )}
 
         {/* Right Arrow Navigation */}
-        {images.length > 1 &&
-          activeIndex < images.length - 1 &&
-          scale === 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onIndexChange(activeIndex + 1);
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/10 transition-all z-20 cursor-pointer"
-              aria-label="Next image"
+        {images.length > 1 && scale === 1 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onIndexChange((activeIndex + 1) % images.length);
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/10 transition-all z-20 cursor-pointer"
+            aria-label="Next image"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Floating Bottom Control Bar */}

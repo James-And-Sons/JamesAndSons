@@ -96,15 +96,11 @@ export default function PDPClient({
     if (now - lastWheelTimeRef.current < 450) return;
 
     if (mainDelta > 0) {
-      if (activeImg < activeImages.length - 1) {
-        lastWheelTimeRef.current = now;
-        setActiveImg((i) => i + 1);
-      }
+      lastWheelTimeRef.current = now;
+      setActiveImg((i) => (i + 1) % activeImages.length);
     } else if (mainDelta < 0) {
-      if (activeImg > 0) {
-        lastWheelTimeRef.current = now;
-        setActiveImg((i) => i - 1);
-      }
+      lastWheelTimeRef.current = now;
+      setActiveImg((i) => (i - 1 + activeImages.length) % activeImages.length);
     }
   };
 
@@ -122,10 +118,12 @@ export default function PDPClient({
     const diffX = e.clientX - dragStartXRef.current;
     dragStartXRef.current = null;
     if (Math.abs(diffX) > 30) {
-      if (diffX < 0 && activeImg < activeImages.length - 1) {
-        setActiveImg((i) => i + 1);
-      } else if (diffX > 0 && activeImg > 0) {
-        setActiveImg((i) => i - 1);
+      if (diffX < 0) {
+        setActiveImg((i) => (i + 1) % activeImages.length);
+      } else if (diffX > 0) {
+        setActiveImg(
+          (i) => (i - 1 + activeImages.length) % activeImages.length,
+        );
       }
     }
   };
@@ -1033,7 +1031,10 @@ export default function PDPClient({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveImg((i) => Math.max(0, i - 1));
+                    setActiveImg(
+                      (i) =>
+                        (i - 1 + activeImages.length) % activeImages.length,
+                    );
                   }}
                   style={{
                     position: "absolute",
@@ -1052,7 +1053,6 @@ export default function PDPClient({
                     justifyContent: "center",
                     cursor: "pointer",
                     zIndex: 10,
-                    opacity: activeImg === 0 ? 0.3 : 1,
                   }}
                   aria-label="Previous product image"
                 >
@@ -1064,9 +1064,7 @@ export default function PDPClient({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveImg((i) =>
-                      Math.min(activeImages.length - 1, i + 1),
-                    );
+                    setActiveImg((i) => (i + 1) % activeImages.length);
                   }}
                   style={{
                     position: "absolute",
@@ -1085,7 +1083,6 @@ export default function PDPClient({
                     justifyContent: "center",
                     cursor: "pointer",
                     zIndex: 10,
-                    opacity: activeImg === activeImages.length - 1 ? 0.3 : 1,
                   }}
                   aria-label="Next product image"
                 >
@@ -2320,7 +2317,11 @@ export default function PDPClient({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImg((i) => Math.max(0, i - 1));
+                            setActiveImg(
+                              (i) =>
+                                (i - 1 + activeImages.length) %
+                                activeImages.length,
+                            );
                           }}
                           style={{
                             position: "absolute",
@@ -2338,10 +2339,8 @@ export default function PDPClient({
                             justifyContent: "center",
                             cursor: "pointer",
                             transition: "all 0.2s",
-                            opacity: activeImg === 0 ? 0.3 : 1,
                             zIndex: 10,
                           }}
-                          disabled={activeImg === 0}
                         >
                           <i
                             className="ti ti-chevron-left"
@@ -2351,9 +2350,7 @@ export default function PDPClient({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImg((i) =>
-                              Math.min(activeImages.length - 1, i + 1),
-                            );
+                            setActiveImg((i) => (i + 1) % activeImages.length);
                           }}
                           style={{
                             position: "absolute",
@@ -2371,11 +2368,8 @@ export default function PDPClient({
                             justifyContent: "center",
                             cursor: "pointer",
                             transition: "all 0.2s",
-                            opacity:
-                              activeImg === activeImages.length - 1 ? 0.3 : 1,
                             zIndex: 10,
                           }}
-                          disabled={activeImg === activeImages.length - 1}
                         >
                           <i
                             className="ti ti-chevron-right"
