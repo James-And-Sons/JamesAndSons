@@ -204,11 +204,11 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
             const thumbnail = product.images?.[0] || product.whiteBackgroundImages?.[0];
             return (
               <Link key={product.id} href={`/products/${product.slug}`} className="mobile-product-card" style={{ background: 'var(--card2)', borderRadius: '20px', border: '0.5px solid var(--border2)' }}>
-                <div className="mobile-product-img" style={{ height: '148px', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
+                <div className="mobile-product-img" style={{ height: '148px', position: 'relative', background: 'linear-gradient(140deg, #181410 0%, #1e1a0f 100%)', borderRadius: '20px 20px 0 0', overflow: 'hidden' }}>
                   {thumbnail ? (
-                    <Image src={thumbnail} alt={product.name} width={400} height={400} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Image src={thumbnail} alt={product.name} fill sizes="(max-width: 640px) 50vw, 200px" style={{ objectFit: 'cover' }} />
                   ) : (
-                    <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28 }}></i>
+                    <i className="ti ti-lamp mobile-product-img-icon" style={{ fontSize: '38px', color: 'var(--gold)', opacity: 0.28, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}></i>
                   )}
                 </div>
                 <div className="mobile-product-info" style={{ padding: '10px 12px 12px' }}>
@@ -363,13 +363,13 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
               </div>
 
               {thumbnail ? (
-                <img
+                <Image
                   src={thumbnail}
                   alt={product.name}
+                  fill
+                  sizes="(max-width: 1024px) 33vw, 25vw"
                   className="prod-actual-img"
                   style={{
-                    width: '100%',
-                    height: '100%',
                     objectFit: 'cover',
                     position: 'absolute',
                     inset: 0,

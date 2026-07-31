@@ -40,7 +40,7 @@ async function getProductsRaw(filter?: string): Promise<Product[]> {
 export const getProducts = (filter?: string) => unstable_cache(
   async () => getProductsRaw(filter),
   ['products-list-v3', filter || 'all'],
-  { revalidate: 10, tags: ['products'] }
+  { revalidate: 300, tags: ['products'] }
 )();
 
 async function getProductBySlugRaw(slug: string): Promise<Product | undefined> {
@@ -70,7 +70,7 @@ async function getProductBySlugRaw(slug: string): Promise<Product | undefined> {
 export const getProductBySlug = (slug: string) => unstable_cache(
   async () => getProductBySlugRaw(slug),
   ['product-detail-v3', slug],
-  { revalidate: 10, tags: ['products'] }
+  { revalidate: 60, tags: ['products'] }
 )();
 
 async function getSpacesRaw() {
@@ -93,7 +93,7 @@ async function getSpacesRaw() {
 export const getSpaces = unstable_cache(
   async () => getSpacesRaw(),
   ['spaces-list-v3'],
-  { revalidate: 10, tags: ['spaces'] }
+  { revalidate: 3600, tags: ['spaces'] }
 );
 
 async function getCategoriesRaw() {
@@ -116,7 +116,7 @@ async function getCategoriesRaw() {
 export const getCategories = unstable_cache(
   async () => getCategoriesRaw(),
   ['categories-list-v1'],
-  { revalidate: 60, tags: ['categories'] }
+  { revalidate: 3600, tags: ['categories'] }
 );
 
 async function getNewArrivalsRaw(limit = 8): Promise<Product[]> {
@@ -144,7 +144,7 @@ async function getNewArrivalsRaw(limit = 8): Promise<Product[]> {
 export const getNewArrivals = (limit = 8) => unstable_cache(
   async () => getNewArrivalsRaw(limit),
   ['new-arrivals-v1', String(limit)],
-  { revalidate: 60, tags: ['products'] }
+  { revalidate: 120, tags: ['products'] }
 )();
 
 async function getBestSellersRaw(limit = 6): Promise<Product[]> {
@@ -189,5 +189,5 @@ async function getBestSellersRaw(limit = 6): Promise<Product[]> {
 export const getBestSellers = (limit = 6) => unstable_cache(
   async () => getBestSellersRaw(limit),
   ['best-sellers-v1', String(limit)],
-  { revalidate: 120, tags: ['products', 'orders'] }
+  { revalidate: 600, tags: ['products', 'orders'] }
 )();

@@ -49,6 +49,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   const mainBtnRef = useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
@@ -642,13 +643,51 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             style={{ margin: '0 auto', position: 'relative', width: '85%', aspectRatio: '1 / 1', borderRadius: '24px', border: '0.5px solid var(--border)', overflow: 'hidden', cursor: activeImages.length > 0 ? 'zoom-in' : 'default' }}
           >
             {activeImages.length > 0 ? (
-              <Image
-                src={activeImages[activeImg]}
-                alt={product.name}
-                fill
-                priority
-                style={{ objectFit: 'cover' }}
-              />
+              <div style={{ position: 'absolute', inset: 0 }}>
+                {activeImages.map((img: string, idx: number) => {
+                  const isPriority = idx === 0;
+                  const isAdjacent = idx === activeImg - 1 || idx === activeImg + 1 || idx === activeImg;
+                  const isVisible = idx === activeImg;
+                  const isLoaded = loadedImages[img];
+                  return (
+                    <div
+                      key={img}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: isVisible ? 1 : 0,
+                        transition: 'opacity 0.35s ease-in-out',
+                        zIndex: isVisible ? 1 : 0,
+                        pointerEvents: isVisible ? 'auto' : 'none',
+                      }}
+                    >
+                      <Image
+                        src={img}
+                        alt={`${product.name} - view ${idx + 1}`}
+                        fill
+                        priority={isPriority}
+                        loading={isPriority ? undefined : (isAdjacent ? 'eager' : 'lazy')}
+                        sizes="(max-width: 768px) 85vw, 0vw"
+                        style={{ objectFit: 'cover' }}
+                        onLoad={() => setLoadedImages(prev => ({ ...prev, [img]: true }))}
+                      />
+                      {!isLoaded && (
+                        <div
+                          className="shimmer-placeholder"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%)',
+                            backgroundSize: '200% 100%',
+                            animation: 'shimmer 1.5s infinite linear',
+                            zIndex: 2,
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div style={{ width: '100%', height: '100%', background: 'linear-gradient(150deg, #1a160a 0%, #0d0b06 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="100" height="130" viewBox="0 0 100 130" stroke="var(--gold)" fill="none" opacity="0.6">
@@ -1093,13 +1132,51 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                     style={{ width: '85%', aspectRatio: '1 / 1', margin: '0 auto' }}
                     onClick={() => setLightboxOpen(true)}
                   >
-                    <Image
-                      src={activeImages[activeImg]}
-                      alt={`${product.name} - view ${activeImg + 1}`}
-                      fill
-                      style={{ objectFit: 'cover' }}
-                      priority
-                    />
+                    <div style={{ position: 'absolute', inset: 0 }}>
+                      {activeImages.map((img: string, idx: number) => {
+                        const isPriority = idx === 0;
+                        const isAdjacent = idx === activeImg - 1 || idx === activeImg + 1 || idx === activeImg;
+                        const isVisible = idx === activeImg;
+                        const isLoaded = loadedImages[img];
+                        return (
+                          <div
+                            key={img}
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              opacity: isVisible ? 1 : 0,
+                              transition: 'opacity 0.35s ease-in-out',
+                              zIndex: isVisible ? 1 : 0,
+                              pointerEvents: isVisible ? 'auto' : 'none',
+                            }}
+                          >
+                            <Image
+                              src={img}
+                              alt={`${product.name} - view ${idx + 1}`}
+                              fill
+                              priority={isPriority}
+                              loading={isPriority ? undefined : (isAdjacent ? 'eager' : 'lazy')}
+                              sizes="(max-width: 768px) 0px, (max-width: 1200px) 47vw, 680px"
+                              style={{ objectFit: 'cover' }}
+                              onLoad={() => setLoadedImages(prev => ({ ...prev, [img]: true }))}
+                            />
+                            {!isLoaded && (
+                              <div
+                                className="shimmer-placeholder"
+                                style={{
+                                  position: 'absolute',
+                                  inset: 0,
+                                  background: 'linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%)',
+                                  backgroundSize: '200% 100%',
+                                  animation: 'shimmer 1.5s infinite linear',
+                                  zIndex: 2,
+                                }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     {/* Left & Right Chevron Arrows */}
                     {activeImages.length > 1 && (
@@ -1145,6 +1222,7 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
                             src={img}
                             alt={`${product.name} thumbnail ${idx + 1}`}
                             fill
+                            sizes="80px"
                             style={{ objectFit: 'cover' }}
                           />
                         </div>
@@ -1692,16 +1770,23 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
             onClick={() => setLightboxOpen(false)}
             style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <button onClick={() => setLightboxOpen(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: '40px', height: '40px', borderRadius: '50%', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <button onClick={() => setLightboxOpen(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: '40px', height: '40px', borderRadius: '50%', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className="ti ti-x"></i>
             </button>
             <div
               onClick={e => e.stopPropagation()}
               onTouchStart={e => setTouchStartX(e.touches[0].clientX)}
               onTouchEnd={e => handleSwipe(e.changedTouches[0].clientX)}
-              style={{ position: 'relative', width: '100%', maxWidth: '800px', maxHeight: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 60px' }}
+              style={{ position: 'relative', width: '100%', maxWidth: '800px', aspectRatio: '4/3', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <img src={activeImages[activeImg]} alt={product.name} style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain' }} />
+              <Image
+                src={activeImages[activeImg]}
+                alt={product.name}
+                fill
+                sizes="(max-width: 800px) 100vw, 800px"
+                style={{ objectFit: 'contain' }}
+                priority
+              />
               {activeImages.length > 1 && (
                 <>
                   <button onClick={() => setActiveImg(i => Math.max(0, i - 1))} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: activeImg === 0 ? 0.3 : 1 }}>
@@ -1827,6 +1912,15 @@ export default function PDPClient({ product, variants, isB2B }: { product: any; 
 
         <style jsx>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        .shimmer-placeholder {
+          background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite linear;
+        }
       `}</style>
       </div>
     </>
