@@ -110,7 +110,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
     <section className="section" id="collections" style={{ padding: 0 }}>
       {/* Mobile Layout */}
       <div className="md:hidden">
-        <div style={{ padding: '8px 12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div style={{ padding: '4px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <div className="section-label" style={{ marginBottom: '2px' }}>{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
             <div className="section-title" style={{ fontSize: '22px' }}>
@@ -236,7 +236,7 @@ export default function ProductGrid({ initialFilter = 'All', initialProducts, in
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:block" style={{ padding: '0 40px' }}>
+      <div className="hidden md:block" style={{ padding: '32px 40px 0' }}>
         <div className="section-header" style={{ marginBottom: '20px' }}>
         <div>
           <div className="section-label">{activeFilters.length === 0 ? 'Masterworks' : 'Curated Selection'}</div>
