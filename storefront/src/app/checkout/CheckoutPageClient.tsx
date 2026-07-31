@@ -49,7 +49,6 @@ export default function CheckoutPageInner({
   const [generatingLink, setGeneratingLink] = useState(false);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-
   useEffect(() => {
     const loadAddresses = async () => {
       const addresses = await getUserAddressesAction();
@@ -58,6 +57,35 @@ export default function CheckoutPageInner({
     loadAddresses();
   }, []);
 
+  // Load from query params if redirecting back from Razorpay hosted page or showing errors
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const stepParam = params.get('step');
+      const orderNumParam = params.get('orderNumber');
+      const errorParam = params.get('error');
+      if (stepParam === '3' && orderNumParam) {
+        setOrderNumber(orderNumParam);
+        clearCart();
+        setStep(3);
+      } else if (errorParam) {
+        setOrderError(errorParam);
+      }
+    }
+  }, []);
+
+  // Auto-advance to step 2 if a complete default address is already saved
+  useEffect(() => {
+    if (
+      initialData?.address && 
+      initialData?.city && 
+      initialData?.state && 
+      initialData?.pincode && 
+      initialData?.phone
+    ) {
+      setStep(2);
+    }
+  }, [initialData]);
   const selectSavedAddress = (addr: any) => {
     setForm(prev => ({
       ...prev,
@@ -164,8 +192,11 @@ export default function CheckoutPageInner({
       </div>
     );
   }
-
   const handlePayment = async () => {
+    if (shipping === null) {
+      setOrderError('Calculating shipping rate, please wait...');
+      return;
+    }
     setLoading(true);
     setOrderError('');
     try {
@@ -201,6 +232,7 @@ export default function CheckoutPageInner({
         name: 'James & Sons',
         description: `Order ${result.orderNumber}`,
         order_id: result.razorpayOrderId,
+        callback_url: `${window.location.origin}/api/webhooks/razorpay/callback`,
         handler: async function (response: any) {
           try {
             const verifyRes = await verifyPayment(
@@ -549,7 +581,8 @@ export default function CheckoutPageInner({
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--gold)', marginBottom: '8px', letterSpacing: '0.08em' }}>Shipping To</div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--cream)', lineHeight: 1.5 }}>
                     <strong style={{ color: '#fff' }}>{form.name}</strong><br />
-                    {form.address}, {form.city}, {form.state} - {form.pincode}
+                    {form.address}, {form.city}, {form.state} - {form.pincode}<br />
+                    Phone: <span style={{ fontFamily: 'var(--font-mono)' }}>{form.phone}</span>
                   </div>
                 </div>
 
