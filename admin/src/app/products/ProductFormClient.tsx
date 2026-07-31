@@ -520,6 +520,15 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
     defaultValues?.whiteBackgroundImages || []
   );
 
+  // Drag and drop state for images
+  const [draggedImage, setDraggedImage] = useState<{
+    sourceType: 'remastered' | 'whiteBg';
+    sourceIndex: number;
+    variantIndex?: number;
+  } | null>(null);
+  const [dragOverZone, setDragOverZone] = useState<string | null>(null);
+  const [dragOverCardKey, setDragOverCardKey] = useState<string | null>(null);
+
   // Main Product Specs
   const [specs, setSpecs] = useState<Spec[]>(
     defaultValues?.specs
@@ -791,6 +800,93 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
       items[index + 1] = temp;
       updateVariantField(vIdx, fieldKey, items.join(', '));
     }
+  };
+
+  // Drag and Drop transfer and reordering handler
+  const handleImageDrop = (
+    targetType: 'remastered' | 'whiteBg',
+    targetIndex?: number,
+    variantIndex?: number
+  ) => {
+    if (!draggedImage) return;
+    const { sourceType, sourceIndex, variantIndex: srcVariantIndex } = draggedImage;
+
+    // Prevent cross-variant or cross-parent dragging
+    if (srcVariantIndex !== variantIndex) {
+      setDraggedImage(null);
+      setDragOverZone(null);
+      setDragOverCardKey(null);
+      return;
+    }
+
+    setIsDirty(true);
+
+    if (variantIndex !== undefined) {
+      // VARIANT IMAGE DROP
+      const srcField = sourceType === 'whiteBg' ? 'whiteBackgroundImages' : 'images';
+      const tgtField = targetType === 'whiteBg' ? 'whiteBackgroundImages' : 'images';
+
+      let srcList = (variants[variantIndex][srcField] || '').split(',').map(s => s.trim()).filter(Boolean);
+      let tgtList = sourceType === targetType 
+        ? srcList 
+        : (variants[variantIndex][tgtField] || '').split(',').map(s => s.trim()).filter(Boolean);
+
+      if (sourceIndex < 0 || sourceIndex >= srcList.length) return;
+      const [movedUrl] = srcList.splice(sourceIndex, 1);
+
+      if (sourceType === targetType) {
+        const insertAt = targetIndex !== undefined ? targetIndex : srcList.length;
+        srcList.splice(insertAt, 0, movedUrl);
+        updateVariantField(variantIndex, srcField, srcList.join(', '));
+      } else {
+        const insertAt = targetIndex !== undefined ? targetIndex : tgtList.length;
+        tgtList.splice(insertAt, 0, movedUrl);
+
+        setVariants(prev => {
+          const copy = [...prev];
+          copy[variantIndex] = {
+            ...copy[variantIndex],
+            [srcField]: srcList.join(', '),
+            [tgtField]: tgtList.join(', ')
+          };
+          return copy;
+        });
+      }
+    } else {
+      // PARENT PRODUCT IMAGE DROP
+      let srcList = sourceType === 'whiteBg' ? [...whiteBackgroundImages] : [...images];
+      let tgtList = sourceType === targetType 
+        ? srcList 
+        : (targetType === 'whiteBg' ? [...whiteBackgroundImages] : [...images]);
+
+      if (sourceIndex < 0 || sourceIndex >= srcList.length) return;
+      const [movedUrl] = srcList.splice(sourceIndex, 1);
+
+      if (sourceType === targetType) {
+        const insertAt = targetIndex !== undefined ? targetIndex : srcList.length;
+        srcList.splice(insertAt, 0, movedUrl);
+        if (sourceType === 'whiteBg') {
+          setWhiteBackgroundImages(srcList);
+        } else {
+          setImages(srcList);
+        }
+      } else {
+        const insertAt = targetIndex !== undefined ? targetIndex : tgtList.length;
+        tgtList.splice(insertAt, 0, movedUrl);
+
+        if (sourceType === 'whiteBg') {
+          setWhiteBackgroundImages(srcList);
+          setImages(tgtList);
+        } else {
+          setImages(srcList);
+          setWhiteBackgroundImages(tgtList);
+        }
+      }
+    }
+
+    setDraggedImage(null);
+    setDragOverZone(null);
+    setDragOverCardKey(null);
   };
 
   // Sync form state to contextual sidebar outline
@@ -1710,54 +1806,138 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
               >
                 {/* 1. STOREFRONT IMAGES */}
                 <div className="space-y-4">
-                  <h4 className="font-serif text-[16px] text-accent tracking-wide">Remastered Images (Storefront &amp; Socials)</h4>
-                  <p className="font-mono text-[10px] text-muted">The first image is the cover photo shown on storefront catalogs.</p>
-                  
-                  {images.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                      {images.map((url, idx) => (
-                        <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
-                          {idx === 0 && (
-                            <span className="absolute top-2 left-2 bg-accent text-black font-semibold px-2 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider">Primary</span>
-                          )}
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setIsDirty(true);
-                              setImages(prev => prev.filter((_, i) => i !== idx));
-                            }}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10"
-                          >
-                            ×
-                          </button>
-                          
-                          {/* Reordering Controls */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
-                            {idx > 0 && (
-                              <button 
-                                type="button" 
-                                onClick={() => moveImage(idx, 'left', false)}
-                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                              >
-                                ←
-                              </button>
-                            )}
-                            {idx < images.length - 1 && (
-                              <button 
-                                type="button" 
-                                onClick={() => moveImage(idx, 'right', false)}
-                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                              >
-                                →
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-serif text-[16px] text-accent tracking-wide">Remastered Images (Storefront &amp; Socials)</h4>
+                      <p className="font-mono text-[10px] text-muted">The first image is the cover photo shown on storefront catalogs. Drag images to rearrange or move to White Background section.</p>
                     </div>
-                  )}
+                    <span className="font-mono text-[9px] text-accent/80 bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                      ⇄ Drag &amp; Drop Enabled
+                    </span>
+                  </div>
+                  
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (dragOverZone !== 'parent-remastered') setDragOverZone('parent-remastered');
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      if (dragOverZone === 'parent-remastered') setDragOverZone(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleImageDrop('remastered', undefined, undefined);
+                    }}
+                    className={`rounded-xl transition-all p-3 border ${
+                      dragOverZone === 'parent-remastered'
+                        ? 'border-accent border-dashed bg-accent/10 ring-2 ring-accent/30'
+                        : images.length === 0
+                        ? 'border-dashed border-border/60 bg-background/20 py-8 text-center'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    {images.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        {images.map((url, idx) => {
+                          const cardKey = `parent-remastered-${idx}`;
+                          const isBeingDragged = draggedImage?.sourceType === 'remastered' && draggedImage?.sourceIndex === idx && draggedImage?.variantIndex === undefined;
+                          const isOver = dragOverCardKey === cardKey;
+
+                          return (
+                            <div
+                              key={idx}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggedImage({ sourceType: 'remastered', sourceIndex: idx });
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              onDragEnd={() => {
+                                setDraggedImage(null);
+                                setDragOverZone(null);
+                                setDragOverCardKey(null);
+                              }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverCardKey(cardKey);
+                              }}
+                              onDragLeave={(e) => {
+                                e.preventDefault();
+                                if (dragOverCardKey === cardKey) setDragOverCardKey(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleImageDrop('remastered', idx, undefined);
+                              }}
+                              className={`group relative aspect-square border rounded-xl overflow-hidden transition-all cursor-grab active:cursor-grabbing ${
+                                isBeingDragged
+                                  ? 'opacity-25 border-dashed border-accent scale-95'
+                                  : isOver
+                                  ? 'border-accent ring-2 ring-accent/60 scale-[1.03] z-20'
+                                  : 'border-border bg-background/40 hover:border-accent/60'
+                              }`}
+                            >
+                              <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                              
+                              <span className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 rounded font-mono text-[9px] text-muted flex items-center gap-1">
+                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent">
+                                  <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                                  <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                                </svg>
+                                #{idx + 1}
+                              </span>
+
+                              {idx === 0 && (
+                                <span className="absolute top-2 left-2 bg-accent text-black font-semibold px-2 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider">Primary</span>
+                              )}
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  setIsDirty(true);
+                                  setImages(prev => prev.filter((_, i) => i !== idx));
+                                }}
+                                className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10 cursor-pointer"
+                                title="Remove Image"
+                              >
+                                ×
+                              </button>
+                              
+                              {/* Hover controls */}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all">
+                                {idx > 0 && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => moveImage(idx, 'left', false)}
+                                    className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                    title="Move Left"
+                                  >
+                                    ←
+                                  </button>
+                                )}
+                                <span className="font-mono text-[9px] text-accent uppercase tracking-widest bg-black/70 px-2 py-0.5 rounded border border-accent/30">Drag</span>
+                                {idx < images.length - 1 && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => moveImage(idx, 'right', false)}
+                                    className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                    title="Move Right"
+                                  >
+                                    →
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center font-mono text-[11px] text-muted py-4">
+                        Drag remastered images here or upload using the button below.
+                      </div>
+                    )}
+                  </div>
 
                   <CloudinaryUpload
                     onUpload={(urls) => {
@@ -1772,54 +1952,138 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 
                 {/* 2. AMAZON COMPLIANCE WHITE BACKGROUND IMAGES */}
                 <div className="space-y-4 pt-6 border-t border-border/40 mt-6">
-                  <h4 className="font-serif text-[16px] text-accent tracking-wide">White Background Images (Amazon Listing Compliance)</h4>
-                  <p className="font-mono text-[10px] text-muted">Amazon requires the first listing photo to be on a pure white background.</p>
-
-                  {whiteBackgroundImages.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                      {whiteBackgroundImages.map((url, idx) => (
-                        <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
-                          {idx === 0 && (
-                            <span className="absolute top-2 left-2 bg-accent text-black font-semibold px-2 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider">Amazon Main</span>
-                          )}
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              setIsDirty(true);
-                              setWhiteBackgroundImages(prev => prev.filter((_, i) => i !== idx));
-                            }}
-                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10"
-                          >
-                            ×
-                          </button>
-
-                          {/* Reordering Controls */}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-4 transition-all">
-                            {idx > 0 && (
-                              <button 
-                                type="button" 
-                                onClick={() => moveImage(idx, 'left', true)}
-                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                              >
-                                ←
-                              </button>
-                            )}
-                            {idx < whiteBackgroundImages.length - 1 && (
-                              <button 
-                                type="button" 
-                                onClick={() => moveImage(idx, 'right', true)}
-                                className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-sm hover:border-accent"
-                              >
-                                →
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-serif text-[16px] text-accent tracking-wide">White Background Images (Amazon Listing Compliance)</h4>
+                      <p className="font-mono text-[10px] text-muted">Amazon requires the first listing photo to be on a pure white background. Drag images between sections freely.</p>
                     </div>
-                  )}
+                    <span className="font-mono text-[9px] text-accent/80 bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                      ⇄ Drag &amp; Drop Enabled
+                    </span>
+                  </div>
+
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (dragOverZone !== 'parent-whiteBg') setDragOverZone('parent-whiteBg');
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      if (dragOverZone === 'parent-whiteBg') setDragOverZone(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleImageDrop('whiteBg', undefined, undefined);
+                    }}
+                    className={`rounded-xl transition-all p-3 border ${
+                      dragOverZone === 'parent-whiteBg'
+                        ? 'border-accent border-dashed bg-accent/10 ring-2 ring-accent/30'
+                        : whiteBackgroundImages.length === 0
+                        ? 'border-dashed border-border/60 bg-background/20 py-8 text-center'
+                        : 'border-transparent'
+                    }`}
+                  >
+                    {whiteBackgroundImages.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        {whiteBackgroundImages.map((url, idx) => {
+                          const cardKey = `parent-whiteBg-${idx}`;
+                          const isBeingDragged = draggedImage?.sourceType === 'whiteBg' && draggedImage?.sourceIndex === idx && draggedImage?.variantIndex === undefined;
+                          const isOver = dragOverCardKey === cardKey;
+
+                          return (
+                            <div
+                              key={idx}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggedImage({ sourceType: 'whiteBg', sourceIndex: idx });
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              onDragEnd={() => {
+                                setDraggedImage(null);
+                                setDragOverZone(null);
+                                setDragOverCardKey(null);
+                              }}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragOverCardKey(cardKey);
+                              }}
+                              onDragLeave={(e) => {
+                                e.preventDefault();
+                                if (dragOverCardKey === cardKey) setDragOverCardKey(null);
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleImageDrop('whiteBg', idx, undefined);
+                              }}
+                              className={`group relative aspect-square border rounded-xl overflow-hidden transition-all cursor-grab active:cursor-grabbing ${
+                                isBeingDragged
+                                  ? 'opacity-25 border-dashed border-accent scale-95'
+                                  : isOver
+                                  ? 'border-accent ring-2 ring-accent/60 scale-[1.03] z-20'
+                                  : 'border-border bg-background/40 hover:border-accent/60'
+                              }`}
+                            >
+                              <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                              
+                              <span className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 rounded font-mono text-[9px] text-muted flex items-center gap-1">
+                                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent">
+                                  <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                                  <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                                </svg>
+                                #{idx + 1}
+                              </span>
+
+                              {idx === 0 && (
+                                <span className="absolute top-2 left-2 bg-accent text-black font-semibold px-2 py-0.5 rounded font-mono text-[8px] uppercase tracking-wider">Amazon Main</span>
+                              )}
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  setIsDirty(true);
+                                  setWhiteBackgroundImages(prev => prev.filter((_, i) => i !== idx));
+                                }}
+                                className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10 cursor-pointer"
+                                title="Remove Image"
+                              >
+                                ×
+                              </button>
+
+                              {/* Hover controls */}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all">
+                                {idx > 0 && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => moveImage(idx, 'left', true)}
+                                    className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                    title="Move Left"
+                                  >
+                                    ←
+                                  </button>
+                                )}
+                                <span className="font-mono text-[9px] text-accent uppercase tracking-widest bg-black/70 px-2 py-0.5 rounded border border-accent/30">Drag</span>
+                                {idx < whiteBackgroundImages.length - 1 && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => moveImage(idx, 'right', true)}
+                                    className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                    title="Move Right"
+                                  >
+                                    →
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center font-mono text-[11px] text-muted py-4">
+                        Drag white background images here or upload using the button below.
+                      </div>
+                    )}
+                  </div>
 
                   <CloudinaryUpload
                     onUpload={(urls) => {
@@ -2190,52 +2454,137 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
                 <div className="space-y-6">
                   {/* Variant Standard Images */}
                   <div className="space-y-4">
-                    <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant Remastered Images</h4>
-                    <p className="font-mono text-[10px] text-muted">Variant-specific marketing images (inherits parent if left blank).</p>
-                    
-                    {variants[activeTab].images ? (
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        {variants[activeTab].images.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => (
-                          <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
-                            <img src={url} alt="" className="w-full h-full object-cover" />
-                            <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                setIsDirty(true);
-                                const currentList = variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean);
-                                const filtered = currentList.filter((_, i) => i !== idx);
-                                updateVariantField(activeTab, 'images', filtered.join(', '));
-                              }}
-                              className="absolute top-2 right-2 bg-red-600/90 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                              title="Remove image"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
-                            <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={() => moveVariantImage(activeTab, idx, 'left', false)}
-                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
-                                title="Move Left"
-                              >
-                                ◀
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => moveVariantImage(activeTab, idx, 'right', false)}
-                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
-                                title="Move Right"
-                              >
-                                ▶
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant Remastered Images</h4>
+                        <p className="font-mono text-[10px] text-muted">Variant-specific marketing images (inherits parent if left blank). Drag to reorder or move between sections.</p>
                       </div>
-                    ) : (
-                      <p className="font-mono text-[10px] text-muted italic">No custom remastered images uploaded. (Inheriting from parent)</p>
-                    )}
+                      <span className="font-mono text-[9px] text-accent/80 bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                        ⇄ Drag &amp; Drop Enabled
+                      </span>
+                    </div>
+
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        const zoneKey = `variant-${activeTab}-remastered`;
+                        if (dragOverZone !== zoneKey) setDragOverZone(zoneKey);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        const zoneKey = `variant-${activeTab}-remastered`;
+                        if (dragOverZone === zoneKey) setDragOverZone(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleImageDrop('remastered', undefined, activeTab);
+                      }}
+                      className={`rounded-xl transition-all p-3 border ${
+                        dragOverZone === `variant-${activeTab}-remastered`
+                          ? 'border-accent border-dashed bg-accent/10 ring-2 ring-accent/30'
+                          : !variants[activeTab].images
+                          ? 'border-dashed border-border/60 bg-background/20 py-6 text-center'
+                          : 'border-transparent'
+                      }`}
+                    >
+                      {variants[activeTab].images ? (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                          {variants[activeTab].images.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => {
+                            const cardKey = `variant-${activeTab}-remastered-${idx}`;
+                            const isBeingDragged = draggedImage?.sourceType === 'remastered' && draggedImage?.sourceIndex === idx && draggedImage?.variantIndex === activeTab;
+                            const isOver = dragOverCardKey === cardKey;
+
+                            return (
+                              <div
+                                key={idx}
+                                draggable
+                                onDragStart={(e) => {
+                                  setDraggedImage({ sourceType: 'remastered', sourceIndex: idx, variantIndex: activeTab });
+                                  e.dataTransfer.effectAllowed = 'move';
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedImage(null);
+                                  setDragOverZone(null);
+                                  setDragOverCardKey(null);
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDragOverCardKey(cardKey);
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault();
+                                  if (dragOverCardKey === cardKey) setDragOverCardKey(null);
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleImageDrop('remastered', idx, activeTab);
+                                }}
+                                className={`group relative aspect-square border rounded-xl overflow-hidden transition-all cursor-grab active:cursor-grabbing ${
+                                  isBeingDragged
+                                    ? 'opacity-25 border-dashed border-accent scale-95'
+                                    : isOver
+                                    ? 'border-accent ring-2 ring-accent/60 scale-[1.03] z-20'
+                                    : 'border-border bg-background/40 hover:border-accent/60'
+                                }`}
+                              >
+                                <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                                
+                                <span className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 rounded font-mono text-[9px] text-muted flex items-center gap-1">
+                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent">
+                                    <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                                    <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                                  </svg>
+                                  #{idx + 1}
+                                </span>
+
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    setIsDirty(true);
+                                    const currentList = variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean);
+                                    const filtered = currentList.filter((_, i) => i !== idx);
+                                    updateVariantField(activeTab, 'images', filtered.join(', '));
+                                  }}
+                                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10 cursor-pointer"
+                                  title="Remove image"
+                                >
+                                  ×
+                                </button>
+                                
+                                {/* Hover controls */}
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all">
+                                  {idx > 0 && (
+                                    <button 
+                                      type="button" 
+                                      onClick={() => moveVariantImage(activeTab, idx, 'left', false)}
+                                      className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                      title="Move Left"
+                                    >
+                                      ←
+                                    </button>
+                                  )}
+                                  <span className="font-mono text-[9px] text-accent uppercase tracking-widest bg-black/70 px-2 py-0.5 rounded border border-accent/30">Drag</span>
+                                  {idx < variants[activeTab].images.split(',').map(s => s.trim()).filter(Boolean).length - 1 && (
+                                    <button 
+                                      type="button" 
+                                      onClick={() => moveVariantImage(activeTab, idx, 'right', false)}
+                                      className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                      title="Move Right"
+                                    >
+                                      →
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="font-mono text-[10px] text-muted italic">No custom remastered images uploaded. Drag images here or upload below. (Inheriting from parent)</p>
+                      )}
+                    </div>
 
                     <div className="max-w-[400px]">
                       <CloudinaryUpload 
@@ -2253,52 +2602,137 @@ export default function ProductFormClient({ categories, spaces, defaultValues, m
 
                   {/* Variant White Background Images */}
                   <div className="pt-6 border-t border-border/40 space-y-4">
-                    <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant White Background Images</h4>
-                    <p className="font-mono text-[10px] text-muted">Variant-specific white background catalog images (inherits parent if left blank).</p>
-                    
-                    {variants[activeTab].whiteBackgroundImages ? (
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        {variants[activeTab].whiteBackgroundImages.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => (
-                          <div key={idx} className="group relative aspect-square border border-border bg-background/40 rounded overflow-hidden">
-                            <img src={url} alt="" className="w-full h-full object-cover" />
-                            <span className="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[9px] text-muted">#{idx + 1}</span>
-                            <button 
-                              type="button"
-                              onClick={() => {
-                                setIsDirty(true);
-                                const currentList = variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean);
-                                const filtered = currentList.filter((_, i) => i !== idx);
-                                updateVariantField(activeTab, 'whiteBackgroundImages', filtered.join(', '));
-                              }}
-                              className="absolute top-2 right-2 bg-red-600/90 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                              title="Remove image"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
-                            <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={() => moveVariantImage(activeTab, idx, 'left', true)}
-                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
-                                title="Move Left"
-                              >
-                                ◀
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => moveVariantImage(activeTab, idx, 'right', true)}
-                                className="bg-black/75 hover:bg-accent text-white hover:text-black p-1 rounded font-mono text-[9px] cursor-pointer"
-                                title="Move Right"
-                              >
-                                ▶
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-serif text-[16px] text-accent tracking-wide">Variant White Background Images</h4>
+                        <p className="font-mono text-[10px] text-muted">Variant-specific white background catalog images (inherits parent if left blank). Drag to move across sections.</p>
                       </div>
-                    ) : (
-                      <p className="font-mono text-[10px] text-muted italic">No custom white-background images uploaded. (Inheriting from parent)</p>
-                    )}
+                      <span className="font-mono text-[9px] text-accent/80 bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                        ⇄ Drag &amp; Drop Enabled
+                      </span>
+                    </div>
+
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        const zoneKey = `variant-${activeTab}-whiteBg`;
+                        if (dragOverZone !== zoneKey) setDragOverZone(zoneKey);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        const zoneKey = `variant-${activeTab}-whiteBg`;
+                        if (dragOverZone === zoneKey) setDragOverZone(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleImageDrop('whiteBg', undefined, activeTab);
+                      }}
+                      className={`rounded-xl transition-all p-3 border ${
+                        dragOverZone === `variant-${activeTab}-whiteBg`
+                          ? 'border-accent border-dashed bg-accent/10 ring-2 ring-accent/30'
+                          : !variants[activeTab].whiteBackgroundImages
+                          ? 'border-dashed border-border/60 bg-background/20 py-6 text-center'
+                          : 'border-transparent'
+                      }`}
+                    >
+                      {variants[activeTab].whiteBackgroundImages ? (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                          {variants[activeTab].whiteBackgroundImages.split(',').map((s) => s.trim()).filter(Boolean).map((url, idx) => {
+                            const cardKey = `variant-${activeTab}-whiteBg-${idx}`;
+                            const isBeingDragged = draggedImage?.sourceType === 'whiteBg' && draggedImage?.sourceIndex === idx && draggedImage?.variantIndex === activeTab;
+                            const isOver = dragOverCardKey === cardKey;
+
+                            return (
+                              <div
+                                key={idx}
+                                draggable
+                                onDragStart={(e) => {
+                                  setDraggedImage({ sourceType: 'whiteBg', sourceIndex: idx, variantIndex: activeTab });
+                                  e.dataTransfer.effectAllowed = 'move';
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedImage(null);
+                                  setDragOverZone(null);
+                                  setDragOverCardKey(null);
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDragOverCardKey(cardKey);
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault();
+                                  if (dragOverCardKey === cardKey) setDragOverCardKey(null);
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleImageDrop('whiteBg', idx, activeTab);
+                                }}
+                                className={`group relative aspect-square border rounded-xl overflow-hidden transition-all cursor-grab active:cursor-grabbing ${
+                                  isBeingDragged
+                                    ? 'opacity-25 border-dashed border-accent scale-95'
+                                    : isOver
+                                    ? 'border-accent ring-2 ring-accent/60 scale-[1.03] z-20'
+                                    : 'border-border bg-background/40 hover:border-accent/60'
+                                }`}
+                              >
+                                <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                                
+                                <span className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 rounded font-mono text-[9px] text-muted flex items-center gap-1">
+                                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-accent">
+                                    <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                                    <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                                  </svg>
+                                  #{idx + 1}
+                                </span>
+
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    setIsDirty(true);
+                                    const currentList = variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean);
+                                    const filtered = currentList.filter((_, i) => i !== idx);
+                                    updateVariantField(activeTab, 'whiteBackgroundImages', filtered.join(', '));
+                                  }}
+                                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/80 hover:bg-red-600 hover:text-white flex items-center justify-center text-[12px] transition-colors z-10 cursor-pointer"
+                                  title="Remove image"
+                                >
+                                  ×
+                                </button>
+
+                                {/* Hover controls */}
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all">
+                                  {idx > 0 && (
+                                    <button 
+                                      type="button" 
+                                      onClick={() => moveVariantImage(activeTab, idx, 'left', true)}
+                                      className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                      title="Move Left"
+                                    >
+                                      ←
+                                    </button>
+                                  )}
+                                  <span className="font-mono text-[9px] text-accent uppercase tracking-widest bg-black/70 px-2 py-0.5 rounded border border-accent/30">Drag</span>
+                                  {idx < variants[activeTab].whiteBackgroundImages.split(',').map(s => s.trim()).filter(Boolean).length - 1 && (
+                                    <button 
+                                      type="button" 
+                                      onClick={() => moveVariantImage(activeTab, idx, 'right', true)}
+                                      className="w-7 h-7 rounded-full bg-background border border-border flex items-center justify-center text-primary font-mono text-xs hover:border-accent cursor-pointer"
+                                      title="Move Right"
+                                    >
+                                      →
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="font-mono text-[10px] text-muted italic">No custom white-background images uploaded. Drag images here or upload below. (Inheriting from parent)</p>
+                      )}
+                    </div>
 
                     <div className="max-w-[400px]">
                       <CloudinaryUpload
