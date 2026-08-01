@@ -9,6 +9,7 @@ import BlogProductPickerModal, {
 import { BlogMarkdownRenderer } from "@james-andsons/blog-editor";
 import { CldUploadWidget } from "next-cloudinary";
 import { pickImageFiles } from "@/lib/fileSystemAccess";
+import CloudinaryUpload from "@/components/CloudinaryUpload";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface BlogPost {
@@ -741,6 +742,12 @@ export default function BlogEditorForm({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<"card" | "photo">("card");
 
+  /* Upload & insert photo modal */
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState("");
+  const [photoCaption, setPhotoCaption] = useState("");
+  const [photoLinkedSlug, setPhotoLinkedSlug] = useState("");
+
   /* Product map */
   const productsMap: Record<string, SimpleProduct> = {};
   products.forEach((p) => {
@@ -1046,6 +1053,22 @@ export default function BlogEditorForm({
                     <span>📸</span>
                     <span className="hidden sm:inline">Product Photo</span>
                     <span className="sm:hidden">+ Photo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadedPhotoUrl("");
+                      setPhotoCaption("");
+                      setPhotoLinkedSlug("");
+                      setUploadModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-wider text-accent border border-accent/40 bg-accent/10 hover:bg-accent/20 px-3 py-2 rounded transition-all shadow-sm"
+                    title="Upload custom photo and insert into article"
+                  >
+                    <span>🖼️</span>
+                    <span className="hidden sm:inline">Upload Image</span>
+                    <span className="sm:hidden">+ Upload</span>
                   </button>
                 </div>
 
@@ -1521,6 +1544,99 @@ export default function BlogEditorForm({
         }}
         onClose={() => setPickerOpen(false)}
       />
+
+      {/* Upload & Insert Photo Modal */}
+      {uploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-surface border border-border rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in duration-150">
+            <div className="flex justify-between items-center border-b border-border pb-3">
+              <h3 className="font-serif text-lg text-primary font-light flex items-center gap-2">
+                <span>🖼️</span> Upload &amp; Insert Photo
+              </h3>
+              <button
+                type="button"
+                onClick={() => setUploadModalOpen(false)}
+                className="text-muted hover:text-primary text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-muted mb-2">
+                  1. Choose / Upload Image File
+                </label>
+                <CloudinaryUpload
+                  multiple={false}
+                  label="Upload Image"
+                  defaultImages={uploadedPhotoUrl ? [uploadedPhotoUrl] : []}
+                  onUpload={(urls) => {
+                    if (urls.length > 0) setUploadedPhotoUrl(urls[0]);
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-muted mb-1">
+                  2. Caption / Alt Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={photoCaption}
+                  onChange={(e) => setPhotoCaption(e.target.value)}
+                  placeholder="e.g., 12-Light Black Iron Classic Chandelier"
+                  className="w-full bg-background border border-border px-3 py-2 rounded text-xs font-mono text-primary outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-[10px] uppercase tracking-wider text-muted mb-1">
+                  3. Link to Storefront Product (Optional)
+                </label>
+                <select
+                  value={photoLinkedSlug}
+                  onChange={(e) => setPhotoLinkedSlug(e.target.value)}
+                  className="w-full bg-background border border-border px-3 py-2 rounded text-xs font-mono text-primary outline-none focus:border-accent"
+                >
+                  <option value="">-- No Linked Product --</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.slug}>
+                      {p.name} ({p.slug})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setUploadModalOpen(false)}
+                className="px-4 py-2 rounded border border-border font-mono text-[10px] uppercase tracking-wider text-muted hover:text-primary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!uploadedPhotoUrl}
+                onClick={() => {
+                  const alt = photoCaption.trim() || "Article Photo";
+                  const fragment = photoLinkedSlug
+                    ? `#product:${photoLinkedSlug}`
+                    : "";
+                  const snippet = `\n\n![${alt}](${uploadedPhotoUrl}${fragment})\n\n`;
+                  insertSnippet(snippet);
+                  setUploadModalOpen(false);
+                }}
+                className="px-5 py-2 rounded bg-accent text-black font-mono text-[10px] uppercase tracking-wider font-bold hover:brightness-110 disabled:opacity-40 shadow-lg shadow-accent/20"
+              >
+                Insert Photo →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
