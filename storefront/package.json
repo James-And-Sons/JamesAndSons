@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@james-andsons/blog-editor": "*",
     "@james-andsons/config": "*",
     "@james-andsons/db": "*",
     "@james-andsons/media": "*",
