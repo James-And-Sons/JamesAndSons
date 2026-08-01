@@ -770,29 +770,26 @@ export default function BlogEditorForm({
     };
   };
 
-  const insertSnippet = useCallback(
-    (snippet: string, cursorOffset?: number) => {
-      const el = textareaRef.current;
-      if (!el) {
-        setContent((prev) => prev + snippet);
-        return;
-      }
-      const start = el.selectionStart;
-      const end = el.selectionEnd;
-      const next =
-        content.substring(0, start) + snippet + content.substring(end);
-      setContent(next);
-      const cursor =
-        cursorOffset !== undefined
-          ? start + cursorOffset
-          : start + snippet.length;
-      setTimeout(() => {
-        el.focus();
-        el.setSelectionRange(cursor, cursor);
-      }, 20);
-    },
-    [content],
-  );
+  const insertSnippet = (snippet: string, cursorOffset?: number) => {
+    const el = textareaRef.current;
+    if (!el) {
+      setContent((prev) => prev + snippet);
+      return;
+    }
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    setContent(
+      (prev) => prev.substring(0, start) + snippet + prev.substring(end),
+    );
+    const cursor =
+      cursorOffset !== undefined
+        ? start + cursorOffset
+        : start + snippet.length;
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(cursor, cursor);
+    }, 20);
+  };
 
   /* Auto-resize textarea */
   useEffect(() => {

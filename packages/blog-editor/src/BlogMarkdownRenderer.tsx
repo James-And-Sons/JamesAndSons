@@ -59,22 +59,22 @@ export function BlogMarkdownRenderer({
       </a>
     ));
 
-  const components: Components = {
+  const components: Components | any = {
     // ── Headings ─────────────────────────────────────────────────────────────
-    h1: ({ children }) => <h1 className="blog-md-h1">{children}</h1>,
-    h2: ({ children }) => <h2 className="blog-md-h2">{children}</h2>,
-    h3: ({ children }) => (
+    h1: ({ children }: any) => <h1 className="blog-md-h1">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="blog-md-h2">{children}</h2>,
+    h3: ({ children }: any) => (
       <h3 className="blog-md-h3">
         <span className="blog-md-h3-icon">✦</span>
         <span>{children}</span>
       </h3>
     ),
-    h4: ({ children }) => <h4 className="blog-md-h4">{children}</h4>,
-    h5: ({ children }) => <h5 className="blog-md-h5">{children}</h5>,
-    h6: ({ children }) => <h6 className="blog-md-h6">{children}</h6>,
+    h4: ({ children }: any) => <h4 className="blog-md-h4">{children}</h4>,
+    h5: ({ children }: any) => <h5 className="blog-md-h5">{children}</h5>,
+    h6: ({ children }: any) => <h6 className="blog-md-h6">{children}</h6>,
 
     // ── Paragraph ────────────────────────────────────────────────────────────
-    p: ({ children, node }) => {
+    p: ({ children, node }: any) => {
       // Check if this paragraph is a product shortcode
       const raw = (node as any)?.children?.[0]?.value as string | undefined;
 
@@ -119,14 +119,14 @@ export function BlogMarkdownRenderer({
     },
 
     // ── Inline elements ───────────────────────────────────────────────────────
-    strong: ({ children }) => (
+    strong: ({ children }: any) => (
       <strong className="blog-md-strong">{children}</strong>
     ),
-    em: ({ children }) => <em className="blog-md-em">{children}</em>,
-    del: ({ children }) => <del className="blog-md-del">{children}</del>,
+    em: ({ children }: any) => <em className="blog-md-em">{children}</em>,
+    del: ({ children }: any) => <del className="blog-md-del">{children}</del>,
 
     // ── Links ────────────────────────────────────────────────────────────────
-    a: ({ href, children }) => (
+    a: ({ href, children }: any) => (
       <LinkEl
         href={href || "#"}
         target="_blank"
@@ -138,7 +138,7 @@ export function BlogMarkdownRenderer({
     ),
 
     // ── Inline code ───────────────────────────────────────────────────────────
-    code: ({ children, className, ...props }) => {
+    code: ({ children, className, ...props }: any) => {
       // Block code is handled by <pre><code>
       const isInline = !className;
       if (isInline) {
@@ -155,43 +155,43 @@ export function BlogMarkdownRenderer({
     },
 
     // ── Code block (pre) ──────────────────────────────────────────────────────
-    pre: ({ children }) => (
+    pre: ({ children }: any) => (
       <div className="blog-md-pre-wrapper">
         <pre className="blog-md-pre">{children}</pre>
       </div>
     ),
 
     // ── Blockquote ────────────────────────────────────────────────────────────
-    blockquote: ({ children }) => (
+    blockquote: ({ children }: any) => (
       <blockquote className="blog-md-blockquote">{children}</blockquote>
     ),
 
     // ── Lists ─────────────────────────────────────────────────────────────────
-    ul: ({ children }) => <ul className="blog-md-ul">{children}</ul>,
-    ol: ({ children }) => <ol className="blog-md-ol">{children}</ol>,
-    li: ({ children }) => <li className="blog-md-li">{children}</li>,
+    ul: ({ children }: any) => <ul className="blog-md-ul">{children}</ul>,
+    ol: ({ children }: any) => <ol className="blog-md-ol">{children}</ol>,
+    li: ({ children }: any) => <li className="blog-md-li">{children}</li>,
 
     // ── Horizontal rule ───────────────────────────────────────────────────────
     hr: () => <hr className="blog-md-hr" />,
 
     // ── Tables ────────────────────────────────────────────────────────────────
-    table: ({ children }) => (
+    table: ({ children }: any) => (
       <div className="blog-md-table-wrapper">
         <table className="blog-md-table">{children}</table>
       </div>
     ),
-    thead: ({ children }) => (
+    thead: ({ children }: any) => (
       <thead className="blog-md-thead">{children}</thead>
     ),
-    tbody: ({ children }) => (
+    tbody: ({ children }: any) => (
       <tbody className="blog-md-tbody">{children}</tbody>
     ),
-    tr: ({ children }) => <tr className="blog-md-tr">{children}</tr>,
-    th: ({ children }) => <th className="blog-md-th">{children}</th>,
-    td: ({ children }) => <td className="blog-md-td">{children}</td>,
+    tr: ({ children }: any) => <tr className="blog-md-tr">{children}</tr>,
+    th: ({ children }: any) => <th className="blog-md-th">{children}</th>,
+    td: ({ children }: any) => <td className="blog-md-td">{children}</td>,
 
     // ── Images ────────────────────────────────────────────────────────────────
-    img: ({ src, alt }) => {
+    img: ({ src, alt }: any) => {
       if (!src || typeof src !== "string") return null;
       // Skip if this is the featured image (already shown at top)
       if (featuredImg && src === featuredImg) return null;
