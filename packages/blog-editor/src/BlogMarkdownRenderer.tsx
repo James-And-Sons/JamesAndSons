@@ -34,7 +34,6 @@ interface BlogMarkdownRendererProps {
 /**
  * Transforms raw markdown content, replacing product/image shortcodes
  * so react-markdown can handle the rest as standard GFM.
- * We keep shortcodes as-is for now and handle them in custom renderers.
  */
 function preprocessContent(content: string): string {
   // Normalise Windows line endings
@@ -75,11 +74,10 @@ export function BlogMarkdownRenderer({
 
     // ── Paragraph ────────────────────────────────────────────────────────────
     p: ({ children, node }: any) => {
-      // Check if this paragraph is a product shortcode
+      // Check if this paragraph is a product shortcode: [product:slug]
       const raw = (node as any)?.children?.[0]?.value as string | undefined;
 
       if (raw) {
-        // Product card shortcode: [product:slug]
         const productMatch = raw.match(/^\[product:([a-zA-Z0-9-]+)\]$/i);
         if (productMatch) {
           const pSlug = productMatch[1].toLowerCase();
@@ -88,28 +86,40 @@ export function BlogMarkdownRenderer({
             const thumb =
               product.images?.[0] || product.whiteBackgroundImages?.[0];
             return (
-              <div className="blog-md-product-card">
-                <div className="blog-md-product-thumb">
-                  {thumb ? (
-                    <img
-                      src={thumb}
-                      alt={product.name}
-                      className="blog-md-product-img"
-                    />
-                  ) : (
-                    <span className="blog-md-product-placeholder">JS</span>
-                  )}
-                </div>
-                <div className="blog-md-product-info">
-                  <div className="blog-md-product-collection">
-                    {product.collection || "Signature Fixture"}
+              <LinkEl
+                href={`/products/${product.slug}`}
+                className="blog-md-product-card group no-underline flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="blog-md-product-thumb">
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt={product.name}
+                        className="blog-md-product-img transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <span className="blog-md-product-placeholder">JS</span>
+                    )}
                   </div>
-                  <div className="blog-md-product-name">{product.name}</div>
-                  <div className="blog-md-product-price">
-                    ₹{product.d2cPrice?.toLocaleString() || "N/A"}
+                  <div className="blog-md-product-info min-w-0 flex-1">
+                    <div className="blog-md-product-collection font-mono text-[9.5px] uppercase tracking-[0.15em] text-[var(--gold)]">
+                      {product.collection || "Signature Fixture"}
+                    </div>
+                    <div className="blog-md-product-name font-serif text-lg font-light text-[var(--cream)] group-hover:text-[var(--gold-light)] transition-colors truncate">
+                      {product.name}
+                    </div>
+                    <div className="blog-md-product-price font-mono text-sm font-semibold text-[var(--gold)] mt-0.5">
+                      ₹{product.d2cPrice?.toLocaleString() || "N/A"}
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                <div className="hidden sm:flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-[var(--gold)] border border-[var(--gold)]/40 px-3.5 py-1.5 rounded-full group-hover:bg-[var(--gold)] group-hover:text-black transition-all flex-shrink-0">
+                  <span>View Product</span>
+                  <span>↗</span>
+                </div>
+              </LinkEl>
             );
           }
         }
@@ -129,8 +139,8 @@ export function BlogMarkdownRenderer({
     a: ({ href, children }: any) => (
       <LinkEl
         href={href || "#"}
-        target="_blank"
-        rel="noopener noreferrer"
+        target={href?.startsWith("http") ? "_blank" : undefined}
+        rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
         className="blog-md-link"
       >
         {children}
@@ -139,7 +149,6 @@ export function BlogMarkdownRenderer({
 
     // ── Inline code ───────────────────────────────────────────────────────────
     code: ({ children, className, ...props }: any) => {
-      // Block code is handled by <pre><code>
       const isInline = !className;
       if (isInline) {
         return <code className="blog-md-inline-code">{children}</code>;
@@ -204,14 +213,47 @@ export function BlogMarkdownRenderer({
       const linkedSlug = linkedSlugMatch?.[1]?.toLowerCase();
       const linkedProduct = linkedSlug ? productsMap[linkedSlug] : null;
 
+      const imageFrame = (
+        <div className="blog-md-img-wrapper relative group">
+          <img
+            src={imgUrl}
+            alt={alt || "Product Photo"}
+            className="blog-md-img transition-transform duration-500 group-hover:scale-105"
+          />
+          {linkedProduct && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+              <span className="px-3 py-1.5 rounded-full bg-[var(--gold)] text-black font-mono text-[10px] uppercase tracking-widest font-bold shadow-xl flex items-center gap-1">
+                <span>View {linkedProduct.name}</span>
+                <span>↗</span>
+              </span>
+            </div>
+          )}
+        </div>
+      );
+
       return (
         <figure className="blog-md-figure">
-          <div className="blog-md-img-wrapper">
-            <img src={imgUrl} alt={alt || "Image"} className="blog-md-img" />
-          </div>
+          {linkedSlug ? (
+            <LinkEl
+              href={`/products/${linkedSlug}`}
+              className="block no-underline"
+            >
+              {imageFrame}
+            </LinkEl>
+          ) : (
+            imageFrame
+          )}
           {(alt || linkedProduct) && (
             <figcaption className="blog-md-figcaption">
-              {alt} {linkedProduct && `— ${linkedProduct.name}`}
+              {alt}{" "}
+              {linkedSlug && (
+                <LinkEl
+                  href={`/products/${linkedSlug}`}
+                  className="text-[var(--gold)] underline font-medium ml-1"
+                >
+                  — {linkedProduct?.name || linkedSlug} ↗
+                </LinkEl>
+              )}
             </figcaption>
           )}
         </figure>
