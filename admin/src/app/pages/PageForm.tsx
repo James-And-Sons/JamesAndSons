@@ -20,7 +20,7 @@ export default function PageForm({ page, isNew, action }: PageFormProps) {
   const insertImageTag = (url: string, altText: string) => {
     const alt = altText.trim() || "James & Sons";
     const tag = `\n<p><img src="${url}" alt="${alt}" style="max-width: 100%; border-radius: 12px; margin: 24px 0;" /></p>\n`;
-    setContent((prev) => prev + tag);
+    setContent((prev: string) => prev + tag);
   };
 
   return (
