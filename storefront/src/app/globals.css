@@ -1166,6 +1166,11 @@ body {
   display: flex;
   align-items: center;
   gap: 1.25rem;
+  width: 100%;
+  height: auto;
+  min-height: fit-content;
+  box-sizing: border-box;
+  overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .blog-md-product-card:hover {
@@ -1191,6 +1196,31 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.blog-md-product-info {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.blog-md-product-name {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.35 !important;
+  margin: 2px 0;
+}
+@media (max-width: 640px) {
+  .blog-md-product-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .blog-md-product-thumb {
+    width: 76px;
+    height: 76px;
+  }
 }
 
 

@@ -106,7 +106,7 @@ export function BlogMarkdownRenderer({
                     <div className="blog-md-product-collection font-mono text-[9.5px] uppercase tracking-[0.15em] text-[var(--gold)]">
                       {product.collection || "Signature Fixture"}
                     </div>
-                    <div className="blog-md-product-name font-serif text-lg font-light text-[var(--cream)] group-hover:text-[var(--gold-light)] transition-colors truncate">
+                    <div className="blog-md-product-name font-serif text-base sm:text-lg font-light text-[var(--cream)] group-hover:text-[var(--gold-light)] transition-colors leading-snug break-words">
                       {product.name}
                     </div>
                     <div className="blog-md-product-price font-mono text-sm font-semibold text-[var(--gold)] mt-0.5">
