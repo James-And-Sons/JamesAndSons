@@ -36,6 +36,23 @@ export function AdaptiveImageFrame({
     null,
   );
   const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = React.useRef<HTMLImageElement>(null);
+
+  // Check if image is already cached/complete on mount or when src changes
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete) {
+      if (imgRef.current.naturalWidth > 0) {
+        setIsLoaded(true);
+        if (imgRef.current.naturalHeight) {
+          setDetectedRatio(
+            imgRef.current.naturalWidth / imgRef.current.naturalHeight,
+          );
+        }
+      }
+    } else {
+      setIsLoaded(false);
+    }
+  }, [src]);
 
   // Parse or compute actual aspect ratio style string
   let currentAspectRatio: string | number = fallbackAspectRatio;
@@ -95,6 +112,7 @@ export function AdaptiveImageFrame({
       {/* Render HTML Image with fallback and smooth opacity transition */}
       {src && (
         <img
+          ref={imgRef}
           src={getOptimizedCloudinaryUrl(src, { width: 800 })}
           alt={alt}
           onLoad={handleImageLoad}

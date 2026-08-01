@@ -8,7 +8,10 @@ import Link from "next/link";
 import { useWishlistStore } from "@/store/wishlist";
 import { checkPincode, getSavedPincode } from "../actions";
 import Image from "next/image";
-import { AdaptiveImageFrame } from "@james-andsons/media";
+import {
+  AdaptiveImageFrame,
+  getOptimizedCloudinaryUrl,
+} from "@james-andsons/media";
 import InquiryModal from "@/components/InquiryModal";
 import ProductZoomModal from "./ProductZoomModal";
 
@@ -2299,10 +2302,11 @@ export default function PDPClient({
                           }}
                         >
                           <AdaptiveImageFrame
+                            key={activeImages[activeImg]}
                             src={activeImages[activeImg]}
                             alt={`${product.name} - view ${activeImg + 1}`}
                             objectFit="cover"
-                            priority={activeImg === 0}
+                            priority={true}
                           />
                         </div>
                       )
@@ -2325,6 +2329,19 @@ export default function PDPClient({
                         />
                       </div>
                     )}
+
+                    {/* Preload all active gallery images for instantaneous photo switching */}
+                    <div className="hidden" aria-hidden="true">
+                      {activeImages.map((imgUrl, idx) => (
+                        <img
+                          key={idx}
+                          src={getOptimizedCloudinaryUrl(imgUrl, {
+                            width: 800,
+                          })}
+                          alt=""
+                        />
+                      ))}
+                    </div>
 
                     {/* Left & Right Chevron Arrows */}
                     {activeImages.length > 1 && (
