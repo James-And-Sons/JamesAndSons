@@ -1,31 +1,34 @@
-'use client';
-import Link from 'next/link';
-import { createBlogPost } from '../actions';
-import { useState, useEffect } from 'react';
-import { useSidebar } from '@/lib/context/SidebarContext';
+"use client";
+import Link from "next/link";
+import { createBlogPost } from "../actions";
+import { useState, useEffect } from "react";
+import { useSidebar } from "@/lib/context/SidebarContext";
 
 export default function NewBlogPostPage() {
   const { setIsPageDirty } = useSidebar();
-  
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [excerpt, setExcerpt] = useState('');
-  const [content, setContent] = useState('');
+
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [content, setContent] = useState("");
   const [isDraft, setIsDraft] = useState(true);
 
-  const [metaTitle, setMetaTitle] = useState('');
-  const [metaDesc, setMetaDesc] = useState('');
-  const [geoTakeaway, setGeoTakeaway] = useState('');
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDesc, setMetaDesc] = useState("");
+  const [geoTakeaway, setGeoTakeaway] = useState("");
   const [faq, setFaq] = useState<{ q: string; a: string }[]>([]);
-  const [citations, setCitations] = useState<{ title: string; url: string }[]>([]);
+  const [citations, setCitations] = useState<{ title: string; url: string }[]>(
+    [],
+  );
 
-  const isDirty = title !== '' || 
-    slug !== '' || 
-    excerpt !== '' || 
-    content !== '' ||
-    metaTitle !== '' ||
-    metaDesc !== '' ||
-    geoTakeaway !== '' ||
+  const isDirty =
+    title !== "" ||
+    slug !== "" ||
+    excerpt !== "" ||
+    content !== "" ||
+    metaTitle !== "" ||
+    metaDesc !== "" ||
+    geoTakeaway !== "" ||
     faq.length > 0 ||
     citations.length > 0;
 
@@ -36,7 +39,9 @@ export default function NewBlogPostPage() {
 
   const handleCancel = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isDirty) {
-      if (!confirm('You have unsaved changes. Are you sure you want to leave?')) {
+      if (
+        !confirm("You have unsaved changes. Are you sure you want to leave?")
+      ) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -44,57 +49,76 @@ export default function NewBlogPostPage() {
   };
 
   return (
-    <form 
+    <form
       action={async (formData) => {
         setIsPageDirty(false);
         await createBlogPost(formData);
-      }} 
+      }}
       className="space-y-6"
     >
       {/* Sticky Header Actions */}
       <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border/80 py-4 mb-6 flex justify-between items-center">
         <div>
-          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">Create New Post</h1>
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">Publish a new article to the store blog</p>
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">
+            Create New Post
+          </h1>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">
+            Publish a new article to the store blog
+          </p>
         </div>
         <div className="flex gap-4">
-          <Link 
-            href="/blog" 
+          <Link
+            href="/blog"
             onClick={handleCancel}
             className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background flex items-center"
           >
             Cancel
           </Link>
-          <button type="submit" className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold shadow-lg shadow-accent/15">
+          <button
+            type="submit"
+            className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold shadow-lg shadow-accent/15"
+          >
             Publish Post
           </button>
         </div>
       </div>
 
       <div className="premium-card p-8 space-y-6 bg-surface/90 backdrop-blur">
-        <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">Article Content</h3>
+        <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">
+          Article Content
+        </h3>
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-1">
-            <label htmlFor="title" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Title *</label>
+            <label
+              htmlFor="title"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+            >
+              Title *
+            </label>
             <input
               type="text"
               id="title"
               name="title"
               required
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors"
               placeholder="Enter post title..."
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="slug" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Slug (Optional)</label>
+            <label
+              htmlFor="slug"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+            >
+              Slug (Optional)
+            </label>
             <input
               type="text"
               id="slug"
               name="slug"
               value={slug}
-              onChange={e => setSlug(e.target.value)}
+              onChange={(e) => setSlug(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-mono text-[12px] text-primary focus:outline-none focus:border-accent transition-colors"
               placeholder="my-post-slug"
             />
@@ -102,29 +126,84 @@ export default function NewBlogPostPage() {
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="excerpt" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Excerpt</label>
+          <label
+            htmlFor="excerpt"
+            className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+          >
+            Excerpt
+          </label>
           <textarea
             id="excerpt"
             name="excerpt"
             rows={3}
             value={excerpt}
-            onChange={e => setExcerpt(e.target.value)}
+            onChange={(e) => setExcerpt(e.target.value)}
             className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
             placeholder="A short summary of the post..."
           ></textarea>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="content" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Content *</label>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <label
+              htmlFor="content"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+            >
+              Content * (Markdown &amp; Product Shortcodes Supported)
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const pSlug = prompt(
+                    "Enter Product Slug (e.g. opulent-crystal-chandelier):",
+                  );
+                  if (pSlug) {
+                    setContent(
+                      (prev) => prev + `\n\n[product:${pSlug.trim()}]\n\n`,
+                    );
+                  }
+                }}
+                className="font-mono text-[9px] uppercase tracking-wider text-accent border border-accent/30 hover:bg-accent/10 px-2.5 py-1 rounded transition-colors"
+                title="Embeds an interactive Shoppable Product Card in article"
+              >
+                + Insert Product Card
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const pSlug = prompt(
+                    "Enter Product Slug (e.g. opulent-crystal-chandelier):",
+                  );
+                  const imgUrl = prompt("Enter Product Image URL:");
+                  const altText = prompt(
+                    "Enter Photo Caption/Alt Text:",
+                    "Featured Fixture",
+                  );
+                  if (imgUrl) {
+                    setContent(
+                      (prev) =>
+                        prev +
+                        `\n\n![${altText || "Product"}](${imgUrl.trim()}#product:${(pSlug || "").trim()})\n\n`,
+                    );
+                  }
+                }}
+                className="font-mono text-[9px] uppercase tracking-wider text-primary border border-border hover:border-accent hover:text-accent px-2.5 py-1 rounded transition-colors"
+                title="Embeds a photo that links directly to product page"
+              >
+                + Insert Product Photo
+              </button>
+            </div>
+          </div>
           <textarea
             id="content"
             name="content"
             required
             rows={18}
             value={content}
-            onChange={e => setContent(e.target.value)}
+            onChange={(e) => setContent(e.target.value)}
             className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] leading-relaxed"
-            placeholder="Write your content here..."
+            placeholder="Write your article content here... Use [product:slug] to embed a product card or ![Name](url#product:slug) for clickable product photos."
           ></textarea>
         </div>
       </div>
@@ -133,28 +212,38 @@ export default function NewBlogPostPage() {
         <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">
           SEO &amp; Generative Engine Optimization (GEO)
         </h3>
-        
+
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-1">
-            <label htmlFor="metaTitle" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">SEO Meta Title</label>
+            <label
+              htmlFor="metaTitle"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+            >
+              SEO Meta Title
+            </label>
             <input
               type="text"
               id="metaTitle"
               name="metaTitle"
               value={metaTitle}
-              onChange={e => setMetaTitle(e.target.value)}
+              onChange={(e) => setMetaTitle(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors"
               placeholder="Recommended: Under 60 characters"
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="metaDesc" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">SEO Meta Description</label>
+            <label
+              htmlFor="metaDesc"
+              className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+            >
+              SEO Meta Description
+            </label>
             <textarea
               id="metaDesc"
               name="metaDesc"
               rows={2}
               value={metaDesc}
-              onChange={e => setMetaDesc(e.target.value)}
+              onChange={(e) => setMetaDesc(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
               placeholder="Recommended: Under 160 characters"
             ></textarea>
@@ -162,13 +251,18 @@ export default function NewBlogPostPage() {
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="geoTakeaway" className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">GEO Summary / Key Takeaway</label>
+          <label
+            htmlFor="geoTakeaway"
+            className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+          >
+            GEO Summary / Key Takeaway
+          </label>
           <textarea
             id="geoTakeaway"
             name="geoTakeaway"
             rows={3}
             value={geoTakeaway}
-            onChange={e => setGeoTakeaway(e.target.value)}
+            onChange={(e) => setGeoTakeaway(e.target.value)}
             className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
             placeholder="A direct, concise summary of the article's core findings. Highly favored by generative search engines like Perplexity/Gemini."
           ></textarea>
@@ -177,10 +271,12 @@ export default function NewBlogPostPage() {
         {/* FAQs */}
         <div className="space-y-4 pt-4 border-t border-border/40">
           <div className="flex justify-between items-center">
-            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">GEO Structured FAQs (Q&amp;A)</label>
+            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
+              GEO Structured FAQs (Q&amp;A)
+            </label>
             <button
               type="button"
-              onClick={() => setFaq([...faq, { q: '', a: '' }])}
+              onClick={() => setFaq([...faq, { q: "", a: "" }])}
               className="font-mono text-[9px] uppercase tracking-wider text-accent border border-accent/25 hover:border-accent/80 hover:bg-accent/5 px-3 py-1.5 transition-all"
             >
               + Add FAQ Pair
@@ -189,7 +285,10 @@ export default function NewBlogPostPage() {
 
           <div className="space-y-4">
             {faq.map((item, idx) => (
-              <div key={idx} className="p-4 border border-border/40 bg-background/50 rounded-lg space-y-3 relative">
+              <div
+                key={idx}
+                className="p-4 border border-border/40 bg-background/50 rounded-lg space-y-3 relative"
+              >
                 <button
                   type="button"
                   onClick={() => setFaq(faq.filter((_, i) => i !== idx))}
@@ -202,7 +301,7 @@ export default function NewBlogPostPage() {
                     type="text"
                     placeholder="Question (e.g., What are the best chandelier styles for high ceilings?)"
                     value={item.q}
-                    onChange={e => {
+                    onChange={(e) => {
                       const next = [...faq];
                       next[idx].q = e.target.value;
                       setFaq(next);
@@ -215,7 +314,7 @@ export default function NewBlogPostPage() {
                     placeholder="Answer (Provide a direct, authoritative, and fact-backed answer)"
                     rows={2}
                     value={item.a}
-                    onChange={e => {
+                    onChange={(e) => {
                       const next = [...faq];
                       next[idx].a = e.target.value;
                       setFaq(next);
@@ -232,10 +331,14 @@ export default function NewBlogPostPage() {
         {/* Citations / Authority Links */}
         <div className="space-y-4 pt-4 border-t border-border/40">
           <div className="flex justify-between items-center">
-            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">GEO Authority References / Citations</label>
+            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
+              GEO Authority References / Citations
+            </label>
             <button
               type="button"
-              onClick={() => setCitations([...citations, { title: '', url: '' }])}
+              onClick={() =>
+                setCitations([...citations, { title: "", url: "" }])
+              }
               className="font-mono text-[9px] uppercase tracking-wider text-accent border border-accent/25 hover:border-accent/80 hover:bg-accent/5 px-3 py-1.5 transition-all"
             >
               + Add Citation
@@ -244,10 +347,15 @@ export default function NewBlogPostPage() {
 
           <div className="space-y-4">
             {citations.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center p-3 border border-border/40 bg-[#0A0905]/50 rounded-lg relative pr-12">
+              <div
+                key={idx}
+                className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center p-3 border border-border/40 bg-[#0A0905]/50 rounded-lg relative pr-12"
+              >
                 <button
                   type="button"
-                  onClick={() => setCitations(citations.filter((_, i) => i !== idx))}
+                  onClick={() =>
+                    setCitations(citations.filter((_, i) => i !== idx))
+                  }
                   className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-[#ef4444] hover:underline"
                 >
                   Remove
@@ -257,7 +365,7 @@ export default function NewBlogPostPage() {
                     type="text"
                     placeholder="Source Title (e.g., IS 10322 Chandelier Safety Standard)"
                     value={item.title}
-                    onChange={e => {
+                    onChange={(e) => {
                       const next = [...citations];
                       next[idx].title = e.target.value;
                       setCitations(next);
@@ -270,7 +378,7 @@ export default function NewBlogPostPage() {
                     type="url"
                     placeholder="Source URL (e.g., https://bis.gov.in/standards)"
                     value={item.url}
-                    onChange={e => {
+                    onChange={(e) => {
                       const next = [...citations];
                       next[idx].url = e.target.value;
                       setCitations(next);
@@ -281,12 +389,18 @@ export default function NewBlogPostPage() {
               </div>
             ))}
           </div>
-          <input type="hidden" name="citationsJson" value={JSON.stringify(citations)} />
+          <input
+            type="hidden"
+            name="citationsJson"
+            value={JSON.stringify(citations)}
+          />
         </div>
       </div>
 
       <div className="premium-card p-8 space-y-6 bg-surface/90 backdrop-blur">
-        <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">Publishing Settings</h3>
+        <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">
+          Publishing Settings
+        </h3>
         <div className="flex items-center gap-3">
           <input
             type="checkbox"
@@ -294,10 +408,15 @@ export default function NewBlogPostPage() {
             name="isDraft"
             value="true"
             checked={isDraft}
-            onChange={e => setIsDraft(e.target.checked)}
+            onChange={(e) => setIsDraft(e.target.checked)}
             className="w-4 h-4 accent-accent bg-background border-border"
           />
-          <label htmlFor="isDraft" className="font-body text-[13px] text-secondary cursor-pointer select-none">Save as Draft</label>
+          <label
+            htmlFor="isDraft"
+            className="font-body text-[13px] text-secondary cursor-pointer select-none"
+          >
+            Save as Draft
+          </label>
         </div>
       </div>
     </form>
