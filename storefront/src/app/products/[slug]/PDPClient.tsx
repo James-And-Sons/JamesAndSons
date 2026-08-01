@@ -14,6 +14,7 @@ import {
 } from "@james-andsons/media";
 import InquiryModal from "@/components/InquiryModal";
 import ProductZoomModal from "./ProductZoomModal";
+import { triggerHaptic } from "@/lib/haptic";
 
 type Variant = {
   id: string;
@@ -73,6 +74,35 @@ export default function PDPClient({
   const [isHovered, setIsHovered] = useState(false);
   const [isMagnifierEnabled, setIsMagnifierEnabled] = useState(false);
   const [hoverPos, setHoverPos] = useState({ x: 50, y: 50 });
+  const [shareToast, setShareToast] = useState(false);
+
+  const handleShareProduct = async () => {
+    triggerHaptic(18);
+    const shareData = {
+      title: `${product.name} | James & Sons`,
+      text: `Discover ${product.name} — luxury handcrafted illumination by James & Sons.`,
+      url:
+        typeof window !== "undefined"
+          ? window.location.href
+          : `https://jamesandsons.in/products/${product.slug}`,
+    };
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled share
+      }
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 3000);
+      } catch (err) {
+        console.error("Clipboard copy error:", err);
+      }
+    }
+  };
 
   const handleMouseMoveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -999,6 +1029,20 @@ export default function PDPClient({
               cursor: activeImages.length > 0 ? "zoom-in" : "default",
             }}
           >
+            {/* Top-Left Mobile Share Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareProduct();
+              }}
+              className="absolute top-3 left-3 bg-black/75 backdrop-blur-md text-white border border-white/20 w-9 h-9 rounded-full flex items-center justify-center text-sm shadow-xl z-20 hover:border-[var(--gold)] active:scale-90 transition-all cursor-pointer"
+              aria-label="Share product"
+              title="Share Product Link"
+            >
+              <i className="ti ti-share text-base text-[var(--gold)]" />
+            </button>
+
             {/* Top-Right Tap to Zoom Helper Badge */}
             <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md text-white/90 font-mono text-[10px] tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/20 shadow-lg pointer-events-none z-10">
               <i className="ti ti-zoom-in text-xs text-[var(--gold)]" />
@@ -1179,18 +1223,32 @@ export default function PDPClient({
                 marginBottom: "6px",
                 display: "flex",
                 alignItems: "center",
-                gap: "6px",
+                justifyContent: "space-between",
               }}
             >
               <div
-                style={{
-                  width: "4px",
-                  height: "4px",
-                  background: "var(--gold)",
-                  borderRadius: "50%",
-                }}
-              />
-              {product.category?.name || "Exclusive Fixture"}
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <div
+                  style={{
+                    width: "4px",
+                    height: "4px",
+                    background: "var(--gold)",
+                    borderRadius: "50%",
+                  }}
+                />
+                {product.category?.name || "Exclusive Fixture"}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleShareProduct}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-[10.5px] font-mono text-[var(--cream)] transition-all cursor-pointer active:scale-95"
+                title="Share Product Link"
+              >
+                <i className="ti ti-share text-xs text-[var(--gold)]" />
+                <span>Share</span>
+              </button>
             </div>
 
             <h1
@@ -3039,28 +3097,46 @@ export default function PDPClient({
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "12px",
+                    justifyContent: "space-between",
                     marginBottom: "12px",
                   }}
                 >
                   <div
                     style={{
-                      height: "1px",
-                      width: "24px",
-                      background: "var(--gold)",
-                    }}
-                  ></div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "11px",
-                      color: "var(--gold)",
-                      letterSpacing: "0.2em",
-                      textTransform: "uppercase",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
                     }}
                   >
-                    {product.category?.name || "Exclusive Design"}
+                    <div
+                      style={{
+                        height: "1px",
+                        width: "24px",
+                        background: "var(--gold)",
+                      }}
+                    ></div>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "11px",
+                        color: "var(--gold)",
+                        letterSpacing: "0.2em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {product.category?.name || "Exclusive Design"}
+                    </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleShareProduct}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 hover:border-[var(--gold)] text-xs font-mono text-[var(--cream)] transition-all cursor-pointer shadow-sm active:scale-95"
+                    title="Share Product Link"
+                  >
+                    <i className="ti ti-share text-xs text-[var(--gold)]" />
+                    <span>Share Product</span>
+                  </button>
                 </div>
 
                 <h1
@@ -4349,6 +4425,13 @@ export default function PDPClient({
             animation: shimmer 1.5s infinite linear;
           }
         `}</style>
+        {/* Share Toast Banner */}
+        {shareToast && (
+          <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-black/90 border border-[var(--gold)] text-[var(--gold-light)] font-mono text-xs shadow-2xl flex items-center gap-2 backdrop-blur-md animate-fadeIn">
+            <span>📋</span>
+            <span>Product link copied to clipboard!</span>
+          </div>
+        )}
       </div>
     </>
   );
