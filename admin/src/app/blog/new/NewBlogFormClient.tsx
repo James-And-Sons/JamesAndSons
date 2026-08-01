@@ -1,93 +1,47 @@
 "use client";
 import Link from "next/link";
+import { createBlogPost } from "../actions";
 import { useState, useEffect } from "react";
 import { useSidebar } from "@/lib/context/SidebarContext";
 import BlogProductPickerModal, {
   SimpleProduct,
 } from "@/components/BlogProductPickerModal";
 
-interface PostType {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  content: string;
-  isDraft: boolean;
-  metaTitle?: string | null;
-  metaDesc?: string | null;
-  geoTakeaway?: string | null;
-  faq?: any;
-  citations?: any;
-}
-
-export default function BlogFormClient({
-  post,
-  products = [],
-  action,
+export default function NewBlogFormClient({
+  products,
 }: {
-  post: PostType;
-  products?: SimpleProduct[];
-  action: (formData: FormData) => Promise<void>;
+  products: SimpleProduct[];
 }) {
   const { setIsPageDirty } = useSidebar();
 
-  const [title, setTitle] = useState(post.title);
-  const [slug, setSlug] = useState(post.slug);
-  const [excerpt, setExcerpt] = useState(post.excerpt || "");
-  const [content, setContent] = useState(post.content);
-  const [isDraft, setIsDraft] = useState(post.isDraft);
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [content, setContent] = useState("");
+  const [isDraft, setIsDraft] = useState(true);
 
-  const [metaTitle, setMetaTitle] = useState(post.metaTitle || "");
-  const [metaDesc, setMetaDesc] = useState(post.metaDesc || "");
-  const [geoTakeaway, setGeoTakeaway] = useState(post.geoTakeaway || "");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDesc, setMetaDesc] = useState("");
+  const [geoTakeaway, setGeoTakeaway] = useState("");
+  const [faq, setFaq] = useState<{ q: string; a: string }[]>([]);
+  const [citations, setCitations] = useState<{ title: string; url: string }[]>(
+    [],
+  );
 
   // Picker Modal State
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<"card" | "photo">("card");
 
-  // Find all products currently embedded in content
-  const detectedSlugs = Array.from(
-    (content || "").matchAll(
-      /\[product:([a-zA-Z0-9-]+)\]|#(?:product:)?([a-zA-Z0-9-]+)/gi,
-    ),
-  )
-    .map((m) => (m[1] || m[2]).toLowerCase())
-    .filter(Boolean);
-
-  const linkedProducts = products.filter((p) =>
-    detectedSlugs.includes(p.slug.toLowerCase()),
-  );
-
-  const initialFaq = () => {
-    try {
-      if (typeof post.faq === "string") return JSON.parse(post.faq);
-      if (Array.isArray(post.faq)) return post.faq;
-    } catch {}
-    return [];
-  };
-  const [faq, setFaq] = useState<{ q: string; a: string }[]>(initialFaq());
-
-  const initialCitations = () => {
-    try {
-      if (typeof post.citations === "string") return JSON.parse(post.citations);
-      if (Array.isArray(post.citations)) return post.citations;
-    } catch {}
-    return [];
-  };
-  const [citations, setCitations] =
-    useState<{ title: string; url: string }[]>(initialCitations());
-
   const isDirty =
-    title !== post.title ||
-    slug !== post.slug ||
-    excerpt !== (post.excerpt || "") ||
-    content !== post.content ||
-    isDraft !== post.isDraft ||
-    metaTitle !== (post.metaTitle || "") ||
-    metaDesc !== (post.metaDesc || "") ||
-    geoTakeaway !== (post.geoTakeaway || "") ||
-    JSON.stringify(faq) !== JSON.stringify(initialFaq()) ||
-    JSON.stringify(citations) !== JSON.stringify(initialCitations());
+    title !== "" ||
+    slug !== "" ||
+    excerpt !== "" ||
+    content !== "" ||
+    metaTitle !== "" ||
+    metaDesc !== "" ||
+    geoTakeaway !== "" ||
+    faq.length > 0 ||
+    citations.length > 0;
 
   useEffect(() => {
     setIsPageDirty(isDirty);
@@ -105,12 +59,25 @@ export default function BlogFormClient({
     }
   };
 
+  // Find all products currently embedded in content
+  const detectedSlugs = Array.from(
+    content.matchAll(
+      /\[product:([a-zA-Z0-9-]+)\]|#(?:product:)?([a-zA-Z0-9-]+)/gi,
+    ),
+  )
+    .map((m) => (m[1] || m[2]).toLowerCase())
+    .filter(Boolean);
+
+  const linkedProducts = products.filter((p) =>
+    detectedSlugs.includes(p.slug.toLowerCase()),
+  );
+
   return (
     <>
       <form
         action={async (formData) => {
           setIsPageDirty(false);
-          await action(formData);
+          await createBlogPost(formData);
         }}
         className="space-y-6"
       >
@@ -118,10 +85,10 @@ export default function BlogFormClient({
         <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border/80 py-4 mb-6 flex justify-between items-center">
           <div>
             <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">
-              Edit Blog Post
+              Create New Post
             </h1>
             <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">
-              Editing: {post.title}
+              Publish a new article to the store blog
             </p>
           </div>
           <div className="flex gap-4">
@@ -136,7 +103,7 @@ export default function BlogFormClient({
               type="submit"
               className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold shadow-lg shadow-accent/15"
             >
-              Update Post
+              Publish Post
             </button>
           </div>
         </div>
@@ -161,6 +128,7 @@ export default function BlogFormClient({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors"
+                placeholder="Enter post title..."
               />
             </div>
             <div className="space-y-1">
@@ -168,16 +136,16 @@ export default function BlogFormClient({
                 htmlFor="slug"
                 className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
               >
-                Slug *
+                Slug (Optional)
               </label>
               <input
                 type="text"
                 id="slug"
                 name="slug"
-                required
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 className="w-full bg-background border border-border px-4 py-3 font-mono text-[12px] text-primary focus:outline-none focus:border-accent transition-colors"
+                placeholder="my-post-slug"
               />
             </div>
           </div>
@@ -196,15 +164,16 @@ export default function BlogFormClient({
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
-              placeholder="A brief summary..."
+              placeholder="A short summary of the post..."
             ></textarea>
           </div>
 
+          {/* Content Editor with Visual Product Picker Toolbar */}
           <div className="space-y-2">
             <div className="flex flex-wrap justify-between items-center gap-2">
               <label
                 htmlFor="content"
-                className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+                className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block"
               >
                 Content * (Markdown &amp; Visual Product Shortcodes Supported)
               </label>
@@ -221,6 +190,7 @@ export default function BlogFormClient({
                   <span>🛍️</span>
                   <span>+ Link Product Card</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {
