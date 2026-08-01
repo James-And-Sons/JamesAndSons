@@ -29,9 +29,54 @@ export async function generateMetadata({
 
   if (!post) return {};
 
+  const title = post.metaTitle || `${post.title} | James & Sons`;
+  const description = post.metaDesc || post.excerpt || undefined;
+
+  let rawImg =
+    post.featuredImg || "https://jamesandsons.in/images/logo-dark.png";
+  let imageUrl = rawImg;
+  if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+    imageUrl = `https://jamesandsons.in${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+  }
+
+  if (
+    imageUrl.includes("res.cloudinary.com") &&
+    imageUrl.includes("/upload/")
+  ) {
+    imageUrl = imageUrl.replace(
+      /\/upload\/(?:[^\/]+\/)?/,
+      "/upload/f_jpg,q_auto:good,w_1200,h_630,c_fill/",
+    );
+  }
+
+  const pageUrl = `https://jamesandsons.in/blog/${slug}`;
+
   return {
-    title: post.metaTitle || `${post.title} | James & Sons`,
-    description: post.metaDesc || post.excerpt || undefined,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: "James & Sons",
+      images: [
+        {
+          url: imageUrl,
+          secureUrl: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+          type: "image/jpeg",
+        },
+      ],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
   };
 }
 
