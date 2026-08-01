@@ -17,7 +17,7 @@
     "test:e2e": "playwright test",
     "format": "prettier --check .",
     "prepare": "husky || true",
-    "postinstall": "npm run db:generate --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/assets && npm run build --workspace=@james-andsons/config && npm run build --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/interfaces && npm run build --workspace=@james-andsons/media && npm run build --workspace=@james-andsons/razorpay && npm run build --workspace=@james-andsons/shiprocket && npm run build --workspace=@james-andsons/ui && npm run build --workspace=@james-andsons/utils && npm run build --workspace=@james-andsons/zoho"
+    "postinstall": "npm run db:generate --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/assets && npm run build --workspace=@james-andsons/config && npm run build --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/interfaces && npm run build --workspace=@james-andsons/media && npm run build --workspace=@james-andsons/razorpay && npm run build --workspace=@james-andsons/shiprocket && npm run build --workspace=@james-andsons/ui && npm run build --workspace=@james-andsons/blog-editor && npm run build --workspace=@james-andsons/utils && npm run build --workspace=@james-andsons/zoho"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",

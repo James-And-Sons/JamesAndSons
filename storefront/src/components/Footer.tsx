@@ -101,9 +101,14 @@ export default function Footer() {
               </li>
               {config.featureFlags.enableB2bPortal && (
                 <li>
-                  <Link href="/b2b" className="footer-link">
+                  <a
+                    href="https://indiamart.jamesandsons.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link"
+                  >
                     B2B Portal
-                  </Link>
+                  </a>
                 </li>
               )}
             </ul>

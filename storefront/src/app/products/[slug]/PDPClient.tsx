@@ -1029,24 +1029,9 @@ export default function PDPClient({
               cursor: activeImages.length > 0 ? "zoom-in" : "default",
             }}
           >
-            {/* Top-Left Mobile Share Button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleShareProduct();
-              }}
-              className="absolute top-3 left-3 bg-black/75 backdrop-blur-md text-white border border-white/20 w-9 h-9 rounded-full flex items-center justify-center text-sm shadow-xl z-20 hover:border-[var(--gold)] active:scale-90 transition-all cursor-pointer"
-              aria-label="Share product"
-              title="Share Product Link"
-            >
-              <i className="ti ti-share text-base text-[var(--gold)]" />
-            </button>
-
-            {/* Top-Right Tap to Zoom Helper Badge */}
-            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md text-white/90 font-mono text-[10px] tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/20 shadow-lg pointer-events-none z-10">
-              <i className="ti ti-zoom-in text-xs text-[var(--gold)]" />
-              <span>Tap to zoom</span>
+            {/* Top-Right Subtle Zoom Helper Icon */}
+            <div className="absolute top-2.5 right-2.5 bg-black/30 backdrop-blur-sm text-white/60 p-1.5 rounded-full border border-white/10 shadow-sm pointer-events-none z-10">
+              <i className="ti ti-zoom-in text-xs text-[var(--gold)]/80" />
             </div>
 
             {activeImages.length > 0 && activeImages[activeImg] ? (
@@ -1076,7 +1061,7 @@ export default function PDPClient({
               </div>
             )}
 
-            {/* Mobile Image Helper Navigation Arrows */}
+            {/* Mobile Image Helper Navigation Arrows (Subtle) */}
             {activeImages.length > 1 && (
               <>
                 <button
@@ -1087,60 +1072,20 @@ export default function PDPClient({
                         (i - 1 + activeImages.length) % activeImages.length,
                     );
                   }}
-                  style={{
-                    position: "absolute",
-                    left: "10px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: "rgba(0,0,0,0.7)",
-                    backdropFilter: "blur(6px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    zIndex: 10,
-                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/25 hover:bg-black/60 backdrop-blur-sm border border-white/10 text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-all z-10"
                   aria-label="Previous product image"
                 >
-                  <i
-                    className="ti ti-chevron-left"
-                    style={{ fontSize: "18px" }}
-                  ></i>
+                  <i className="ti ti-chevron-left text-sm" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveImg((i) => (i + 1) % activeImages.length);
                   }}
-                  style={{
-                    position: "absolute",
-                    right: "10px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: "rgba(0,0,0,0.7)",
-                    backdropFilter: "blur(6px)",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    zIndex: 10,
-                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/25 hover:bg-black/60 backdrop-blur-sm border border-white/10 text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-all z-10"
                   aria-label="Next product image"
                 >
-                  <i
-                    className="ti ti-chevron-right"
-                    style={{ fontSize: "18px" }}
-                  ></i>
+                  <i className="ti ti-chevron-right text-sm" />
                 </button>
 
                 {/* Mobile Dots Indicator */}
@@ -2341,17 +2286,17 @@ export default function PDPClient({
                     onMouseLeave={() => setIsHovered(false)}
                     onMouseMove={handleMouseMoveFrame}
                   >
-                    {/* Top-Right Desktop Zoom Lens Toggle Button */}
+                    {/* Top-Right Desktop Subtle Zoom Toggle Button */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsMagnifierEnabled((prev) => !prev);
                       }}
-                      className={`absolute top-4 right-4 z-20 px-3.5 py-1.5 rounded-full backdrop-blur-md border text-xs font-mono flex items-center gap-1.5 transition-all shadow-lg cursor-pointer ${
+                      className={`absolute top-3 right-3 z-20 w-8 h-8 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all shadow-md cursor-pointer ${
                         isMagnifierEnabled
-                          ? "bg-[var(--gold)] text-black border-[var(--gold)] font-semibold"
-                          : "bg-black/70 text-white/90 border-white/20 hover:border-[var(--gold)] hover:text-[var(--gold)]"
+                          ? "bg-[var(--gold)] text-black border-[var(--gold)] opacity-90 hover:opacity-100"
+                          : "bg-black/30 text-white/60 border-white/10 hover:border-white/30 hover:text-white hover:bg-black/50"
                       }`}
                       title={
                         isMagnifierEnabled
@@ -2360,11 +2305,8 @@ export default function PDPClient({
                       }
                     >
                       <i
-                        className={`ti ${isMagnifierEnabled ? "ti-zoom-check" : "ti-zoom-in"}`}
+                        className={`ti ${isMagnifierEnabled ? "ti-zoom-check text-sm" : "ti-zoom-in text-xs"}`}
                       />
-                      <span>
-                        {isMagnifierEnabled ? "Zoom Active" : "Enable Zoom"}
-                      </span>
                     </button>
 
                     {activeImages.length > 0 && activeImages[activeImg] ? (
@@ -2434,7 +2376,7 @@ export default function PDPClient({
                       ))}
                     </div>
 
-                    {/* Left & Right Chevron Arrows */}
+                    {/* Left & Right Chevron Arrows (Subtle) */}
                     {activeImages.length > 1 && (
                       <>
                         <button
@@ -2446,58 +2388,20 @@ export default function PDPClient({
                                 activeImages.length,
                             );
                           }}
-                          style={{
-                            position: "absolute",
-                            left: "20px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            width: "44px",
-                            height: "44px",
-                            borderRadius: "50%",
-                            background: "rgba(0,0,0,0.6)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            zIndex: 10,
-                          }}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/20 hover:bg-black/60 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white flex items-center justify-center cursor-pointer transition-all z-10 opacity-70 hover:opacity-100"
+                          aria-label="Previous product image"
                         >
-                          <i
-                            className="ti ti-chevron-left"
-                            style={{ fontSize: "20px" }}
-                          ></i>
+                          <i className="ti ti-chevron-left text-base" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveImg((i) => (i + 1) % activeImages.length);
                           }}
-                          style={{
-                            position: "absolute",
-                            right: "20px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            width: "44px",
-                            height: "44px",
-                            borderRadius: "50%",
-                            background: "rgba(0,0,0,0.6)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            zIndex: 10,
-                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/20 hover:bg-black/60 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white flex items-center justify-center cursor-pointer transition-all z-10 opacity-70 hover:opacity-100"
+                          aria-label="Next product image"
                         >
-                          <i
-                            className="ti ti-chevron-right"
-                            style={{ fontSize: "20px" }}
-                          ></i>
+                          <i className="ti ti-chevron-right text-base" />
                         </button>
                       </>
                     )}
