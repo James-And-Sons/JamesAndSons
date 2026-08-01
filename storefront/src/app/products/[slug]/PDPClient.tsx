@@ -71,6 +71,7 @@ export default function PDPClient({
   const dragStartXRef = useRef<number | null>(null);
 
   const [isHovered, setIsHovered] = useState(false);
+  const [isMagnifierEnabled, setIsMagnifierEnabled] = useState(false);
   const [hoverPos, setHoverPos] = useState({ x: 50, y: 50 });
 
   const handleMouseMoveFrame = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -348,12 +349,15 @@ export default function PDPClient({
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
   const handleSwipe = (endX: number) => {
-    if (touchStartX === null) return;
+    if (touchStartX === null || !activeImages || activeImages.length <= 1)
+      return;
     const diff = touchStartX - endX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0)
-        setActiveImg((i) => Math.min(activeImages.length - 1, i + 1));
-      else setActiveImg((i) => Math.max(0, i - 1));
+    if (Math.abs(diff) > 30) {
+      if (diff > 0) setActiveImg((i) => (i + 1) % activeImages.length);
+      else
+        setActiveImg(
+          (i) => (i - 1 + activeImages.length) % activeImages.length,
+        );
     }
     setTouchStartX(null);
   };
@@ -2279,6 +2283,32 @@ export default function PDPClient({
                     onMouseLeave={() => setIsHovered(false)}
                     onMouseMove={handleMouseMoveFrame}
                   >
+                    {/* Top-Right Desktop Zoom Lens Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMagnifierEnabled((prev) => !prev);
+                      }}
+                      className={`absolute top-4 right-4 z-20 px-3.5 py-1.5 rounded-full backdrop-blur-md border text-xs font-mono flex items-center gap-1.5 transition-all shadow-lg cursor-pointer ${
+                        isMagnifierEnabled
+                          ? "bg-[var(--gold)] text-black border-[var(--gold)] font-semibold"
+                          : "bg-black/70 text-white/90 border-white/20 hover:border-[var(--gold)] hover:text-[var(--gold)]"
+                      }`}
+                      title={
+                        isMagnifierEnabled
+                          ? "Click to turn off zoom lens"
+                          : "Click to enable zoom lens"
+                      }
+                    >
+                      <i
+                        className={`ti ${isMagnifierEnabled ? "ti-zoom-check" : "ti-zoom-in"}`}
+                      />
+                      <span>
+                        {isMagnifierEnabled ? "Zoom Active" : "Enable Zoom"}
+                      </span>
+                    </button>
+
                     {activeImages.length > 0 && activeImages[activeImg] ? (
                       activeImages[activeImg].toLowerCase().includes(".mp4") ||
                       activeImages[activeImg].toLowerCase().includes(".webm") ||
@@ -2297,7 +2327,10 @@ export default function PDPClient({
                         <div
                           className="w-full h-full transition-transform duration-150 ease-out"
                           style={{
-                            transform: isHovered ? "scale(2.2)" : "scale(1)",
+                            transform:
+                              isHovered && isMagnifierEnabled
+                                ? "scale(2.2)"
+                                : "scale(1)",
                             transformOrigin: `${hoverPos.x}% ${hoverPos.y}%`,
                           }}
                         >

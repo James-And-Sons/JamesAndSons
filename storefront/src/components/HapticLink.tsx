@@ -11,19 +11,15 @@ interface HapticLinkProps extends LinkProps {
 
 export default function HapticLink({
   children,
+  className = "",
   onClick,
   ...props
 }: HapticLinkProps) {
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    triggerHaptic(18);
-    if (onClick) onClick(e);
-  };
-
   return (
     <Link
       {...props}
-      onClick={handleClick}
-      onTouchStart={() => triggerHaptic(15)}
+      onClick={onClick}
+      className={`transition-all duration-200 ease-out active:scale-[0.97] active:bg-[rgba(201,168,76,0.15)] active:border-[var(--gold)] ${className}`}
     >
       {children}
     </Link>

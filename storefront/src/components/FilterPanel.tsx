@@ -396,14 +396,15 @@ export default function FilterPanel({
           })}
         </div>
 
-        {/* Right Active Content Area */}
+        {/* Right Active Content Area with generous right-hand side padding */}
         <div
           style={{
             flex: 1,
-            padding: "20px",
+            padding: "24px 32px 24px 24px",
             overflowY: "auto",
             background: "var(--surface)",
           }}
+          className="pr-6 sm:pr-10"
         >
           {/* Price Range Tab */}
           {activeTab === "price" && (
