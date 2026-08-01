@@ -256,39 +256,24 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </div>
           </div>
 
-          <div
-            style={{
-              margin: "24px 24px 32px",
-              aspectRatio: "16/9",
-              background: "var(--surface2)",
-              borderRadius: "16px",
-              border: "0.5px solid var(--border)",
-              overflow: "hidden",
-            }}
-          >
+          {post.featuredImg && (
             <div
               style={{
-                width: "100%",
-                height: "100%",
-                background:
-                  "linear-gradient(45deg, var(--void), var(--surface))",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                margin: "24px 24px 32px",
+                aspectRatio: "16/9",
+                borderRadius: "16px",
+                border: "0.5px solid var(--border)",
+                overflow: "hidden",
+                position: "relative",
               }}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-serif)",
-                  fontSize: "48px",
-                  color: "var(--border)",
-                  opacity: 0.3,
-                }}
-              >
-                JS
-              </span>
+              <img
+                src={post.featuredImg}
+                alt={post.title}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
-          </div>
+          )}
 
           <div style={{ padding: "0 24px" }}>
             {/* GEO Key Takeaway Box */}
@@ -333,6 +318,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <BlogContentRenderer
               content={post.content}
               productsMap={productsMap}
+              featuredImg={post.featuredImg}
             />
 
             {/* Q&A Accordion (FAQs) */}
@@ -575,38 +561,24 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </div>
           </header>
 
-          <div
-            style={{
-              aspectRatio: "16/9",
-              background: "var(--surface2)",
-              border: "1px solid var(--border)",
-              marginBottom: "40px",
-              overflow: "hidden",
-            }}
-          >
+          {post.featuredImg && (
             <div
               style={{
-                width: "100%",
-                height: "100%",
-                background:
-                  "linear-gradient(45deg, var(--void), var(--surface))",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                aspectRatio: "16/9",
+                border: "1px solid var(--border)",
+                borderRadius: "20px",
+                marginBottom: "40px",
+                overflow: "hidden",
+                position: "relative",
               }}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-serif)",
-                  fontSize: "64px",
-                  color: "var(--border)",
-                  opacity: 0.3,
-                }}
-              >
-                JS
-              </span>
+              <img
+                src={post.featuredImg}
+                alt={post.title}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
-          </div>
+          )}
 
           {/* GEO Key Takeaway Box */}
           {post.geoTakeaway && (
@@ -651,6 +623,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <BlogContentRenderer
             content={post.content}
             productsMap={productsMap}
+            featuredImg={post.featuredImg}
           />
 
           {/* Q&A Accordion (FAQs) */}

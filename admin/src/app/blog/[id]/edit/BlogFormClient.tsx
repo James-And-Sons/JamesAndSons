@@ -1,79 +1,76 @@
 "use client";
+
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSidebar } from "@/lib/context/SidebarContext";
 import BlogProductPickerModal, {
   SimpleProduct,
 } from "@/components/BlogProductPickerModal";
+import BlogContentRenderer from "@/components/BlogContentRenderer";
 
-interface PostType {
+interface BlogPost {
   id: number;
-  title: string;
   slug: string;
+  title: string;
   excerpt: string | null;
   content: string;
+  featuredImg: string | null;
   isDraft: boolean;
-  metaTitle?: string | null;
-  metaDesc?: string | null;
-  geoTakeaway?: string | null;
-  faq?: any;
-  citations?: any;
+  metaTitle: string | null;
+  metaDesc: string | null;
+  geoTakeaway: string | null;
+  faq: any;
+  citations: any;
+}
+
+interface BlogFormClientProps {
+  post: BlogPost;
+  products: SimpleProduct[];
+  action: (formData: FormData) => Promise<void>;
 }
 
 export default function BlogFormClient({
   post,
-  products = [],
+  products,
   action,
-}: {
-  post: PostType;
-  products?: SimpleProduct[];
-  action: (formData: FormData) => Promise<void>;
-}) {
+}: BlogFormClientProps) {
   const { setIsPageDirty } = useSidebar();
 
-  const [title, setTitle] = useState(post.title);
-  const [slug, setSlug] = useState(post.slug);
+  const [title, setTitle] = useState(post.title || "");
+  const [slug, setSlug] = useState(post.slug || "");
   const [excerpt, setExcerpt] = useState(post.excerpt || "");
-  const [content, setContent] = useState(post.content);
+  const [content, setContent] = useState(post.content || "");
+  const [featuredImg, setFeaturedImg] = useState(post.featuredImg || "");
   const [isDraft, setIsDraft] = useState(post.isDraft);
+  const [editorMode, setEditorMode] = useState<"write" | "preview">("write");
 
   const [metaTitle, setMetaTitle] = useState(post.metaTitle || "");
   const [metaDesc, setMetaDesc] = useState(post.metaDesc || "");
   const [geoTakeaway, setGeoTakeaway] = useState(post.geoTakeaway || "");
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Picker Modal State
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<"card" | "photo">("card");
-
-  // Find all products currently embedded in content
-  const detectedSlugs = Array.from(
-    (content || "").matchAll(
-      /\[product:([a-zA-Z0-9-]+)\]|#(?:product:)?([a-zA-Z0-9-]+)/gi,
-    ),
-  )
-    .map((m) => (m[1] || m[2]).toLowerCase())
-    .filter(Boolean);
-
-  const linkedProducts = products.filter((p) =>
-    detectedSlugs.includes(p.slug.toLowerCase()),
-  );
 
   const initialFaq = () => {
     try {
       if (typeof post.faq === "string") return JSON.parse(post.faq);
       if (Array.isArray(post.faq)) return post.faq;
-    } catch {}
+    } catch (e) {}
     return [];
   };
-  const [faq, setFaq] = useState<{ q: string; a: string }[]>(initialFaq());
 
   const initialCitations = () => {
     try {
       if (typeof post.citations === "string") return JSON.parse(post.citations);
       if (Array.isArray(post.citations)) return post.citations;
-    } catch {}
+    } catch (e) {}
     return [];
   };
+
+  const [faq, setFaq] = useState<{ q: string; a: string }[]>(initialFaq());
   const [citations, setCitations] =
     useState<{ title: string; url: string }[]>(initialCitations());
 
@@ -82,6 +79,7 @@ export default function BlogFormClient({
     slug !== post.slug ||
     excerpt !== (post.excerpt || "") ||
     content !== post.content ||
+    featuredImg !== (post.featuredImg || "") ||
     isDraft !== post.isDraft ||
     metaTitle !== (post.metaTitle || "") ||
     metaDesc !== (post.metaDesc || "") ||
@@ -105,6 +103,42 @@ export default function BlogFormClient({
     }
   };
 
+  const insertSnippet = (snippet: string) => {
+    if (!textareaRef.current) {
+      setContent((prev) => prev + snippet);
+      return;
+    }
+    const el = textareaRef.current;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const prev = content;
+    const next = prev.substring(0, start) + snippet + prev.substring(end);
+    setContent(next);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + snippet.length, start + snippet.length);
+    }, 50);
+  };
+
+  // Build product map for preview renderer
+  const productsMap: Record<string, any> = {};
+  products.forEach((p) => {
+    productsMap[p.slug.toLowerCase()] = p;
+  });
+
+  // Find all products currently embedded in content
+  const detectedSlugs = Array.from(
+    (content || "").matchAll(
+      /\[product:([a-zA-Z0-9-]+)\]|#(?:product:)?([a-zA-Z0-9-]+)/gi,
+    ),
+  )
+    .map((m) => (m[1] || m[2]).toLowerCase())
+    .filter(Boolean);
+
+  const linkedProducts = products.filter((p) =>
+    detectedSlugs.includes(p.slug.toLowerCase()),
+  );
+
   return (
     <>
       <form
@@ -118,10 +152,10 @@ export default function BlogFormClient({
         <div className="sticky top-0 z-40 bg-background/85 backdrop-blur-md border-b border-border/80 py-4 mb-6 flex justify-between items-center">
           <div>
             <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">
-              Edit Blog Post
+              Edit Post #{post.id}
             </h1>
             <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">
-              Editing: {post.title}
+              Update article content &amp; SEO metadata
             </p>
           </div>
           <div className="flex gap-4">
@@ -136,14 +170,14 @@ export default function BlogFormClient({
               type="submit"
               className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold shadow-lg shadow-accent/15"
             >
-              Update Post
+              Save Changes
             </button>
           </div>
         </div>
 
         <div className="premium-card p-8 space-y-6 bg-surface/90 backdrop-blur">
           <h3 className="font-serif text-[20px] text-primary font-light border-b border-border/40 pb-4">
-            Article Content
+            Article Meta &amp; Cover Image
           </h3>
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-1">
@@ -161,6 +195,7 @@ export default function BlogFormClient({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors"
+                placeholder="Enter post title..."
               />
             </div>
             <div className="space-y-1">
@@ -178,36 +213,86 @@ export default function BlogFormClient({
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 className="w-full bg-background border border-border px-4 py-3 font-mono text-[12px] text-primary focus:outline-none focus:border-accent transition-colors"
+                placeholder="post-slug"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label
-              htmlFor="excerpt"
-              className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
-            >
-              Excerpt
-            </label>
-            <textarea
-              id="excerpt"
-              name="excerpt"
-              rows={3}
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
-              className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
-              placeholder="A brief summary..."
-            ></textarea>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex flex-wrap justify-between items-center gap-2">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-1">
               <label
-                htmlFor="content"
+                htmlFor="excerpt"
                 className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
               >
-                Content * (Markdown &amp; Visual Product Shortcodes Supported)
+                Excerpt
               </label>
+              <textarea
+                id="excerpt"
+                name="excerpt"
+                rows={3}
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
+                placeholder="A short summary of the post..."
+              ></textarea>
+            </div>
+            <div className="space-y-1">
+              <label
+                htmlFor="featuredImg"
+                className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1"
+              >
+                Featured Cover Image URL (Optional)
+              </label>
+              <input
+                type="url"
+                id="featuredImg"
+                name="featuredImg"
+                value={featuredImg}
+                onChange={(e) => setFeaturedImg(e.target.value)}
+                className="w-full bg-background border border-border px-4 py-3 font-mono text-[12px] text-primary focus:outline-none focus:border-accent transition-colors"
+                placeholder="https://res.cloudinary.com/..."
+              />
+              <p className="font-mono text-[9px] text-muted mt-1">
+                Leave empty to hide top cover box on the article page.
+              </p>
+            </div>
+          </div>
+
+          {/* Content Editor with Formatting Toolbar & Live Preview Toggle */}
+          <div className="space-y-3 pt-4 border-t border-border/40">
+            <div className="flex flex-wrap justify-between items-center gap-2">
+              <div className="flex items-center gap-2">
+                <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block">
+                  Content Editor *
+                </label>
+                {/* Editor Mode Tabs */}
+                <div className="flex items-center bg-black/60 border border-white/10 rounded-lg p-0.5 ml-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode("write")}
+                    className={`font-mono text-[9.5px] uppercase tracking-wider px-3 py-1 rounded transition-all cursor-pointer ${
+                      editorMode === "write"
+                        ? "bg-accent text-black font-bold"
+                        : "text-muted hover:text-primary"
+                    }`}
+                  >
+                    ✏️ Edit Text
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode("preview")}
+                    className={`font-mono text-[9.5px] uppercase tracking-wider px-3 py-1 rounded transition-all cursor-pointer ${
+                      editorMode === "preview"
+                        ? "bg-accent text-black font-bold"
+                        : "text-muted hover:text-primary"
+                    }`}
+                  >
+                    👁️ Live Preview
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Insertion Modals Trigger */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -221,6 +306,7 @@ export default function BlogFormClient({
                   <span>🛍️</span>
                   <span>+ Link Product Card</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -235,6 +321,70 @@ export default function BlogFormClient({
                 </button>
               </div>
             </div>
+
+            {/* Writer Formatting Toolbar */}
+            {editorMode === "write" && (
+              <div className="flex flex-wrap items-center gap-1.5 p-2 bg-black/60 border border-white/10 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => insertSnippet("\n\n## Subheading Title\n\n")}
+                  className="px-2.5 py-1 font-mono text-[10px] uppercase font-bold text-accent border border-accent/30 rounded hover:bg-accent/10"
+                  title="Insert Section Subheading (H2)"
+                >
+                  H2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSnippet("\n\n### Section Title\n\n")}
+                  className="px-2.5 py-1 font-mono text-[10px] uppercase font-bold text-accent border border-accent/30 rounded hover:bg-accent/10"
+                  title="Insert Subsection Title (H3)"
+                >
+                  H3
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSnippet("**bold text**")}
+                  className="px-2.5 py-1 font-mono text-[10px] font-bold text-primary border border-white/10 rounded hover:border-accent"
+                  title="Bold Text"
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSnippet("*italic text*")}
+                  className="px-2.5 py-1 font-mono text-[10px] italic text-primary border border-white/10 rounded hover:border-accent"
+                  title="Italic Text"
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    insertSnippet("\n* List item 1\n* List item 2\n")
+                  }
+                  className="px-2.5 py-1 font-mono text-[10px] text-primary border border-white/10 rounded hover:border-accent"
+                  title="Bullet List"
+                >
+                  • List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSnippet("\n> Key takeaway quote...\n")}
+                  className="px-2.5 py-1 font-mono text-[10px] text-primary border border-white/10 rounded hover:border-accent"
+                  title="Quote Callout"
+                >
+                  ❝ Quote
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertSnippet("\n\n---\n\n")}
+                  className="px-2.5 py-1 font-mono text-[10px] text-primary border border-white/10 rounded hover:border-accent"
+                  title="Horizontal Divider"
+                >
+                  — Divider
+                </button>
+              </div>
+            )}
 
             {/* Live Linked Products Chips Bar */}
             {linkedProducts.length > 0 && (
@@ -273,16 +423,44 @@ export default function BlogFormClient({
               </div>
             )}
 
-            <textarea
-              id="content"
-              name="content"
-              required
-              rows={18}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] leading-relaxed"
-              placeholder="Write your article content here... Click '+ Link Product Card' to visually search products or '+ Link Clickable Photo' to insert clickable product images."
-            ></textarea>
+            {/* Write Mode vs Preview Mode */}
+            {editorMode === "write" ? (
+              <textarea
+                ref={textareaRef}
+                id="content"
+                name="content"
+                required
+                rows={18}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] leading-relaxed"
+                placeholder="Write your article content here..."
+              ></textarea>
+            ) : (
+              <div className="p-6 rounded-xl border border-accent/40 bg-black/80 min-h-[400px] space-y-4">
+                <div className="font-mono text-[9px] uppercase tracking-widest text-accent font-bold border-b border-accent/30 pb-2 flex items-center gap-2">
+                  <span>👁️</span>
+                  <span>Live Storefront Preview Rendering</span>
+                </div>
+                {title && (
+                  <h1 className="font-serif text-3xl text-primary font-light">
+                    {title}
+                  </h1>
+                )}
+                {featuredImg && (
+                  <img
+                    src={featuredImg}
+                    alt="Cover Preview"
+                    className="w-full h-48 object-cover rounded-xl border border-white/10"
+                  />
+                )}
+                <BlogContentRenderer
+                  content={content}
+                  productsMap={productsMap}
+                  featuredImg={featuredImg}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -342,7 +520,7 @@ export default function BlogFormClient({
               value={geoTakeaway}
               onChange={(e) => setGeoTakeaway(e.target.value)}
               className="w-full bg-background border border-border px-4 py-3 font-body text-[13px] text-primary focus:outline-none focus:border-accent transition-colors resize-none"
-              placeholder="A direct, concise summary of the article's core findings. Highly favored by generative search engines like Perplexity/Gemini."
+              placeholder="A direct summary of the article's core findings."
             ></textarea>
           </div>
 
@@ -377,7 +555,7 @@ export default function BlogFormClient({
                   <div className="space-y-1 pr-12">
                     <input
                       type="text"
-                      placeholder="Question (e.g., What are the best chandelier styles for high ceilings?)"
+                      placeholder="Question..."
                       value={item.q}
                       onChange={(e) => {
                         const next = [...faq];
@@ -389,7 +567,7 @@ export default function BlogFormClient({
                   </div>
                   <div className="space-y-1">
                     <textarea
-                      placeholder="Answer (Provide a direct, authoritative, and fact-backed answer)"
+                      placeholder="Answer..."
                       rows={2}
                       value={item.a}
                       onChange={(e) => {
@@ -441,7 +619,7 @@ export default function BlogFormClient({
                   <div className="md:col-span-5">
                     <input
                       type="text"
-                      placeholder="Source Title (e.g., IS 10322 Chandelier Safety Standard)"
+                      placeholder="Source Title..."
                       value={item.title}
                       onChange={(e) => {
                         const next = [...citations];
@@ -454,7 +632,7 @@ export default function BlogFormClient({
                   <div className="md:col-span-7">
                     <input
                       type="url"
-                      placeholder="Source URL (e.g., https://bis.gov.in/standards)"
+                      placeholder="Source URL..."
                       value={item.url}
                       onChange={(e) => {
                         const next = [...citations];
@@ -505,13 +683,10 @@ export default function BlogFormClient({
         mode={pickerMode}
         products={products}
         onSelectProductCard={(p) => {
-          setContent((prev) => prev + `\n\n[product:${p.slug}]\n\n`);
+          insertSnippet(`\n\n[product:${p.slug}]\n\n`);
         }}
         onSelectProductPhoto={(p, photoUrl) => {
-          setContent(
-            (prev) =>
-              prev + `\n\n![${p.name}](${photoUrl}#product:${p.slug})\n\n`,
-          );
+          insertSnippet(`\n\n![${p.name}](${photoUrl}#product:${p.slug})\n\n`);
         }}
         onClose={() => setPickerOpen(false)}
       />
