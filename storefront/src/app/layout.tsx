@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Mono, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
@@ -84,8 +84,11 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
-  themeColor: "#0a0a0b",
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Luxury Illumination Ecosystem",
     start_url: "/",
     display: "standalone",
-    background_color: "#0a0905",
-    theme_color: "#C4A05A",
+    background_color: "#faf7f2",
+    theme_color: "#0a0a0b",
     icons: [
       {
         src: "/icons/icon-192x192.png",
