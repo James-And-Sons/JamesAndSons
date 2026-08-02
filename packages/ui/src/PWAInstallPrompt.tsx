@@ -24,17 +24,18 @@ export function PWAInstallPrompt({ appName }: PWAInstallPromptProps) {
       (navigator as any).standalone === true;
     setIsStandalone(standalone);
 
-    // Check if dismissed in this session
+    // Check if dismissed in localStorage (permanently across sessions)
     const isDismissed =
+      localStorage.getItem("pwa_prompt_dismissed") === "true" ||
       sessionStorage.getItem("pwa_prompt_dismissed") === "true";
     setDismissed(isDismissed);
 
-    // Detect iOS
+    // Detect iOS (only show iOS banner if not previously dismissed)
     const ua = window.navigator.userAgent;
     const iosDevice = /iphone|ipad|ipod/i.test(ua);
     const isSafari =
       /safari/i.test(ua) && !/chrome|crios|crmo|firefox|fxios/i.test(ua);
-    setIsIOS(iosDevice && isSafari);
+    setIsIOS(false); // Disable intrusive auto-popup banner on iOS
 
     // Listen for Chrome / Android beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -64,7 +65,10 @@ export function PWAInstallPrompt({ appName }: PWAInstallPromptProps) {
 
   const handleDismiss = () => {
     setDismissed(true);
-    sessionStorage.setItem("pwa_prompt_dismissed", "true");
+    try {
+      localStorage.setItem("pwa_prompt_dismissed", "true");
+      sessionStorage.setItem("pwa_prompt_dismissed", "true");
+    } catch (err) {}
   };
 
   // Don't show if standalone or dismissed or neither iOS nor Android prompt available

@@ -122,7 +122,6 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <ThemeColorSync />
-          <PWAInstallPrompt />
           <Suspense fallback={null}>
             <MetaPixel />
           </Suspense>
