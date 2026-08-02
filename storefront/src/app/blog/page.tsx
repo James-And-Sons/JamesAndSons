@@ -103,8 +103,8 @@ export default async function BlogListPage() {
                       <article
                         style={{
                           background:
-                            "linear-gradient(145deg, rgba(24, 20, 16, 0.95), rgba(14, 12, 10, 0.98))",
-                          border: "1px solid rgba(197, 160, 89, 0.25)",
+                            "linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%)",
+                          border: "1px solid var(--border-gold)",
                           borderRadius: "20px",
                           overflow: "hidden",
                           boxShadow: "0 12px 32px rgba(0, 0, 0, 0.35)",
@@ -393,8 +393,8 @@ export default async function BlogListPage() {
                         style={{
                           cursor: "pointer",
                           background:
-                            "linear-gradient(145deg, rgba(20, 17, 14, 0.9), rgba(10, 9, 7, 0.95))",
-                          border: "1px solid var(--border)",
+                            "linear-gradient(145deg, var(--surface) 0%, var(--surface2) 100%)",
+                          border: "1px solid var(--border-gold)",
                           borderRadius: "16px",
                           overflow: "hidden",
                           transition: "all 0.3s ease",

@@ -8,10 +8,16 @@ export interface ThemeToggleProps {
   variant?: "storefront" | "admin";
 }
 
-function SunIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+interface IconProps {
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+function SunIcon({ className = "w-3.5 h-3.5", style }: IconProps) {
   return (
     <svg
       className={className}
+      style={style}
       width="14"
       height="14"
       fill="none"
@@ -28,10 +34,11 @@ function SunIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   );
 }
 
-function MoonIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+function MoonIcon({ className = "w-3.5 h-3.5", style }: IconProps) {
   return (
     <svg
       className={className}
+      style={style}
       width="14"
       height="14"
       fill="none"
@@ -48,10 +55,11 @@ function MoonIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   );
 }
 
-function SystemIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+function SystemIcon({ className = "w-3.5 h-3.5", style }: IconProps) {
   return (
     <svg
       className={className}
+      style={style}
       width="14"
       height="14"
       fill="none"
@@ -140,7 +148,9 @@ export function ThemeToggle({
               letterSpacing: "0.05em",
               textTransform: "uppercase",
               background: isActive ? "var(--gold, #c4a05a)" : "transparent",
-              color: isActive ? "#0A0905" : "var(--text-muted, #6b6860)",
+              color: isActive
+                ? "var(--obsidian, #0A0905)"
+                : "var(--text-muted, #6b6860)",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
@@ -149,7 +159,12 @@ export function ThemeToggle({
               fontWeight: isActive ? 600 : 400,
             }}
           >
-            <Icon className="w-3.5 h-3.5" />
+            <Icon
+              className="w-3.5 h-3.5"
+              style={{
+                color: isActive ? "var(--obsidian, #0A0905)" : "inherit",
+              }}
+            />
             {!compact && <span>{opt.label}</span>}
           </button>
         );
