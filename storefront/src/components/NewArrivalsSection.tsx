@@ -95,15 +95,15 @@ export default function NewArrivalsSection({
                 key={product.id}
                 style={{
                   background:
-                    "linear-gradient(145deg, rgba(20,17,14,0.85) 0%, rgba(10,9,7,0.95) 100%)",
-                  border: "1px solid rgba(201,168,76,0.2)",
+                    "linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%)",
+                  border: "1px solid var(--border-gold)",
                   borderRadius: "12px",
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
                   transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
                   position: "relative",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
                 }}
                 className="group hover:border-[var(--gold)] hover:shadow-[0_20px_40px_rgba(201,168,76,0.14)] hover:-translate-y-1"
               >

@@ -89,8 +89,8 @@ export default function BestSellersSection({
                 key={product.id}
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(20,17,14,0.9) 0%, rgba(12,10,8,0.95) 100%)",
-                  border: "1px solid rgba(201,168,76,0.25)",
+                    "linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%)",
+                  border: "1px solid var(--border-gold)",
                   borderRadius: "12px",
                   overflow: "hidden",
                   display: "flex",
@@ -98,7 +98,7 @@ export default function BestSellersSection({
                   padding: "18px",
                   position: "relative",
                   transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
                 }}
                 className="group hover:border-[var(--gold)] hover:shadow-[0_16px_36px_rgba(201,168,76,0.15)] hover:-translate-y-0.5"
               >
@@ -131,9 +131,8 @@ export default function BestSellersSection({
                     borderRadius: "8px",
                     overflow: "hidden",
                     position: "relative",
-                    background:
-                      "linear-gradient(135deg, #1a1612 0%, #0d0a08 100%)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "var(--surface2)",
+                    border: "1px solid var(--border)",
                     display: "block",
                   }}
                 >
