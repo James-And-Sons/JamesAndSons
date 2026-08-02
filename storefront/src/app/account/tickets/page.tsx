@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -93,8 +92,7 @@ export default async function TicketsPage() {
 
   return (
     <>
-      <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '40px' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>

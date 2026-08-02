@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Search } from 'lucide-react';
 
 interface SearchResultItem {
   type: 'product' | 'order' | 'rfq' | 'customer';
@@ -19,7 +20,7 @@ interface GroupedResults {
   customers: SearchResultItem[];
 }
 
-export default function GlobalSearch() {
+export default function GlobalSearch({ autoFocus, onClose }: { autoFocus?: boolean; onClose?: () => void } = {}) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GroupedResults>({
@@ -32,6 +33,14 @@ export default function GlobalSearch() {
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when used in mobile search mode
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+      setIsOpen(true);
+    }
+  }, [autoFocus]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -95,13 +104,14 @@ export default function GlobalSearch() {
   const handleSelect = (href: string) => {
     setIsOpen(false);
     setQuery('');
+    if (onClose) onClose();
     router.push(href);
   };
 
   return (
-    <div className="relative" ref={containerRef}>
-      <div className="flex items-center gap-2 border border-border/80 bg-surface-muted/50 px-3 py-1.5 rounded-sm text-xs font-mono min-w-[320px] focus-within:border-accent">
-        <span className="text-muted" aria-hidden="true">🔍</span>
+    <div className="relative w-full" ref={containerRef}>
+      <div className="flex items-center gap-2 border border-border/80 bg-surface-muted/50 px-3 py-1.5 rounded-sm text-xs font-mono w-full min-w-0 lg:min-w-[320px] focus-within:border-accent">
+        <Search size={13} className="text-muted shrink-0" aria-hidden="true" />
         <input
           ref={inputRef}
           type="text"
@@ -115,9 +125,9 @@ export default function GlobalSearch() {
           className="bg-transparent text-primary font-mono text-[11px] focus:outline-none focus-visible:outline-none w-full placeholder:text-muted/60"
         />
         {loading ? (
-          <span className="inline-block animate-spin border border-t-transparent border-muted rounded-full w-3 h-3" />
+          <span className="inline-block animate-spin border border-t-transparent border-muted rounded-full w-3 h-3 shrink-0" />
         ) : (
-          <span className="text-[9px] text-muted/60 bg-surface px-1.5 py-0.5 rounded border border-border">⌘K</span>
+          <span className="hidden lg:inline text-[9px] text-muted/60 bg-surface px-1.5 py-0.5 rounded border border-border shrink-0">⌘K</span>
         )}
       </div>
 

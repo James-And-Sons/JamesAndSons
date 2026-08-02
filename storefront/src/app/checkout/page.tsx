@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation';
 import CheckoutPageClient from './CheckoutPageClient';
 import Script from 'next/script';
 import { createClient } from '@/utils/supabase/server';
@@ -29,7 +28,7 @@ export default async function CheckoutPage() {
   const initialData = {
     name: dbUser ? `${dbUser.firstName} ${dbUser.lastName}`.trim() : '',
     email: dbUser?.email || user.email || '',
-    phone: dbUser?.phone || '',
+    phone: dbUser?.phone || defaultAddr?.phone || '',
     pincode: defaultAddr?.pincode || dbUser?.lastPincode || '',
     address: defaultAddr?.street || '',
     city: defaultAddr?.city || '',
@@ -39,8 +38,7 @@ export default async function CheckoutPage() {
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '32px 40px' }} className="checkout-title-bg">
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <div className="section-label">Secure Checkout</div>

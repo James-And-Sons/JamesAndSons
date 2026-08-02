@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCartStore } from '@/store/cart';
 import { useEffect, useState } from 'react';
-
 export default function MobileBottomNav({ user }: { user: any }) {
   const pathname = usePathname();
+  if (pathname === '/checkout') return null;
+
   const { itemCount, openCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
 

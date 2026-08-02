@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { BRAND_CONFIG } from '@james-andsons/config';
 
 function escapeCSV(val: any) {
   if (val === null || val === undefined) return '';
@@ -48,15 +49,15 @@ export async function GET(req: NextRequest) {
 
     for (const p of products) {
       const getAvailability = (qty: number) => (qty > 0 ? 'in stock' : 'out of stock');
-      const getProductLink = (slug: string) => `https://jamesandsons.in/products/${slug}`;
-      const getPriceText = (price: number) => `${Math.round(price)} INR`;
+      const getProductLink = (slug: string) => `${BRAND_CONFIG.storefrontUrl}/products/${slug}`;
+      const getPriceText = (price: number) => `${Math.round(price)} ${BRAND_CONFIG.currencyCode}`;
 
       if (p.variants && p.variants.length > 0) {
         for (const v of p.variants) {
           const vPrice = v.d2cPrice || p.d2cPrice;
           const vImages = v.images && v.images.length > 0 ? v.images : p.images;
-          const brandVal = v.brand || p.brand || 'James and Sons';
-          const googleCatVal = v.googleProductCategory || p.googleProductCategory || 'Home & Garden > Lighting > Light Fixtures';
+          const brandVal = v.brand || p.brand || BRAND_CONFIG.name;
+          const googleCatVal = v.googleProductCategory || p.googleProductCategory || 'Home & Garden';
           const colorVal = v.color || p.color || '';
           const sizeVal = v.size || p.size || '';
           const materialVal = v.material || p.material || '';
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
             escapeCSV(`${p.name} - ${v.name}`),
             escapeCSV(p.description || p.name),
             escapeCSV(getProductLink(p.slug)),
-            escapeCSV(vImages[0] || 'https://jamesandsons.in/images/placeholder.png'),
+            escapeCSV(vImages[0] || `${BRAND_CONFIG.storefrontUrl}/images/placeholder.png`),
             escapeCSV(getPriceText(vPrice)),
             escapeCSV(getAvailability(v.stockQuantity)),
             escapeCSV('new'),

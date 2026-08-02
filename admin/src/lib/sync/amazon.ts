@@ -11,7 +11,8 @@ import {
   getMountingType,
   getFinishType,
   getLightingMethod,
-  getWaterResistanceLevel
+  getWaterResistanceLevel,
+  generateDefaultBullets
 } from './mapping';
 
 async function getLwaAccessToken() {
@@ -90,18 +91,21 @@ export async function syncToAmazon(product: any) {
     price: number, 
     quantity: number, 
     v: any | null = null,
-    isParent: boolean = false
+    isParent: boolean = false,
+    b2bPrice: number | null = null
   ) => {
     const marketplaceId = process.env.AMAZON_MARKETPLACE_ID || 'A21TJRUUN4KGV';
     const path = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}`;
     const url = `${spApiEndpoint}${path}`;
 
+    // Common listing metadata variables
     let brandVal = (v ? v.brand : null) || product.brand || 'James & Sons, Aligarh';
     if (brandVal === 'Generic' || !brandVal || brandVal.toLowerCase().includes('james & sons') || brandVal.toLowerCase().includes('james and sons')) {
       brandVal = 'James & Sons, Aligarh';
     }
     const descVal = product.description || name;
     const bulletsVal = (v ? v.bulletPoints : null) || product.bulletPoints || [];
+    const finalBullets = (bulletsVal && bulletsVal.length > 0) ? bulletsVal.slice(0, 5) : generateDefaultBullets(product);
     const materialVal = (v ? v.material : null) || product.material || (product.materialAndFinish && product.materialAndFinish.length > 0 ? product.materialAndFinish[0] : null);
     const originVal = (v ? v.countryOfOrigin : null) || product.countryOfOrigin || 'India';
 
@@ -114,9 +118,205 @@ export async function syncToAmazon(product: any) {
           : (product.images || []);
 
     const vWeight = (v ? v.weight : null) || product.weight || 0.5;
-    const vLength = (v ? v.length : null) || product.length || 10;
-    const vWidth = (v ? v.breadth : null) || product.breadth || 10;
-    const vHeight = (v ? v.height : null) || product.height || 10;
+    const vLength = (v ? v.actualDepth : null) || (v ? v.actualLength : null) || product.actualDepth || product.actualLength || (v ? v.length : null) || product.length || 15;
+    const vWidth = (v ? v.actualWidth : null) || product.actualWidth || (v ? v.breadth : null) || product.breadth || 20;
+    const vHeight = (v ? v.actualHeight : null) || product.actualHeight || (v ? v.height : null) || product.height || 53;
+
+    // check if listing exists using GET
+    let exists = false;
+    try {
+      const getPath = `/listings/2021-08-01/items/${sellerId}/${sku}?marketplaceIds=${marketplaceId}&includedData=summaries`;
+      const getUrl = `${spApiEndpoint}${getPath}`;
+      const getRequestOptions = {
+        host: new URL(spApiEndpoint).hostname,
+        path: getPath,
+        method: 'GET',
+        service: 'execute-api',
+        region: process.env.AWS_REGION || 'eu-west-1',
+        headers: {
+          'x-amz-access-token': accessToken
+        }
+      };
+      aws4.sign(getRequestOptions, {
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey
+      });
+      const getResponse = await fetch(getUrl, {
+        method: 'GET',
+        headers: getRequestOptions.headers as any
+      });
+      if (getResponse.status === 200) {
+        exists = true;
+      } else if (getResponse.status === 404) {
+        exists = false;
+      } else {
+        const getBody = await getResponse.text();
+        console.warn(`[Amazon Sync] GET check returned status ${getResponse.status} for SKU ${sku}: ${getBody}`);
+      }
+    } catch (getErr) {
+      console.warn(`[Amazon Sync] Error performing GET check for SKU ${sku}:`, getErr);
+    }
+
+    if (exists) {
+      if (isParent) {
+        console.log(`[Amazon Sync] Parent SKU ${sku} already exists. Skipping parent update.`);
+        return { sku, status: 'ACCEPTED', submissionId: 'SKIPPED_EXISTING_PARENT', issues: [] };
+      }
+
+      console.log(`[Amazon Sync] SKU ${sku} exists on Seller Central. Performing PATCH to update listing details...`);
+      const patches: any[] = [
+        {
+          op: 'replace',
+          path: '/attributes/purchasable_offer',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              currency: 'INR',
+              audience: 'ALL',
+              our_price: [
+                {
+                  schedule: [
+                    {
+                      value_with_tax: price
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/fulfillment_availability',
+          value: [
+            {
+              fulfillment_channel_code: 'DEFAULT',
+              quantity: quantity
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/item_name',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: name.substring(0, 200)
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/model_name',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: name.substring(0, 200)
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/brand',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: brandVal
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/product_description',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              language_tag: 'en_IN',
+              value: descVal
+            }
+          ]
+        },
+        {
+          op: 'replace',
+          path: '/attributes/bullet_point',
+          value: finalBullets.map((bp: string) => ({
+            marketplace_id: marketplaceId,
+            language_tag: 'en_IN',
+            value: bp
+          }))
+        }
+      ];
+
+      // Add image patches if images exist
+      if (vImages && vImages.length > 0) {
+        patches.push({
+          op: 'replace',
+          path: '/attributes/main_product_image_locator',
+          value: [
+            {
+              marketplace_id: marketplaceId,
+              media_location: vImages[0]
+            }
+          ]
+        });
+
+        vImages.slice(1, 9).forEach((img: string, idx: number) => {
+          patches.push({
+            op: 'replace',
+            path: `/attributes/other_product_image_locator_${idx + 1}`,
+            value: [
+              {
+                marketplace_id: marketplaceId,
+                media_location: img
+              }
+            ]
+          });
+        });
+      }
+
+      const patchPayload = {
+        productType: 'LIGHT_FIXTURE',
+        patches: patches
+      };
+
+      const patchRequestOptions = {
+        host: new URL(spApiEndpoint).hostname,
+        path: path,
+        method: 'PATCH',
+        service: 'execute-api',
+        region: process.env.AWS_REGION || 'eu-west-1',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-amz-access-token': accessToken
+        },
+        body: JSON.stringify(patchPayload)
+      };
+
+      aws4.sign(patchRequestOptions, {
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey
+      });
+
+      const patchResponse = await fetch(url, {
+        method: 'PATCH',
+        headers: patchRequestOptions.headers as any,
+        body: patchRequestOptions.body
+      });
+
+      const patchResponseBody = await patchResponse.text();
+      if (!patchResponse.ok) {
+        throw new Error(`Amazon PATCH update error for ${sku}: HTTP ${patchResponse.status} - ${patchResponseBody}`);
+      }
+
+      const result = JSON.parse(patchResponseBody);
+      console.log(`[Amazon Sync] SKU ${sku} PATCH result:`, JSON.stringify(result));
+      return result;
+    }
+
+    console.log(`[Amazon Sync] SKU ${sku} does not exist. Performing PUT request to list it...`);
 
     const wattVal = extractNumber((v ? v.power : null) || product.power);
     const voltVal = extractNumber((v ? v.voltage : null) || product.voltage);
@@ -307,6 +507,24 @@ export async function syncToAmazon(product: any) {
           value: 'not_applicable'
         }
       ],
+      are_batteries_required: [
+        {
+          marketplace_id: marketplaceId,
+          value: false
+        }
+      ],
+      number_of_boxes: [
+        {
+          marketplace_id: marketplaceId,
+          value: 1
+        }
+      ],
+      condition_type: [
+        {
+          marketplace_id: marketplaceId,
+          value: 'new_new'
+        }
+      ],
       rtip_manufacturer_contact_information: [
         {
           value: 'James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India'
@@ -352,22 +570,11 @@ export async function syncToAmazon(product: any) {
       });
     }
 
-    if (bulletsVal && bulletsVal.length > 0) {
-      attributes.bullet_point = bulletsVal.slice(0, 5).map((bp: string) => ({
-        marketplace_id: marketplaceId,
-        language_tag: 'en_IN',
-        value: bp
-      }));
-    } else {
-      // Compliance requires at least 1 bullet point
-      attributes.bullet_point = [
-        {
-          marketplace_id: marketplaceId,
-          language_tag: 'en_IN',
-          value: 'Elegant design and premium build.'
-        }
-      ];
-    }
+    attributes.bullet_point = finalBullets.map((bp: string) => ({
+      marketplace_id: marketplaceId,
+      language_tag: 'en_IN',
+      value: bp
+    }));
 
     if (materialVal) {
       attributes.material = [
@@ -407,7 +614,7 @@ export async function syncToAmazon(product: any) {
       ];
       attributes.variation_theme = [
         {
-          name: 'COLOR/SIZE'
+          name: 'SIZE'
         }
       ];
     } else {
@@ -461,18 +668,64 @@ export async function syncToAmazon(product: any) {
         ];
         attributes.variation_theme = [
           {
-            name: 'COLOR/SIZE'
+            name: 'SIZE'
           }
         ];
       }
 
-      // Note: We omit purchasable_offer (pricing) here because Amazon India's Listings Items API
-      // strictly validates maximum_seller_allowed_price schedule start_at parameters and throws
-      // validation errors for newly created listings. Pricing is managed directly in Seller Central.
+      const offerMrp = (v ? v.mrp : null) || product.mrp || Math.round(price * 1.3);
+
+      attributes.list_price = [
+        {
+          marketplace_id: marketplaceId,
+          currency: 'INR',
+          value_with_tax: offerMrp
+        }
+      ];
+
+      const offers = [
+        {
+          marketplace_id: marketplaceId,
+          currency: 'INR',
+          audience: 'ALL',
+          our_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: price
+                }
+              ]
+            }
+          ],
+          minimum_seller_allowed_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: Math.round(price * 0.7)
+                }
+              ]
+            }
+          ],
+          maximum_seller_allowed_price: [
+            {
+              schedule: [
+                {
+                  value_with_tax: Math.round(price * 2.5)
+                }
+              ]
+            }
+          ]
+        }
+      ];
+
+
+      attributes.purchasable_offer = offers;
+
       attributes.fulfillment_availability = [
         {
           fulfillment_channel_code: 'DEFAULT',
-          quantity: quantity
+          quantity: quantity,
+          lead_time_to_ship_max_days: 5
         }
       ];
     }
@@ -586,13 +839,15 @@ ${responseBody}
     for (const v of product.variants) {
       const vPrice = v.d2cPrice || product.d2cPrice;
       const vQty = v.stockQuantity;
+      const vB2bPrice = v.b2bPrice || product.b2bPrice || Math.round(vPrice * 0.95);
       console.log(`[Amazon Sync] Syncing Child Variant SKU: ${v.sku}...`);
-      const childRes = await syncListingItem(v.sku, `${product.name} - ${v.name}`, vPrice, vQty, v, false);
+      const childRes = await syncListingItem(v.sku, `${product.name} - ${v.name}`, vPrice, vQty, v, false, vB2bPrice);
       results.push(childRes);
     }
   } else {
     // Single product with no variants
-    const res = await syncListingItem(product.sku, product.name, product.d2cPrice, product.stockQuantity, null, false);
+    const productB2bPrice = product.b2bPrice || Math.round(product.d2cPrice * 0.95);
+    const res = await syncListingItem(product.sku, product.name, product.d2cPrice, product.stockQuantity, null, false, productB2bPrice);
     results.push(res);
   }
 

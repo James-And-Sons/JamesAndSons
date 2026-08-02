@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Navigation from '@/components/Navigation';
 import ContactClient from './ContactClient';
 
 export const metadata: Metadata = {
@@ -10,8 +9,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <Navigation />
-      <main style={{ minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ minHeight: '100vh', background: 'var(--obsidian)' }}>
         <ContactClient />
       </main>
     </>

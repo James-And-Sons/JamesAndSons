@@ -96,6 +96,30 @@ export async function adminUpdateAffiliateStatus(affiliateId: string, status: 'A
   return (prisma as any).affiliate.update({ where: { id: affiliateId }, data: { status } });
 }
 
+export async function adminUpdateAffiliate(
+  affiliateId: string,
+  data: {
+    name: string;
+    email: string;
+    phone?: string;
+    affiliateCode: string;
+    commissionRate?: number;
+    notes?: string;
+    status?: 'ACTIVE' | 'SUSPENDED';
+  }
+) {
+  return (prisma as any).affiliate.update({
+    where: { id: affiliateId },
+    data: { ...data, affiliateCode: data.affiliateCode.trim().toUpperCase() },
+  });
+}
+
+export async function adminDeleteAffiliate(affiliateId: string) {
+  return (prisma as any).affiliate.delete({
+    where: { id: affiliateId }
+  });
+}
+
 export async function adminMarkConversionsPaid(conversionIds: string[]) {
   return (prisma as any).affiliateConversion.updateMany({
     where: { id: { in: conversionIds } },
@@ -146,4 +170,37 @@ export async function adminGetAffiliateDetail(id: string) {
     },
   });
 }
+
+export async function adminDeleteCoupon(couponId: string) {
+  return (prisma as any).coupon.delete({
+    where: { id: couponId }
+  });
+}
+
+export async function adminUpdateCoupon(
+  couponId: string,
+  data: {
+    code: string;
+    description?: string;
+    type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+    value: number;
+    minOrderAmount?: number;
+    maxDiscountCap?: number;
+    usageLimit?: number;
+    usageLimitPerUser?: number;
+    startsAt?: Date;
+    expiresAt?: Date;
+    source?: string;
+    status?: 'ACTIVE' | 'PAUSED' | 'EXPIRED' | 'EXHAUSTED';
+  }
+) {
+  return (prisma as any).coupon.update({
+    where: { id: couponId },
+    data: {
+      ...data,
+      code: data.code.trim().toUpperCase(),
+    }
+  });
+}
+
 

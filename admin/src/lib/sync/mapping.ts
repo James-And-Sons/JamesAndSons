@@ -19,8 +19,15 @@ export function getBrowseNode(product: any): string {
 }
 
 export function getFixtureForm(product: any): string {
-  if (product?.amazonFixtureForm) {
-    return product.amazonFixtureForm;
+  const form = product?.amazonFixtureForm;
+  const normalized = (form || '').toLowerCase().replace(/[\s_-]+/g, '');
+  if (
+    form && 
+    normalized !== 'lightfixture' && 
+    normalized !== 'tablelamp' && 
+    normalized !== 'floorlamp'
+  ) {
+    return form;
   }
 
   // Fallback to dynamic classification
@@ -32,7 +39,54 @@ export function getFixtureForm(product: any): string {
   if (cat.includes('pendant') || cat.includes('hanging') || t.includes('pendant') || t.includes('hanging')) {
     return 'Pendant';
   }
+  if (cat.includes('wall') || cat.includes('sconce') || t.includes('wall') || t.includes('sconce') || t.includes('bracket')) {
+    return 'Sconce';
+  }
+  if (t.includes('gate') || t.includes('pole') || t.includes('post') || t.includes('bollard')) {
+    return 'Path';
+  }
   return 'Ceiling';
+}
+
+export function generateDefaultBullets(product: any): string[] {
+  if (product?.bulletPoints && Array.isArray(product.bulletPoints) && product.bulletPoints.length >= 3) {
+    return product.bulletPoints.slice(0, 5);
+  }
+
+  // Extract bullets from description if available
+  if (product?.description && typeof product.description === 'string') {
+    const rawDesc = product.description.replace(/<[^>]*>/g, ' ');
+    const lines = rawDesc
+      .split(/\n|•|;|\||- /)
+      .map((line: string) => line.trim())
+      .filter((line: string) => line.length > 15 && line.length < 250);
+
+    if (lines.length >= 3) {
+      return lines.slice(0, 5);
+    }
+  }
+
+  const name = product.name || 'Luxury Lighting Fixture';
+  const mat = getMaterial(product);
+  const finish = getFinishType(product);
+  const watt = product.power || 'Max 60W';
+  const volt = product.voltage || '220V AC';
+  
+  const h = product.actualHeight || product.height || 53;
+  const l = product.actualDepth || product.actualLength || product.length || 15;
+  const w = product.actualWidth || product.breadth || 20;
+
+  const spacesStr = (product.spaces && Array.isArray(product.spaces) && product.spaces.length > 0)
+    ? product.spaces.map((s: any) => s.name).join(', ')
+    : 'living rooms, bedrooms, hallways, dining areas, hotels, cafes, and decorative spaces';
+
+  return [
+    `ELEGANT DESIGN & PREMIUM BUILD: ${name} features a classic design crafted with high-grade ${mat} and a ${finish} finish for long-lasting durability and timeless aesthetic appeal.`,
+    `SOFT & WARM ILLUMINATION: Designed with a high-quality shade that diffuses light evenly, providing a soft, ambient glow to create a warm and welcoming atmosphere.`,
+    `UNIVERSAL BULB COMPATIBILITY: Features a standard E27 bulb holder compatible with LED, CFL, and incandescent bulbs (${watt}, ${volt}). Bulb not included.`,
+    `VERSATILE INTERIOR APPLICATION: Perfect for enhancing ${spacesStr}, adding a touch of luxury and sophistication to residential and commercial environments.`,
+    `COMPACT PRODUCT DIMENSIONS: Measures ${h} cm in height, ${l} cm in length, and ${w} cm in breadth for a space-efficient lighting solution with simple wall/ceiling installation.`
+  ];
 }
 
 export function getStyle(product: any): string {
@@ -179,6 +233,22 @@ export function generateKeywords(product: any): string {
   return combined.substring(0, 250);
 }
 
+export function generateKeywordsList(product: any): string[] {
+  const mat = getMaterial(product);
+  const style = getStyle(product);
+  const cat = product?.category?.name || 'Lighting';
+
+  const baseKeywords = generateKeywords(product);
+  
+  const cluster1 = `${baseKeywords}`.substring(0, 245);
+  const cluster2 = `${style} ${mat} ${cat} fixture indoor decorative home lighting`.substring(0, 245);
+  const cluster3 = `handcrafted luxury brass metal wall lamp pendant chandelier sconce`.substring(0, 245);
+  const cluster4 = `living room bedroom hallway bedside dining room hotel cafe decor`.substring(0, 245);
+  const cluster5 = `e27 holder warm light ambient illumination modern aesthetic accent`.substring(0, 245);
+
+  return [cluster1, cluster2, cluster3, cluster4, cluster5];
+}
+
 export function getFinishType(product: any): string {
   const mat = String(product.materialAndFinish || '').toLowerCase();
   if (mat.includes('matte') || mat.includes('mat')) return 'Matte';
@@ -199,9 +269,11 @@ export function getLightingMethod(product: any): string {
 }
 
 export function getWaterResistanceLevel(product: any): string {
-  if (product?.amazonWaterResistance) {
-    return product.amazonWaterResistance;
-  }
+  const val = String(product?.amazonWaterResistance || '').toLowerCase();
+  if (val.includes('waterproof')) return 'Waterproof';
+  if (val.includes('repellent')) return 'Water Repellent';
+  if (val.includes('moisture')) return 'Moisture Resistant';
+  if (val.includes('resistant') && !val.includes('not')) return 'Water Resistant';
   return 'Not Water Resistant';
 }
 

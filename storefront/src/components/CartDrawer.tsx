@@ -1,22 +1,29 @@
 'use client';
 
 import { useCartStore } from '@/store/cart';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, renderPrice } from '@/lib/utils';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useWishlistStore } from '@/store/wishlist';
 import CouponInput from '@/components/CouponInput';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, total, itemCount, appliedCoupon, discountedTotal } = useCartStore();
   const { toggleItem } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close cart when navigating to another page
+  useEffect(() => {
+    closeCart();
+  }, [pathname, closeCart]);
 
   // Keyboard close
   useEffect(() => {
@@ -24,6 +31,28 @@ export default function CartDrawer() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [closeCart]);
+
+  // Back button history interceptor to close cart on mobile back navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Push dummy state to capture back navigation
+    window.history.pushState({ cartOpen: true }, '');
+
+    const handlePopState = (e: PopStateEvent) => {
+      closeCart();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Remove the dummy history state if cart was closed by user action
+      if (window.history.state && window.history.state.cartOpen) {
+        window.history.back();
+      }
+    };
+  }, [isOpen, closeCart]);
 
   // Prevent body scroll when open
   useEffect(() => {
@@ -45,9 +74,9 @@ export default function CartDrawer() {
   const currentItems = items;
   const currentCount = itemCount();
   const cartTotal = total();
-  const finalSubtotal = discountedTotal();
-  const gst = finalSubtotal * 0.18;
-  const grandTotal = finalSubtotal + gst;
+  const grandTotal = discountedTotal(); // Prices are inclusive of GST
+  const gst = grandTotal - (grandTotal / 1.18);
+  const finalSubtotal = grandTotal - gst;
 
   return createPortal(
     <>
@@ -98,10 +127,23 @@ export default function CartDrawer() {
             onClick={closeCart}
             aria-label="Close cart"
             style={{ 
-              background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '8px'
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--gold)', 
+              cursor: 'pointer', 
+              padding: '8px',
+              transition: 'color 0.2s ease, transform 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.color = 'var(--gold-pale)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.color = 'var(--gold)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            <i className="ti ti-x" style={{ fontSize: '18px' }}></i>
+            <i className="ti ti-x" style={{ fontSize: '20px', fontWeight: 'bold' }}></i>
           </button>
         </div>
 
@@ -123,12 +165,12 @@ export default function CartDrawer() {
                     <div>
                       <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', color: 'var(--cream)', margin: '0 0 2px', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.product.name}</h3>
                       <div style={{ fontSize: '13px', color: 'var(--gold-light)', opacity: 0.9 }}>
-                        {formatPrice(item.product.d2cPrice)}
+                        {renderPrice(item.product.d2cPrice)}
                       </div>
                       {item.warranty && (
                         <div style={{ fontSize: '11px', color: 'var(--gold)', marginTop: '4px', display: 'flex', gap: '6px', alignItems: 'center' }}>
                           <i className="ti ti-shield-check" style={{ fontSize: '13px' }}></i>
-                          <span>{item.warranty.planName} (+{formatPrice(item.warranty.price)})</span>
+                          <span>{item.warranty.planName} (+{renderPrice(item.warranty.price)})</span>
                         </div>
                       )}
                     </div>
@@ -161,46 +203,57 @@ export default function CartDrawer() {
             <div style={{ marginBottom: '24px' }}>
               <CouponInput />
             </div>
-            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
-                <span>Subtotal</span>
-                <span style={{ color: 'var(--cream)' }}>{formatPrice(cartTotal)}</span>
+                <span>Subtotal (excl. GST)</span>
+                <span style={{ color: 'var(--cream)' }}>{renderPrice(finalSubtotal)}</span>
               </div>
               {appliedCoupon && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--gold)' }}>
                   <span>Promo: {appliedCoupon.code}</span>
-                  <span>{appliedCoupon.freeShipping ? 'Free' : `- ${formatPrice(appliedCoupon.discountAmount)}`}</span>
+                  <span>{appliedCoupon.freeShipping ? 'Free' : <>- {renderPrice(appliedCoupon.discountAmount)}</>}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-dim)' }}>
-                <span>GST (18%)</span>
-                <span style={{ color: 'var(--cream)' }}>{formatPrice(gst)}</span>
+                <span>GST (18% Included)</span>
+                <span style={{ color: 'var(--cream)' }}>{renderPrice(gst)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--cream)', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-                <span>Total</span>
-                <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{formatPrice(grandTotal)}</span>
+                <span>Total (incl. GST)</span>
+                <span style={{ color: 'var(--gold)', fontWeight: 500 }}>{renderPrice(grandTotal)}</span>
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: '12px' }}>
               <Link 
                 href="/cart" 
-                onClick={closeCart} 
-                className="hidden md:flex"
+                className="cart-drawer-view-cart-btn"
                 style={{ 
                   flex: 1, alignItems: 'center', justifyContent: 'center', 
                   border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: '8px', 
                   height: '52px', textDecoration: 'none', fontSize: '11px', fontWeight: 600, 
-                  letterSpacing: '0.12em', transition: 'all 0.2s' 
+                  letterSpacing: '0.12em', transition: 'all 0.2s'
                 }}
               >
                 VIEW CART
               </Link>
 
               <Link 
-                href="/checkout" 
-                onClick={closeCart} 
+                href="/checkout"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+                    window.trackMetaEvent('InitiateCheckout', {
+                      value: discountedTotal() || total(),
+                      currency: 'INR',
+                      content_ids: items.map(item => item.product.sku),
+                      content_type: 'product',
+                      contents: items.map(item => ({
+                        id: item.product.sku,
+                        quantity: item.quantity,
+                        item_price: item.product.d2cPrice
+                      }))
+                    });
+                  }
+                }} 
                 style={{ 
                   flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', 
                   background: 'var(--gold)', color: '#0A0905', borderRadius: '8px', 

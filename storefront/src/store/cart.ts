@@ -1,6 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Product } from '@/lib/utils';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { Product } from "@/lib/utils";
+import { triggerHaptic } from "@/lib/haptic";
 
 export type CartItem = {
   product: Product;
@@ -26,9 +27,17 @@ type CartStore = {
   appliedCoupon: AppliedCoupon | null;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (product: Product, qty?: number, warranty?: CartItem['warranty']) => void;
+  addItem: (
+    product: Product,
+    qty?: number,
+    warranty?: CartItem["warranty"],
+  ) => void;
   removeItem: (productId: string, warrantySku?: string | null) => void;
-  updateQty: (productId: string, qty: number, warrantySku?: string | null) => void;
+  updateQty: (
+    productId: string,
+    qty: number,
+    warrantySku?: string | null,
+  ) => void;
   clearCart: () => void;
   total: () => number;
   itemCount: () => number;
@@ -48,50 +57,68 @@ export const useCartStore = create<CartStore>()(
       closeCart: () => set({ isOpen: false }),
 
       addItem: (product, qty = 1, warranty = null) => {
-        set(state => {
-          const existing = state.items.find(i => 
-            i.product.id === product.id && 
-            ((i.warranty?.planSku || null) === (warranty?.planSku || null))
+        triggerHaptic(22);
+        set((state) => {
+          const existing = state.items.find(
+            (i) =>
+              i.product.id === product.id &&
+              (i.warranty?.planSku || null) === (warranty?.planSku || null),
           );
           if (existing) {
             return {
-              items: state.items.map(i =>
-                (i.product.id === product.id && (i.warranty?.planSku || null) === (warranty?.planSku || null))
+              items: state.items.map((i) =>
+                i.product.id === product.id &&
+                (i.warranty?.planSku || null) === (warranty?.planSku || null)
                   ? { ...i, quantity: i.quantity + qty }
-                  : i
+                  : i,
               ),
               isOpen: true,
             };
           }
-          return { items: [...state.items, { product, quantity: qty, warranty }], isOpen: true };
+          return {
+            items: [...state.items, { product, quantity: qty, warranty }],
+            isOpen: true,
+          };
         });
       },
 
       removeItem: (productId, warrantySku = null) => {
-        set(state => ({ 
-          items: state.items.filter(i => 
-            !(i.product.id === productId && (i.warranty?.planSku || null) === (warrantySku || null))
-          ) 
+        triggerHaptic(15);
+        set((state) => ({
+          items: state.items.filter(
+            (i) =>
+              !(
+                i.product.id === productId &&
+                (i.warranty?.planSku || null) === (warrantySku || null)
+              ),
+          ),
         }));
       },
 
       updateQty: (productId, qty, warrantySku = null) => {
+        triggerHaptic(16);
         if (qty < 1) {
           get().removeItem(productId, warrantySku);
           return;
         }
-        set(state => ({
-          items: state.items.map(i => 
-            (i.product.id === productId && (i.warranty?.planSku || null) === (warrantySku || null)) 
-              ? { ...i, quantity: qty } 
-              : i
+        set((state) => ({
+          items: state.items.map((i) =>
+            i.product.id === productId &&
+            (i.warranty?.planSku || null) === (warrantySku || null)
+              ? { ...i, quantity: qty }
+              : i,
           ),
         }));
       },
 
       clearCart: () => set({ items: [], appliedCoupon: null }),
 
-      total: () => get().items.reduce((sum, i) => sum + (i.product.d2cPrice + (i.warranty?.price || 0)) * i.quantity, 0),
+      total: () =>
+        get().items.reduce(
+          (sum, i) =>
+            sum + (i.product.d2cPrice + (i.warranty?.price || 0)) * i.quantity,
+          0,
+        ),
 
       itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 
@@ -105,6 +132,6 @@ export const useCartStore = create<CartStore>()(
         return Math.max(0, subtotal - discount);
       },
     }),
-    { name: 'jns-cart' }
-  )
+    { name: "jns-cart" },
+  ),
 );

@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
-import ActionDropdown from '@/components/ActionDropdown';
-import SyncButton from '@/components/SyncButton';
-import ClickableRow from '@/components/ClickableRow';
+import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import ActionDropdown from "@/components/ActionDropdown";
+import SyncButton from "@/components/SyncButton";
+import ClickableRow from "@/components/ClickableRow";
 
 interface ProductItem {
   id: string;
@@ -28,18 +29,34 @@ interface CategoryItem {
 }
 
 export default function ProductsTableClient({
-  products,
+  products: initialProducts,
   categories,
 }: {
   products: ProductItem[];
   categories: CategoryItem[];
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const searchParams = useSearchParams();
+  const [productsList, setProductsList] =
+    useState<ProductItem[]>(initialProducts);
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  const [selectedCategory, setSelectedCategory] = useState(
+    searchParams.get("categoryId") || "ALL",
+  );
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  const [chipFilter, setChipFilter] = useState<'ALL' | 'LOW_STOCK' | 'ANOMALY' | 'OUT_OF_STOCK'>('ALL');
+  const [chipFilter, setChipFilter] = useState<
+    "ALL" | "LOW_STOCK" | "ANOMALY" | "OUT_OF_STOCK"
+  >("ALL");
+
+  useEffect(() => {
+    setProductsList(initialProducts);
+  }, [initialProducts]);
+
+  useEffect(() => {
+    setSearchTerm(searchParams.get("q") || "");
+    setSelectedCategory(searchParams.get("categoryId") || "ALL");
+  }, [searchParams]);
 
   // Calculate stats for the top summary strip
   const stats = useMemo(() => {
@@ -48,19 +65,25 @@ export default function ProductsTableClient({
     let anomaly = 0;
     let outOfStock = 0;
 
-    products.forEach((p) => {
+    productsList.forEach((p) => {
       if (p.stockQuantity > 0) active++;
       if (p.stockQuantity > 0 && p.stockQuantity < 5) lowStock++;
       if (p.stockQuantity <= 0) outOfStock++;
       if (p.b2bPrice > p.d2cPrice || p.d2cPrice < 600) anomaly++;
     });
 
-    return { active, lowStock, anomaly, outOfStock, total: products.length };
-  }, [products]);
+    return {
+      active,
+      lowStock,
+      anomaly,
+      outOfStock,
+      total: productsList.length,
+    };
+  }, [productsList]);
 
   // Filter products based on search term, category, status, and active chip
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    return productsList.filter((p) => {
       // 1. Search filter
       const query = searchTerm.toLowerCase();
       const matchesSearch =
@@ -71,22 +94,25 @@ export default function ProductsTableClient({
 
       // 2. Category filter
       const matchesCategory =
-        selectedCategory === 'ALL' || p.categoryId === selectedCategory;
+        selectedCategory === "ALL" || p.categoryId === selectedCategory;
 
       // 3. Status filter
       let matchesStatus = true;
-      if (selectedStatus === 'ACTIVE') matchesStatus = p.stockQuantity > 0;
-      if (selectedStatus === 'OUT_OF_STOCK') matchesStatus = p.stockQuantity <= 0;
+      if (selectedStatus === "ACTIVE") matchesStatus = p.stockQuantity > 0;
+      if (selectedStatus === "OUT_OF_STOCK")
+        matchesStatus = p.stockQuantity <= 0;
 
       // 4. Quick Chip filter
       let matchesChip = true;
-      if (chipFilter === 'LOW_STOCK') matchesChip = p.stockQuantity > 0 && p.stockQuantity < 5;
-      if (chipFilter === 'ANOMALY') matchesChip = p.b2bPrice > p.d2cPrice || p.d2cPrice < 600;
-      if (chipFilter === 'OUT_OF_STOCK') matchesChip = p.stockQuantity <= 0;
+      if (chipFilter === "LOW_STOCK")
+        matchesChip = p.stockQuantity > 0 && p.stockQuantity < 5;
+      if (chipFilter === "ANOMALY")
+        matchesChip = p.b2bPrice > p.d2cPrice || p.d2cPrice < 600;
+      if (chipFilter === "OUT_OF_STOCK") matchesChip = p.stockQuantity <= 0;
 
       return matchesSearch && matchesCategory && matchesStatus && matchesChip;
     });
-  }, [products, searchTerm, selectedCategory, selectedStatus, chipFilter]);
+  }, [productsList, searchTerm, selectedCategory, selectedStatus, chipFilter]);
 
   // Reset page to 1 when filters change
   useEffect(() => {
@@ -133,11 +159,48 @@ export default function ProductsTableClient({
                 <span aria-hidden="true">▾</span>
               </button>
               <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-surface border border-border py-2 w-48 shadow-xl rounded-sm">
-                <a href="/api/admin/export/pinterest" download="pinterest_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary transition-colors">Pinterest Feed</a>
-                <a href="/api/admin/export/meta" download="meta_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Meta Feed</a>
-                <a href="/api/admin/export/amazon" download="amazon_listing_feed.xlsm" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Amazon Feed</a>
-                <a href="/api/admin/export/flipkart" download="flipkart_feed.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">Flipkart Feed</a>
-                <a href="/api/admin/export/indiamart" download="indiamart_catalog.csv" className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors">IndiaMART Feed</a>
+                <a
+                  href="/api/admin/export/google"
+                  download="google_merchant_feed.xml"
+                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary transition-colors"
+                >
+                  Google Merchant Feed
+                </a>
+                <a
+                  href="/api/admin/export/pinterest"
+                  download="pinterest_feed.csv"
+                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors"
+                >
+                  Pinterest Feed
+                </a>
+                <a
+                  href="/api/admin/export/meta"
+                  download="meta_feed.csv"
+                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors"
+                >
+                  Meta Feed
+                </a>
+                <a
+                  href="/api/admin/export/amazon"
+                  download="amazon_listing_feed.xlsm"
+                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors"
+                >
+                  Amazon Feed
+                </a>
+                <a
+                  href="/api/admin/export/flipkart"
+                  download="flipkart_feed.csv"
+                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors"
+                >
+                  Flipkart Feed
+                </a>
+                <a
+                  href="/api/admin/export/indiamart"
+                  download="indiamart_catalog.csv"
+                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors"
+                >
+                  IndiaMART Feed
+                </a>
               </div>
             </div>
 
@@ -153,38 +216,70 @@ export default function ProductsTableClient({
       </div>
 
       {/* Summary Health Strip */}
-      <section aria-label="Catalog summary" className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-
+      <section
+        aria-label="Catalog summary"
+        className="grid grid-cols-2 lg:grid-cols-3 gap-3"
+      >
         {stats.lowStock > 0 && (
           <button
-            onClick={() => setChipFilter('LOW_STOCK')}
-            className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${chipFilter === 'LOW_STOCK' ? 'bg-[#D6A24A]/15 border-[#D6A24A]' : 'bg-surface border-[#D6A24A]/40 hover:border-[#D6A24A]'
-              }`}>
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#D6A24A] font-semibold block mb-1">Low Stock</span>
-            <div className="font-serif text-[26px] font-normal text-[#D6A24A] leading-none">{stats.lowStock}</div>
-            <span className="font-mono text-[10px] text-[#D6A24A]/80 mt-1.5 block">below 5 units in inventory</span>
+            onClick={() => setChipFilter("LOW_STOCK")}
+            className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${
+              chipFilter === "LOW_STOCK"
+                ? "bg-[#D6A24A]/15 border-[#D6A24A]"
+                : "bg-surface border-[#D6A24A]/40 hover:border-[#D6A24A]"
+            }`}
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#D6A24A] font-semibold block mb-1">
+              Low Stock
+            </span>
+            <div className="font-serif text-[26px] font-normal text-[#D6A24A] leading-none">
+              {stats.lowStock}
+            </div>
+            <span className="font-mono text-[10px] text-[#D6A24A]/80 mt-1.5 block">
+              below 5 units in inventory
+            </span>
           </button>
         )}
 
         {stats.anomaly > 0 && (
           <button
-            onClick={() => setChipFilter('ANOMALY')}
-            className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${chipFilter === 'ANOMALY' ? 'bg-[#C97E6A]/20 border-[#C97E6A]' : 'bg-surface border-[#C97E6A]/40 hover:border-[#C97E6A]'
-              }`}>
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#C97E6A] font-semibold block mb-1">Price Anomalies</span>
-            <div className="font-serif text-[26px] font-normal text-[#C97E6A] leading-none">{stats.anomaly}</div>
-            <span className="font-mono text-[10px] text-[#C97E6A]/80 mt-1.5 block">B2B &gt; D2C or price &lt; ₹600</span>
+            onClick={() => setChipFilter("ANOMALY")}
+            className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${
+              chipFilter === "ANOMALY"
+                ? "bg-[#C97E6A]/20 border-[#C97E6A]"
+                : "bg-surface border-[#C97E6A]/40 hover:border-[#C97E6A]"
+            }`}
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#C97E6A] font-semibold block mb-1">
+              Price Anomalies
+            </span>
+            <div className="font-serif text-[26px] font-normal text-[#C97E6A] leading-none">
+              {stats.anomaly}
+            </div>
+            <span className="font-mono text-[10px] text-[#C97E6A]/80 mt-1.5 block">
+              B2B &gt; D2C or price &lt; ₹600
+            </span>
           </button>
         )}
 
         {stats.outOfStock > 0 && (
           <button
-            onClick={() => setChipFilter('OUT_OF_STOCK')}
-            className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${chipFilter === 'OUT_OF_STOCK' ? 'bg-surface-muted/60 border-primary' : 'bg-surface border-border hover:border-border-strong'
-              }`}>
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">Out of Stock</span>
-            <div className="font-serif text-[26px] font-normal text-secondary leading-none">{stats.outOfStock}</div>
-            <span className="font-mono text-[10px] text-muted mt-1.5 block">0 units available</span>
+            onClick={() => setChipFilter("OUT_OF_STOCK")}
+            className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${
+              chipFilter === "OUT_OF_STOCK"
+                ? "bg-surface-muted/60 border-primary"
+                : "bg-surface border-border hover:border-border-strong"
+            }`}
+          >
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
+              Out of Stock
+            </span>
+            <div className="font-serif text-[26px] font-normal text-secondary leading-none">
+              {stats.outOfStock}
+            </div>
+            <span className="font-mono text-[10px] text-muted mt-1.5 block">
+              0 units available
+            </span>
           </button>
         )}
       </section>
@@ -194,8 +289,12 @@ export default function ProductsTableClient({
         {/* Controls: Search and Filters */}
         <div className="p-4 md:p-6 border-b border-border flex flex-wrap gap-4 bg-surface-muted/40 items-center justify-between">
           <div className="flex-1 min-w-[260px] flex items-center gap-2 border border-border bg-background px-3.5 py-2 rounded-sm focus-within:border-accent">
-            <span className="text-muted text-xs" aria-hidden="true">🔍</span>
-            <label htmlFor="productSearchInput" className="sr-only">Search products by name or SKU</label>
+            <span className="text-muted text-xs" aria-hidden="true">
+              🔍
+            </span>
+            <label htmlFor="productSearchInput" className="sr-only">
+              Search products by name or SKU
+            </label>
             <input
               id="productSearchInput"
               type="text"
@@ -206,7 +305,7 @@ export default function ProductsTableClient({
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm("")}
                 className="text-muted hover:text-primary font-mono text-[10px] uppercase cursor-pointer"
                 aria-label="Clear search query"
               >
@@ -217,7 +316,9 @@ export default function ProductsTableClient({
 
           <div className="flex flex-wrap items-center gap-2">
             <div>
-              <label htmlFor="categorySelectFilter" className="sr-only">Filter by Category</label>
+              <label htmlFor="categorySelectFilter" className="sr-only">
+                Filter by Category
+              </label>
               <select
                 id="categorySelectFilter"
                 value={selectedCategory}
@@ -235,7 +336,9 @@ export default function ProductsTableClient({
             </div>
 
             <div>
-              <label htmlFor="statusSelectFilter" className="sr-only">Filter by Status</label>
+              <label htmlFor="statusSelectFilter" className="sr-only">
+                Filter by Status
+              </label>
               <select
                 id="statusSelectFilter"
                 value={selectedStatus}
@@ -252,82 +355,130 @@ export default function ProductsTableClient({
 
           {/* Quick Filter Chips */}
           <div className="w-full flex items-center gap-2 pt-2 border-t border-border/30">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-muted">Quick Triage:</span>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-muted">
+              Quick Triage:
+            </span>
             <button
-              onClick={() => setChipFilter('ALL')}
-              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${chipFilter === 'ALL' ? 'bg-accent/20 text-accent border border-accent/40 font-semibold' : 'bg-surface-muted text-muted border border-border hover:text-primary'
-                }`}
+              onClick={() => setChipFilter("ALL")}
+              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
+                chipFilter === "ALL"
+                  ? "bg-accent/20 text-accent border border-accent/40 font-semibold"
+                  : "bg-surface-muted text-muted border border-border hover:text-primary"
+              }`}
             >
               All ({stats.total})
             </button>
             <button
-              onClick={() => setChipFilter('LOW_STOCK')}
-              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${chipFilter === 'LOW_STOCK' ? 'bg-[#D6A24A]/20 text-[#D6A24A] border border-[#D6A24A]/40 font-semibold' : 'bg-surface-muted text-muted border border-border hover:text-primary'
-                }`}
+              onClick={() => setChipFilter("LOW_STOCK")}
+              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
+                chipFilter === "LOW_STOCK"
+                  ? "bg-[#D6A24A]/20 text-[#D6A24A] border border-[#D6A24A]/40 font-semibold"
+                  : "bg-surface-muted text-muted border border-border hover:text-primary"
+              }`}
             >
               Low Stock ({stats.lowStock})
             </button>
             <button
-              onClick={() => setChipFilter('ANOMALY')}
-              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${chipFilter === 'ANOMALY' ? 'bg-[#C97E6A]/20 text-[#C97E6A] border border-[#C97E6A]/40 font-semibold' : 'bg-surface-muted text-muted border border-border hover:text-primary'
-                }`}
+              onClick={() => setChipFilter("ANOMALY")}
+              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
+                chipFilter === "ANOMALY"
+                  ? "bg-[#C97E6A]/20 text-[#C97E6A] border border-[#C97E6A]/40 font-semibold"
+                  : "bg-surface-muted text-muted border border-border hover:text-primary"
+              }`}
             >
               Price Anomaly ({stats.anomaly})
             </button>
             <button
-              onClick={() => setChipFilter('OUT_OF_STOCK')}
-              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${chipFilter === 'OUT_OF_STOCK' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 font-semibold' : 'bg-surface-muted text-muted border border-border hover:text-primary'
-                }`}
+              onClick={() => setChipFilter("OUT_OF_STOCK")}
+              className={`px-3 py-1 rounded-full font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
+                chipFilter === "OUT_OF_STOCK"
+                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 font-semibold"
+                  : "bg-surface-muted text-muted border border-border hover:text-primary"
+              }`}
             >
               Out of Stock ({stats.outOfStock})
             </button>
-          <div className="flex items-center gap-2 md:ml-auto">
-  <button
-    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-    disabled={currentPage === 1}
-    className={`px-3 py-1 rounded text-[10px] font-mono ${currentPage === 1 ? 'bg-surface text-muted cursor-not-allowed' : 'bg-accent text-black hover:bg-accent-hover'} transition-colors`}
-  >
-    Prev
-  </button>
-  <span className="font-mono text-[10px]">
-    Page {currentPage} of {Math.ceil(filteredProducts.length / itemsPerPage)}
-  </span>
-  <button
-    onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(filteredProducts.length / itemsPerPage)))}
-    disabled={currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)}
-    className={`px-3 py-1 rounded text-[10px] font-mono ${currentPage >= Math.ceil(filteredProducts.length / itemsPerPage) ? 'bg-surface text-muted cursor-not-allowed' : 'bg-accent text-black hover:bg-accent-hover'} transition-colors`}
-  >
-    Next
-  </button>
-</div>
-        </div>
+            <div className="flex items-center gap-2 md:ml-auto">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded text-[10px] font-mono ${currentPage === 1 ? "bg-surface text-muted cursor-not-allowed" : "bg-accent text-black hover:bg-accent-hover"} transition-colors`}
+              >
+                Prev
+              </button>
+              <span className="font-mono text-[10px]">
+                Page {currentPage} of{" "}
+                {Math.ceil(filteredProducts.length / itemsPerPage)}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) =>
+                    Math.min(
+                      p + 1,
+                      Math.ceil(filteredProducts.length / itemsPerPage),
+                    ),
+                  )
+                }
+                disabled={
+                  currentPage >=
+                  Math.ceil(filteredProducts.length / itemsPerPage)
+                }
+                className={`px-3 py-1 rounded text-[10px] font-mono ${currentPage >= Math.ceil(filteredProducts.length / itemsPerPage) ? "bg-surface text-muted cursor-not-allowed" : "bg-accent text-black hover:bg-accent-hover"} transition-colors`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Desktop Table View (Visible on desktop: md:block) */}
         <div className="hidden md:block table-responsive flex-1">
           <table className="w-full text-left border-collapse">
-            <caption className="sr-only">Product catalog with pricing, stock, and sync status</caption>
+            <caption className="sr-only">
+              Product catalog with pricing, stock, and sync status
+            </caption>
             <thead className="border-b border-border bg-surface-muted/20">
               <tr>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
                   Product
                 </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
                   SKU
                 </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
                   D2C Price
                 </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
                   B2B Base Price
                 </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
                   Stock
                 </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
                   Status
                 </th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
                   Direct Action &amp; Sync
                 </th>
               </tr>
@@ -335,35 +486,52 @@ export default function ProductsTableClient({
             <tbody className="divide-y divide-border/40">
               {paginatedProducts.map((product) => {
                 const isOutOfStock = product.stockQuantity <= 0;
-                const isLowStock = product.stockQuantity > 0 && product.stockQuantity < 5;
-                const isAnomaly = product.b2bPrice > product.d2cPrice || product.d2cPrice < 600;
+                const isLowStock =
+                  product.stockQuantity > 0 && product.stockQuantity < 5;
+                const isAnomaly =
+                  product.b2bPrice > product.d2cPrice || product.d2cPrice < 600;
 
                 const rowBgClass = isAnomaly
-                  ? 'bg-[#C97E6A]/10 border-l-2 border-l-[#C97E6A] hover:bg-[#C97E6A]/20'
-                  : 'hover:bg-surface-muted/40';
+                  ? "bg-[#C97E6A]/10 border-l-2 border-l-[#C97E6A] hover:bg-[#C97E6A]/20"
+                  : "hover:bg-surface-muted/40";
 
                 return (
-                  <ClickableRow key={product.id} href={`/products/${product.id}/edit`} className={`transition-colors ${rowBgClass}`}>
+                  <ClickableRow
+                    key={product.id}
+                    href={`/products/${product.id}/edit`}
+                    className={`transition-colors ${rowBgClass}`}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-12 bg-background border border-border flex items-center justify-center font-mono text-[8px] text-muted tracking-widest text-center shrink-0 overflow-hidden rounded-sm">
-                          {product.images?.[0] || product.whiteBackgroundImages?.[0] ? (
-                            <img src={product.images?.[0] || product.whiteBackgroundImages?.[0]} alt={product.name} className="w-full h-full object-cover" />
+                        <div className="relative w-10 h-12 bg-background border border-border flex items-center justify-center font-mono text-[8px] text-muted tracking-widest text-center shrink-0 overflow-hidden rounded-sm">
+                          {product.images?.[0] ||
+                          product.whiteBackgroundImages?.[0] ? (
+                            <img
+                              src={
+                                product.images?.[0] ||
+                                product.whiteBackgroundImages?.[0]
+                              }
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
-                            'IMG'
+                            "IMG"
                           )}
                         </div>
                         <div>
                           <div className="font-serif text-[16px] text-primary flex items-center gap-2">
                             <span>{product.name}</span>
                             {isAnomaly && (
-                              <span className="text-[10px] font-mono text-[#C97E6A] bg-[#C97E6A]/15 border border-[#C97E6A]/30 px-1.5 py-0.5 rounded" title="Price Anomaly: B2B > D2C or price < ₹600">
+                              <span
+                                className="text-[10px] font-mono text-[#C97E6A] bg-[#C97E6A]/15 border border-[#C97E6A]/30 px-1.5 py-0.5 rounded"
+                                title="Price Anomaly: B2B > D2C or price < ₹600"
+                              >
                                 ⚠️ Anomaly
                               </span>
                             )}
                           </div>
                           <div className="font-mono text-[9px] text-muted mt-0.5 tracking-wider uppercase">
-                            {product.category?.name || 'Uncategorized'}
+                            {product.category?.name || "Uncategorized"}
                           </div>
                         </div>
                       </div>
@@ -373,17 +541,25 @@ export default function ProductsTableClient({
                       {product.sku}
                     </td>
 
-                    <td className={`px-6 py-4 font-mono text-[13px] text-right tabular-nums ${isAnomaly ? 'text-[#C97E6A] font-bold' : 'text-emerald-400'}`}>
-                      ₹{product.d2cPrice.toLocaleString('en-IN')}
+                    <td
+                      className={`px-6 py-4 font-mono text-[13px] text-right tabular-nums ${isAnomaly ? "text-[#C97E6A] font-bold" : "text-emerald-400"}`}
+                    >
+                      ₹{product.d2cPrice.toLocaleString("en-IN")}
                     </td>
 
                     <td className="px-6 py-4 font-mono text-[13px] text-secondary text-right tabular-nums">
-                      ₹{product.b2bPrice.toLocaleString('en-IN')}
+                      ₹{product.b2bPrice.toLocaleString("en-IN")}
                     </td>
 
-                    <td className={`px-6 py-4 font-mono text-[13px] text-right tabular-nums ${isOutOfStock ? 'text-rose-500 font-bold' : isLowStock ? 'text-[#D6A24A] font-semibold' : 'text-primary'}`}>
+                    <td
+                      className={`px-6 py-4 font-mono text-[13px] text-right tabular-nums ${isOutOfStock ? "text-rose-500 font-bold" : isLowStock ? "text-[#D6A24A] font-semibold" : "text-primary"}`}
+                    >
                       {product.stockQuantity}
-                      {isLowStock && <span className="block text-[9px] text-[#D6A24A] font-mono">Low Stock</span>}
+                      {isLowStock && (
+                        <span className="block text-[9px] text-[#D6A24A] font-mono">
+                          Low Stock
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-6 py-4">
@@ -412,11 +588,12 @@ export default function ProductsTableClient({
                           <span>Edit</span>
                         </Link>
 
-                        {/* Direct Action: SYNC */}
-                        
-
                         {/* Secondary Options */}
-                        <ActionDropdown productId={product.id} sku={product.sku} slug={product.slug} />
+                        <ActionDropdown
+                          productId={product.id}
+                          sku={product.sku}
+                          slug={product.slug}
+                        />
                       </div>
                     </td>
                   </ClickableRow>
@@ -425,7 +602,10 @@ export default function ProductsTableClient({
 
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest"
+                  >
                     No matching products found in catalog.
                   </td>
                 </tr>
@@ -438,21 +618,31 @@ export default function ProductsTableClient({
         <div className="block md:hidden p-4 space-y-3">
           {filteredProducts.map((product) => {
             const isOutOfStock = product.stockQuantity <= 0;
-            const isLowStock = product.stockQuantity > 0 && product.stockQuantity < 5;
-            const isAnomaly = product.b2bPrice > product.d2cPrice || product.d2cPrice < 600;
+            const isLowStock =
+              product.stockQuantity > 0 && product.stockQuantity < 5;
+            const isAnomaly =
+              product.b2bPrice > product.d2cPrice || product.d2cPrice < 600;
 
             return (
               <div
                 key={product.id}
-                className={`p-4 border rounded-lg space-y-3 ${isAnomaly ? 'bg-[#C97E6A]/15 border-[#C97E6A]' : 'bg-surface border-border'}`}
+                className={`p-4 border rounded-lg space-y-3 ${isAnomaly ? "bg-[#C97E6A]/15 border-[#C97E6A]" : "bg-surface border-border"}`}
               >
                 {/* Top: Image + Name + SKU */}
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-14 bg-background border border-border flex items-center justify-center font-mono text-[9px] text-muted shrink-0 overflow-hidden rounded-sm">
-                    {product.images?.[0] || product.whiteBackgroundImages?.[0] ? (
-                      <img src={product.images?.[0] || product.whiteBackgroundImages?.[0]} alt={product.name} className="w-full h-full object-cover" />
+                  <div className="relative w-12 h-14 bg-background border border-border flex items-center justify-center font-mono text-[9px] text-muted shrink-0 overflow-hidden rounded-sm">
+                    {product.images?.[0] ||
+                    product.whiteBackgroundImages?.[0] ? (
+                      <img
+                        src={
+                          product.images?.[0] ||
+                          product.whiteBackgroundImages?.[0]
+                        }
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      'IMG'
+                      "IMG"
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -460,7 +650,8 @@ export default function ProductsTableClient({
                       {product.name}
                     </h2>
                     <p className="font-mono text-[11px] text-muted m-0 mt-0.5">
-                      SKU: {product.sku} · {product.category?.name || 'Uncategorized'}
+                      SKU: {product.sku} ·{" "}
+                      {product.category?.name || "Uncategorized"}
                     </p>
                     {isAnomaly && (
                       <span className="inline-block text-[9px] font-mono text-[#C97E6A] bg-[#C97E6A]/20 border border-[#C97E6A]/40 px-1.5 py-0.5 rounded mt-1">
@@ -473,20 +664,32 @@ export default function ProductsTableClient({
                 {/* Grid: Pricing & Stock Chips */}
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40 font-mono text-center">
                   <div className="bg-surface-muted/50 p-2 rounded-sm border border-border/30">
-                    <span className="text-[9px] text-muted uppercase tracking-wider block">D2C Price</span>
-                    <span className="text-[12px] text-primary font-semibold">₹{product.d2cPrice.toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <div className="bg-surface-muted/50 p-2 rounded-sm border border-border/30">
-                    <span className="text-[9px] text-muted uppercase tracking-wider block">B2B Base</span>
-                    <span className={`text-[12px] font-semibold ${isAnomaly ? 'text-[#C97E6A]' : 'text-emerald-400'}`}>
-                      ₹{product.b2bPrice.toLocaleString('en-IN')}
+                    <span className="text-[9px] text-muted uppercase tracking-wider block">
+                      D2C Price
+                    </span>
+                    <span className="text-[12px] text-primary font-semibold">
+                      ₹{product.d2cPrice.toLocaleString("en-IN")}
                     </span>
                   </div>
 
                   <div className="bg-surface-muted/50 p-2 rounded-sm border border-border/30">
-                    <span className="text-[9px] text-muted uppercase tracking-wider block">Stock</span>
-                    <span className={`text-[12px] font-semibold ${isOutOfStock ? 'text-rose-500' : isLowStock ? 'text-[#D6A24A]' : 'text-primary'}`}>
+                    <span className="text-[9px] text-muted uppercase tracking-wider block">
+                      B2B Base
+                    </span>
+                    <span
+                      className={`text-[12px] font-semibold ${isAnomaly ? "text-[#C97E6A]" : "text-emerald-400"}`}
+                    >
+                      ₹{product.b2bPrice.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  <div className="bg-surface-muted/50 p-2 rounded-sm border border-border/30">
+                    <span className="text-[9px] text-muted uppercase tracking-wider block">
+                      Stock
+                    </span>
+                    <span
+                      className={`text-[12px] font-semibold ${isOutOfStock ? "text-rose-500" : isLowStock ? "text-[#D6A24A]" : "text-primary"}`}
+                    >
                       {product.stockQuantity}
                     </span>
                   </div>
@@ -515,7 +718,11 @@ export default function ProductsTableClient({
                     >
                       Edit Product
                     </Link>
-                    <ActionDropdown productId={product.id} sku={product.sku} slug={product.slug} />
+                    <ActionDropdown
+                      productId={product.id}
+                      sku={product.sku}
+                      slug={product.slug}
+                    />
                   </div>
                 </div>
               </div>
@@ -532,12 +739,14 @@ export default function ProductsTableClient({
         {/* Table Footer / Pagination */}
         <div className="p-4 md:p-6 border-t border-border flex justify-between items-center bg-background/50">
           <span className="font-mono text-[11px] tracking-wider text-muted">
-            Showing {(currentPage-1)*itemsPerPage + 1} to {Math.min(currentPage*itemsPerPage, filteredProducts.length)} of {filteredProducts.length} catalog items
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of{" "}
+            {filteredProducts.length} catalog items
           </span>
           <div className="flex gap-2">
             <button
               className="px-4 py-2 border border-border text-[10px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50 min-h-[36px] rounded-sm cursor-pointer disabled:cursor-not-allowed hover:text-primary transition-colors"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               aria-label="Previous page"
             >
@@ -545,7 +754,9 @@ export default function ProductsTableClient({
             </button>
             <button
               className="px-4 py-2 border border-border text-[10px] font-mono tracking-widest uppercase text-muted bg-background disabled:opacity-50 min-h-[36px] rounded-sm cursor-pointer disabled:cursor-not-allowed hover:text-primary transition-colors"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages || totalPages === 0}
               aria-label="Next page"
             >
@@ -553,8 +764,7 @@ export default function ProductsTableClient({
             </button>
           </div>
         </div>
-      
+      </div>
     </div>
-  </div>
-);
+  );
 }

@@ -1,7 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/auth';
+import TicketAssignment from './TicketAssignment';
+import TicketReplyBox from './TicketReplyBox';
+import TicketStatusChanger from './TicketStatusChanger';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,135 +32,295 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default async function AdminTicketDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
+  const currentUser = await requireAdmin();
+
   const ticket = await prisma.ticket.findUnique({
     where: { id: params.id },
     include: {
       user: true,
       order: true,
-      ticketMessages: { orderBy: { createdAt: 'asc' } }
+      assignedTo: true,
+      auditLogs: {
+        orderBy: { createdAt: 'desc' },
+        include: { actor: true }
+      },
+      ticketMessages: {
+        orderBy: { createdAt: 'asc' },
+        include: { author: true }
+      }
     }
   });
 
   if (!ticket) return notFound();
 
+  if (!ticket.readByAdmin) {
+    await prisma.ticket.update({
+      where: { id: params.id },
+      data: { readByAdmin: true }
+    });
+    ticket.readByAdmin = true;
+  }
 
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN' },
+    select: { id: true, firstName: true, lastName: true, email: true }
+  });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12 animate-in fade-in duration-300">
-      {/* Header Panel */}
-      <div className="flex justify-between items-center premium-card p-6">
-        <div>
-          <Link href="/tickets" className="font-mono text-[9px] uppercase tracking-widest text-muted hover:text-accent mb-4 inline-block transition-colors">
-            &larr; Back to Inbox
+    <div className="animate-in fade-in duration-300">
+
+      {/* ── Mobile Layout (<md) ─────────────────────────────────────────────── */}
+      <div className="fixed inset-0 z-50 flex md:hidden flex-col overflow-hidden bg-background">
+
+        {/* Mobile Header Bar */}
+        <div className="shrink-0 bg-surface/95 backdrop-blur-md border-b border-border/80 px-4 py-3 flex items-center justify-between gap-3 relative z-30">
+          <Link href="/tickets" className="font-mono text-[10px] uppercase tracking-wider text-accent flex items-center gap-1">
+            ← Back
           </Link>
-          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">{ticket.subject}</h1>
-          <div className="font-mono text-[9px] text-muted mt-2.5 tracking-wider uppercase flex gap-2 items-center flex-wrap">
-            <span>{ticket.ticketNumber}</span>
-            <span>&middot;</span>
-            <span>{ticket.user.firstName} {ticket.user.lastName} ({ticket.user.email})</span>
-            <span>&middot;</span>
-            <span className="text-accent">{CATEGORY_LABELS[ticket.category] || ticket.category}</span>
+          <div className="flex-1 min-w-0 text-center">
+            <div className="font-mono text-[9px] text-muted uppercase tracking-wider leading-none">
+              {ticket.ticketNumber} <span className="opacity-45 text-[8px]">({ticket.id})</span>
+            </div>
+            <div className="font-serif text-[13px] text-primary truncate mt-0.5">{ticket.subject}</div>
           </div>
         </div>
-        <div className="text-right flex flex-col items-end">
-          <span className={`font-mono text-[9px] uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${STATUS_COLORS[ticket.status]}`}>
-            {STATUS_LABELS[ticket.status]}
-          </span>
-          {ticket.order && (
-            <div className="font-mono text-[10px] text-secondary mt-3">
-              Order: <span className="text-accent">#{ticket.order.orderNumber}</span>
+
+        {/* Scrollable Message Thread */}
+        <div className="flex-1 overflow-y-auto overscroll-contain pb-2" id="mobile-thread">
+          <div className="flex flex-col gap-3.5 p-4">
+
+            {/* Category pill at top of thread */}
+            <div className="flex justify-center mb-1">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted border border-border/50 bg-surface px-3 py-1 rounded-full">
+                {CATEGORY_LABELS[ticket.category] || ticket.category}
+              </span>
             </div>
-          )}
+
+            {ticket.ticketMessages.map((msg: any) => {
+              const isNote = msg.isInternalNote;
+              let displayName = 'Customer';
+              if (msg.isAdmin) {
+                displayName = msg.author
+                  ? `${msg.author.firstName} ${msg.author.lastName}`
+                  : 'Support';
+              } else if (msg.author) {
+                displayName = `${msg.author.firstName} ${msg.author.lastName}`;
+              }
+
+              const timeStr = new Date(msg.createdAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              if (isNote) {
+                return (
+                  <div key={msg.id} className="flex justify-center">
+                    <div className="max-w-[85%] bg-amber-500/5 border border-amber-500/20 rounded-[14px] p-3">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="text-[8px] font-mono uppercase tracking-wider bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-[3px] font-bold">
+                          Internal Note
+                        </span>
+                        <span className="font-mono text-[9px] text-amber-500/60">{displayName} · {timeStr}</span>
+                      </div>
+                      <p className="font-body text-[12.5px] text-amber-200/80 leading-relaxed italic whitespace-pre-wrap">
+                        {msg.message}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={msg.id} className={`flex flex-col ${msg.isAdmin ? 'items-end' : 'items-start'}`}>
+                  <div className="font-mono text-[9px] text-muted/70 mb-1 px-1.5">
+                    {displayName} · {timeStr}
+                  </div>
+                  <div className={`
+                    px-4 py-3 rounded-[20px] font-body text-[13px] leading-relaxed max-w-[80%] whitespace-pre-wrap
+                    ${msg.isAdmin
+                      ? 'bg-accent/15 border border-accent/20 text-primary rounded-tr-[4px]'
+                      : 'bg-surface border border-border text-secondary rounded-tl-[4px]'
+                    }
+                  `}>
+                    {msg.message}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-white/10">
+                        {msg.attachments.map((url: string, i: number) => (
+                          <a key={i} href={url} target="_blank" rel="noreferrer"
+                            className="w-12 h-12 border border-border/50 rounded-[4px] overflow-hidden block">
+                            {url.toLowerCase().endsWith('.pdf')
+                              ? <div className="flex items-center justify-center h-full text-[9px] font-mono text-rose-400 bg-surface-muted">PDF</div>
+                              : <img src={url} alt="" className="w-full h-full object-cover" />
+                            }
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Floating Reply Composer at bottom (WhatsApp Style) */}
+        <div className="shrink-0 p-3 bg-background/90 backdrop-blur-md border-t border-border/20 pb-[calc(env(safe-area-inset-bottom,12px)+8px)]">
+          <TicketReplyBox ticketId={ticket.id} currentStatus={ticket.status} />
         </div>
       </div>
 
-      {/* Selected Items Detail Panel for Returns/Defects */}
-      {ticket.orderItems && Array.isArray(ticket.orderItems) && (
-        <div className="premium-card p-6 space-y-4 bg-surface/90">
-          <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted border-b border-border/40 pb-2">
-            Selected Items for issue / return report
+
+      {/* ── Desktop Layout (>=md) ──────────────────────────────────────────── */}
+      <div className="hidden md:block space-y-5 max-w-5xl mx-auto pb-12">
+        {/* Header Panel */}
+        <div className="flex justify-between items-start premium-card p-6 gap-6">
+          <div className="flex-1">
+            <Link href="/tickets" className="font-mono text-[9px] uppercase tracking-widest text-muted hover:text-accent mb-4 inline-block transition-colors">
+              ← Back to Inbox
+            </Link>
+            <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">{ticket.subject}</h1>
+            <div className="font-mono text-[9px] text-muted mt-2.5 tracking-wider uppercase flex gap-2 items-center flex-wrap">
+              <span>{ticket.ticketNumber}</span>
+              <span>&middot;</span>
+              <span>{ticket.user.firstName} {ticket.user.lastName} ({ticket.user.email})</span>
+              <span>&middot;</span>
+              <span className="text-accent">{CATEGORY_LABELS[ticket.category] || ticket.category}</span>
+            </div>
           </div>
-          <div className="divide-y divide-border/40">
-            {ticket.orderItems.map((item: any, idx: number) => (
-              <div key={idx} className="flex justify-between items-center py-3">
-                <span className="text-primary font-serif text-[15px]">{item.name}</span>
-                <span className="font-mono text-[11px] text-accent">QTY: {item.quantity}</span>
+          <div className="text-right flex flex-col items-end gap-3">
+            <span className={`font-mono text-[9px] uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${STATUS_COLORS[ticket.status]}`}>
+              {STATUS_LABELS[ticket.status]}
+            </span>
+            {ticket.order && (
+              <div className="font-mono text-[10px] text-secondary">
+                Order: <span className="text-accent">#{ticket.order.orderNumber}</span>
               </div>
-            ))}
+            )}
           </div>
         </div>
-      )}
 
-      {/* Main Conversation Box */}
-      <div className="premium-card overflow-hidden flex flex-col bg-surface/90">
-        {/* Messages */}
-        <div className="p-8 flex flex-col gap-6 max-h-[600px] overflow-y-auto bg-background/25">
-          {ticket.ticketMessages.map((msg: any) => {
-            const isAdmin = msg.authorId === 'ADMIN';
-            return (
-              <div key={msg.id} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
-                <div className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted mb-1.5">
-                  {isAdmin ? 'Support Team' : `${ticket.user.firstName}`} &middot; {new Date(msg.createdAt).toLocaleString()}
+        {/* Assignment Control */}
+        <TicketAssignment
+          ticketId={ticket.id}
+          currentAssigneeId={ticket.assignedToId}
+          admins={admins as any}
+          currentUser={currentUser}
+        />
+
+        {/* Selected Items for Returns/Defects */}
+        {ticket.orderItems && Array.isArray(ticket.orderItems) && (
+          <div className="premium-card p-6 space-y-4 bg-surface/90">
+            <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted border-b border-border/40 pb-2">
+              Selected Items for issue / return report
+            </div>
+            <div className="divide-y divide-border/40">
+              {ticket.orderItems.map((item: any, idx: number) => (
+                <div key={idx} className="flex justify-between items-center py-3">
+                  <span className="text-primary font-serif text-[15px]">{item.name}</span>
+                  <span className="font-mono text-[11px] text-accent">QTY: {item.quantity}</span>
                 </div>
-                <div className={`
-                  p-4 rounded-[4px] font-body text-[13px] leading-relaxed max-w-[85%] whitespace-pre-wrap
-                  ${isAdmin 
-                    ? 'bg-accent/10 border border-accent/20 text-primary rounded-tr-none' 
-                    : 'bg-background border border-border text-secondary rounded-tl-none'}
-                `}>
-                  {msg.message}
+              ))}
+            </div>
+          </div>
+        )}
 
-                  {/* Inline attachments inside messages */}
-                  {msg.attachments && msg.attachments.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border/40">
-                      {msg.attachments.map((url: string, imgIdx: number) => {
-                        const isPdf = url.toLowerCase().endsWith('.pdf');
-                        return (
-                          <a 
-                            key={imgIdx} 
-                            href={url} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="block w-[50px] h-[50px] border border-border rounded-[4px] overflow-hidden bg-background cursor-pointer hover:border-accent transition-colors"
-                          >
-                            {isPdf ? (
-                              <div className="flex flex-col items-center justify-center h-full text-muted bg-surface-muted">
-                                <span className="text-[8px] font-mono text-rose-500 font-bold">PDF</span>
-                              </div>
-                            ) : (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={url} alt="Attachment" className="w-full h-full object-cover" />
-                            )}
-                          </a>
-                        );
-                      })}
+        {/* Message Thread — Desktop */}
+        <div className="premium-card overflow-hidden flex flex-col bg-surface/90">
+          <div className="p-8 flex flex-col gap-5 max-h-[600px] overflow-y-auto bg-background/25">
+            {ticket.ticketMessages.map((msg: any) => {
+              const isNote = msg.isInternalNote;
+              let displayName = 'Customer';
+              if (msg.isAdmin) {
+                displayName = msg.author
+                  ? `${msg.author.firstName} ${msg.author.lastName}`
+                  : 'Support Concierge';
+              } else if (msg.author) {
+                displayName = `${msg.author.firstName} ${msg.author.lastName}`;
+              }
+
+              if (isNote) {
+                return (
+                  <div key={msg.id} className="flex justify-center">
+                    <div className="max-w-[80%] bg-amber-500/5 border border-amber-500/20 rounded-[6px] p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-mono text-[8px] uppercase tracking-wider bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-[3px] border border-amber-500/20 font-bold">
+                          Internal Note
+                        </span>
+                        <span className="font-mono text-[9px] text-amber-500/60">
+                          {displayName} · {new Date(msg.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="font-body text-[13px] text-amber-200/80 leading-relaxed italic whitespace-pre-wrap">
+                        {msg.message}
+                      </p>
                     </div>
-                  )}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={msg.id} className={`flex flex-col ${msg.isAdmin ? 'items-end' : 'items-start'}`}>
+                  <div className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted mb-1.5 flex items-center gap-1.5">
+                    <span>{displayName}</span>
+                    <span>&middot;</span>
+                    <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div className={`
+                    p-4 rounded-[6px] font-body text-[13px] leading-relaxed max-w-[80%] whitespace-pre-wrap border
+                    ${msg.isAdmin
+                      ? 'bg-accent/10 border-accent/20 text-primary rounded-tr-[3px]'
+                      : 'bg-background border-border text-secondary rounded-tl-[3px]'
+                    }
+                  `}>
+                    {msg.message}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-border/40">
+                        {msg.attachments.map((url: string, imgIdx: number) => {
+                          const isPdf = url.toLowerCase().endsWith('.pdf');
+                          return (
+                            <a key={imgIdx} href={url} target="_blank" rel="noreferrer"
+                              className="block w-[50px] h-[50px] border border-border rounded-[4px] overflow-hidden bg-background cursor-pointer hover:border-accent transition-colors">
+                              {isPdf
+                                ? <div className="flex flex-col items-center justify-center h-full">
+                                    <span className="text-[8px] font-mono text-rose-500 font-bold">PDF</span>
+                                  </div>
+                                : <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                              }
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* Reply Box — Desktop */}
+          <div className="border-t border-border/40 bg-surface-muted/30 p-6">
+            <TicketReplyBox ticketId={ticket.id} currentStatus={ticket.status} />
+          </div>
         </div>
 
-        {/* Reply Area (Managed via Zoho Desk) */}
-        <div className="p-8 border-t border-border/40 bg-surface-muted/40 text-center flex flex-col items-center justify-center gap-3">
-          <div className="font-serif text-[16px] text-accent flex items-center gap-2">
-            <span>⚠️ Managed via Zoho Desk</span>
+        {/* Activity Timeline */}
+        {ticket.auditLogs && ticket.auditLogs.length > 0 && (
+          <div className="premium-card p-6 bg-surface/90 space-y-4">
+            <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted border-b border-border/40 pb-2">
+              Activity History
+            </div>
+            <div className="space-y-3 font-mono text-[11px] text-muted">
+              {ticket.auditLogs.map((log: any) => (
+                <div key={log.id} className="flex justify-between items-center gap-4 py-1 border-b border-border/20 last:border-0">
+                  <span>
+                    <strong className="text-primary">{log.actor.firstName} {log.actor.lastName}</strong>: {log.details}
+                  </span>
+                  <span className="text-[10px] text-muted/70 whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="font-body text-[13px] text-muted max-w-lg m-0 leading-relaxed">
-            This ticket is synchronized with your Zoho Desk helpdesk dashboard. To prevent communication fragmentation, please reply to the customer directly inside Zoho Desk.
-          </p>
-          {ticket.zohoId && (
-            <a 
-              href={`https://desk.zoho.in/agent/jamesandsons/james-and-sons/tickets/show/all/${ticket.zohoId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="font-mono text-[9px] uppercase tracking-widest text-accent mt-3 hover:underline border border-accent/25 px-6 py-2.5 hover:bg-accent/5 transition-all bg-background"
-            >
-              Open Ticket in Zoho Desk &rarr;
-            </a>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

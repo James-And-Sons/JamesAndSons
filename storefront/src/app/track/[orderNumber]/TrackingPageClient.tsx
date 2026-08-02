@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getOrderTrackingAction } from '../actions';
-import Navigation from '@/components/Navigation';
 import { formatPrice } from '@/lib/utils';
 
 export default function TrackingPageClient({ orderNumber }: { orderNumber: string }) {

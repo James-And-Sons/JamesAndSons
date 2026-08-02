@@ -3,6 +3,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { addProductToCollection, removeProductFromCollection } from './actions';
 import { useSidebar } from '@/lib/context/SidebarContext';
+import CloudinaryUpload from '@/components/CloudinaryUpload';
 
 type Category = { 
   id: string; 
@@ -14,6 +15,10 @@ type Category = {
   gstRate: number | null;
   bisStandard: string | null;
   bisStatus: string | null;
+  image: string | null;
+  images: string[];
+  baseShippingLimit: number | null;
+  freeShippingThreshold: number | null;
   _count: { products: number };
   products: { id: string; name: string; images: string[] }[];
 };
@@ -31,6 +36,9 @@ export default function CategoryManager({ categories, allProducts }: { categorie
   const [gstRate, setGstRate] = useState<number>(18);
   const [bisStandard, setBisStandard] = useState('');
   const [bisStatus, setBisStatus] = useState('Pending Application');
+  const [images, setImages] = useState<string[]>([]);
+  const [baseShippingLimit, setBaseShippingLimit] = useState<number | ''>('');
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | ''>('');
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
 
@@ -38,14 +46,17 @@ export default function CategoryManager({ categories, allProducts }: { categorie
 
   const isDirty = showForm && (
     editing === null 
-      ? (name !== '' || description !== '' || technicalSubheading !== '' || hsnCode !== '' || gstRate !== 18 || bisStandard !== '' || bisStatus !== '')
+      ? (name !== '' || description !== '' || technicalSubheading !== '' || hsnCode !== '' || gstRate !== 18 || bisStandard !== '' || bisStatus !== '' || images.length > 0 || baseShippingLimit !== '' || freeShippingThreshold !== '')
       : (name !== editing.name || 
          description !== (editing.description || '') ||
          technicalSubheading !== (editing.technicalSubheading || '') ||
          hsnCode !== (editing.hsnCode || '') ||
          gstRate !== (editing.gstRate !== null && editing.gstRate !== undefined ? editing.gstRate : 18) ||
          bisStandard !== (editing.bisStandard || '') ||
-         bisStatus !== (editing.bisStatus || ''))
+         bisStatus !== (editing.bisStatus || '') ||
+         baseShippingLimit !== (editing.baseShippingLimit !== null && editing.baseShippingLimit !== undefined ? editing.baseShippingLimit : '') ||
+         freeShippingThreshold !== (editing.freeShippingThreshold !== null && editing.freeShippingThreshold !== undefined ? editing.freeShippingThreshold : '') ||
+         JSON.stringify(images) !== JSON.stringify(editing.images || []))
   );
 
   useEffect(() => {
@@ -85,6 +96,9 @@ export default function CategoryManager({ categories, allProducts }: { categorie
           setGstRate(cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18);
           setBisStandard(cat.bisStandard || '');
           setBisStatus(cat.bisStatus || '');
+          setImages(cat.images || []);
+          setBaseShippingLimit(cat.baseShippingLimit !== null && cat.baseShippingLimit !== undefined ? cat.baseShippingLimit : '');
+          setFreeShippingThreshold(cat.freeShippingThreshold !== null && cat.freeShippingThreshold !== undefined ? cat.freeShippingThreshold : '');
           setShowForm(true);
           setManagingProducts(null);
         }
@@ -101,6 +115,9 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setGstRate(18);
     setBisStandard('');
     setBisStatus('Pending Application');
+    setImages([]);
+    setBaseShippingLimit('');
+    setFreeShippingThreshold('');
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -114,6 +131,9 @@ export default function CategoryManager({ categories, allProducts }: { categorie
     setGstRate(cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18);
     setBisStandard(cat.bisStandard || '');
     setBisStatus(cat.bisStatus || '');
+    setImages(cat.images || []);
+    setBaseShippingLimit(cat.baseShippingLimit !== null && cat.baseShippingLimit !== undefined ? cat.baseShippingLimit : '');
+    setFreeShippingThreshold(cat.freeShippingThreshold !== null && cat.freeShippingThreshold !== undefined ? cat.freeShippingThreshold : '');
     setShowForm(true); 
     setManagingProducts(null); 
   };
@@ -137,7 +157,11 @@ export default function CategoryManager({ categories, allProducts }: { categorie
           hsnCode,
           gstRate: parseFloat(String(gstRate)) || 18,
           bisStandard,
-          bisStatus
+          bisStatus,
+          baseShippingLimit: baseShippingLimit !== '' ? parseFloat(String(baseShippingLimit)) : null,
+          freeShippingThreshold: freeShippingThreshold !== '' ? parseFloat(String(freeShippingThreshold)) : null,
+          image: images[0] || null,
+          images
         }),
       });
       if (!res.ok) { setError(await res.text()); return; }
@@ -153,6 +177,22 @@ export default function CategoryManager({ categories, allProducts }: { categorie
       await fetch(`/api/collections/${id}`, { method: 'DELETE' });
       router.refresh();
     });
+  };
+
+  const handleRowClick = (e: React.MouseEvent, cat: Category) => {
+    const target = e.target as HTMLElement;
+    const isInteractive = 
+      target.tagName === 'A' || 
+      target.tagName === 'BUTTON' || 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'SELECT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.closest('a') || 
+      target.closest('button');
+
+    if (!isInteractive) {
+      openEdit(cat);
+    }
   };
 
   const handleAddProduct = async () => {
@@ -186,53 +226,103 @@ export default function CategoryManager({ categories, allProducts }: { categorie
       </div>
 
       {showForm && (
-        <div className="premium-card p-8 space-y-6 shadow-[0_8px_32px_rgba(0,0,0,0.25)] border-accent/40 bg-surface/90 backdrop-blur">
-          <h3 className="font-serif text-[22px] text-primary font-light">{editing ? 'Edit Category' : 'Create New Category'}</h3>
-          {error && <p className="text-red-400 font-mono text-[11px]">{error}</p>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Category Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandeliers" />
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-surface border border-accent/30 rounded-lg w-full max-w-[640px] flex flex-col overflow-hidden max-h-[90vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-accent">
+                  {editing ? 'Edit Details' : 'Create New'}
+                </div>
+                <h2 className="font-serif text-[20px] text-primary font-normal m-0">
+                  {editing ? 'Edit Category' : 'Create New Category'}
+                </h2>
+              </div>
+              <button 
+                onClick={handleDiscard}
+                className="text-muted hover:text-primary font-mono text-[16px] cursor-pointer bg-transparent border-none focus:outline-none"
+              >
+                ✕
+              </button>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Technical Subheading</label>
-              <input value={technicalSubheading} onChange={e => setTechnicalSubheading(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandelier / Pendant (LED)" />
+
+            {/* Content */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {error && <p className="text-red-400 font-mono text-[11px] m-0">⚠️ {error}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Category Name *</label>
+                  <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandeliers" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Technical Subheading</label>
+                  <input value={technicalSubheading} onChange={e => setTechnicalSubheading(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Chandelier / Pendant (LED)" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">8-Digit HSN Code</label>
+                  <input value={hsnCode} onChange={e => setHsnCode(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 94051100" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">GST Rate (%)</label>
+                  <select value={gstRate} onChange={e => setGstRate(parseFloat(e.target.value))} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
+                    <option value={5}>5%</option>
+                    <option value={12}>12%</option>
+                    <option value={18}>18%</option>
+                    <option value={28}>28%</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Applicable BIS Standard</label>
+                  <input value={bisStandard} onChange={e => setBisStandard(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. IS 10322 (Part 5 / Sec 1)" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">BIS Status</label>
+                  <select value={bisStatus} onChange={e => setBisStatus(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
+                    <option value="Pending Application">Pending Application</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Not Available">Not Available</option>
+                  </select>
+                </div>
+                 <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Base Shipping Included (₹)</label>
+                  <input type="number" value={baseShippingLimit} onChange={e => setBaseShippingLimit(e.target.value !== '' ? parseFloat(e.target.value) : '')} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 280 (Default fallback if empty)" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Free Shipping Threshold (₹)</label>
+                  <input type="number" value={freeShippingThreshold} onChange={e => setFreeShippingThreshold(e.target.value !== '' ? parseFloat(e.target.value) : '')} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 380 (Default fallback if empty)" />
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>
+                  <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="Brief summary of this category" />
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Category Cover Photos (Multiple)</label>
+                  <CloudinaryUpload 
+                    onUpload={(urls) => setImages(urls)}
+                    defaultImages={images}
+                    multiple={true}
+                    label="Add Category Cover Photo"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">8-Digit HSN Code</label>
-              <input value={hsnCode} onChange={e => setHsnCode(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. 94051100" />
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-border bg-surface-muted/40 flex justify-end gap-3">
+              <button
+                onClick={handleDiscard}
+                className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary transition-colors bg-background rounded-sm"
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isPending}
+                className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 rounded-sm"
+              >
+                {isPending ? 'Processing...' : 'Save Category'}
+              </button>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">GST Rate (%)</label>
-              <select value={gstRate} onChange={e => setGstRate(parseFloat(e.target.value))} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
-                <option value={5}>5%</option>
-                <option value={12}>12%</option>
-                <option value={18}>18%</option>
-                <option value={28}>28%</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Applicable BIS Standard</label>
-              <input value={bisStandard} onChange={e => setBisStandard(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. IS 10322 (Part 5 / Sec 1)" />
-            </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">BIS Status</label>
-              <select value={bisStatus} onChange={e => setBisStatus(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors cursor-pointer">
-                <option value="Pending Application">Pending Application</option>
-                <option value="Approved">Approved</option>
-                <option value="Not Available">Not Available</option>
-              </select>
-            </div>
-            <div className="space-y-1 md:col-span-2">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description (Optional)</label>
-              <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="Brief summary of this category" />
-            </div>
-          </div>
-          <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-            <button onClick={handleDiscard} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
-            <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
-              {isPending ? 'Processing...' : 'Save Category'}
-            </button>
           </div>
         </div>
       )}
@@ -318,40 +408,72 @@ export default function CategoryManager({ categories, allProducts }: { categorie
         <table className="w-full text-left">
           <thead className="border-b border-border bg-surface-muted/30">
             <tr>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Category Name</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Technical Subheading</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">8-Digit HSN Code</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">GST Rate</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Applicable BIS Standard</th>
-              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">BIS Status</th>
+              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Category Info</th>
+              <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Tax &amp; Compliance</th>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Products</th>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
             {categories.map(cat => (
-              <tr key={cat.id} className="hover:bg-surface-muted/50 transition-colors">
+              <tr 
+                key={cat.id} 
+                onClick={(e) => handleRowClick(e, cat)}
+                className="hover:bg-surface-muted/50 transition-colors cursor-pointer"
+              >
                 <td className="px-6 py-4">
-                  <div className="font-serif text-[17px] text-primary">{cat.name}</div>
-                  <div className="font-mono text-[10px] text-muted">{cat.slug}</div>
+                  <div className="flex items-center gap-3">
+                    {cat.image ? (
+                      <div className="relative w-12 h-12 border border-border overflow-hidden bg-background flex-shrink-0">
+                        <img src={cat.image} alt={cat.name} className="object-cover w-full h-full" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 border border-dashed border-border/60 flex items-center justify-center text-muted font-mono text-[9px] bg-background flex-shrink-0">
+                        No Img
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-serif text-[17px] text-primary">{cat.name}</div>
+                      <div className="font-mono text-[10px] text-muted">{cat.slug}</div>
+                      {cat.technicalSubheading && (
+                        <div className="font-mono text-[10px] text-accent mt-1">{cat.technicalSubheading}</div>
+                      )}
+                    </div>
+                  </div>
                 </td>
-                <td className="px-6 py-4 font-body text-[13px] text-primary">{cat.technicalSubheading || '—'}</td>
-                <td className="px-6 py-4 font-mono text-[12px] text-secondary">{cat.hsnCode || '—'}</td>
-                <td className="px-6 py-4 font-mono text-[12px] text-secondary">{cat.gstRate !== null && cat.gstRate !== undefined ? `${cat.gstRate}%` : '—'}</td>
-                <td className="px-6 py-4 font-body text-[13px] text-primary">{cat.bisStandard || '—'}</td>
-                <td className="px-6 py-4">
-                  <span className={`font-mono text-[10px] uppercase px-2 py-1 rounded-sm border ${
-                    cat.bisStatus?.toLowerCase().includes('pending')
-                      ? 'border-amber-500/30 text-amber-400 bg-amber-500/5'
-                      : cat.bisStatus?.toLowerCase().includes('approved')
-                        ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
-                        : 'border-border text-muted bg-surface-muted/20'
-                  }`}>
-                    {cat.bisStatus || '—'}
-                  </span>
+                <td className="px-6 py-4 space-y-1">
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-secondary">
+                    <span>HSN:</span>
+                    <span className="text-primary font-semibold">{cat.hsnCode || '—'}</span>
+                    <span>|</span>
+                    <span>GST:</span>
+                    <span className="text-primary font-semibold">{cat.gstRate !== null && cat.gstRate !== undefined ? `${cat.gstRate}%` : '—'}</span>
+                  </div>
+                  {(cat.bisStandard || cat.bisStatus) && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {cat.bisStandard && (
+                        <span className="font-mono text-[10px] text-muted tracking-wide max-w-[200px] truncate" title={cat.bisStandard}>
+                          {cat.bisStandard}
+                        </span>
+                      )}
+                      {cat.bisStatus && (
+                        <span className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-sm border ${
+                          cat.bisStatus.toLowerCase().includes('pending')
+                            ? 'border-amber-500/30 text-amber-400 bg-amber-500/5'
+                            : cat.bisStatus.toLowerCase().includes('approved')
+                              ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
+                              : 'border-border text-muted bg-surface-muted/20'
+                        }`}>
+                          {cat.bisStatus}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </td>
-                <td className="px-6 py-4 font-mono text-[13px] text-right text-secondary tabular-nums">{cat._count.products}</td>
-                <td className="px-6 py-4 text-right flex gap-4 justify-end">
+                <td className="px-6 py-4 font-mono text-[13px] text-right text-secondary tabular-nums">
+                  {cat._count.products} Designs
+                </td>
+                <td className="px-6 py-4 text-right flex gap-4 justify-end items-center">
                   <button onClick={() => openManage(cat)} className="font-mono text-[9px] uppercase tracking-[0.1em] text-accent hover:text-white transition-colors">Products</button>
                   <button onClick={() => openEdit(cat)} className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted hover:text-white transition-colors">Edit</button>
                   <button onClick={() => handleDelete(cat.id, cat._count.products)} className="font-mono text-[9px] uppercase tracking-[0.1em] text-rose-400 hover:text-rose-500 transition-colors">Delete</button>
@@ -359,7 +481,7 @@ export default function CategoryManager({ categories, allProducts }: { categorie
               </tr>
             ))}
             {categories.length === 0 && (
-              <tr><td colSpan={8} className="px-6 py-12 text-center font-mono text-[11px] text-muted uppercase tracking-widest">No categories yet</td></tr>
+              <tr><td colSpan={4} className="px-6 py-12 text-center font-mono text-[11px] text-muted uppercase tracking-widest">No categories yet</td></tr>
             )}
           </tbody>
         </table>

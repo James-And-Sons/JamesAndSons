@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { sendInvoiceEmail } from '@/lib/email';
 import { generateSequentialInvoiceNumber } from '@/lib/invoice';
 import { createClient } from '@/utils/supabase/server';
-import { UserAddress } from '@prisma/client';
+import { UserAddress } from '@james-andsons/db';
 import { calculateShipping } from '@/lib/shiprocket';
 
 type CartItem = {
@@ -80,15 +80,15 @@ export async function createOrder(
     const shippingAddress = `${cleanAddress}, ${form.city.trim()}, ${form.state.trim()} - ${form.pincode.trim()}`;
     const orderNumber = `JNS-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 100)}`;
     const discountAmount = form.discountAmount ?? 0;
-    const totalAmount = subtotal + gst + shipping - discountAmount;
-
-    // Validate that all products exist in the database (handles stale carts in localStorage)
+    const totalAmount = subtotal + shipping - discountAmount;
     const productIds = cartItems.map(item => item.product.id);
+
     const dbProducts = await prisma.product.findMany({
       where: { id: { in: productIds } },
       select: { id: true }
     });
     const dbProductIds = new Set(dbProducts.map(p => p.id));
+
     const missingProductIds = productIds.filter(id => !dbProductIds.has(id));
     if (missingProductIds.length > 0) {
       throw new Error("Some items in your cart are no longer available. Please clear your cart and try again.");
@@ -144,7 +144,8 @@ export async function createOrder(
       where: {
         userId: user.id,
         street: form.address,
-        pincode: form.pincode
+        pincode: form.pincode,
+        phone: form.phone
       }
     });
 
@@ -264,9 +265,64 @@ export async function validatePincodeDelivery(pincode: string) {
   }
 }
 
-export async function calculateShippingRateAction(pincode: string, weightKg: number, subtotal: number) {
+export async function calculateShippingRateAction(
+  pincode: string,
+  weightKg: number,
+  subtotal: number,
+  cartItems: { productId: string; quantity: number }[] = []
+) {
   try {
-    return await getShippingRates(pincode, weightKg, subtotal);
+    const rawRateObj = await getShippingRates(pincode, weightKg, subtotal);
+    if (!rawRateObj) return null;
+
+    const productIds = cartItems.map(item => item.productId);
+    const dbProducts = productIds.length > 0 ? await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      include: { category: true }
+    }) : [];
+
+    const globalRule = await prisma.shippingRule.findUnique({
+      where: { id: 'GLOBAL' }
+    }) || { baseShippingLimit: 280.0, freeShippingThreshold: 380.0 };
+
+    let totalBaseLimit = 0;
+    let totalFreeThreshold = 0;
+
+    for (const item of cartItems) {
+      const prod = dbProducts.find(p => p.id === item.productId);
+      const cat = prod?.category;
+
+      const baseLimit = cat?.baseShippingLimit ?? globalRule.baseShippingLimit;
+      const freeThreshold = cat?.freeShippingThreshold ?? globalRule.freeShippingThreshold;
+
+      totalBaseLimit += baseLimit * item.quantity;
+      totalFreeThreshold += freeThreshold * item.quantity;
+    }
+
+    const rawShippingRate = rawRateObj.rate || 0;
+
+    let adjustedRate = 0;
+    let shippingDiscount = 0;
+
+    if (rawShippingRate < totalBaseLimit) {
+      adjustedRate = 0;
+      shippingDiscount = totalBaseLimit - rawShippingRate;
+    } else if (rawShippingRate > totalFreeThreshold) {
+      adjustedRate = rawShippingRate - totalFreeThreshold;
+      shippingDiscount = 0;
+    } else {
+      adjustedRate = 0;
+      shippingDiscount = 0;
+    }
+
+    return {
+      ...rawRateObj,
+      rawRate: rawShippingRate,
+      rate: adjustedRate,
+      shippingDiscount,
+      totalBaseLimit,
+      totalFreeThreshold
+    };
   } catch (error: any) {
     console.error('Shipping rate action error:', error);
     return null;

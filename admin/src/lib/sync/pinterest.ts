@@ -1,3 +1,5 @@
+import { BRAND_CONFIG } from '@james-andsons/config';
+
 export async function syncToPinterest(product: any) {
   const catalogId = process.env.PINTEREST_CATALOG_ID;
   const accessToken = process.env.PINTEREST_ACCESS_TOKEN;
@@ -14,12 +16,12 @@ export async function syncToPinterest(product: any) {
     attributes: {
       title: name,
       description: product.description || name,
-      link: `https://jamesandsons.in/products/${product.slug}`,
-      image_link: images[0] || 'https://jamesandsons.in/images/placeholder.png',
-      price: `${Math.round(price)} INR`,
+      link: `${BRAND_CONFIG.storefrontUrl}/products/${product.slug}`,
+      image_link: images[0] || `${BRAND_CONFIG.storefrontUrl}/images/placeholder.png`,
+      price: `${Math.round(price)} ${BRAND_CONFIG.currencyCode}`,
       availability: product.stockQuantity > 0 ? 'in stock' : 'out of stock',
       condition: 'new',
-      brand: 'James and Sons'
+      brand: BRAND_CONFIG.name
     }
   });
 

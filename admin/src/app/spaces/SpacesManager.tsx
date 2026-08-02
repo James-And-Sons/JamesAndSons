@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { addProductToSpace, removeProductFromSpace } from './actions';
 import CloudinaryUpload from '@/components/CloudinaryUpload';
 import { useSidebar } from '@/lib/context/SidebarContext';
+import ClickableRow from '@/components/ClickableRow';
 
 type Space = { 
   id: string; 
@@ -11,6 +13,7 @@ type Space = {
   slug: string; 
   description: string | null; 
   image: string | null;
+  images: string[];
   _count: { products: number };
   products: { id: string; name: string; images: string[] }[];
 };
@@ -23,7 +26,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
   const [managingProducts, setManagingProducts] = useState<Space | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -31,8 +34,8 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
   const { setIsPageDirty } = useSidebar();
 
   const isDirty = !!(
-    (showForm && !editing && (name !== '' || description !== '' || image !== '')) ||
-    (editing !== null && (name !== editing.name || description !== (editing.description || '') || image !== (editing.image || '')))
+    (showForm && !editing && (name !== '' || description !== '' || images.length > 0)) ||
+    (editing !== null && (name !== editing.name || description !== (editing.description || '') || JSON.stringify(images) !== JSON.stringify(editing.images || [])))
   );
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
           setEditing(sp);
           setName(sp.name);
           setDescription(sp.description || '');
-          setImage(sp.image || '');
+          setImages(sp.images || []);
           setShowForm(true);
           setManagingProducts(null);
         }
@@ -83,8 +86,8 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
     }
   }, [spaces]);
 
-  const openAdd = () => { setEditing(null); setName(''); setDescription(''); setImage(''); setShowForm(true); setManagingProducts(null); };
-  const openEdit = (s: Space) => { setEditing(s); setName(s.name); setDescription(s.description || ''); setImage(s.image || ''); setShowForm(true); setManagingProducts(null); };
+  const openAdd = () => { setEditing(null); setName(''); setDescription(''); setImages([]); setShowForm(true); setManagingProducts(null); };
+  const openEdit = (s: Space) => { setEditing(s); setName(s.name); setDescription(s.description || ''); setImages(s.images || []); setShowForm(true); setManagingProducts(null); };
   const openManage = (s: Space) => { setManagingProducts(s); setShowForm(false); setEditing(null); };
 
   const handleSave = () => {
@@ -96,10 +99,17 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, slug, description, image }),
+        body: JSON.stringify({ 
+          name, 
+          slug, 
+          description, 
+          image: images[0] || null,
+          images
+        }),
       });
       if (!res.ok) { setError(await res.text()); return; }
       setShowForm(false);
+      setEditing(null);
       router.refresh();
     });
   };
@@ -147,34 +157,67 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
         </button>
       </div>
 
-      {showForm && !editing && (
-        <div className="premium-card p-8 space-y-6 shadow-[0_8px_32px_rgba(0,0,0,0.25)] border-accent/40 bg-surface/90 backdrop-blur">
-          <h3 className="font-serif text-[22px] text-primary font-light">Create New Space</h3>
-          {error && <p className="text-red-400 font-mono text-[11px]">{error}</p>}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Master Bedroom" />
+      {showForm && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-surface border border-accent/30 rounded-lg w-full max-w-[640px] flex flex-col overflow-hidden max-h-[90vh] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-accent">
+                  {editing ? 'Edit Details' : 'Create New'}
+                </div>
+                <h2 className="font-serif text-[20px] text-primary font-normal m-0">
+                  {editing ? 'Edit Space' : 'Create New Space'}
+                </h2>
+              </div>
+              <button 
+                onClick={handleDiscardCreate}
+                className="text-muted hover:text-primary font-mono text-[16px] cursor-pointer bg-transparent border-none focus:outline-none"
+              >
+                ✕
+              </button>
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description</label>
-              <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Elegant light fixtures suited for bedrooms" />
+
+            {/* Content */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {error && <p className="text-red-400 font-mono text-[11px] m-0">⚠️ {error}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Name *</label>
+                  <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Master Bedroom" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description</label>
+                  <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Elegant light fixtures suited for bedrooms" />
+                </div>
+                <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
+                  <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-2">Space Cover Photos (Multiple)</label>
+                  <CloudinaryUpload 
+                    onUpload={(urls) => setImages(urls)}
+                    defaultImages={images}
+                    multiple={true}
+                    label="Add Space Cover Photo"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
-              <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Thumbnail Image</label>
-              <CloudinaryUpload 
-                onUpload={(urls) => setImage(urls[0] || '')}
-                defaultImages={image ? [image] : []}
-                multiple={false}
-                label="Add Space Image"
-              />
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-border bg-surface-muted/40 flex justify-end gap-3">
+              <button
+                onClick={handleDiscardCreate}
+                className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary transition-colors bg-background rounded-sm"
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isPending}
+                className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 rounded-sm"
+              >
+                {isPending ? 'Processing...' : 'Save Space'}
+              </button>
             </div>
-          </div>
-          <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-            <button onClick={handleDiscardCreate} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Discard</button>
-            <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
-              {isPending ? 'Processing...' : 'Save Space'}
-            </button>
           </div>
         </div>
       )}
@@ -192,7 +235,10 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
           <tbody className="divide-y divide-border/50">
             {spaces.map(s => (
               <React.Fragment key={s.id}>
-                <tr className={`transition-colors ${editing?.id === s.id || managingProducts?.id === s.id ? 'bg-surface-muted border-accent/20' : 'hover:bg-surface-muted/50'}`}>
+                <ClickableRow 
+                  href={`/spaces/${s.id}/edit`}
+                  className={deletingId === s.id ? 'bg-surface-muted border-accent/20' : ''}
+                >
                   <td className="px-6 py-4">
                     <span className="font-serif text-[17px] text-primary">{s.name}</span>
                     <p className="font-mono text-[10px] text-muted mt-1 lowercase tracking-wider">{s.slug}</p>
@@ -223,18 +269,12 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                       </div>
                     ) : (
                       <>
-                        <button 
-                          onClick={() => openManage(s)} 
-                          className={`font-mono text-[9px] uppercase tracking-[0.1em] ${managingProducts?.id === s.id ? 'text-accent font-semibold' : 'text-muted hover:text-white transition-colors'}`}
+                        <Link 
+                          href={`/spaces/${s.id}/edit`} 
+                          className="font-mono text-[9px] uppercase tracking-[0.1em] text-accent hover:text-accent-hover transition-colors"
                         >
-                          Products
-                        </button>
-                        <button 
-                          onClick={() => openEdit(s)} 
-                          className={`font-mono text-[9px] uppercase tracking-[0.1em] ${editing?.id === s.id ? 'text-accent font-semibold' : 'text-muted hover:text-white transition-colors'}`}
-                        >
-                          Edit
-                        </button>
+                          Edit &amp; Manage
+                        </Link>
                         <button 
                           onClick={() => setDeletingId(s.id)} 
                           className="font-mono text-[9px] uppercase tracking-[0.1em] text-rose-400/80 hover:text-rose-500 transition-colors"
@@ -244,46 +284,8 @@ export default function SpaceManager({ spaces, allProducts }: { spaces: Space[],
                       </>
                     )}
                   </td>
-                </tr>
+                </ClickableRow>
                 
-                {(editing?.id === s.id) && (
-                  <tr>
-                    <td colSpan={4} className="p-0">
-                      <div className="bg-surface/90 backdrop-blur border-b border-border/60 p-8 space-y-6 shadow-inner animate-in fade-in zoom-in-95 duration-300">
-                        <div className="flex justify-between items-center border-b border-border/40 pb-4">
-                          <h3 className="font-serif text-[20px] text-primary font-light">Edit Space: {s.name}</h3>
-                          <button onClick={handleCancelEdit} className="font-mono text-[9px] uppercase text-muted hover:text-primary border border-border px-4 py-2 hover:bg-surface-muted">Close</button>
-                        </div>
-                        {error && <p className="text-red-400 font-mono text-[11px]">{error}</p>}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-1">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Name *</label>
-                            <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" placeholder="e.g. Master Bedroom" />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Description</label>
-                            <input value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-background border border-border px-4 py-3 text-[13px] font-body text-primary focus:outline-none focus:border-accent transition-colors" />
-                          </div>
-                          <div className="md:col-span-2 space-y-1 border-t border-border/40 pt-4">
-                            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted block mb-1">Space Thumbnail Image</label>
-                            <CloudinaryUpload 
-                              onUpload={(urls) => setImage(urls[0] || '')}
-                              defaultImages={image ? [image] : []}
-                              multiple={false}
-                              label="Update Space Image"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-4 justify-end pt-4 border-t border-border/40">
-                          <button onClick={handleCancelEdit} className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary hover:bg-surface-muted/30 transition-colors bg-background">Cancel</button>
-                          <button onClick={handleSave} disabled={isPending} className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50">
-                            {isPending ? 'Processing...' : 'Update Space'}
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
 
                 {(managingProducts?.id === s.id) && (
                   <tr>

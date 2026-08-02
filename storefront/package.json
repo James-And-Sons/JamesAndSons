@@ -4,13 +4,24 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node ../packages/assets/copy-assets.js && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@james-andsons/blog-editor": "*",
+    "@james-andsons/config": "*",
+    "@james-andsons/db": "*",
+    "@james-andsons/media": "*",
+    "@james-andsons/razorpay": "*",
+    "@james-andsons/shiprocket": "*",
+    "@james-andsons/ui": "*",
+    "@james-andsons/utils": "*",
+    "@james-andsons/zoho": "*",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.100.0",
     "@vercel/analytics": "^2.0.1",
@@ -35,7 +46,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
-    "prisma": "^7.5.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5"
   }

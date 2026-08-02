@@ -8,7 +8,18 @@ export const maxDuration = 60; // Allow it to run for up to 60 seconds if bulk s
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { productId } = body;
+    const { productId, action } = body;
+
+    if (action === 'list') {
+      console.log('[Manual Sync] Listing all product IDs for client-side batch execution...');
+      const products = await prisma.product.findMany({
+        select: { id: true }
+      });
+      return NextResponse.json({
+        success: true,
+        productIds: products.map(p => p.id)
+      });
+    }
 
     if (productId) {
       console.log(`[Manual Sync] Triggering sync for single product ID: ${productId}`);

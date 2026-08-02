@@ -112,6 +112,18 @@ export default function ClientLoginPage({ searchParams, referer }: Props) {
         }
         setLoading(false)
       } else if (res && res.success) {
+        if (!isLogin) {
+          if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+            window.trackMetaEvent('CompleteRegistration', {
+              status: 'success',
+              content_name: accountType
+            }, {
+              email: email,
+              firstName: firstName || null,
+              lastName: lastName || null
+            });
+          }
+        }
         if (res.message) {
           setLocalSuccess(res.message)
         }

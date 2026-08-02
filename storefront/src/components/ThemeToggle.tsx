@@ -3,16 +3,15 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 const OPTIONS = [
-  { value: 'system', label: 'System Default', icon: '⊙' },
-  { value: 'light',  label: 'Light',          icon: '☀' },
-  { value: 'dark',   label: 'Dark',            icon: '☽' },
+  { value: 'system', icon: 'ti-device-laptop', label: 'System' },
+  { value: 'light',  icon: 'ti-sun',           label: 'Light'  },
+  { value: 'dark',   icon: 'ti-moon',           label: 'Dark'   },
 ];
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Avoid hydration mismatch
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
@@ -24,7 +23,7 @@ export default function ThemeToggle() {
       borderRadius: '12px', 
       padding: '4px',
       gap: '2px',
-      position: 'relative'
+      flexShrink: 0,
     }}>
       {OPTIONS.map(opt => {
         const isActive = theme === opt.value;
@@ -32,13 +31,13 @@ export default function ThemeToggle() {
           <button
             key={opt.value}
             onClick={() => setTheme(opt.value)}
+            title={opt.label}
             style={{
-              flex: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-              padding: '8px 12px',
+              gap: compact ? '0' : '6px',
+              padding: compact ? '8px 10px' : '8px 14px',
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
               letterSpacing: '0.05em',
@@ -53,10 +52,8 @@ export default function ThemeToggle() {
               fontWeight: isActive ? 600 : 400,
             }}
           >
-            <span style={{ fontSize: '14px', opacity: isActive ? 1 : 0.6 }}>
-              {opt.value === 'light' ? <i className="ti ti-sun"></i> : opt.value === 'dark' ? <i className="ti ti-moon"></i> : <i className="ti ti-device-laptop"></i>}
-            </span>
-            {opt.label.split(' ')[0]}
+            <i className={`ti ${opt.icon}`} style={{ fontSize: '16px', opacity: isActive ? 1 : 0.6 }} />
+            {!compact && <span>{opt.label}</span>}
           </button>
         );
       })}

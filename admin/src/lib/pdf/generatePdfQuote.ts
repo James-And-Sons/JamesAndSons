@@ -1,3 +1,5 @@
+import { DEFAULT_TENANT_CONFIG } from "@james-andsons/config";
+
 export interface QuotePrintData {
   rfqNumber: string;
   date: string;
@@ -23,29 +25,36 @@ export interface QuotePrintData {
 }
 
 export function printPdfQuotation(data: QuotePrintData) {
-  const printWindow = window.open('', '_blank');
+  const brand = DEFAULT_TENANT_CONFIG.brand;
+
+  const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    alert('Please allow popups to generate and print the quotation PDF.');
+    alert("Please allow popups to generate and print the quotation PDF.");
     return;
   }
 
-  const itemsHtml = data.items.map(item => `
+  const itemsHtml = data.items
+    .map(
+      (item) => `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #eee;">
         <div style="font-weight: 600; color: #1a1a1a; font-size: 14px;">${item.productName}</div>
         <div style="font-family: monospace; font-size: 11px; color: #777; margin-top: 2px;">SKU: ${item.sku}</div>
-        ${item.customSpecs?.notes ? `<div style="font-size: 11px; color: #b08940; margin-top: 4px; font-style: italic;">Specs: ${item.customSpecs.notes}</div>` : ''}
+        ${item.customSpecs?.notes ? `<div style="font-size: 11px; color: #b08940; margin-top: 4px; font-style: italic;">Specs: ${item.customSpecs.notes}</div>` : ""}
       </td>
       <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; font-family: monospace;">${item.quantity}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-family: monospace;">₹${item.unitPrice.toLocaleString('en-IN')}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-family: monospace; font-weight: 600;">₹${item.total.toLocaleString('en-IN')}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-family: monospace;">${brand.currencySymbol}${item.unitPrice.toLocaleString("en-IN")}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-family: monospace; font-weight: 600;">${brand.currencySymbol}${item.total.toLocaleString("en-IN")}</td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 
   const subtotal = data.items.reduce((acc, curr) => acc + curr.total, 0);
 
   const htmlContent = `
     <!DOCTYPE html>
+
     <html>
       <head>
         <title>Quotation_${data.rfqNumber}</title>
@@ -165,11 +174,11 @@ export function printPdfQuotation(data: QuotePrintData) {
             <div style="font-weight: 600; font-size: 15px;">${data.companyName || data.customerName}</div>
             <div>Attn: ${data.customerName}</div>
             <div>Email: ${data.email}</div>
-            ${data.phone ? `<div>Phone: ${data.phone}</div>` : ''}
+            ${data.phone ? `<div>Phone: ${data.phone}</div>` : ""}
           </div>
           <div style="text-align: right;">
             <div class="section-title">Project & Timeline</div>
-            ${data.projectName ? `<div style="font-weight: 600;">Project: ${data.projectName}</div>` : ''}
+            ${data.projectName ? `<div style="font-weight: 600;">Project: ${data.projectName}</div>` : ""}
             <div>Validity: 30 Days</div>
             <div>Payment Terms: 50% Advance, 50% Before Dispatch</div>
           </div>
@@ -192,29 +201,41 @@ export function printPdfQuotation(data: QuotePrintData) {
         <table class="totals-table">
           <tr>
             <td>Subtotal:</td>
-            <td style="text-align: right; font-family: monospace;">₹${subtotal.toLocaleString('en-IN')}</td>
+            <td style="text-align: right; font-family: monospace;">₹${subtotal.toLocaleString("en-IN")}</td>
           </tr>
-          ${data.discountAmount > 0 ? `
+          ${
+            data.discountAmount > 0
+              ? `
           <tr>
             <td style="color: #c0392b;">Trade Discount:</td>
-            <td style="text-align: right; font-family: monospace; color: #c0392b;">-₹${data.discountAmount.toLocaleString('en-IN')}</td>
+            <td style="text-align: right; font-family: monospace; color: #c0392b;">-₹${data.discountAmount.toLocaleString("en-IN")}</td>
           </tr>
-          ` : ''}
-          ${data.taxAmount > 0 ? `
+          `
+              : ""
+          }
+          ${
+            data.taxAmount > 0
+              ? `
           <tr>
             <td>GST (18%):</td>
-            <td style="text-align: right; font-family: monospace;">₹${data.taxAmount.toLocaleString('en-IN')}</td>
+            <td style="text-align: right; font-family: monospace;">₹${data.taxAmount.toLocaleString("en-IN")}</td>
           </tr>
-          ` : ''}
-          ${data.shippingAmount > 0 ? `
+          `
+              : ""
+          }
+          ${
+            data.shippingAmount > 0
+              ? `
           <tr>
             <td>Freight & Logistics:</td>
-            <td style="text-align: right; font-family: monospace;">₹${data.shippingAmount.toLocaleString('en-IN')}</td>
+            <td style="text-align: right; font-family: monospace;">₹${data.shippingAmount.toLocaleString("en-IN")}</td>
           </tr>
-          ` : ''}
+          `
+              : ""
+          }
           <tr class="grand-total">
             <td>Total Offered:</td>
-            <td style="text-align: right; font-family: monospace;">₹${data.totalAmount.toLocaleString('en-IN')}</td>
+            <td style="text-align: right; font-family: monospace;">₹${data.totalAmount.toLocaleString("en-IN")}</td>
           </tr>
         </table>
 

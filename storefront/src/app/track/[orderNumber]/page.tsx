@@ -1,5 +1,4 @@
 import TrackingPageClient from './TrackingPageClient';
-import Navigation from '@/components/Navigation';
 
 export default async function TrackingPage({ 
   params 
@@ -10,8 +9,7 @@ export default async function TrackingPage({
   
   return (
     <>
-      <Navigation />
-      <TrackingPageClient orderNumber={orderNumber} />
+            <TrackingPageClient orderNumber={orderNumber} />
     </>
   );
 }

@@ -1,11 +1,9 @@
 import TrackSearchClient from './TrackSearchClient';
-import Navigation from '@/components/Navigation';
 
 export default function TrackSearchPage() {
   return (
     <>
-      <Navigation />
-      <TrackSearchClient />
+            <TrackSearchClient />
     </>
   );
 }

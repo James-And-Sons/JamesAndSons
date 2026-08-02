@@ -24,7 +24,58 @@ export default async function CustomersPage() {
         </div>
       </div>
 
-      <div className="table-responsive">
+      {/* Mobile Card List View (< md) */}
+      <div className="block md:hidden space-y-4">
+        {users.length === 0 ? (
+          <div className="premium-card p-12 text-center font-mono text-[11px] text-muted uppercase tracking-widest">
+            No registered customers found.
+          </div>
+        ) : (
+          users.map((user: any) => (
+            <div key={user.id} className="premium-card p-4 space-y-3">
+              {/* Header: Name and Role badge */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-serif text-[17px] text-primary leading-snug">{user.firstName} {user.lastName}</h3>
+                  {user.company && (
+                    <span className="font-body text-[11px] text-accent italic mt-0.5 block">{user.company.name}</span>
+                  )}
+                </div>
+                <span className={`font-mono text-[8px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-sm border shrink-0 ${
+                  user.role === 'ADMIN' ? 'text-red-400 border-red-400/20 bg-red-400/5'
+                  : user.role.startsWith('B2B') ? 'text-accent border-accent/20 bg-accent/5'
+                  : 'text-muted border-border bg-background'
+                }`}>
+                  {user.role}
+                </span>
+              </div>
+
+              {/* Email & Phone */}
+              <div className="text-[12px] space-y-1 pt-2 border-t border-border/30">
+                <div className="flex justify-between">
+                  <span className="font-mono text-[9px] uppercase text-muted/60">Email</span>
+                  <span className="font-body text-secondary">{user.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-mono text-[9px] uppercase text-muted/60">Phone</span>
+                  <span className="font-mono text-secondary">{user.phone || 'No phone'}</span>
+                </div>
+              </div>
+
+              {/* Joined and Actions */}
+              <div className="flex justify-between items-center text-[10px] font-mono pt-2 border-t border-border/20">
+                <span className="text-muted/60">Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
+                <button className="text-accent hover:text-white transition-colors uppercase tracking-wider">
+                  View Profile
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View (>= md) */}
+      <div className="hidden md:block table-responsive">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-border bg-[#16161a]">
@@ -81,6 +132,7 @@ export default async function CustomersPage() {
           </tbody>
         </table>
       </div>
+
     </div>
   );
 }

@@ -1,19 +1,37 @@
-import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import SpaceGrid from "@/components/SpaceGrid";
-import ProductGridMobile from "@/components/ProductGridMobile";
-import { getSpaces, getProducts } from "@/lib/products";
+import CategoryGrid from "@/components/CategoryGrid";
+import NewArrivalsSection from "@/components/NewArrivalsSection";
+import BestSellersSection from "@/components/BestSellersSection";
+import AboutExcerpt from "@/components/AboutExcerpt";
+import ContactCTA from "@/components/ContactCTA";
+import {
+  getSpaces,
+  getProducts,
+  getCategories,
+  getNewArrivals,
+  getBestSellers,
+} from "@/lib/products";
 
 export default async function Home() {
-  const spaces = await getSpaces();
-  const products = await getProducts();
+  const [spaces, products, categories, newArrivals, bestSellers] =
+    await Promise.all([
+      getSpaces(),
+      getProducts(),
+      getCategories(),
+      getNewArrivals(8),
+      getBestSellers(6),
+    ]);
 
   return (
-    <main>
-      <Navigation />
+    <main className="home-main">
       <Hero />
+      <BestSellersSection products={bestSellers} />
       <SpaceGrid spaces={spaces as any} />
-      <ProductGridMobile products={products} />
+      <AboutExcerpt />
+      <CategoryGrid categories={categories as any} products={products} />
+      <NewArrivalsSection products={newArrivals} />
+      <ContactCTA />
     </main>
   );
 }

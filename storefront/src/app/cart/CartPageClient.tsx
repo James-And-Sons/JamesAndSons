@@ -46,11 +46,12 @@ export default function CartPageClient() {
   if (!mounted) return <div style={{ minHeight: '80vh', background: 'var(--bg)' }} />;
 
   const subtotal = total();
-  const finalSubtotal = discountedTotal();
-  const gst = finalSubtotal * 0.18; // Standard 18% for luxury goods
+  const grandTotalItems = discountedTotal(); // Prices are inclusive of GST
+  const gst = grandTotalItems - (grandTotalItems / 1.18);
+  const finalSubtotal = grandTotalItems - gst; // Base subtotal before GST
   const isShippingCalculated = !!shippingRes?.success;
   const shipping = appliedCoupon?.freeShipping ? 0 : (isShippingCalculated ? shippingRes.rate : (subtotal > 50000 ? 0 : null));
-  const grandTotal = finalSubtotal + gst + (shipping || 0);
+  const grandTotal = grandTotalItems + (shipping || 0);
 
   if (items.length === 0) {
     return (
@@ -183,7 +184,7 @@ export default function CartPageClient() {
               
               <div style={{ padding: '24px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-                  <SummaryRow label="Subtotal" value={formatPrice(subtotal)} />
+                  <SummaryRow label="Subtotal (excl. GST)" value={formatPrice(finalSubtotal)} />
                   {appliedCoupon && (
                     <SummaryRow 
                       label={`Promo: ${appliedCoupon.code}`} 
@@ -191,7 +192,7 @@ export default function CartPageClient() {
                       highlight 
                     />
                   )}
-                  <SummaryRow label="GST (18%)" value={formatPrice(gst)} />
+                  <SummaryRow label="GST (18% Included)" value={formatPrice(gst)} />
                   <SummaryRow 
                     label="Shipping" 
                     value={appliedCoupon?.freeShipping ? 'Free' : (shipping === null ? 'At next step' : (shipping === 0 ? 'Complimentary' : formatPrice(shipping)))} 
@@ -205,7 +206,25 @@ export default function CartPageClient() {
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: '28px', color: '#E2C97A' }}>{formatPrice(grandTotal)}</div>
                 </div>
 
-                <button onClick={() => router.push('/checkout')} style={{ width: '100%', background: 'var(--gold)', color: '#0A0905', border: 'none', borderRadius: '16px', padding: '16px', fontSize: '13px', fontWeight: 600, letterSpacing: '0.15em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <button 
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && typeof window.trackMetaEvent === 'function') {
+                      window.trackMetaEvent('InitiateCheckout', {
+                        value: discountedTotal() || total(),
+                        currency: 'INR',
+                        content_ids: items.map(item => item.product.sku),
+                        content_type: 'product',
+                        contents: items.map(item => ({
+                          id: item.product.sku,
+                          quantity: item.quantity,
+                          item_price: item.product.d2cPrice
+                        }))
+                      });
+                    }
+                    router.push('/checkout');
+                  }} 
+                  style={{ width: '100%', background: 'var(--gold)', color: '#0A0905', border: 'none', borderRadius: '16px', padding: '16px', fontSize: '13px', fontWeight: 600, letterSpacing: '0.15em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                >
                   <i className="ti ti-lock"></i> SECURE CHECKOUT
                 </button>
               </div>

@@ -1,5 +1,13 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+
+// Mobile-safe cookie defaults — Safari on iOS drops cookies without these
+const COOKIE_OPTIONS = {
+  path: '/',
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 60 * 60 * 24 * 7, // 7 days
+};
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -15,7 +23,10 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...COOKIE_OPTIONS,
+                ...options,
+              })
             )
           } catch {
             // The `setAll` method was called from a Server Component.
@@ -27,3 +38,4 @@ export async function createClient() {
     }
   )
 }
+

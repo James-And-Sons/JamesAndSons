@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
-import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName } from '@/lib/sync/mapping';
+import { getBrowseNode, getFixtureForm, getStyle, getMaterial, generateKeywords, generateKeywordsList, getInstallationLocation, getMountingType, getFinishType, getLightingMethod, getWaterResistanceLevel, getItemTypeName, generateDefaultBullets } from '@/lib/sync/mapping';
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -42,9 +42,12 @@ function writeRowAttributes(
   spaces: any[],
   v: any = null       // variant if exists
 ) {
-  // Brand Name (Col 9)
+  // Brand Name (Col 9 - Col I)
   writeCell(sheet, rowIdx, 9, "James & Sons, Aligarh");
-  
+
+  // Part Number (Col 60 - Col BH) - Must be identical to SKU
+  writeCell(sheet, rowIdx, 60, sku);
+
   // Model Number (Col 17)
   writeCell(sheet, rowIdx, 17, sku);
   
@@ -53,6 +56,10 @@ function writeRowAttributes(
   
   // Manufacturer (Col 19)
   writeCell(sheet, rowIdx, 19, "James & Sons");
+
+  // External Product Information Entity & Value (Col 30 & 31)
+  writeCell(sheet, rowIdx, 30, "9405");
+  writeCell(sheet, rowIdx, 31, "HSN Code");
 
   // Style (Col 48)
   writeCell(sheet, rowIdx, 48, getStyle(v ? { ...p, style: v.style || p.style } : p));
@@ -66,7 +73,7 @@ function writeRowAttributes(
   // Item Type Name (Col 55)
   writeCell(sheet, rowIdx, 55, getItemTypeName(p));
 
-  // Water Resistance Level (Col 56)
+  // Water Resistance Level (Col 56 - Col BD) - Must be official dropdown value
   writeCell(sheet, rowIdx, 56, getWaterResistanceLevel(p));
 
   // Color (Col 57)
@@ -84,14 +91,26 @@ function writeRowAttributes(
   // Manufacturer Contact Information (Col 68)
   writeCell(sheet, rowIdx, 68, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
 
+  // Power Source Type (Col 77 - Col BY)
+  writeCell(sheet, rowIdx, 77, "Corded Electric");
+
   // Lighting Method (Col 79)
   writeCell(sheet, rowIdx, 79, getLightingMethod(p));
+
+  // Voltage & Voltage Unit (Col 87 - Col CI & Col 88 - Col CJ)
+  const voltVal = extractNumber(v ? v.voltage || p.voltage : p.voltage) || 220;
+  writeCell(sheet, rowIdx, 87, voltVal);
+  writeCell(sheet, rowIdx, 88, "Volts");
 
   // Mounting Type (Col 93)
   writeCell(sheet, rowIdx, 93, getMountingType(p));
 
   // Finish Type (Col 94)
   writeCell(sheet, rowIdx, 94, getFinishType(v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p));
+
+  // Unit Count & Unit Count Type (Col 97 - Col CS & Col 98 - Col CT)
+  writeCell(sheet, rowIdx, 97, 1);
+  writeCell(sheet, rowIdx, 98, "Count");
 
   // Included Components (Col 100)
   writeCell(sheet, rowIdx, 100, p.amazonIncludedComponents || "1 Pendant Light, Hanging Accessories, Wire");
@@ -102,6 +121,10 @@ function writeRowAttributes(
   // Bulb Base (Col 127)
   writeCell(sheet, rowIdx, 127, "E12");
 
+  // External Product Information Entity & Value (Col 142 & 143)
+  writeCell(sheet, rowIdx, 142, "HSN Code");
+  writeCell(sheet, rowIdx, 143, "9405");
+
   // Room Type (Col 151-155)
   const roomNames = (spaces || []).map((s: any) => s.name);
   if (roomNames.length === 0) {
@@ -111,8 +134,26 @@ function writeRowAttributes(
     writeCell(sheet, rowIdx, 151 + idx, rn);
   });
 
+  // Shade Material (Col 164)
+  writeCell(sheet, rowIdx, 164, "Fabric");
+
+  // Number of Light Sources (Col 167)
+  writeCell(sheet, rowIdx, 167, 1);
+
+  // Importer Contact Information (Col 172)
+  writeCell(sheet, rowIdx, 172, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
+
+  // Packer Contact Information (Col 177)
+  writeCell(sheet, rowIdx, 177, "James & Sons, CNI Church Compound, Civil Lines, Aligarh, Uttar Pradesh, 202001, India");
+
+  // Indoor Outdoor Usage (Col 183)
+  writeCell(sheet, rowIdx, 183, "Indoor");
+
   // Light Fixture Installation Location (Col 241)
   writeCell(sheet, rowIdx, 241, getInstallationLocation(p));
+
+  // Item Condition (Col 244 - Col IJ)
+  writeCell(sheet, rowIdx, 244, "New");
 
   // B2B Pricing
   writeCell(sheet, rowIdx, 283, price); // Your Price INR (B2B)
@@ -120,6 +161,15 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 289, "Percent"); // Quantity Price Type (B2B)
   writeCell(sheet, rowIdx, 290, 5); // Quantity Threshold 1
   writeCell(sheet, rowIdx, 291, 5); // Quantity Price 1 (Percent Discount)
+
+  // Number of Boxes (Col 317)
+  writeCell(sheet, rowIdx, 317, 1);
+
+  // Are Batteries Required? (Col 324)
+  writeCell(sheet, rowIdx, 324, "No");
+
+  // Dangerous Goods Regulations (Col 350)
+  writeCell(sheet, rowIdx, 350, "Not Applicable");
 
   // Manufacturer's Email or Electronic Address (Col 396)
   writeCell(sheet, rowIdx, 396, "sales@jamesandsons.com");
@@ -191,7 +241,7 @@ export async function GET(req: NextRequest) {
       const pDesc = p.description || p.name;
       const pMaterial = p.material || (p.materialAndFinish && p.materialAndFinish.length > 0 ? p.materialAndFinish[0] : null);
       const pOrigin = p.countryOfOrigin || "India";
-      const pBullets = p.bulletPoints || [];
+      const pBullets = (p.bulletPoints && Array.isArray(p.bulletPoints) && p.bulletPoints.length >= 3) ? p.bulletPoints : generateDefaultBullets(p);
       const pImages = p.images || [];
 
       // Write Parent row if variants exist
@@ -200,8 +250,10 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 2, "LIGHT_FIXTURE"); // Product Type
         writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
         writeCell(sheet, rowIdx, 4, "Parent"); // Parentage Level
-        writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
+        writeCell(sheet, rowIdx, 6, "SIZE"); // Col F - Variation Theme Name
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
+        writeCell(sheet, rowIdx, 10, "GTIN Exempt"); // Col J - Product Id Type
+        writeCell(sheet, rowIdx, 11, null); // Col K - Product Id (GTIN Exempt)
 
         // Standardized and expanded attributes
         writeRowAttributes(
@@ -219,24 +271,37 @@ export async function GET(req: NextRequest) {
           null
         );
 
-        // Browse Node & Keywords
+        // Browse Node & Keywords (Cols 38-42: AL, AM, AN, AO, AP)
         writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
-        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        const pKwList = generateKeywordsList(p);
+        pKwList.forEach((kw, idx) => {
+          writeCell(sheet, rowIdx, 38 + idx, kw);
+        });
         writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
-        // Images
+        // Images (Main: Col 22 V, Other 1-8: Cols 23-30 W-AD)
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
-            writeCell(sheet, rowIdx, 23 + idx, img);
+            writeCell(sheet, rowIdx, 23 + idx, img); // Cols 23 to 30 (W to AD)
           });
         }
         writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-        // Bullets
+        // Bullets (Cols 33-37: AG, AH, AI, AJ, AK)
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
+
+        // Shade Height & Width (Cols 162, 163, 165, 166)
+        if ((p as any).shadeHeight) {
+          writeCell(sheet, rowIdx, 162, (p as any).shadeHeight);
+          writeCell(sheet, rowIdx, 163, "Centimeters");
+        }
+        if ((p as any).shadeWidth) {
+          writeCell(sheet, rowIdx, 165, (p as any).shadeWidth);
+          writeCell(sheet, rowIdx, 166, "Centimeters");
+        }
 
         // Wattage
         const pWatt = extractNumber(p.power);
@@ -252,7 +317,7 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
+        writeCell(sheet, rowIdx, 318, pOrigin || "India"); // Col LF - Country of Origin
 
         rowIdx++;
 
@@ -279,10 +344,10 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
           writeCell(sheet, rowIdx, 4, "Child"); // Parentage Level
           writeCell(sheet, rowIdx, 5, p.sku); // Parent SKU
-          writeCell(sheet, rowIdx, 6, "Size/Color"); // Variation Theme Name
+          writeCell(sheet, rowIdx, 6, "SIZE"); // Col F - Variation Theme Name
           writeCell(sheet, rowIdx, 7, `${p.name} - ${v.name}`); // Item Name
-          writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
-          writeCell(sheet, rowIdx, 11, vSku); // Product Id
+          writeCell(sheet, rowIdx, 10, "GTIN Exempt"); // Col J - Product Id Type
+          writeCell(sheet, rowIdx, 11, null); // Col K - Product Id (GTIN Exempt)
 
           // Standardized and expanded attributes
           writeRowAttributes(
@@ -300,24 +365,39 @@ export async function GET(req: NextRequest) {
             v
           );
 
-          // Browse Node & Keywords
+          // Browse Node & Keywords (Cols 38-42: AL, AM, AN, AO, AP)
           writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
-          writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+          const vKwList = generateKeywordsList(p);
+          vKwList.forEach((kw, idx) => {
+            writeCell(sheet, rowIdx, 38 + idx, kw);
+          });
           writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
-          // Images
+          // Images (Main: Col 22 V, Other 1-8: Cols 23-30 W-AD)
           if (vImages.length > 0) {
             writeCell(sheet, rowIdx, 22, vImages[0]);
             vImages.slice(1, 9).forEach((img, idx) => {
-              writeCell(sheet, rowIdx, 23 + idx, img);
+              writeCell(sheet, rowIdx, 23 + idx, img); // Cols 23 to 30 (W to AD)
             });
           }
           writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-          // Bullets
+          // Bullets (Cols 33-37: AG, AH, AI, AJ, AK)
           vBullets.slice(0, 5).forEach((b, idx) => {
             writeCell(sheet, rowIdx, 33 + idx, b);
           });
+
+          // Shade Height & Width (Cols 162, 163, 165, 166)
+          const vShadeH = (v as any).shadeHeight || (p as any).shadeHeight;
+          const vShadeW = (v as any).shadeWidth || (p as any).shadeWidth;
+          if (vShadeH) {
+            writeCell(sheet, rowIdx, 162, vShadeH);
+            writeCell(sheet, rowIdx, 163, "Centimeters");
+          }
+          if (vShadeW) {
+            writeCell(sheet, rowIdx, 165, vShadeW);
+            writeCell(sheet, rowIdx, 166, "Centimeters");
+          }
 
           if (vMaterial) {
             writeCell(sheet, rowIdx, 49, vMaterial); // Material
@@ -332,41 +412,44 @@ export async function GET(req: NextRequest) {
             writeCell(sheet, rowIdx, 86, "Volts");
           }
 
-          // Actual Product Weight & Dimensions
-          const actHeight = v.actualHeight || p.actualHeight;
-          const actLength = v.actualWidth || p.actualWidth;
-          const actWidth = v.actualDepth || p.actualDepth;
+          // Actual Product Weight & Dimensions (HU, HV, HW, HX, HY, HZ)
+          const actHeight = v.actualHeight || p.actualHeight || 53;
+          const actLength = v.actualDepth || p.actualDepth || (v as any).length || p.length || 15;
+          const actWidth = v.actualWidth || p.actualWidth || 20;
+
+          writeCell(sheet, rowIdx, 229, actHeight); // Col HU
+          writeCell(sheet, rowIdx, 230, "Centimeters"); // Col HV
+          writeCell(sheet, rowIdx, 231, actLength); // Col HW
+          writeCell(sheet, rowIdx, 232, "Centimeters"); // Col HX
+          writeCell(sheet, rowIdx, 233, actWidth); // Col HY
+          writeCell(sheet, rowIdx, 234, "Centimeters"); // Col HZ
 
           writeCell(sheet, rowIdx, 197, vWeight); // Item Weight
-          writeCell(sheet, rowIdx, 198, "kg");
-
-          if (actHeight) {
-            writeCell(sheet, rowIdx, 229, actHeight);
-            writeCell(sheet, rowIdx, 230, "cm");
-          }
-          if (actLength) {
-            writeCell(sheet, rowIdx, 231, actLength);
-            writeCell(sheet, rowIdx, 232, "cm");
-          }
-          if (actWidth) {
-            writeCell(sheet, rowIdx, 233, actWidth);
-            writeCell(sheet, rowIdx, 234, "cm");
-          }
+          writeCell(sheet, rowIdx, 198, "Kilograms"); // Item Weight Unit
 
           // Package Dimensions & Weight
-          writeCell(sheet, rowIdx, 301, vLength); // Item Package Length
-          writeCell(sheet, rowIdx, 302, "Centimetres");
-          writeCell(sheet, rowIdx, 303, vWidth); // Item Package Width
-          writeCell(sheet, rowIdx, 304, "Centimetres");
-          writeCell(sheet, rowIdx, 305, vHeight); // Item Package Height
-          writeCell(sheet, rowIdx, 306, "Centimetres");
-          writeCell(sheet, rowIdx, 307, vWeight); // Package Weight
-          writeCell(sheet, rowIdx, 308, "Kilograms");
+          writeCell(sheet, rowIdx, 307, vLength); // Item Package Length
+          writeCell(sheet, rowIdx, 308, "Centimeters");
+          writeCell(sheet, rowIdx, 309, vWidth); // Item Package Width
+          writeCell(sheet, rowIdx, 310, "Centimeters");
+          writeCell(sheet, rowIdx, 311, vHeight); // Item Package Height
+          writeCell(sheet, rowIdx, 312, "Centimeters");
+          writeCell(sheet, rowIdx, 313, vWeight); // Package Weight
+          writeCell(sheet, rowIdx, 314, "Kilograms");
 
+          const vMinPrice = v.b2bPrice || p.b2bPrice || Math.round(vPrice * 0.85);
+          const vMaxPrice = vMrp || Math.round(vPrice * 1.30);
+
+          writeCell(sheet, rowIdx, 268, "DEFAULT"); // Col JH (Fulfillment Channel Code)
           writeCell(sheet, rowIdx, 269, vStock); // Quantity (IN)
+          writeCell(sheet, rowIdx, 270, 5); // Handling Time
           writeCell(sheet, rowIdx, 273, vPrice); // Your Price INR
           writeCell(sheet, rowIdx, 274, vMrp); // Maximum Retail Price
-          writeCell(sheet, rowIdx, 312, vOrigin); // Country of Origin
+          writeCell(sheet, rowIdx, 275, "Competitive Price Rule by Amazon"); // Col JO - Pricing Rule
+          writeCell(sheet, rowIdx, 276, vMinPrice); // Minimum Seller Allowed Price
+          writeCell(sheet, rowIdx, 277, vMaxPrice); // Maximum Seller Allowed Price
+          writeCell(sheet, rowIdx, 300, "Migrated Template"); // Col KN - Shipping Template
+          writeCell(sheet, rowIdx, 318, vOrigin || pOrigin || "India"); // Col LF - Country of Origin
 
           rowIdx++;
         }
@@ -388,8 +471,8 @@ export async function GET(req: NextRequest) {
         writeCell(sheet, rowIdx, 3, "Create or Replace (Full Update)"); // Listing Action
         writeCell(sheet, rowIdx, 4, null); // Parentage Level
         writeCell(sheet, rowIdx, 7, p.name); // Item Name
-        writeCell(sheet, rowIdx, 10, "SellerSKU"); // Product Id Type
-        writeCell(sheet, rowIdx, 11, pSku); // Product Id
+        writeCell(sheet, rowIdx, 10, "GTIN Exempt"); // Col J - Product Id Type
+        writeCell(sheet, rowIdx, 11, null); // Col K - Product Id (GTIN Exempt)
 
         // Standardized and expanded attributes
         writeRowAttributes(
@@ -407,24 +490,37 @@ export async function GET(req: NextRequest) {
           null
         );
 
-        // Browse Node & Keywords
+        // Browse Node & Keywords (Cols 38-42: AL, AM, AN, AO, AP)
         writeCell(sheet, rowIdx, 12, getBrowseNode(p)); // Recommended Browse Node
-        writeCell(sheet, rowIdx, 38, generateKeywords(p)); // Generic Keywords
+        const sKwList = generateKeywordsList(p);
+        sKwList.forEach((kw, idx) => {
+          writeCell(sheet, rowIdx, 38 + idx, kw);
+        });
         writeCell(sheet, rowIdx, 90, getFixtureForm(p)); // Light Fixture Form
 
-        // Images
+        // Images (Main: Col 22 V, Other 1-8: Cols 23-30 W-AD)
         if (pImages.length > 0) {
           writeCell(sheet, rowIdx, 22, pImages[0]);
           pImages.slice(1, 9).forEach((img, idx) => {
-            writeCell(sheet, rowIdx, 23 + idx, img);
+            writeCell(sheet, rowIdx, 23 + idx, img); // Cols 23 to 30 (W to AD)
           });
         }
         writeCell(sheet, rowIdx, 32, pDesc); // Product Description
 
-        // Bullets
+        // Bullets (Cols 33-37: AG, AH, AI, AJ, AK)
         pBullets.slice(0, 5).forEach((b, idx) => {
           writeCell(sheet, rowIdx, 33 + idx, b);
         });
+
+        // Shade Height & Width (Cols 162, 163, 165, 166)
+        if ((p as any).shadeHeight) {
+          writeCell(sheet, rowIdx, 162, (p as any).shadeHeight);
+          writeCell(sheet, rowIdx, 163, "Centimeters");
+        }
+        if ((p as any).shadeWidth) {
+          writeCell(sheet, rowIdx, 165, (p as any).shadeWidth);
+          writeCell(sheet, rowIdx, 166, "Centimeters");
+        }
 
         if (pMaterial) {
           writeCell(sheet, rowIdx, 49, pMaterial); // Material
@@ -439,37 +535,44 @@ export async function GET(req: NextRequest) {
           writeCell(sheet, rowIdx, 86, "Volts");
         }
 
-        // Actual Product Weight & Dimensions
-        writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
-        writeCell(sheet, rowIdx, 198, "kg");
+        // Actual Product Weight & Dimensions (HU, HV, HW, HX, HY, HZ)
+        const actHeight = p.actualHeight || 53;
+        const actLength = p.actualDepth || p.length || 15;
+        const actWidth = p.actualWidth || 20;
 
-        if (p.actualHeight) {
-          writeCell(sheet, rowIdx, 229, p.actualHeight);
-          writeCell(sheet, rowIdx, 230, "cm");
-        }
-        if (p.actualWidth) {
-          writeCell(sheet, rowIdx, 231, p.actualWidth);
-          writeCell(sheet, rowIdx, 232, "cm");
-        }
-        if (p.actualDepth) {
-          writeCell(sheet, rowIdx, 233, p.actualDepth);
-          writeCell(sheet, rowIdx, 234, "cm");
-        }
+        writeCell(sheet, rowIdx, 229, actHeight); // Col HU
+        writeCell(sheet, rowIdx, 230, "Centimeters"); // Col HV
+        writeCell(sheet, rowIdx, 231, actLength); // Col HW
+        writeCell(sheet, rowIdx, 232, "Centimeters"); // Col HX
+        writeCell(sheet, rowIdx, 233, actWidth); // Col HY
+        writeCell(sheet, rowIdx, 234, "Centimeters"); // Col HZ
+
+        writeCell(sheet, rowIdx, 197, pWeight); // Item Weight
+        writeCell(sheet, rowIdx, 198, "Kilograms"); // Item Weight Unit
 
         // Package Dimensions & Weight
-        writeCell(sheet, rowIdx, 301, pLength); // Item Package Length
-        writeCell(sheet, rowIdx, 302, "Centimetres");
-        writeCell(sheet, rowIdx, 303, pWidth); // Item Package Width
-        writeCell(sheet, rowIdx, 304, "Centimetres");
-        writeCell(sheet, rowIdx, 305, pHeight); // Item Package Height
-        writeCell(sheet, rowIdx, 306, "Centimetres");
-        writeCell(sheet, rowIdx, 307, pWeight); // Package Weight
-        writeCell(sheet, rowIdx, 308, "Kilograms");
+        writeCell(sheet, rowIdx, 307, pLength); // Item Package Length
+        writeCell(sheet, rowIdx, 308, "Centimeters");
+        writeCell(sheet, rowIdx, 309, pWidth); // Item Package Width
+        writeCell(sheet, rowIdx, 310, "Centimeters");
+        writeCell(sheet, rowIdx, 311, pHeight); // Item Package Height
+        writeCell(sheet, rowIdx, 312, "Centimeters");
+        writeCell(sheet, rowIdx, 313, pWeight); // Package Weight
+        writeCell(sheet, rowIdx, 314, "Kilograms");
 
+        const pMinPrice = p.b2bPrice || Math.round(pPrice * 0.85);
+        const pMaxPrice = pMrp || Math.round(pPrice * 1.30);
+
+        writeCell(sheet, rowIdx, 268, "DEFAULT"); // Col JH (Fulfillment Channel Code)
         writeCell(sheet, rowIdx, 269, pStock); // Quantity (IN)
+        writeCell(sheet, rowIdx, 270, 5); // Handling Time
         writeCell(sheet, rowIdx, 273, pPrice); // Your Price INR
         writeCell(sheet, rowIdx, 274, pMrp); // Maximum Retail Price
-        writeCell(sheet, rowIdx, 312, pOrigin); // Country of Origin
+        writeCell(sheet, rowIdx, 275, "Competitive Price Rule by Amazon"); // Col JO - Pricing Rule
+        writeCell(sheet, rowIdx, 276, pMinPrice); // Minimum Seller Allowed Price
+        writeCell(sheet, rowIdx, 277, pMaxPrice); // Maximum Seller Allowed Price
+        writeCell(sheet, rowIdx, 300, "Migrated Template"); // Col KN - Shipping Template
+        writeCell(sheet, rowIdx, 318, pOrigin || "India"); // Col LF - Country of Origin
 
         rowIdx++;
       }

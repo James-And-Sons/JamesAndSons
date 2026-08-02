@@ -6,7 +6,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
   let slug: string | undefined;
   try {
     const body = await req.json();
-    const { name, description, image } = body;
+    const { name, description, image, images } = body;
     slug = body.slug;
 
     if (!slug) {
@@ -27,7 +27,13 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
 
     const space = await prisma.space.update({ 
       where: { id }, 
-      data: { name, slug, description, image } 
+      data: { 
+        name, 
+        slug, 
+        description, 
+        image: image || null,
+        images: Array.isArray(images) ? images : []
+      } 
     });
     return NextResponse.json(space);
   } catch (e: any) {

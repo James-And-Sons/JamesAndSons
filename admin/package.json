@@ -4,17 +4,28 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node ../packages/assets/copy-assets.js && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@james-andsons/blog-editor": "*",
+    "@james-andsons/config": "*",
+    "@james-andsons/db": "*",
+    "@james-andsons/media": "*",
+    "@james-andsons/razorpay": "*",
+    "@james-andsons/shiprocket": "*",
+    "@james-andsons/ui": "*",
+    "@james-andsons/utils": "*",
+    "@james-andsons/zoho": "*",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.100.0",
     "aws4": "^1.13.2",
@@ -29,6 +40,10 @@
     "razorpay": "^2.9.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "web-push": "^3.6.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -38,9 +53,9 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
-    "prisma": "^7.5.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

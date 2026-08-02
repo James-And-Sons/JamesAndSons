@@ -18,7 +18,9 @@ export default async function OrdersPage() {
     email: o.user.email,
     totalValue: o.totalAmount,
     status: o.status,
+    channel: o.channel,
   }));
 
   return <OrdersTableClient records={formattedOrders} />;
 }
+

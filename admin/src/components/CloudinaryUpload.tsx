@@ -1,7 +1,9 @@
-'use client';
-import { CldUploadWidget } from 'next-cloudinary';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+"use client";
+import { CldUploadWidget } from "next-cloudinary";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { pickImageFiles } from "@/lib/fileSystemAccess";
+import { ProductImageEditor } from "@james-andsons/media";
 
 interface CloudinaryUploadProps {
   onUpload: (urls: string[]) => void;
@@ -14,9 +16,19 @@ export default function CloudinaryUpload({
   onUpload,
   defaultImages = [],
   multiple = false,
-  label = "Upload Image"
+  label = "Upload Image",
 }: CloudinaryUploadProps) {
   const [images, setImages] = useState<string[]>(defaultImages);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [hasFSA, setHasFSA] = useState(false);
+  const [editingUrl, setEditingUrl] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number>(-1);
+
+  // Detect File System Access API support (Chrome desktop)
+  useEffect(() => {
+    setHasFSA(typeof window !== "undefined" && "showOpenFilePicker" in window);
+  }, []);
 
   // Sync state if defaultImages changes (e.g., when switching active variant)
   useEffect(() => {
@@ -26,43 +38,142 @@ export default function CloudinaryUpload({
   }, [defaultImages]);
 
   const handleClose = () => {
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
   };
 
   const handleUpload = (result: any) => {
-    if (result.event === 'success') {
+    if (result.event === "success") {
       const url = result.info.secure_url;
-      setImages(prev => {
-        const newImages = multiple ? [...prev, url] : [url];
-        onUpload(newImages); // Need to call onUpload with the updated array
-        return newImages;
-      });
+      const newImages = multiple ? [...images, url] : [url];
+      setImages(newImages);
+      onUpload(newImages);
     }
     handleClose();
   };
 
+  const handleSaveEditedImage = async (blob: Blob, indexToReplace: number) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+
+    const timestamp = Math.round(Date.now() / 1000);
+    const paramsToSign = { timestamp, upload_preset: uploadPreset };
+
+    const sigRes = await fetch("/api/sign-cloudinary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paramsToSign }),
+    });
+    const { signature } = await sigRes.json();
+
+    const file = new File([blob], `edited-${Date.now()}.jpg`, {
+      type: "image/jpeg",
+    });
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", apiKey!);
+    formData.append("timestamp", String(timestamp));
+    formData.append("signature", signature);
+    formData.append("upload_preset", uploadPreset!);
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: formData },
+    );
+
+    if (uploadRes.ok) {
+      const data = await uploadRes.json();
+      const newImages = [...images];
+      newImages[indexToReplace] = data.secure_url;
+      setImages(newImages);
+      onUpload(newImages);
+    }
+  };
+
+  /**
+   * FSA-powered upload: pick files natively → upload directly to Cloudinary
+   * without showing the Cloudinary widget UI.
+   */
+  const handleNativePick = async () => {
+    const files = await pickImageFiles({ multiple });
+    if (!files.length) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+
+    const uploadedUrls: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Get a signed timestamp from our backend
+      const timestamp = Math.round(Date.now() / 1000);
+      const paramsToSign = { timestamp, upload_preset: uploadPreset };
+
+      const sigRes = await fetch("/api/sign-cloudinary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paramsToSign }),
+      });
+      const { signature } = await sigRes.json();
+
+      // Upload directly to Cloudinary
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", apiKey!);
+      formData.append("timestamp", String(timestamp));
+      formData.append("signature", signature);
+      formData.append("upload_preset", uploadPreset!);
+
+      const uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: formData },
+      );
+
+      if (uploadRes.ok) {
+        const data = await uploadRes.json();
+        uploadedUrls.push(data.secure_url);
+      }
+
+      setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+    }
+
+    const newImages = multiple
+      ? [...images, ...uploadedUrls]
+      : uploadedUrls.slice(-1);
+    setImages(newImages);
+    onUpload(newImages);
+    setUploading(false);
+    setUploadProgress(0);
+  };
+
   const removeImage = async (urlToRemove: string) => {
-    const newImages = images.filter(url => url !== urlToRemove);
+    const newImages = images.filter((url) => url !== urlToRemove);
     setImages(newImages);
     onUpload(newImages);
 
     // Trigger deletion from Cloudinary in the background
     try {
-      const res = await fetch('/api/cloudinary/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlToRemove })
+      const res = await fetch("/api/cloudinary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlToRemove }),
       });
       if (!res.ok) {
-        console.error('Failed to delete image from Cloudinary:', await res.text());
-      } else {
-        console.log('Successfully deleted image from Cloudinary:', urlToRemove);
+        console.error(
+          "Failed to delete image from Cloudinary:",
+          await res.text(),
+        );
       }
     } catch (err) {
-      console.error('Failed to delete image from Cloudinary:', err);
+      console.error("Failed to delete image from Cloudinary:", err);
     }
   };
 
@@ -79,61 +190,170 @@ export default function CloudinaryUpload({
     onUpload(newImages);
   };
 
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [showVideoInput, setShowVideoInput] = useState(false);
+
+  const handleAddVideoUrl = () => {
+    if (!videoUrlInput.trim()) return;
+    const url = videoUrlInput.trim();
+    const newImages = multiple ? [...images, url] : [url];
+    setImages(newImages);
+    onUpload(newImages);
+    setVideoUrlInput("");
+    setShowVideoInput(false);
+  };
+
+  const isVideoUrl = (url: string) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return (
+      lower.includes(".mp4") ||
+      lower.includes(".webm") ||
+      lower.includes(".mov") ||
+      lower.includes("/video/upload/") ||
+      lower.includes("instagram.com/reel") ||
+      lower.includes("facebook.com/reel") ||
+      lower.includes("youtube.com/shorts")
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
-        {images.map((url, idx) => (
-          <div key={idx} className="relative w-24 h-24 border border-border group overflow-hidden">
-            <Image
-              src={url}
-              alt="Uploaded product"
-              fill
-              className="object-cover"
-            />
-            {/* Delete button */}
-            <button
-              type="button"
-              onClick={() => removeImage(url)}
-              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
-              title="Delete from Cloudinary"
+        {images.map((url, idx) => {
+          const isVid = isVideoUrl(url);
+          return (
+            <div
+              key={idx}
+              className="relative w-24 h-24 border border-border group overflow-hidden rounded-md bg-black/40"
             >
-              ×
-            </button>
+              {isVid ? (
+                <div className="w-full h-full relative flex items-center justify-center bg-black">
+                  {url.endsWith(".mp4") ||
+                  url.endsWith(".webm") ||
+                  url.includes("/video/") ? (
+                    <video
+                      src={url}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-2 text-center">
+                      <span className="text-amber-400 text-xs font-mono font-bold">
+                        REEL
+                      </span>
+                      <span className="text-[8px] text-muted-foreground truncate w-20">
+                        {url}
+                      </span>
+                    </div>
+                  )}
+                  <span className="absolute bottom-1 left-1 bg-amber-500/90 text-black px-1 rounded text-[8px] font-bold font-mono">
+                    VIDEO
+                  </span>
+                </div>
+              ) : (
+                <Image
+                  src={url}
+                  alt="Uploaded product"
+                  fill
+                  sizes="96px"
+                  className="object-cover"
+                />
+              )}
 
-            {/* Reordering Overlay */}
-            {multiple && images.length > 1 && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              {/* Edit button (for images) */}
+              {!isVid && (
                 <button
                   type="button"
-                  disabled={idx === 0}
-                  onClick={() => moveImage(idx, -1)}
-                  className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
-                  title="Move left"
+                  onClick={() => {
+                    setEditingUrl(url);
+                    setEditingIndex(idx);
+                  }}
+                  className="absolute top-1 left-1 bg-black/80 text-amber-400 hover:text-amber-300 rounded px-1.5 py-0.5 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  title="Edit image (Crop, Rotate, Adjust)"
                 >
-                  ←
+                  ✎ Edit
                 </button>
-                <span className="text-[8px] font-mono text-muted">{idx + 1}</span>
-                <button
-                  type="button"
-                  disabled={idx === images.length - 1}
-                  onClick={() => moveImage(idx, 1)}
-                  className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
-                  title="Move right"
-                >
-                  →
-                </button>
-              </div>
+              )}
+
+              {/* Delete button */}
+              <button
+                type="button"
+                onClick={() => removeImage(url)}
+                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
+                title="Delete item"
+              >
+                ×
+              </button>
+
+              {/* Reordering Overlay */}
+              {multiple && images.length > 1 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-1 px-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => moveImage(idx, -1)}
+                    className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
+                    title="Move left"
+                  >
+                    ←
+                  </button>
+                  <span className="text-[8px] font-mono text-muted">
+                    {idx + 1}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={idx === images.length - 1}
+                    onClick={() => moveImage(idx, 1)}
+                    className="text-white hover:text-accent text-[10px] disabled:opacity-30 disabled:hover:text-white"
+                    title="Move right"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Native FSA upload button — shown on Chrome desktop */}
+        {hasFSA && (multiple || images.length === 0) && (
+          <button
+            type="button"
+            onClick={handleNativePick}
+            disabled={uploading}
+            className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest disabled:opacity-50 relative overflow-hidden rounded-md"
+          >
+            {uploading ? (
+              <>
+                <span className="text-[11px] text-accent font-mono">
+                  {uploadProgress}%
+                </span>
+                <div
+                  className="absolute bottom-0 left-0 h-[2px] bg-accent transition-all"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </>
+            ) : (
+              <>
+                <span className="text-xl">+</span>
+                {label}
+              </>
             )}
-          </div>
-        ))}
+          </button>
+        )}
 
-        {(multiple || images.length === 0) && (
+        {/* Cloudinary widget button — used on iOS / Firefox or when FSA is unavailable */}
+        {!hasFSA && (multiple || images.length === 0) && (
           <CldUploadWidget
             signatureEndpoint="/api/sign-cloudinary"
             uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
             options={{
               multiple: multiple,
-              apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY
+              apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
             }}
             onSuccess={handleUpload}
             onClose={handleClose}
@@ -142,7 +362,7 @@ export default function CloudinaryUpload({
               <button
                 type="button"
                 onClick={() => open()}
-                className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest"
+                className="w-24 h-24 border border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-accent hover:text-accent transition-colors text-muted text-[10px] uppercase font-mono tracking-widest rounded-md"
               >
                 <span className="text-xl">+</span>
                 {label}
@@ -150,10 +370,57 @@ export default function CloudinaryUpload({
             )}
           </CldUploadWidget>
         )}
+
+        {/* Add Reel / Video URL Button */}
+        <button
+          type="button"
+          onClick={() => setShowVideoInput(!showVideoInput)}
+          className="w-24 h-24 border border-dashed border-amber-500/40 flex flex-col items-center justify-center gap-1 hover:border-amber-400 hover:text-amber-400 transition-colors text-amber-500/80 text-[9px] uppercase font-mono tracking-wider rounded-md bg-amber-500/5"
+        >
+          <span className="text-lg">🎬</span>
+          <span>Add Video / Reel</span>
+        </button>
       </div>
+
+      {/* Video / Reel URL Input Popup */}
+      {showVideoInput && (
+        <div className="flex gap-2 items-center bg-background border border-amber-500/30 p-2.5 rounded-lg max-w-md">
+          <input
+            type="url"
+            value={videoUrlInput}
+            onChange={(e) => setVideoUrlInput(e.target.value)}
+            placeholder="Paste MP4, Instagram Reel, FB Reel URL..."
+            className="flex-1 bg-surface border border-border px-3 py-1.5 rounded text-xs font-mono text-text outline-none focus:border-amber-500"
+          />
+          <button
+            type="button"
+            onClick={handleAddVideoUrl}
+            className="bg-amber-500 text-black px-3 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider hover:bg-amber-400"
+          >
+            Add
+          </button>
+        </div>
+      )}
 
       {images.length === 0 && !multiple && (
         <p className="text-[11px] text-muted italic">No image uploaded yet.</p>
+      )}
+
+      {/* Product Image Editor Modal */}
+      {editingUrl && editingIndex >= 0 && (
+        <ProductImageEditor
+          isOpen={!!editingUrl}
+          imageUrl={editingUrl}
+          onClose={() => {
+            setEditingUrl(null);
+            setEditingIndex(-1);
+          }}
+          onSave={async (blob: Blob) => {
+            await handleSaveEditedImage(blob, editingIndex);
+            setEditingUrl(null);
+            setEditingIndex(-1);
+          }}
+        />
       )}
     </div>
   );

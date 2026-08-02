@@ -112,12 +112,15 @@ export async function fulfillPaidOrder({
   let finalStatus = updatedOrder.status;
 
   try {
-    // Parse address: split by comma, extract pin/state/city for Shiprocket
+    // Parse address: prefer explicit db columns if they exist, fallback to splitting address string
     const parts = updatedOrder.shippingAddress.split(', ');
-    const pincodeStr = parts.pop()?.split(' - ')[1] || updatedOrder.shippingPincode || '110030';
-    const stateStr = parts.pop() || updatedOrder.shippingState || '';
-    const cityStr = parts.pop() || updatedOrder.shippingCity || '';
-    const addrStr = parts.join(', ') || updatedOrder.shippingAddress;
+    const pincodeStr = updatedOrder.shippingPincode || parts.pop()?.split(' - ')[1] || '110030';
+    const stateStr = updatedOrder.shippingState || parts.pop() || '';
+    const cityStr = updatedOrder.shippingCity || parts.pop() || '';
+    const addrStr = updatedOrder.shippingPincode && updatedOrder.shippingState && updatedOrder.shippingCity
+      ? updatedOrder.shippingAddress.split(', ').slice(0, -3).join(', ') || updatedOrder.shippingAddress
+      : parts.join(', ') || updatedOrder.shippingAddress;
+
 
     // Weight/dimensions defaults from first item or fallback to shipping box defaults
     const firstProduct = updatedOrder.items[0]?.product;
