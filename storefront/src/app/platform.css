@@ -18,9 +18,9 @@
     --red: #c45a5a;
     --green: #5ac47a;
     --teal: #5ab4c4;
-    --font-serif: 'Cormorant Garamond', Georgia, serif;
-    --font-mono: 'DM Mono', monospace;
-    --font-body: var(--font-outfit), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: var(--font-cormorant, 'Cormorant Garamond'), Georgia, serif;
+    --font-mono: var(--font-dm-mono, 'DM Mono'), monospace;
+    --font-body: var(--font-outfit, 'Outfit'), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color-scheme: dark;
   }
 
@@ -49,7 +49,12 @@
     }
   }
 
-  [data-theme='light'], html[data-theme='light'], html.light, .light {
+  [data-theme='light'],
+  html[data-theme='light'],
+  html.light,
+  .light,
+  :root[data-theme='light'],
+  :root.light {
     --obsidian: #f8f5f0;
     --void: #ede9e0;
     --surface: #ffffff;

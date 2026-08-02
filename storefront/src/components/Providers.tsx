@@ -7,7 +7,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <TenantProvider config={DEFAULT_TENANT_CONFIG}>
       <ThemeProvider
-        attribute="data-theme"
+        attribute="class"
         defaultTheme="system"
         enableSystem
         disableTransitionOnChange={false}

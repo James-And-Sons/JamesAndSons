@@ -16,18 +16,21 @@ const cormorant = Cormorant_Garamond({
   weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
+  display: "swap",
 });
 
 const dmMono = DM_Mono({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
   variable: "--font-dm-mono",
+  display: "swap",
 });
 
 const outfit = Outfit({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-outfit",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -96,7 +99,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <link
           rel="stylesheet"
@@ -107,10 +114,7 @@ export default function RootLayout({
           content="05e17f9bd7917ad9a8dd38bdc291baf3"
         />
       </head>
-      <body
-        className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <ThemeColorSync />
           <Suspense fallback={null}>
