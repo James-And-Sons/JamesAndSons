@@ -9,6 +9,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import MetaPixel from "@/components/MetaPixel";
 import ThemeColorSync from "@/components/ThemeColorSync";
 import Navigation from "@/components/Navigation";
+import { BRAND_CONFIG } from "@james-andsons/config";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -67,7 +68,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "James & Sons",
+    title: BRAND_CONFIG.name,
   },
   formatDetection: {
     telephone: false,

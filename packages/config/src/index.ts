@@ -1,5 +1,7 @@
 export interface IBrandConfig {
   name: string;
+  shortName: string;
+  adminPwaName: string;
   legalName: string;
   tagline: string;
   domain: string;
@@ -102,6 +104,14 @@ export const BRAND_CONFIG: IBrandConfig = {
     process.env.NEXT_PUBLIC_BRAND_NAME ||
     process.env.BRAND_NAME ||
     "James & Sons",
+  shortName:
+    process.env.NEXT_PUBLIC_BRAND_SHORT_NAME ||
+    process.env.BRAND_SHORT_NAME ||
+    "J&S",
+  adminPwaName:
+    process.env.NEXT_PUBLIC_ADMIN_PWA_NAME ||
+    process.env.ADMIN_PWA_NAME ||
+    "Admin J&S",
   legalName: process.env.BRAND_LEGAL_NAME || "James and Sons Bespoke Interiors",
   tagline:
     process.env.BRAND_TAGLINE || "Luxury Artisanal Lighting & Home Accessories",
