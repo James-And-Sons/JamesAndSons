@@ -1,6 +1,7 @@
 "use client";
-import { ThemeProvider } from "next-themes";
-import { TenantProvider } from "@james-andsons/ui";
+
+import React from "react";
+import { ThemeProvider, TenantProvider } from "@james-andsons/ui";
 import { DEFAULT_TENANT_CONFIG } from "@james-andsons/config";
 
 export default function Providers({ children }: { children: React.ReactNode }) {

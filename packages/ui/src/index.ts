@@ -1,3 +1,5 @@
+export { ThemeProvider, useTheme } from "next-themes";
+export type { ThemeProviderProps } from "next-themes";
 export * from "./ActionDropdown";
 export * from "./BrandLogo";
 export * from "./ClickableRow";
