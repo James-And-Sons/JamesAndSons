@@ -36,8 +36,9 @@ yarn-error.log*
 # prisma
 /generated/prisma
 
-# scratch files
-/scratch
+# db backups
+packages/db/backups/
+*.sql.gz
 
 # Amazon debug logs
 amazon-debug-log.txt
