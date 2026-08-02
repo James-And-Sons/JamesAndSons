@@ -8,10 +8,70 @@ export interface ThemeToggleProps {
   variant?: "storefront" | "admin";
 }
 
+function SunIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 3v2.25m0 13.5V21m8.966-8.966h-2.25m-13.5 0H3m15.364-6.364l-1.591 1.591M6.758 17.242l-1.591 1.591m12.728 0l-1.591-1.591M6.758 6.758L5.167 5.167M12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z"
+      />
+    </svg>
+  );
+}
+
+function MoonIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+      />
+    </svg>
+  );
+}
+
+function SystemIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="1.75"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0h-18"
+      />
+    </svg>
+  );
+}
+
 const OPTIONS = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
+  { value: "system", label: "System", Icon: SystemIcon },
+  { value: "light", label: "Light", Icon: SunIcon },
+  { value: "dark", label: "Dark", Icon: MoonIcon },
 ];
 
 export function ThemeToggle({
@@ -26,15 +86,28 @@ export function ThemeToggle({
     return variant === "admin" ? <div className="w-[32px] h-[32px]" /> : null;
 
   if (variant === "admin") {
-    const isDark = theme === "dark";
     return (
-      <button
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-        className="flex items-center justify-center w-[32px] h-[32px] rounded-sm border border-border text-muted hover:text-accent hover:border-accent/30 transition-colors bg-surface"
-        aria-label="Toggle theme"
-      >
-        <span className="text-xs font-mono">{isDark ? "🌙" : "☀️"}</span>
-      </button>
+      <div className="flex items-center bg-surface border border-border rounded-sm p-0.5 gap-0.5">
+        {OPTIONS.map((opt) => {
+          const isActive = theme === opt.value;
+          const Icon = opt.Icon;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              title={`Switch to ${opt.label} theme`}
+              className={`flex items-center justify-center w-7 h-7 rounded-sm text-xs transition-colors ${
+                isActive
+                  ? "bg-accent/15 text-accent border border-accent/30 font-medium"
+                  : "text-muted hover:text-primary hover:bg-surface-muted border border-transparent"
+              }`}
+              aria-label={`Set theme to ${opt.label}`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </button>
+          );
+        })}
+      </div>
     );
   }
 
@@ -52,6 +125,7 @@ export function ThemeToggle({
     >
       {OPTIONS.map((opt) => {
         const isActive = theme === opt.value;
+        const Icon = opt.Icon;
         return (
           <button
             key={opt.value}
@@ -77,6 +151,7 @@ export function ThemeToggle({
               fontWeight: isActive ? 600 : 400,
             }}
           >
+            <Icon className="w-3.5 h-3.5" />
             {!compact && <span>{opt.label}</span>}
           </button>
         );

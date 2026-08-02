@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import ClickableRow from '@/components/ClickableRow';
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import ClickableRow from "@/components/ClickableRow";
 
 interface OrderItem {
   id: string;
@@ -16,9 +17,13 @@ interface OrderItem {
   channel?: string | null;
 }
 
-export default function OrdersTableClient({ records }: { records: OrderItem[] }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+export default function OrdersTableClient({
+  records,
+}: {
+  records: OrderItem[];
+}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
@@ -32,12 +37,12 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
 
       const s = r.status.toUpperCase();
       let matchesStatus = true;
-      if (statusFilter === 'PAID') {
-        matchesStatus = ['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s);
-      } else if (statusFilter === 'PROCESSING') {
-        matchesStatus = ['PENDING', 'PROCESSING', 'SUBMITTED'].includes(s);
-      } else if (statusFilter === 'CANCELLED') {
-        matchesStatus = ['CANCELLED', 'REFUNDED', 'FAILED'].includes(s);
+      if (statusFilter === "PAID") {
+        matchesStatus = ["DELIVERED", "PAID", "SUCCESS", "SHIPPED"].includes(s);
+      } else if (statusFilter === "PROCESSING") {
+        matchesStatus = ["PENDING", "PROCESSING", "SUBMITTED"].includes(s);
+      } else if (statusFilter === "CANCELLED") {
+        matchesStatus = ["CANCELLED", "REFUNDED", "FAILED"].includes(s);
       }
 
       return matchesSearch && matchesStatus;
@@ -46,32 +51,46 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
 
   const handleExportCSV = () => {
     if (filteredRecords.length === 0) {
-      alert('No records to export.');
+      alert("No records to export.");
       return;
     }
 
-    const headers = ['Order ID', 'Date', 'Customer Name', 'Company', 'Email', 'Total Value', 'Status', 'Channel'];
+    const headers = [
+      "Order ID",
+      "Date",
+      "Customer Name",
+      "Company",
+      "Email",
+      "Total Value",
+      "Status",
+      "Channel",
+    ];
     const rows = filteredRecords.map((r) => [
       r.displayId,
-      new Date(r.date).toISOString().split('T')[0],
+      new Date(r.date).toISOString().split("T")[0],
       r.customerName,
-      r.company || '',
+      r.company || "",
       r.email,
       r.totalValue,
       r.status,
-      r.channel || 'JNS_STOREFRONT',
+      r.channel || "JNS_STOREFRONT",
     ]);
 
     const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')),
-    ].join('\n');
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', `james-and-sons-orders-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `james-and-sons-orders-${new Date().toISOString().split("T")[0]}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -86,7 +105,8 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
             Orders &amp; Logistics
           </h1>
           <p className="font-body text-muted text-[13px] mt-1 m-0">
-            Manage incoming customer payments, D2C dispatches, and order fulfillment.
+            Manage incoming customer payments, D2C dispatches, and order
+            fulfillment.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -104,7 +124,10 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
         {/* Controls: Search and Filters */}
         <div className="p-4 md:p-6 border-b border-border flex flex-col sm:flex-row gap-3 bg-surface-muted/40 items-stretch sm:items-center justify-between">
           <div className="flex-1 flex items-center gap-2 border border-border bg-background px-3 py-2.5 rounded-sm focus-within:border-accent min-h-[44px]">
-            <span className="text-muted text-xs" aria-hidden="true">🔍</span>
+            <Search
+              className="w-3.5 h-3.5 text-muted shrink-0"
+              aria-hidden="true"
+            />
             <input
               type="text"
               value={searchTerm}
@@ -114,7 +137,7 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm("")}
                 className="text-muted hover:text-primary font-mono text-[10px] uppercase"
               >
                 Clear
@@ -143,43 +166,123 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
             <caption className="sr-only">List of customer orders</caption>
             <thead className="border-b border-border bg-surface-muted/20">
               <tr>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Order ID</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Date</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer / Company</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Total Amount</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Action</th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Order ID
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Date
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Customer / Company
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
+                  Total Amount
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
               {filteredRecords.map((record) => {
-                const s = (record.status || '').toUpperCase();
-                const isPaid = ['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s);
-                const isProcessing = ['PENDING', 'PROCESSING'].includes(s);
-                const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
+                const s = (record.status || "").toUpperCase();
+                const isPaid = [
+                  "DELIVERED",
+                  "PAID",
+                  "SUCCESS",
+                  "SHIPPED",
+                ].includes(s);
+                const isProcessing = ["PENDING", "PROCESSING"].includes(s);
+                const pillClass = isPaid
+                  ? "status-paid"
+                  : isProcessing
+                    ? "status-processing"
+                    : "status-pending";
                 const href = `/orders/${record.id}`;
                 return (
-                  <ClickableRow key={record.id} href={href} className="hover:bg-surface-muted/40 transition-colors">
+                  <ClickableRow
+                    key={record.id}
+                    href={href}
+                    className="hover:bg-surface-muted/40 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[12px] text-accent hover:underline font-semibold">{record.displayId}</span>
-                        {record.channel && record.channel !== 'JNS_STOREFRONT' && (
-                          <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
-                            {record.channel.replace(/_/g, ' ')}
-                          </span>
-                        )}
+                        <span className="font-mono text-[12px] text-accent hover:underline font-semibold">
+                          {record.displayId}
+                        </span>
+                        {record.channel &&
+                          record.channel !== "JNS_STOREFRONT" && (
+                            <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
+                              {record.channel.replace(/_/g, " ")}
+                            </span>
+                          )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-mono text-[11px] text-muted">{new Date(record.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                    <td className="px-6 py-4"><div className="font-serif text-[15px] text-primary">{record.company || record.customerName}</div><div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{record.email}</div></td>
-                    <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">₹{Math.round(record.totalValue).toLocaleString('en-IN')}</td>
-                    <td className="px-6 py-4"><span className={`status-pill ${pillClass}`}><span className="dot" aria-hidden="true" /><span>{s.replace(/_/g, ' ')}</span></span></td>
-                    <td className="px-6 py-4 text-right"><Link href={href} className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors">View Details →</Link></td>
+                    <td className="px-6 py-4 font-mono text-[11px] text-muted">
+                      {new Date(record.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-serif text-[15px] text-primary">
+                        {record.company || record.customerName}
+                      </div>
+                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">
+                        {record.email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">
+                      ₹{Math.round(record.totalValue).toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`status-pill ${pillClass}`}>
+                        <span className="dot" aria-hidden="true" />
+                        <span>{s.replace(/_/g, " ")}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link
+                        href={href}
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors"
+                      >
+                        View Details →
+                      </Link>
+                    </td>
                   </ClickableRow>
                 );
               })}
               {filteredRecords.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest">No matching customer orders found.</td></tr>
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest"
+                  >
+                    No matching customer orders found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -188,26 +291,37 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
         {/* Mobile Card View (< md) */}
         <div className="block md:hidden p-4 space-y-3">
           {filteredRecords.map((record) => {
-            const s = (record.status || '').toUpperCase();
-            const isPaid = ['DELIVERED', 'PAID', 'SUCCESS', 'SHIPPED'].includes(s);
-            const isProcessing = ['PENDING', 'PROCESSING'].includes(s);
-            const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
+            const s = (record.status || "").toUpperCase();
+            const isPaid = ["DELIVERED", "PAID", "SUCCESS", "SHIPPED"].includes(
+              s,
+            );
+            const isProcessing = ["PENDING", "PROCESSING"].includes(s);
+            const pillClass = isPaid
+              ? "status-paid"
+              : isProcessing
+                ? "status-processing"
+                : "status-pending";
             const href = `/orders/${record.id}`;
             return (
-              <div key={record.id} className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div
+                key={record.id}
+                className="bg-surface border border-border rounded-lg overflow-hidden"
+              >
                 {/* Card Header */}
                 <div className="flex items-center justify-between px-4 py-3 bg-surface-muted/30 border-b border-border/40">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[13px] text-accent font-semibold tracking-wide">{record.displayId}</span>
-                    {record.channel && record.channel !== 'JNS_STOREFRONT' && (
+                    <span className="font-mono text-[13px] text-accent font-semibold tracking-wide">
+                      {record.displayId}
+                    </span>
+                    {record.channel && record.channel !== "JNS_STOREFRONT" && (
                       <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
-                        {record.channel.replace(/_/g, ' ')}
+                        {record.channel.replace(/_/g, " ")}
                       </span>
                     )}
                   </div>
                   <span className={`status-pill ${pillClass}`}>
                     <span className="dot" aria-hidden="true" />
-                    <span>{s.replace(/_/g, ' ')}</span>
+                    <span>{s.replace(/_/g, " ")}</span>
                   </span>
                 </div>
 
@@ -215,18 +329,29 @@ export default function OrdersTableClient({ records }: { records: OrderItem[] })
                 <div className="px-4 py-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-serif text-[15px] text-primary leading-snug">{record.company || record.customerName}</div>
-                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{record.email}</div>
+                      <div className="font-serif text-[15px] text-primary leading-snug">
+                        {record.company || record.customerName}
+                      </div>
+                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">
+                        {record.email}
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-mono text-[12px] text-muted">Amount</div>
+                      <div className="font-mono text-[12px] text-muted">
+                        Amount
+                      </div>
                       <div className="font-mono text-[15px] text-primary font-semibold tabular-nums">
-                        ₹{Math.round(record.totalValue).toLocaleString('en-IN')}
+                        ₹{Math.round(record.totalValue).toLocaleString("en-IN")}
                       </div>
                     </div>
                   </div>
                   <div className="font-mono text-[10px] text-muted/60">
-                    {new Date(record.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                    {new Date(record.date).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </div>
                 </div>
 

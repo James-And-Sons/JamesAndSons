@@ -1,12 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useTransition, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Users,
+  CheckCircle2,
+  TrendingUp,
+  DollarSign,
+  Search,
+  Lightbulb,
+  Edit,
+  Trash2,
+  Pause,
+  Play,
+} from "lucide-react";
 import {
   adminCreateAffiliate,
   adminUpdateAffiliate,
   adminDeleteAffiliate,
-} from '../promotions/server-actions';
+} from "../promotions/server-actions";
 
 interface Affiliate {
   id: string;
@@ -14,7 +26,7 @@ interface Affiliate {
   email: string;
   phone: string | null;
   affiliateCode: string;
-  status: 'ACTIVE' | 'SUSPENDED';
+  status: "ACTIVE" | "SUSPENDED";
   commissionRate: number;
   totalRevenue: number;
   totalCommission: number;
@@ -36,26 +48,33 @@ export default function AffiliatesManagerClient({
   const [isPending, startTransition] = useTransition();
 
   // Search & Filter
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingAffiliate, setEditingAffiliate] = useState<Affiliate | null>(null);
+  const [editingAffiliate, setEditingAffiliate] = useState<Affiliate | null>(
+    null,
+  );
 
   // Form States
-  const [formName, setFormName] = useState('');
-  const [formEmail, setFormEmail] = useState('');
-  const [formPhone, setFormPhone] = useState('');
-  const [formCode, setFormCode] = useState('');
-  const [formCommissionRate, setFormCommissionRate] = useState('10');
-  const [formNotes, setFormNotes] = useState('');
-  const [formStatus, setFormStatus] = useState<'ACTIVE' | 'SUSPENDED'>('ACTIVE');
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formCode, setFormCode] = useState("");
+  const [formCommissionRate, setFormCommissionRate] = useState("10");
+  const [formNotes, setFormNotes] = useState("");
+  const [formStatus, setFormStatus] = useState<"ACTIVE" | "SUSPENDED">(
+    "ACTIVE",
+  );
 
   // Toast
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "ok" | "err";
+  } | null>(null);
 
-  const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
+  const showToast = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
   };
@@ -67,7 +86,11 @@ export default function AffiliatesManagerClient({
       setFormCode(`AFF${rand}`);
       return;
     }
-    const cleanName = formName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    const cleanName = formName
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 4);
     const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
     setFormCode(`${cleanName}${rand}`);
   };
@@ -78,20 +101,20 @@ export default function AffiliatesManagerClient({
       setEditingAffiliate(affiliate);
       setFormName(affiliate.name);
       setFormEmail(affiliate.email);
-      setFormPhone(affiliate.phone || '');
+      setFormPhone(affiliate.phone || "");
       setFormCode(affiliate.affiliateCode);
       setFormCommissionRate(String(affiliate.commissionRate));
-      setFormNotes(affiliate.notes || '');
+      setFormNotes(affiliate.notes || "");
       setFormStatus(affiliate.status);
     } else {
       setEditingAffiliate(null);
-      setFormName('');
-      setFormEmail('');
-      setFormPhone('');
-      setFormCode('');
-      setFormCommissionRate('10');
-      setFormNotes('');
-      setFormStatus('ACTIVE');
+      setFormName("");
+      setFormEmail("");
+      setFormPhone("");
+      setFormCode("");
+      setFormCommissionRate("10");
+      setFormNotes("");
+      setFormStatus("ACTIVE");
     }
     setIsCreateModalOpen(true);
   };
@@ -100,15 +123,15 @@ export default function AffiliatesManagerClient({
   const handleSaveAffiliate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) {
-      showToast('Name is required', 'err');
+      showToast("Name is required", "err");
       return;
     }
     if (!formEmail.trim()) {
-      showToast('Email is required', 'err');
+      showToast("Email is required", "err");
       return;
     }
     if (!formCode.trim()) {
-      showToast('Affiliate code is required', 'err');
+      showToast("Affiliate code is required", "err");
       return;
     }
 
@@ -134,14 +157,14 @@ export default function AffiliatesManagerClient({
         setIsCreateModalOpen(false);
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || 'Failed to save affiliate', 'err');
+        showToast(err.message || "Failed to save affiliate", "err");
       }
     });
   };
 
   // Toggle Status
   const handleToggleStatus = async (affiliate: Affiliate) => {
-    const newStatus = affiliate.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    const newStatus = affiliate.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
     startTransition(async () => {
       try {
         await adminUpdateAffiliate(affiliate.id, {
@@ -150,17 +173,22 @@ export default function AffiliatesManagerClient({
           affiliateCode: affiliate.affiliateCode,
           status: newStatus,
         });
-        showToast(`Affiliate ${affiliate.name} status updated to ${newStatus.toLowerCase()}`);
+        showToast(
+          `Affiliate ${affiliate.name} status updated to ${newStatus.toLowerCase()}`,
+        );
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || 'Failed to update status', 'err');
+        showToast(err.message || "Failed to update status", "err");
       }
     });
   };
 
   // Delete Affiliate
   const handleDelete = async (affiliate: Affiliate) => {
-    if (!confirm(`Are you sure you want to delete affiliate ${affiliate.name}?`)) return;
+    if (
+      !confirm(`Are you sure you want to delete affiliate ${affiliate.name}?`)
+    )
+      return;
 
     startTransition(async () => {
       try {
@@ -168,20 +196,20 @@ export default function AffiliatesManagerClient({
         showToast(`Affiliate ${affiliate.name} deleted successfully`);
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || 'Failed to delete affiliate', 'err');
+        showToast(err.message || "Failed to delete affiliate", "err");
       }
     });
   };
 
   // Filter & Search Logic
   const filteredAffiliates = useMemo(() => {
-    return affiliates.filter(a => {
+    return affiliates.filter((a) => {
       const matchesSearch =
         a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.affiliateCode.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus = statusFilter === 'ALL' || a.status === statusFilter;
+      const matchesStatus = statusFilter === "ALL" || a.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -194,9 +222,15 @@ export default function AffiliatesManagerClient({
 
   // Stats Calculations
   const totalCount = affiliates.length;
-  const activeCount = affiliates.filter(a => a.status === 'ACTIVE').length;
-  const totalRevenue = affiliates.reduce((sum, a) => sum + (a.totalRevenue || 0), 0);
-  const totalCommission = affiliates.reduce((sum, a) => sum + (a.totalCommission || 0), 0);
+  const activeCount = affiliates.filter((a) => a.status === "ACTIVE").length;
+  const totalRevenue = affiliates.reduce(
+    (sum, a) => sum + (a.totalRevenue || 0),
+    0,
+  );
+  const totalCommission = affiliates.reduce(
+    (sum, a) => sum + (a.totalCommission || 0),
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -207,7 +241,8 @@ export default function AffiliatesManagerClient({
             Affiliate Partners
           </h1>
           <p className="font-body text-muted text-[13px] mt-1 m-0">
-            Manage tracking codes, custom commissions rates, and attributed referral conversions.
+            Manage tracking codes, custom commissions rates, and attributed
+            referral conversions.
           </p>
         </div>
         <div>
@@ -223,53 +258,95 @@ export default function AffiliatesManagerClient({
       {/* Analytics Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Affiliates', value: totalCount, indicator: '👥' },
-          { label: 'Active', value: activeCount, colorClass: 'text-emerald-400', indicator: '🟢' },
-          { label: 'Revenue Attributed', value: `₹${totalRevenue.toLocaleString('en-IN')}`, colorClass: 'text-accent', indicator: '📈' },
-          { label: 'Commission Earned', value: `₹${totalCommission.toLocaleString('en-IN')}`, indicator: '💰' },
-        ].map((stat, idx) => (
-          <div key={idx} className="premium-card p-5 rounded-lg flex items-center justify-between">
-            <div>
-              <div className="font-mono text-[10px] text-muted uppercase tracking-wider">{stat.label}</div>
-              <div className={`font-serif text-[24px] mt-1.5 font-light ${stat.colorClass || 'text-primary'}`}>
-                {stat.value}
+          {
+            label: "Total Affiliates",
+            value: totalCount,
+            Icon: Users,
+            colorClass: "text-primary",
+          },
+          {
+            label: "Active",
+            value: activeCount,
+            Icon: CheckCircle2,
+            colorClass: "text-emerald-400",
+          },
+          {
+            label: "Revenue Attributed",
+            value: `₹${totalRevenue.toLocaleString("en-IN")}`,
+            Icon: TrendingUp,
+            colorClass: "text-accent",
+          },
+          {
+            label: "Commission Earned",
+            value: `₹${totalCommission.toLocaleString("en-IN")}`,
+            Icon: DollarSign,
+            colorClass: "text-primary",
+          },
+        ].map((stat, idx) => {
+          const StatIcon = stat.Icon;
+          return (
+            <div
+              key={idx}
+              className="premium-card p-5 rounded-lg flex items-center justify-between"
+            >
+              <div>
+                <div className="font-mono text-[10px] text-muted uppercase tracking-wider">
+                  {stat.label}
+                </div>
+                <div
+                  className={`font-serif text-[24px] mt-1.5 font-light ${stat.colorClass}`}
+                >
+                  {stat.value}
+                </div>
               </div>
+              <StatIcon className={`w-6 h-6 opacity-75 ${stat.colorClass}`} />
             </div>
-            <span className="text-[24px] opacity-75">{stat.indicator}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* How It Works Explainer Box */}
       <div className="border border-accent/20 bg-accent/5 p-4 rounded-lg text-[13px] text-muted leading-relaxed font-body">
-        <strong className="text-accent font-semibold block mb-0.5">How Link Tracking Operates:</strong>
-        Share custom links formatted like <code className="bg-background text-primary px-1.5 py-0.5 rounded-sm font-mono text-[11px] border border-border">jamesandsons.in?ref=AFFILIATECODE</code>.
-        Visits set a tracking cookie. Any checkout placement within 30 days automatically links revenue and updates payouts.
+        <strong className="text-accent font-semibold block mb-0.5">
+          <Lightbulb className="w-3 h-3 inline mr-1" /> How Link Tracking
+          Operates:
+        </strong>
+        Share custom links formatted like{" "}
+        <code className="bg-background text-primary px-1.5 py-0.5 rounded-sm font-mono text-[11px] border border-border">
+          jamesandsons.in?ref=AFFILIATECODE
+        </code>
+        . Visits set a tracking cookie. Any checkout placement within 30 days
+        automatically links revenue and updates payouts.
       </div>
 
       {/* Search and Filters */}
       <div className="premium-card p-4 rounded-lg flex flex-wrap gap-4 items-center justify-between">
         <div className="flex-1 flex items-center gap-2 border border-border bg-background px-3 py-2.5 rounded-sm focus-within:border-accent min-w-[280px]">
-          <span className="text-muted text-xs">🔍</span>
+          <Search className="w-3.5 h-3.5 text-muted shrink-0" />
           <input
             type="text"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by partner name, email, ref code..."
             className="bg-transparent text-primary font-mono text-[12px] focus:outline-none w-full placeholder:text-muted/60"
           />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="text-muted hover:text-primary font-mono text-[10px] uppercase">
+            <button
+              onClick={() => setSearchTerm("")}
+              className="text-muted hover:text-primary font-mono text-[10px] uppercase"
+            >
               Clear
             </button>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[9px] uppercase tracking-wider text-muted">Status</span>
+          <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+            Status
+          </span>
           <select
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2.5 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-wider focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
           >
             <option value="ALL">All Partners</option>
@@ -284,9 +361,12 @@ export default function AffiliatesManagerClient({
         {filteredAffiliates.length === 0 ? (
           <div className="py-16 text-center">
             <div className="text-[32px] mb-3 opacity-60">🤝</div>
-            <h3 className="font-serif text-[16px] text-primary mb-1">No Affiliate Partners</h3>
+            <h3 className="font-serif text-[16px] text-primary mb-1">
+              No Affiliate Partners
+            </h3>
             <p className="font-body text-muted text-[13px] max-w-sm mx-auto">
-              No matching records. Adjust filters or invite a new affiliate partner to start tracking.
+              No matching records. Adjust filters or invite a new affiliate
+              partner to start tracking.
             </p>
           </div>
         ) : (
@@ -298,24 +378,40 @@ export default function AffiliatesManagerClient({
                   <th className="px-6 py-4 font-semibold">Referral Code</th>
                   <th className="px-6 py-4 font-semibold">Status</th>
                   <th className="px-6 py-4 font-semibold">Commission %</th>
-                  <th className="px-6 py-4 font-semibold">Attributed Revenue</th>
-                  <th className="px-6 py-4 font-semibold">Calculated Commission</th>
+                  <th className="px-6 py-4 font-semibold">
+                    Attributed Revenue
+                  </th>
+                  <th className="px-6 py-4 font-semibold">
+                    Calculated Commission
+                  </th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {filteredAffiliates.map(aff => {
-                  const isSuspended = aff.status === 'SUSPENDED';
+                {filteredAffiliates.map((aff) => {
+                  const isSuspended = aff.status === "SUSPENDED";
                   return (
-                    <tr key={aff.id} className="hover:bg-surface-muted/15 transition-colors">
+                    <tr
+                      key={aff.id}
+                      className="hover:bg-surface-muted/15 transition-colors"
+                    >
                       <td className="px-6 py-4">
-                        <div className="font-sans text-[14px] text-primary font-medium">{aff.name}</div>
-                        <div className="text-[11px] text-muted font-body mt-0.5">{aff.email}</div>
+                        <div className="font-sans text-[14px] text-primary font-medium">
+                          {aff.name}
+                        </div>
+                        <div className="text-[11px] text-muted font-body mt-0.5">
+                          {aff.email}
+                        </div>
                         {aff.phone && (
-                          <div className="text-[10px] text-muted font-mono mt-0.5">{aff.phone}</div>
+                          <div className="text-[10px] text-muted font-mono mt-0.5">
+                            {aff.phone}
+                          </div>
                         )}
                         {aff.notes && (
-                          <div className="text-[10px] text-muted/75 italic mt-1 font-body">💡 {aff.notes}</div>
+                          <div className="text-[10px] text-muted/75 italic mt-1 font-body flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3 text-accent shrink-0" />{" "}
+                            {aff.notes}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -324,7 +420,9 @@ export default function AffiliatesManagerClient({
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`status-pill ${isSuspended ? 'status-pending' : 'status-active'}`}>
+                        <span
+                          className={`status-pill ${isSuspended ? "status-pending" : "status-active"}`}
+                        >
                           <span className="dot" />
                           {aff.status}
                         </span>
@@ -333,39 +431,51 @@ export default function AffiliatesManagerClient({
                         {aff.commissionRate}%
                       </td>
                       <td className="px-6 py-4 font-serif text-[15px] text-accent">
-                        ₹{aff.totalRevenue.toLocaleString('en-IN')}
+                        ₹{aff.totalRevenue.toLocaleString("en-IN")}
                       </td>
                       <td className="px-6 py-4 font-mono text-[13px] text-primary">
-                        ₹{aff.totalCommission.toLocaleString('en-IN')}
+                        ₹{aff.totalCommission.toLocaleString("en-IN")}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
+                        <div
+                          className="flex justify-end gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(aff)}
-                            className={`font-mono text-[10px] uppercase tracking-[0.1em] border px-2.5 py-1.5 rounded-sm cursor-pointer transition-colors bg-background ${
-                              aff.status === 'ACTIVE'
-                                ? 'border-amber-500/30 text-amber-400 hover:bg-amber-900/10'
-                                : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/10'
+                            className={`font-mono text-[10px] uppercase tracking-[0.1em] border px-2.5 py-1.5 rounded-sm cursor-pointer transition-colors bg-background flex items-center gap-1 ${
+                              aff.status === "ACTIVE"
+                                ? "border-amber-500/30 text-amber-400 hover:bg-amber-900/10"
+                                : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/10"
                             }`}
-                            title={aff.status === 'ACTIVE' ? 'Suspend Affiliate' : 'Activate Affiliate'}
+                            title={
+                              aff.status === "ACTIVE"
+                                ? "Suspend Affiliate"
+                                : "Activate Affiliate"
+                            }
                           >
-                            {aff.status === 'ACTIVE' ? '⏸ Suspend' : '▶ Activate'}
+                            {aff.status === "ACTIVE" ? (
+                              <Pause className="w-3 h-3" />
+                            ) : (
+                              <Play className="w-3 h-3" />
+                            )}
+                            {aff.status === "ACTIVE" ? "Suspend" : "Activate"}
                           </button>
                           <button
                             type="button"
                             onClick={() => openCreateModal(aff)}
-                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer font-semibold"
+                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer font-semibold flex items-center gap-1"
                           >
-                            ✏️ Edit
+                            <Edit className="w-3 h-3" /> Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDelete(aff)}
-                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
+                            className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer flex items-center justify-center"
                             title="Delete Affiliate"
                           >
-                            🗑
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       </td>
@@ -388,9 +498,13 @@ export default function AffiliatesManagerClient({
           <div className="bg-surface border border-border rounded-lg w-full max-w-[500px] flex flex-col overflow-hidden shadow-2xl">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Affiliate Engine</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+                  Affiliate Engine
+                </div>
                 <h2 className="font-serif text-[18px] text-primary font-normal m-0">
-                  {editingAffiliate ? `Edit Partner: ${editingAffiliate.name}` : 'Invite Affiliate Partner'}
+                  {editingAffiliate
+                    ? `Edit Partner: ${editingAffiliate.name}`
+                    : "Invite Affiliate Partner"}
                 </h2>
               </div>
               <button
@@ -411,7 +525,7 @@ export default function AffiliatesManagerClient({
                 <input
                   type="text"
                   value={formName}
-                  onChange={e => setFormName(e.target.value)}
+                  onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g. Architect Rajesh Gupta"
                   className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                 />
@@ -426,7 +540,7 @@ export default function AffiliatesManagerClient({
                   <input
                     type="email"
                     value={formEmail}
-                    onChange={e => setFormEmail(e.target.value)}
+                    onChange={(e) => setFormEmail(e.target.value)}
                     placeholder="e.g. rajesh@gupta.com"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                   />
@@ -438,7 +552,7 @@ export default function AffiliatesManagerClient({
                   <input
                     type="tel"
                     value={formPhone}
-                    onChange={e => setFormPhone(e.target.value)}
+                    onChange={(e) => setFormPhone(e.target.value)}
                     placeholder="e.g. 9876543210"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                   />
@@ -454,7 +568,7 @@ export default function AffiliatesManagerClient({
                   <input
                     type="text"
                     value={formCode}
-                    onChange={e => setFormCode(e.target.value.toUpperCase())}
+                    onChange={(e) => setFormCode(e.target.value.toUpperCase())}
                     placeholder="e.g. RAJESH10"
                     disabled={!!editingAffiliate}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm disabled:opacity-50"
@@ -480,7 +594,7 @@ export default function AffiliatesManagerClient({
                   <input
                     type="number"
                     value={formCommissionRate}
-                    onChange={e => setFormCommissionRate(e.target.value)}
+                    onChange={(e) => setFormCommissionRate(e.target.value)}
                     min={0}
                     max={100}
                     placeholder="e.g. 10"
@@ -493,7 +607,7 @@ export default function AffiliatesManagerClient({
                   </label>
                   <select
                     value={formStatus}
-                    onChange={e => setFormStatus(e.target.value as any)}
+                    onChange={(e) => setFormStatus(e.target.value as any)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="ACTIVE">Active</option>
@@ -509,7 +623,7 @@ export default function AffiliatesManagerClient({
                 </label>
                 <textarea
                   value={formNotes}
-                  onChange={e => setFormNotes(e.target.value)}
+                  onChange={(e) => setFormNotes(e.target.value)}
                   placeholder="e.g. 10% commission on catalog price referrals, paid monthly"
                   rows={3}
                   className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm resize-none"
@@ -529,7 +643,7 @@ export default function AffiliatesManagerClient({
                   disabled={isPending}
                   className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-5 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold disabled:opacity-50 min-h-[44px]"
                 >
-                  {isPending ? 'Saving…' : 'Save Partner'}
+                  {isPending ? "Saving…" : "Save Partner"}
                 </button>
               </div>
             </form>
@@ -543,9 +657,9 @@ export default function AffiliatesManagerClient({
           role="status"
           aria-live="polite"
           className={`fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-sm border font-mono text-[12px] max-w-sm shadow-xl backdrop-blur-sm ${
-            toast.type === 'err'
-              ? 'bg-red-900/20 border-red-600/40 text-red-300'
-              : 'bg-surface border-border text-primary'
+            toast.type === "err"
+              ? "bg-red-900/20 border-red-600/40 text-red-300"
+              : "bg-surface border-border text-primary"
           }`}
         >
           {toast.msg}

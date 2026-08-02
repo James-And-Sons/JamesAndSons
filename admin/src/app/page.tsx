@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import Link from "next/link";
+import { Package } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
 
 export const dynamic = "force-dynamic";
@@ -148,12 +149,10 @@ export default async function Dashboard() {
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
                 RECENT ORDERS
               </span>
-              <span
-                className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors"
+              <Package
+                className="w-4 h-4 text-muted group-hover:text-accent transition-colors"
                 aria-hidden="true"
-              >
-                📦
-              </span>
+              />
             </div>
             <p className="font-serif text-[28px] md:text-[32px] font-normal text-primary m-0 leading-tight">
               {activeOrders}

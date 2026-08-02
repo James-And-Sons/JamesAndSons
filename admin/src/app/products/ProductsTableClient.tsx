@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 import ActionDropdown from "@/components/ActionDropdown";
 import SyncButton from "@/components/SyncButton";
 import ClickableRow from "@/components/ClickableRow";
@@ -289,9 +290,10 @@ export default function ProductsTableClient({
         {/* Controls: Search and Filters */}
         <div className="p-4 md:p-6 border-b border-border flex flex-wrap gap-4 bg-surface-muted/40 items-center justify-between">
           <div className="flex-1 min-w-[260px] flex items-center gap-2 border border-border bg-background px-3.5 py-2 rounded-sm focus-within:border-accent">
-            <span className="text-muted text-xs" aria-hidden="true">
-              🔍
-            </span>
+            <Search
+              className="w-3.5 h-3.5 text-muted shrink-0"
+              aria-hidden="true"
+            />
             <label htmlFor="productSearchInput" className="sr-only">
               Search products by name or SKU
             </label>
