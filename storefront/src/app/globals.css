@@ -163,7 +163,8 @@ html.dark, html.dark body, [data-theme='dark'], [data-theme='dark'] body, .dark,
   /* Hide desktop components on mobile */
   .hero.hidden.md\:flex,
   .main-nav.hidden.md\:flex,
-  .space-grid.hidden.md\:grid {
+  .space-grid.hidden.md\:grid,
+  .desktop-only-grid {
     display: none !important;
   }
   

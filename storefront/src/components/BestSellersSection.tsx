@@ -72,6 +72,7 @@ export default function BestSellersSection({
 
         {/* 6-Grid Layout */}
         <div
+          className="bestsellers-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",

@@ -143,7 +143,7 @@ export default function CategoryGrid({
       </div>
 
       {/* Desktop Grid */}
-      <div className="space-grid hidden md:grid">
+      <div className="space-grid desktop-only-grid">
         {/* Main large category card */}
         <Link
           href={`/collections?category=${mainCat.slug}`}
@@ -281,7 +281,7 @@ export default function CategoryGrid({
       </div>
 
       {/* Mobile Horizontal Scroll */}
-      <div className="mobile-spaces-scroll md:hidden">
+      <div className="mobile-spaces-scroll touch-scroll-view">
         {displayCategories.map((cat, index) => {
           const bgClass = `mobile-sc-${(index % 4) + 1}`;
           const catImage = categoryImages[cat.slug];
