@@ -8,9 +8,10 @@ import { createPortal } from "react-dom";
 import { useWishlistStore } from "@/store/wishlist";
 import CouponInput from "@/components/CouponInput";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function CartDrawer() {
+  const router = useRouter();
   const {
     items,
     isOpen,
@@ -232,17 +233,20 @@ export default function CartDrawer() {
               {currentItems.map((item) => (
                 <div
                   key={`${item.product.id}-${item.warranty?.planSku || "none"}`}
+                  onClick={() => {
+                    closeCart();
+                    router.push(`/products/${item.product.slug}`);
+                  }}
                   style={{
                     borderBottom: "1px solid var(--border)",
                     padding: "24px 0",
                     display: "flex",
                     gap: "20px",
                     position: "relative",
+                    cursor: "pointer",
                   }}
                 >
-                  <Link
-                    href={`/products/${item.product.slug}`}
-                    onClick={closeCart}
+                  <div
                     style={{
                       width: "70px",
                       height: "90px",
@@ -251,7 +255,6 @@ export default function CartDrawer() {
                       overflow: "hidden",
                       flexShrink: 0,
                       display: "block",
-                      cursor: "pointer",
                     }}
                   >
                     <Image
@@ -268,7 +271,7 @@ export default function CartDrawer() {
                         objectFit: "cover",
                       }}
                     />
-                  </Link>
+                  </div>
                   <div
                     style={{
                       flex: 1,
@@ -279,27 +282,20 @@ export default function CartDrawer() {
                     }}
                   >
                     <div>
-                      <Link
-                        href={`/products/${item.product.slug}`}
-                        onClick={closeCart}
-                        style={{ textDecoration: "none", display: "block" }}
+                      <h3
+                        style={{
+                          fontFamily: "var(--font-serif)",
+                          fontSize: "15px",
+                          color: "var(--cream)",
+                          margin: "0 0 2px",
+                          fontWeight: 400,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
                       >
-                        <h3
-                          style={{
-                            fontFamily: "var(--font-serif)",
-                            fontSize: "15px",
-                            color: "var(--cream)",
-                            margin: "0 0 2px",
-                            fontWeight: 400,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {item.product.name}
-                        </h3>
-                      </Link>
+                        {item.product.name}
+                      </h3>
                       <div
                         style={{
                           fontSize: "13px",
@@ -345,6 +341,7 @@ export default function CartDrawer() {
                           alignItems: "center",
                           gap: "12px",
                         }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <div
                           style={{
@@ -356,13 +353,14 @@ export default function CartDrawer() {
                           }}
                         >
                           <button
-                            onClick={() =>
+                            onClick={(e) => {
+                              e.stopPropagation();
                               updateQty(
                                 item.product.id,
                                 item.quantity - 1,
                                 item.warranty?.planSku,
-                              )
-                            }
+                              );
+                            }}
                             style={{
                               padding: "2px 8px",
                               background: "none",
@@ -384,13 +382,14 @@ export default function CartDrawer() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() =>
+                            onClick={(e) => {
+                              e.stopPropagation();
                               updateQty(
                                 item.product.id,
                                 item.quantity + 1,
                                 item.warranty?.planSku,
-                              )
-                            }
+                              );
+                            }}
                             style={{
                               padding: "2px 8px",
                               background: "none",
@@ -404,7 +403,8 @@ export default function CartDrawer() {
                         </div>
                       </div>
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           toggleItem(item.product);
                           removeItem(item.product.id, item.warranty?.planSku);
                         }}
