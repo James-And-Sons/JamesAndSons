@@ -10,6 +10,7 @@ import { checkPincode, getSavedPincode } from "../actions";
 import Image from "next/image";
 import {
   AdaptiveImageFrame,
+  PinchZoomContainer,
   getOptimizedCloudinaryUrl,
 } from "@james-andsons/media";
 import InquiryModal from "@/components/InquiryModal";
@@ -1035,12 +1036,14 @@ export default function PDPClient({
             </div>
 
             {activeImages.length > 0 && activeImages[activeImg] ? (
-              <AdaptiveImageFrame
-                src={activeImages[activeImg]}
-                alt={`${product.name} - view ${activeImg + 1}`}
-                objectFit="cover"
-                priority={activeImg === 0}
-              />
+              <PinchZoomContainer>
+                <AdaptiveImageFrame
+                  src={activeImages[activeImg]}
+                  alt={`${product.name} - view ${activeImg + 1}`}
+                  objectFit="cover"
+                  priority={activeImg === 0}
+                />
+              </PinchZoomContainer>
             ) : (
               <div
                 style={{
