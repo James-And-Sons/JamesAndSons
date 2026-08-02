@@ -76,22 +76,22 @@
     color-scheme: light;
   }
 
-  /* Fallback: system preference dark mode (when theme = 'system') */
+  /* Fallback: system preference light mode */
   @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) {
-      --obsidian: #f8f5f0;
-      --void: #ede9e0;
+    :root:not([data-theme='dark']):not(.dark) {
+      --obsidian: #faf7f2;
+      --void: #f0ebd8;
       --surface: #ffffff;
-      --surface2: #f2ede4;
-      --border: rgba(0,0,0,0.08);
-      --border-gold: rgba(140,100,30,0.25);
-      --gold: #9a7030;
-      --gold-light: #7a5520;
-      --gold-pale: #5c3d10;
-      --cream: #2a1a05;
-      --text: #1a1714;
-      --text-muted: #7a7570;
-      --text-dim: #c0bab0;
+      --surface2: #f4efe6;
+      --border: rgba(0,0,0,0.12);
+      --border-gold: rgba(140,94,26,0.35);
+      --gold: #8c5e1a;
+      --gold-light: #6e4810;
+      --gold-pale: #54360a;
+      --cream: #12100d;
+      --text: #12100d;
+      --text-muted: #4a4640;
+      --text-dim: #666056;
       color-scheme: light;
     }
   }
