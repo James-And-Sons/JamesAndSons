@@ -20,7 +20,24 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@james-andsons/media": ["../packages/media/src/index.ts"]
+      "@james-andsons/auth": ["../packages/auth/src/index.ts"],
+      "@james-andsons/auth/client": ["../packages/auth/src/client.ts"],
+      "@james-andsons/auth/server": ["../packages/auth/src/server.ts"],
+      "@james-andsons/auth/middleware": ["../packages/auth/src/middleware.ts"],
+      "@james-andsons/blog-editor": ["../packages/blog-editor/src/index.ts"],
+      "@james-andsons/config": ["../packages/config/src/index.ts"],
+      "@james-andsons/db": ["../packages/db/src/index.ts"],
+      "@james-andsons/interfaces": ["../packages/interfaces/src/index.ts"],
+      "@james-andsons/integrations": ["../packages/integrations/src/index.ts"],
+      "@james-andsons/media": ["../packages/media/src/index.ts"],
+      "@james-andsons/pdf-generator": [
+        "../packages/pdf-generator/src/index.ts"
+      ],
+      "@james-andsons/razorpay": ["../packages/razorpay/src/index.ts"],
+      "@james-andsons/shiprocket": ["../packages/shiprocket/src/index.ts"],
+      "@james-andsons/ui": ["../packages/ui/src/index.ts"],
+      "@james-andsons/utils": ["../packages/utils/src/index.ts"],
+      "@james-andsons/zoho": ["../packages/zoho/src/index.ts"]
     }
   },
   "include": [

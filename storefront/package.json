@@ -10,10 +10,13 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@james-andsons/auth": "*",
     "@james-andsons/blog-editor": "*",
     "@james-andsons/config": "*",
     "@james-andsons/db": "*",
+    "@james-andsons/integrations": "*",
     "@james-andsons/media": "*",
+    "@james-andsons/pdf-generator": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",
     "@james-andsons/ui": "*",

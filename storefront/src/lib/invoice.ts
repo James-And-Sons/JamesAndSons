@@ -1,4 +1,5 @@
-import { prisma } from './prisma';
+import { prisma } from "./prisma";
+export { calculateTaxBreakdown } from "@james-andsons/pdf-generator";
 
 /**
  * Generates a sequential invoice number in the format: INV/YYYY-YY/XXXX
@@ -30,32 +31,7 @@ export async function generateSequentialInvoiceNumber() {
       });
     }
 
-    const sequentialPart = counter.count.toString().padStart(4, '0');
+    const sequentialPart = counter.count.toString().padStart(4, "0");
     return `INV/${yearString}/${sequentialPart}`;
   });
-}
-
-/**
- * Calculates CGST/SGST vs IGST based on customer state
- * Store is assumed to be in Uttar Pradesh (UP) based on pincode 202001
- */
-export function calculateTaxBreakdown(totalTax: number, customerState: string) {
-  const storeState = 'Uttar Pradesh';
-  const isIntraState = customerState.trim().toLowerCase() === storeState.toLowerCase();
-
-  if (isIntraState) {
-    return {
-      type: 'CGST/SGST',
-      cgst: totalTax / 2,
-      sgst: totalTax / 2,
-      igst: 0,
-    };
-  } else {
-    return {
-      type: 'IGST',
-      cgst: 0,
-      sgst: 0,
-      igst: totalTax,
-    };
-  }
 }

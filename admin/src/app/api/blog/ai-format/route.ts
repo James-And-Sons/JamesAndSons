@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { withErrorHandler } from "@/lib/api-handler";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export async function POST(req: NextRequest) {
-  try {
-    const { rawText, instruction } = await req.json();
+export const POST = withErrorHandler(async (req: NextRequest) => {
+  const { rawText, instruction } = await req.json();
 
-    if (!rawText || typeof rawText !== "string") {
-      return NextResponse.json(
-        { error: "rawText is required" },
-        { status: 400 },
-      );
-    }
+  if (!rawText || typeof rawText !== "string") {
+    return NextResponse.json({ error: "rawText is required" }, { status: 400 });
+  }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const systemPrompt = `You are an expert blog editor and content formatter for James & Sons, a premium luxury lighting brand based in India.
+  const systemPrompt = `You are an expert blog editor and content formatter for James & Sons, a premium luxury lighting brand based in India.
 
 Your job is to take raw blog content provided by the user and format it into clean, well-structured Markdown that is:
 1. Properly formatted with headings (##, ###, ####), paragraphs, bullet lists, numbered lists, blockquotes, and horizontal rules where appropriate
@@ -43,15 +40,8 @@ ${rawText}
 
 Return only the formatted markdown:`;
 
-    const result = await model.generateContent(systemPrompt);
-    const formatted = result.response.text();
+  const result = await model.generateContent(systemPrompt);
+  const formatted = result.response.text();
 
-    return NextResponse.json({ formatted });
-  } catch (err: any) {
-    console.error("[AI Format] Error:", err);
-    return NextResponse.json(
-      { error: err?.message || "Failed to format content" },
-      { status: 500 },
-    );
-  }
-}
+  return NextResponse.json({ formatted });
+});

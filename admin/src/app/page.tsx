@@ -20,18 +20,7 @@ function formatTimeAgo(date: Date): string {
 }
 
 export default async function Dashboard() {
-  const [
-    orders,
-    rfqs,
-    b2bRegistrations,
-    pendingB2B,
-    tickets,
-    inquiries,
-    openTicketsCount,
-    newInquiriesCount,
-    revenueAggregate,
-    activeOrdersCount,
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     prisma.order.findMany({
       include: { user: true },
       orderBy: { createdAt: "desc" },
@@ -73,6 +62,29 @@ export default async function Dashboard() {
       },
     }),
   ]);
+
+  const orders =
+    results[0].status === "fulfilled" ? (results[0].value as any) : [];
+  const rfqs =
+    results[1].status === "fulfilled" ? (results[1].value as any) : [];
+  const b2bRegistrations =
+    results[2].status === "fulfilled" ? (results[2].value as number) : 0;
+  const pendingB2B =
+    results[3].status === "fulfilled" ? (results[3].value as number) : 0;
+  const tickets =
+    results[4].status === "fulfilled" ? (results[4].value as any) : [];
+  const inquiries =
+    results[5].status === "fulfilled" ? (results[5].value as any) : [];
+  const openTicketsCount =
+    results[6].status === "fulfilled" ? (results[6].value as number) : 0;
+  const newInquiriesCount =
+    results[7].status === "fulfilled" ? (results[7].value as number) : 0;
+  const revenueAggregate =
+    results[8].status === "fulfilled"
+      ? (results[8].value as any)
+      : { _sum: { totalAmount: 0 } };
+  const activeOrdersCount =
+    results[9].status === "fulfilled" ? (results[9].value as number) : 0;
 
   const totalRevenue = revenueAggregate._sum.totalAmount || 0;
   const activeOrders = activeOrdersCount;

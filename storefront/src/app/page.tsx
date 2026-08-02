@@ -14,14 +14,19 @@ import {
 } from "@/lib/products";
 
 export default async function Home() {
-  const [spaces, products, categories, newArrivals, bestSellers] =
-    await Promise.all([
-      getSpaces(),
-      getProducts(),
-      getCategories(),
-      getNewArrivals(8),
-      getBestSellers(6),
-    ]);
+  const results = await Promise.allSettled([
+    getSpaces(),
+    getProducts(),
+    getCategories(),
+    getNewArrivals(8),
+    getBestSellers(6),
+  ]);
+
+  const spaces = results[0].status === "fulfilled" ? results[0].value : [];
+  const products = results[1].status === "fulfilled" ? results[1].value : [];
+  const categories = results[2].status === "fulfilled" ? results[2].value : [];
+  const newArrivals = results[3].status === "fulfilled" ? results[3].value : [];
+  const bestSellers = results[4].status === "fulfilled" ? results[4].value : [];
 
   return (
     <main className="home-main">

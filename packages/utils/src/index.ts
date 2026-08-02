@@ -6,24 +6,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '₹0';
+  if (n === null || n === undefined) return "₹0";
   if (n >= 100000) return `₹${(n / 100000).toFixed(n % 100000 === 0 ? 0 : 1)}L`;
-  return `₹${n.toLocaleString('en-IN')}`;
+  return `₹${n.toLocaleString("en-IN")}`;
 }
 
 export function formatPriceFull(amount: number) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
 }
 
 export function formatDate(date: Date | string) {
-  return new Date(date).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 }
 
@@ -51,6 +51,22 @@ export interface IProduct {
   images: string[];
   whiteBackgroundImages?: string[];
   category?: { name: string; slug: string };
-  // Extendable specs metadata dictionary
   metadata?: Record<string, any>;
+}
+
+export type Product = IProduct & {
+  isLed?: boolean;
+  luminousEfficacy?: number | null;
+  cri?: number | null;
+  bisCertification?: string | null;
+  bulbType?: string[];
+  badge?: "new" | "bis" | "sale" | "b2b";
+};
+
+export function triggerHaptic() {
+  if (typeof window !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(8);
+    } catch {}
+  }
 }

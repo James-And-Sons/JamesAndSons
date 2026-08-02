@@ -14,10 +14,13 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@james-andsons/auth": "*",
     "@james-andsons/blog-editor": "*",
     "@james-andsons/config": "*",
     "@james-andsons/db": "*",
+    "@james-andsons/integrations": "*",
     "@james-andsons/media": "*",
+    "@james-andsons/pdf-generator": "*",
     "@james-andsons/razorpay": "*",
     "@james-andsons/shiprocket": "*",
     "@james-andsons/ui": "*",

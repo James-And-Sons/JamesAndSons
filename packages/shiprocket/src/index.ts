@@ -44,18 +44,24 @@ export async function getShiprocketToken(config: IShiprocketConfig = {}) {
     );
 
     if (!res.ok) {
-      throw new Error(`Shiprocket auth failed: ${res.statusText}`);
+      const errText = await res.text().catch(() => res.statusText);
+      throw new Error(`HTTP ${res.status}: ${errText}`);
     }
 
     const data = await res.json();
+    if (!data?.token) {
+      throw new Error("Invalid response format: missing token property");
+    }
+
     cachedToken = data.token;
-
-    // Simplistic expiry: assume token is good for 9 days (Shiprocket tokens usually last 10)
     tokenExpiryTime = now + 9 * 24 * 60 * 60 * 1000;
-
     return cachedToken;
   } catch (err) {
-    console.error("getShiprocketToken Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[Shiprocket Authentication Exception]:", {
+      error: message,
+      timestamp: new Date().toISOString(),
+    });
     return null;
   }
 }
