@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCartStore } from "@/store/cart";
 import CartDrawer from "./CartDrawer";
 import SearchModal from "./SearchModal";
-import ThemeToggle from "./ThemeToggle";
 import { usePathname, useRouter } from "next/navigation";
 import { Product, triggerHaptic } from "@/lib/utils";
 
@@ -55,7 +54,6 @@ export default function NavClient({
         className="nav-right"
         style={{ display: "flex", alignItems: "center", gap: "16px" }}
       >
-        <ThemeToggle compact />
         <button
           className="nav-icon hide-on-mobile nav-haptic"
           title="Search"

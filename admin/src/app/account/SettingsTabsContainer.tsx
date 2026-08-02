@@ -7,6 +7,7 @@ import PWAInstallButton from "@/components/PWAInstallButton";
 import BrandSettingsForm from "./BrandSettingsForm";
 import { adminTogglePagePublishStatus } from "./config-actions";
 import CataloguesClient from "../catalogues/CataloguesClient";
+import { ThemeToggle } from "@james-andsons/ui";
 
 interface PageItem {
   id: string;
@@ -134,6 +135,20 @@ export default function SettingsTabsContainer({
       {/* General Settings Tab Content */}
       {activeTab === "general" && (
         <div className="space-y-6">
+          {/* Theme Preference Section */}
+          <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
+            <h2 className="font-serif text-[20px] text-primary mb-2">
+              Appearance & Theme
+            </h2>
+            <p className="font-body text-[13px] text-muted mb-6">
+              Select your preferred workspace theme (System, Light, or Dark
+              mode).
+            </p>
+            <div className="max-w-xs">
+              <ThemeToggle variant="admin" />
+            </div>
+          </div>
+
           {/* PWA App Installation Section */}
           <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
             <h2 className="font-serif text-[20px] text-primary mb-2">
