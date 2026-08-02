@@ -20,15 +20,15 @@
 }
 
 .light {
-  --color-primary: #1a1a1a;
-  --color-secondary: #4a4844;
-  --color-accent: #b08940;
-  --color-accent-hover: #8a6b32;
+  --color-primary: #12100d;
+  --color-secondary: #2e2b26;
+  --color-accent: #8c5e1a;
+  --color-accent-hover: #6e4810;
   --color-background: #faf8f5;
-  --color-surface: #f4f0ea;
-  --color-surface-muted: #ebe5dc;
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-muted: #8a8880;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4efe6;
+  --color-border: rgba(0, 0, 0, 0.12);
+  --color-muted: #4a4640;
 }
 
 /* ── iOS / Android Safe Area Variables ─────────────────────────────────────── */

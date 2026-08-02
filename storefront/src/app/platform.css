@@ -339,6 +339,7 @@
   }
 
   /* Light mode hero background */
+  .light .hero-bg,
   [data-theme='light'] .hero-bg {
     background:
       radial-gradient(ellipse 60% 80% at 65% 40%, rgba(140,100,30,0.08) 0%, transparent 60%),
@@ -346,7 +347,7 @@
       linear-gradient(180deg, var(--obsidian) 0%, var(--void) 100%);
   }
   @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) .hero-bg {
+    :root:not([data-theme='dark']):not(.dark) .hero-bg {
       background:
         radial-gradient(ellipse 60% 80% at 65% 40%, rgba(140,100,30,0.08) 0%, transparent 60%),
         radial-gradient(ellipse 40% 60% at 30% 70%, rgba(60,140,160,0.05) 0%, transparent 50%),
@@ -587,17 +588,17 @@
   }
 
   /* Light mode space card gradients */
-  [data-theme='light'] .space-card:nth-child(1) .space-card-bg { background: linear-gradient(135deg, #ede0cc 0%, #e8d4b4 50%, #e0caa0 100%); }
-  [data-theme='light'] .space-card:nth-child(2) .space-card-bg { background: linear-gradient(135deg, #d0dde6 0%, #baccdc 100%); }
-  [data-theme='light'] .space-card:nth-child(3) .space-card-bg { background: linear-gradient(135deg, #ede4d0 0%, #e6d8b8 100%); }
-  [data-theme='light'] .space-card:nth-child(4) .space-card-bg { background: linear-gradient(135deg, #d4d8e4 0%, #c2cad8 100%); }
-  [data-theme='light'] .space-card:nth-child(5) .space-card-bg { background: linear-gradient(135deg, #e4d0d8 0%, #d8c0cc 100%); }
+  .light .space-card:nth-child(1) .space-card-bg, [data-theme='light'] .space-card:nth-child(1) .space-card-bg { background: linear-gradient(135deg, #ede0cc 0%, #e8d4b4 50%, #e0caa0 100%); }
+  .light .space-card:nth-child(2) .space-card-bg, [data-theme='light'] .space-card:nth-child(2) .space-card-bg { background: linear-gradient(135deg, #d0dde6 0%, #baccdc 100%); }
+  .light .space-card:nth-child(3) .space-card-bg, [data-theme='light'] .space-card:nth-child(3) .space-card-bg { background: linear-gradient(135deg, #ede4d0 0%, #e6d8b8 100%); }
+  .light .space-card:nth-child(4) .space-card-bg, [data-theme='light'] .space-card:nth-child(4) .space-card-bg { background: linear-gradient(135deg, #d4d8e4 0%, #c2cad8 100%); }
+  .light .space-card:nth-child(5) .space-card-bg, [data-theme='light'] .space-card:nth-child(5) .space-card-bg { background: linear-gradient(135deg, #e4d0d8 0%, #d8c0cc 100%); }
   @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) .space-card:nth-child(1) .space-card-bg { background: linear-gradient(135deg, #ede0cc 0%, #e8d4b4 50%, #e0caa0 100%); }
-    :root:not([data-theme='dark']) .space-card:nth-child(2) .space-card-bg { background: linear-gradient(135deg, #d0dde6 0%, #baccdc 100%); }
-    :root:not([data-theme='dark']) .space-card:nth-child(3) .space-card-bg { background: linear-gradient(135deg, #ede4d0 0%, #e6d8b8 100%); }
-    :root:not([data-theme='dark']) .space-card:nth-child(4) .space-card-bg { background: linear-gradient(135deg, #d4d8e4 0%, #c2cad8 100%); }
-    :root:not([data-theme='dark']) .space-card:nth-child(5) .space-card-bg { background: linear-gradient(135deg, #e4d0d8 0%, #d8c0cc 100%); }
+    :root:not([data-theme='dark']):not(.dark) .space-card:nth-child(1) .space-card-bg { background: linear-gradient(135deg, #ede0cc 0%, #e8d4b4 50%, #e0caa0 100%); }
+    :root:not([data-theme='dark']):not(.dark) .space-card:nth-child(2) .space-card-bg { background: linear-gradient(135deg, #d0dde6 0%, #baccdc 100%); }
+    :root:not([data-theme='dark']):not(.dark) .space-card:nth-child(3) .space-card-bg { background: linear-gradient(135deg, #ede4d0 0%, #e6d8b8 100%); }
+    :root:not([data-theme='dark']):not(.dark) .space-card:nth-child(4) .space-card-bg { background: linear-gradient(135deg, #d4d8e4 0%, #c2cad8 100%); }
+    :root:not([data-theme='dark']):not(.dark) .space-card:nth-child(5) .space-card-bg { background: linear-gradient(135deg, #e4d0d8 0%, #d8c0cc 100%); }
   }
 
   .space-card-chandelier {
@@ -618,12 +619,13 @@
     background: linear-gradient(transparent, rgba(0,0,0,0.75));
   }
 
+  .light .space-card-content,
   [data-theme='light'] .space-card-content {
     background: linear-gradient(transparent, rgba(0,0,0,0.55));
   }
 
   @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) .space-card-content {
+    :root:not([data-theme='dark']):not(.dark) .space-card-content {
       background: linear-gradient(transparent, rgba(0,0,0,0.55));
     }
   }
