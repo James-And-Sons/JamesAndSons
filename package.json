@@ -16,7 +16,7 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "format": "prettier --check .",
-    "prepare": "husky || true",
+    "prepare": "command -v husky >/dev/null 2>&1 && husky || true",
     "postinstall": "npm run db:generate --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/assets && npm run build --workspace=@james-andsons/config && npm run build --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/interfaces && npm run build --workspace=@james-andsons/auth && npm run build --workspace=@james-andsons/pdf-generator && npm run build --workspace=@james-andsons/integrations && npm run build --workspace=@james-andsons/media && npm run build --workspace=@james-andsons/razorpay && npm run build --workspace=@james-andsons/shiprocket && npm run build --workspace=@james-andsons/ui && npm run build --workspace=@james-andsons/blog-editor && npm run build --workspace=@james-andsons/utils && npm run build --workspace=@james-andsons/zoho"
   },
   "dependencies": {

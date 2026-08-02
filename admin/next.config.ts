@@ -30,11 +30,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: "your-sentry-org-slug",
-  project: "your-sentry-project-slug",
-  silent: true,
-  sourcemaps: {
-    deleteSourcemapsAfterUpload: true,
-  },
-});
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG || "your-sentry-org-slug",
+      project: process.env.SENTRY_PROJECT || "your-sentry-project-slug",
+      silent: true,
+      sourcemaps: {
+        deleteSourcemapsAfterUpload: true,
+      },
+    })
+  : nextConfig;
