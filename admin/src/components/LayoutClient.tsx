@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SidebarProvider, useSidebar } from "@/lib/context/SidebarContext";
+import { PWAInstallPrompt } from "@james-andsons/ui";
 
 function HeaderTitle() {
   const pathname = usePathname();
@@ -140,28 +141,15 @@ function UnsavedChangesListener() {
 /** Registers the service worker once on mount */
 function ServiceWorkerRegistrar() {
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      if (
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1"
-      ) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (const reg of registrations) {
-            reg.unregister();
-          }
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((reg) => {
+          reg.update();
+        })
+        .catch(() => {
+          /* silent */
         });
-        if ("caches" in window) {
-          caches.keys().then((keys) => {
-            for (const key of keys) {
-              caches.delete(key);
-            }
-          });
-        }
-      } else {
-        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-          /* silent — dev environments may block SW */
-        });
-      }
     }
   }, []);
   return null;
@@ -213,6 +201,7 @@ export default function LayoutClient({
           <PushNotificationManager />
           <AppBadgeManager />
           <UnsavedChangesListener />
+          <PWAInstallPrompt appName="Admin J&S" />
 
           {!isLoginPage && (
             <Suspense

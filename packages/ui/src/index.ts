@@ -8,3 +8,4 @@ export * from "./SelectFilter";
 export * from "./Spinner";
 export * from "./TenantProvider";
 export * from "./ThemeToggle";
+export * from "./PWAInstallPrompt";

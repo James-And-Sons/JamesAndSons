@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import ScrollToTop from "@/components/ScrollToTop";
+import { PWAInstallPrompt } from "@james-andsons/ui";
 import MetaPixel from "@/components/MetaPixel";
 import ThemeColorSync from "@/components/ThemeColorSync";
 import Navigation from "@/components/Navigation";
@@ -121,6 +122,7 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <ThemeColorSync />
+          <PWAInstallPrompt />
           <Suspense fallback={null}>
             <MetaPixel />
           </Suspense>

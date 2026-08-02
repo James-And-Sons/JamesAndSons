@@ -107,7 +107,7 @@ export const BRAND_CONFIG: IBrandConfig = {
   shortName:
     process.env.NEXT_PUBLIC_BRAND_SHORT_NAME ||
     process.env.BRAND_SHORT_NAME ||
-    "J&S",
+    "James & Sons",
   adminPwaName:
     process.env.NEXT_PUBLIC_ADMIN_PWA_NAME ||
     process.env.ADMIN_PWA_NAME ||
