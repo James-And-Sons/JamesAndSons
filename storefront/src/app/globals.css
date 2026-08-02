@@ -495,9 +495,9 @@ html.dark, html.dark body, [data-theme='dark'], [data-theme='dark'] body, .dark,
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 8px 8px 0;
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
-    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 8px 0;
+    padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+    height: calc(70px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--border);
     background: rgba(10,9,5,0.96);
     -webkit-backdrop-filter: blur(20px);
@@ -523,7 +523,7 @@ html.dark, html.dark body, [data-theme='dark'], [data-theme='dark'] body, .dark,
     align-items: center;
     gap: 4px;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 6px 0 4px;
     border-radius: 14px;
     transition: background 0.2s;
     text-decoration: none;
@@ -542,25 +542,24 @@ html.dark, html.dark body, [data-theme='dark'], [data-theme='dark'] body, .dark,
     left: 0;
     right: 0;
     z-index: 50;
-    background: rgba(10,9,5,0.96);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    background: #0a0a0b;
     border-top: none !important;
     border-bottom: 1px solid var(--border);
+    margin-top: 0 !important;
     padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px;
     height: calc(56px + env(safe-area-inset-top, 0px));
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05);
     box-sizing: border-box;
   }
   .light .mobile-page-header,
   [data-theme='light'] .mobile-page-header {
-    background: rgba(250,247,242,0.96);
+    background: #faf7f2 !important;
     border-top: none !important;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
   }
   .mobile-sticky-cart-bar {
     position: fixed;
@@ -906,33 +905,45 @@ html.dark, html.dark body, [data-theme='dark'], [data-theme='dark'] body, .dark,
   color: #E2C882 !important; /* Constant bright warm gold */
 }
 
-/* Ensure the dark gradient overlay remains dark and rich in both light and dark themes */
-.mobile-space-card.has-image::before,
-[data-theme='light'] .mobile-space-card.has-image::before,
-[data-theme='light'] .mobile-space-card[style].has-image::before {
-  background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.85) 100%) !important;
-  z-index: 1 !important;
+/* Dynamic Theme-Aware Card Overlay & Typography */
+.category-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(10,10,11,0.85) 100%);
+  z-index: 1;
 }
 
-/* Force constant light styling for all desktop space cards (.space-card)
-   since their content overlay is always dark/gradient across both themes. */
-.space-card .space-card-name,
+.light .category-card-overlay,
+[data-theme='light'] .category-card-overlay {
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(250,247,242,0.92) 100%) !important;
+}
+
+.space-card .space-card-name {
+  color: #faf7f2;
+}
+.light .space-card .space-card-name,
 [data-theme='light'] .space-card .space-card-name {
-  color: #F5EFE6 !important; /* Constant light cream */
-  text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+  color: #12100d !important;
+  text-shadow: none !important;
 }
 
-.space-card .space-card-count,
+.space-card .space-card-count {
+  color: rgba(255, 255, 255, 0.75);
+}
+.light .space-card .space-card-count,
 [data-theme='light'] .space-card .space-card-count {
-  color: rgba(255, 255, 255, 0.7) !important; /* Constant semi-transparent white */
-  opacity: 0.95 !important;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+  color: #4a4640 !important;
+  text-shadow: none !important;
 }
 
-.space-card .space-card-arrow,
+.space-card .space-card-arrow {
+  color: #e2c882;
+}
+.light .space-card .space-card-arrow,
 [data-theme='light'] .space-card .space-card-arrow {
-  border-color: rgba(255,255,255,0.25) !important;
-  color: #E2C882 !important; /* Constant warm gold */
+  color: #8c5e1a !important;
+  border-color: rgba(140,94,26,0.3) !important;
+  background: rgba(140,94,26,0.08) !important;
 }
 
 /* Global Mobile Main Padding Override */

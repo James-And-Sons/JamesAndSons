@@ -11,14 +11,19 @@ export default function ThemeColorSync() {
       const themeColorHex = isLight ? "#faf7f2" : "#0a0a0b";
       const appleStatusStyle = isLight ? "default" : "black-translucent";
 
-      // 1. Update theme-color meta tag
-      let metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (!metaTheme) {
-        metaTheme = document.createElement("meta");
+      // 1. Update ALL theme-color meta tags (including those with media attributes)
+      const metaThemes = document.querySelectorAll('meta[name="theme-color"]');
+      if (metaThemes.length > 0) {
+        metaThemes.forEach((meta) => {
+          meta.setAttribute("content", themeColorHex);
+          meta.removeAttribute("media"); // Remove static OS media filter so app theme takes full precedence
+        });
+      } else {
+        const metaTheme = document.createElement("meta");
         metaTheme.setAttribute("name", "theme-color");
+        metaTheme.setAttribute("content", themeColorHex);
         document.head.appendChild(metaTheme);
       }
-      metaTheme.setAttribute("content", themeColorHex);
 
       // 2. Update apple-mobile-web-app-status-bar-style meta tag
       let metaApple = document.querySelector(

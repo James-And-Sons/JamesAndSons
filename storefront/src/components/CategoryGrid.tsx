@@ -165,16 +165,8 @@ export default function CategoryGrid({
             />
           )}
 
-          {/* Dark Luxury Gradient Overlay */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(10,10,10,0.85) 100%)",
-              zIndex: 1,
-            }}
-          />
+          {/* Theme-Aware Gradient Overlay */}
+          <div className="category-card-overlay" />
 
           {!mainCatImage && (
             <div
@@ -234,16 +226,8 @@ export default function CategoryGrid({
                   />
                 )}
 
-                {/* Dark Luxury Gradient Overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(10,10,10,0.85) 100%)",
-                    zIndex: 1,
-                  }}
-                />
+                {/* Theme-Aware Gradient Overlay */}
+                <div className="category-card-overlay" />
 
                 {!catImage && (
                   <div
@@ -322,15 +306,7 @@ export default function CategoryGrid({
                 />
               )}
 
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(10,10,10,0.85) 100%)",
-                  zIndex: 1,
-                }}
-              />
+              <div className="category-card-overlay" />
 
               <div style={{ position: "relative", zIndex: 2 }}>
                 <div className="mobile-space-name">{cat.name}</div>
