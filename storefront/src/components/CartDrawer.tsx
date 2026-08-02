@@ -45,14 +45,11 @@ export default function CartDrawer() {
     return () => window.removeEventListener("keydown", handler);
   }, [closeCart]);
 
-  // Back button history interceptor to close cart on mobile back navigation
+  // Close cart on mobile back navigation
   useEffect(() => {
     if (!isOpen) return;
 
-    // Push dummy state to capture back navigation
-    window.history.pushState({ cartOpen: true }, "");
-
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       closeCart();
     };
 
@@ -60,10 +57,6 @@ export default function CartDrawer() {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      // Remove the dummy history state if cart was closed by user action
-      if (window.history.state && window.history.state.cartOpen) {
-        window.history.back();
-      }
     };
   }, [isOpen, closeCart]);
 
@@ -233,61 +226,70 @@ export default function CartDrawer() {
               {currentItems.map((item) => (
                 <div
                   key={`${item.product.id}-${item.warranty?.planSku || "none"}`}
-                  onClick={() => {
-                    closeCart();
-                    router.push(`/products/${item.product.slug}`);
-                  }}
                   style={{
                     borderBottom: "1px solid var(--border)",
                     padding: "24px 0",
                     display: "flex",
-                    gap: "20px",
+                    gap: "16px",
                     position: "relative",
-                    cursor: "pointer",
+                    alignItems: "flex-start",
                   }}
                 >
-                  <div
+                  <Link
+                    href={`/products/${item.product.slug}`}
+                    onClick={() => closeCart()}
                     style={{
-                      width: "70px",
-                      height: "90px",
-                      background: "var(--void)",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      flexShrink: 0,
-                      display: "block",
-                    }}
-                  >
-                    <Image
-                      src={
-                        item.product.images?.[0] ||
-                        "/images/brand-placeholder.png"
-                      }
-                      alt={item.product.name}
-                      width={70}
-                      height={90}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
+                      display: "flex",
+                      gap: "16px",
                       flex: 1,
                       minWidth: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
+                      textDecoration: "none",
+                      color: "inherit",
+                      cursor: "pointer",
                     }}
                   >
-                    <div>
+                    <div
+                      style={{
+                        width: "70px",
+                        height: "90px",
+                        background: "var(--void)",
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        flexShrink: 0,
+                        position: "relative",
+                      }}
+                    >
+                      <Image
+                        src={
+                          item.product.images?.[0] ||
+                          "/images/brand-placeholder.png"
+                        }
+                        alt={item.product.name}
+                        width={70}
+                        height={90}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                      }}
+                    >
                       <h3
                         style={{
                           fontFamily: "var(--font-serif)",
                           fontSize: "15px",
                           color: "var(--cream)",
-                          margin: "0 0 2px",
+                          margin: 0,
                           fontWeight: 400,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -310,7 +312,7 @@ export default function CartDrawer() {
                           style={{
                             fontSize: "11px",
                             color: "var(--gold)",
-                            marginTop: "4px",
+                            marginTop: "2px",
                             display: "flex",
                             gap: "6px",
                             alignItems: "center",
@@ -319,7 +321,7 @@ export default function CartDrawer() {
                           <i
                             className="ti ti-shield-check"
                             style={{ fontSize: "13px" }}
-                          ></i>
+                          />
                           <span>
                             {item.warranty.planName} (+
                             {renderPrice(item.warranty.price)})
@@ -327,103 +329,105 @@ export default function CartDrawer() {
                         </div>
                       )}
                     </div>
+                  </Link>
 
+                  {/* Quantity & Wishlist Action Controls */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      justifyContent: "space-between",
+                      height: "90px",
+                      flexShrink: 0,
+                    }}
+                  >
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
                         alignItems: "center",
+                        background: "var(--surface2)",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            background: "var(--surface2)",
-                            borderRadius: "6px",
-                            border: "1px solid var(--border)",
-                          }}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQty(
-                                item.product.id,
-                                item.quantity - 1,
-                                item.warranty?.planSku,
-                              );
-                            }}
-                            style={{
-                              padding: "2px 8px",
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-dim)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            −
-                          </button>
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              color: "var(--cream)",
-                              width: "16px",
-                              textAlign: "center",
-                            }}
-                          >
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQty(
-                                item.product.id,
-                                item.quantity + 1,
-                                item.warranty?.planSku,
-                              );
-                            }}
-                            style={{
-                              padding: "2px 8px",
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-dim)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          toggleItem(item.product);
-                          removeItem(item.product.id, item.warranty?.planSku);
+                          updateQty(
+                            item.product.id,
+                            item.quantity - 1,
+                            item.warranty?.planSku,
+                          );
                         }}
                         style={{
+                          padding: "2px 8px",
                           background: "none",
                           border: "none",
-                          fontSize: "10px",
-                          color: "var(--gold)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
+                          color: "var(--text-dim)",
                           cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
                         }}
                       >
-                        <i className="ti ti-heart"></i> Move to wishlist
+                        −
+                      </button>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--cream)",
+                          width: "16px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateQty(
+                            item.product.id,
+                            item.quantity + 1,
+                            item.warranty?.planSku,
+                          );
+                        }}
+                        style={{
+                          padding: "2px 8px",
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-dim)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        +
                       </button>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleItem(item.product);
+                        removeItem(item.product.id, item.warranty?.planSku);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        fontSize: "10px",
+                        color: "var(--gold)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <i className="ti ti-heart" /> Move to wishlist
+                    </button>
                   </div>
                 </div>
               ))}
