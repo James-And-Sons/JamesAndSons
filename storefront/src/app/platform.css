@@ -27,24 +27,24 @@
   /* Light mode overrides — triggered by next-themes data-theme, class, or system preference */
   @media (prefers-color-scheme: light) {
     :root:not([data-theme='dark']):not(.dark) {
-      --obsidian: #f8f5f0;
-      --void: #ede9e0;
+      --obsidian: #faf7f2;
+      --void: #f0ebd8;
       --surface: #ffffff;
-      --surface2: #f2ede4;
-      --background: #f8f5f0;
-      --foreground: #1a1714;
-      --border: rgba(0,0,0,0.08);
-      --border-gold: rgba(140,100,30,0.25);
-      --gold: #9a7030;
-      --gold-light: #7a5520;
-      --gold-pale: #5c3d10;
-      --cream: #1a1714;
-      --text: #1a1714;
-      --text-muted: #7a7570;
-      --text-dim: #908a80;
-      --red: #a43a3a;
-      --green: #3a9a5a;
-      --teal: #3a8a9a;
+      --surface2: #f4efe6;
+      --background: #faf7f2;
+      --foreground: #12100d;
+      --border: rgba(0,0,0,0.12);
+      --border-gold: rgba(140,94,26,0.35);
+      --gold: #8c5e1a;
+      --gold-light: #6e4810;
+      --gold-pale: #54360a;
+      --cream: #12100d;
+      --text: #12100d;
+      --text-muted: #4a4640;
+      --text-dim: #666056;
+      --red: #b82e2e;
+      --green: #267e43;
+      --teal: #267280;
       color-scheme: light;
     }
   }
@@ -55,21 +55,24 @@
   .light,
   :root[data-theme='light'],
   :root.light {
-    --obsidian: #f8f5f0;
-    --void: #ede9e0;
+    --obsidian: #faf7f2;
+    --void: #f0ebd8;
     --surface: #ffffff;
-    --surface2: #f2ede4;
-    --background: #f8f5f0;
-    --foreground: #1a1714;
-    --border: rgba(0,0,0,0.08);
-    --border-gold: rgba(140,100,30,0.25);
-    --gold: #9a7030;
-    --gold-light: #7a5520;
-    --gold-pale: #5c3d10;
-    --cream: #1a1714;
-    --text: #1a1714;
-    --text-muted: #7a7570;
-    --text-dim: #908a80;
+    --surface2: #f4efe6;
+    --background: #faf7f2;
+    --foreground: #12100d;
+    --border: rgba(0,0,0,0.12);
+    --border-gold: rgba(140,94,26,0.35);
+    --gold: #8c5e1a;
+    --gold-light: #6e4810;
+    --gold-pale: #54360a;
+    --cream: #12100d;
+    --text: #12100d;
+    --text-muted: #4a4640;
+    --text-dim: #666056;
+    --red: #b82e2e;
+    --green: #267e43;
+    --teal: #267280;
     color-scheme: light;
   }
 
