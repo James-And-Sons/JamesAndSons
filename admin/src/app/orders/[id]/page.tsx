@@ -259,6 +259,7 @@ export default async function OrderDetailPage(props: {
         currentStatus={order.status}
         razorpayOrderId={order.razorpayOrderId}
         awbNumber={order.awbNumber}
+        trackingNumber={order.trackingNumber}
         fulfillmentError={order.fulfillmentError}
         channel={order.channel}
         amazonOrderId={order.amazonOrderId}

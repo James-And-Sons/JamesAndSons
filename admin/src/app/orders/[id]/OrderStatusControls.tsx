@@ -5,8 +5,9 @@ import { updateOrderStatus, updateTrackingNumber } from "../actions";
 import {
   syncRazorpayPayment,
   trackShiprocketShipment,
-  requestOrderPickup,
   retryLogisticsSync,
+  bookShiprocketPickupAction,
+  getShiprocketLabelAction,
 } from "./logistics-actions";
 
 const STATUS_OPTIONS = [
@@ -48,6 +49,7 @@ export default function OrderStatusControls({
   currentStatus,
   razorpayOrderId,
   awbNumber,
+  trackingNumber,
   fulfillmentError,
   channel,
   amazonOrderId,
@@ -57,6 +59,7 @@ export default function OrderStatusControls({
   currentStatus: string;
   razorpayOrderId?: string | null;
   awbNumber?: string | null;
+  trackingNumber?: string | null;
   fulfillmentError?: string | null;
   channel?: string | null;
   amazonOrderId?: string | null;
@@ -75,6 +78,13 @@ export default function OrderStatusControls({
   const [isBooking, setIsBooking] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [bookingError, setBookingError] = useState<string>("");
+
+  // Shiprocket Fulfillment panel state (non-Amazon)
+  const [isBookingPickup, setIsBookingPickup] = useState(false);
+  const [shiprocketResult, setShiprocketResult] = useState<any>(null);
+  const [shiprocketError, setShiprocketError] = useState("");
+  const [shiprocketLabelUrl, setShiprocketLabelUrl] = useState("");
+  const [isFetchingLabel, setIsFetchingLabel] = useState(false);
 
   // Package dimension state — auto-calculated from items
   const [pkgLength, setPkgLength] = useState(20);
@@ -207,29 +217,52 @@ export default function OrderStatusControls({
   };
 
   const handleTrackRealtime = () => {
-    if (!awbNumber) return;
+    const trackCode = trackingNumber || awbNumber;
+    if (!trackCode) return;
     startTransition(async () => {
-      const result = await trackShiprocketShipment(awbNumber);
+      const result = await trackShiprocketShipment(trackCode);
       if (!result.success) alert("Tracking failed: " + result.error);
       else setTrackingData(result.data);
     });
   };
 
-  const handleRequestPickup = () => {
-    if (!awbNumber) return;
-    startTransition(async () => {
-      const result = await requestOrderPickup(awbNumber);
-      if (result.success) alert("Pickup requested successfully!");
-      else alert("Pickup request failed: " + result.error);
-    });
+  const handleBookShiprocketPickup = async () => {
+    setIsBookingPickup(true);
+    setShiprocketError("");
+    try {
+      const result = await bookShiprocketPickupAction(orderId);
+      if (result.success) {
+        setShiprocketResult(result);
+        if (result.labelUrl) {
+          setShiprocketLabelUrl(result.labelUrl);
+          window.open(result.labelUrl, "_blank");
+        }
+      } else {
+        setShiprocketError(result.error || "Pickup booking failed.");
+      }
+    } catch (err: any) {
+      setShiprocketError(err.message || "Network error.");
+    } finally {
+      setIsBookingPickup(false);
+    }
   };
 
-  const handleRetryLogistics = () => {
-    startTransition(async () => {
-      const result = await retryLogisticsSync(orderId);
-      if (!result.success) alert("Logistics Sync Failed: " + result.error);
-      else alert("Logistics synced successfully and AWB assigned!");
-    });
+  const handleFetchShiprocketLabel = async () => {
+    setIsFetchingLabel(true);
+    setShiprocketError("");
+    try {
+      const result = await getShiprocketLabelAction(orderId);
+      if (result.success && result.labelUrl) {
+        setShiprocketLabelUrl(result.labelUrl);
+        window.open(result.labelUrl, "_blank");
+      } else {
+        setShiprocketError(result.error || "No label URL returned.");
+      }
+    } catch (err: any) {
+      setShiprocketError(err.message || "Network error.");
+    } finally {
+      setIsFetchingLabel(false);
+    }
   };
 
   // Format slot label for display
@@ -295,81 +328,427 @@ export default function OrderStatusControls({
               fontSize: "9px",
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: isAmazon ? "#c4a05a" : "var(--muted, #888)",
+              color: isAmazon ? "#c4a05a" : "#6b8dd6",
               margin: 0,
             }}
           >
             {isAmazon
               ? "▲ Amazon Easy Ship · Fulfillment Studio"
-              : "Manage Order"}
+              : "▲ Shiprocket · Fulfillment Studio"}
           </p>
-          {isAmazon && (
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: "8px",
-                color: "rgba(196,160,90,0.5)",
-                marginTop: "4px",
-                margin: "4px 0 0",
-                letterSpacing: "0.1em",
-              }}
-            >
-              Shiprocket bypassed · Amazon ATS handles delivery end-to-end
-            </p>
-          )}
+          <p
+            style={{
+              fontFamily: "monospace",
+              fontSize: "8px",
+              color: isAmazon
+                ? "rgba(196,160,90,0.5)"
+                : "rgba(107,141,214,0.5)",
+              marginTop: "4px",
+              margin: "4px 0 0",
+              letterSpacing: "0.1em",
+            }}
+          >
+            {isAmazon
+              ? "Shiprocket bypassed · Amazon ATS handles delivery end-to-end"
+              : "Auto-synced with Shiprocket on payment · Book pickup & download label without leaving admin"}
+          </p>
         </div>
 
-        {/* Non-Amazon secondary actions */}
-        {!isAmazon && (
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            {(currentStatus === "PAID" || currentStatus === "PROCESSING") &&
-              (!awbNumber || fulfillmentError) && (
-                <button
-                  onClick={handleRetryLogistics}
-                  disabled={isPending}
-                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#d97706] text-white hover:bg-[#b45309] transition-colors disabled:opacity-50"
-                >
-                  {isPending ? "Syncing..." : "Retry Shiprocket Sync"}
-                </button>
-              )}
-            {currentStatus === "PENDING" && razorpayOrderId && (
-              <button
-                onClick={handleSyncPayment}
-                disabled={isPending}
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
+        {/* Razorpay sync for unpaid orders */}
+        {!isAmazon && currentStatus === "PENDING" && razorpayOrderId && (
+          <button
+            onClick={handleSyncPayment}
+            disabled={isPending}
+            className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
+          >
+            Sync Razorpay Payment
+          </button>
+        )}
+      </div>
+
+      {/* ── Shiprocket Fulfillment Studio (non-Amazon) ───────────── */}
+      {!isAmazon && (
+        <div style={{ padding: "24px" }}>
+          {/* ── Sync error / retry section ── */}
+          {(currentStatus === "PAID" || currentStatus === "PROCESSING") &&
+            (!awbNumber || fulfillmentError) && (
+              <div
+                style={{
+                  background: fulfillmentError
+                    ? "rgba(248,113,113,0.06)"
+                    : "rgba(107,141,214,0.06)",
+                  border: `1px solid ${fulfillmentError ? "rgba(248,113,113,0.3)" : "rgba(107,141,214,0.2)"}`,
+                  borderRadius: "2px",
+                  padding: "16px 20px",
+                  marginBottom: "20px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: "16px",
+                }}
               >
-                Sync Razorpay Payment
-              </button>
-            )}
-            {awbNumber && (
-              <>
-                <a
-                  href={`/api/orders/${orderId}/label`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
-                >
-                  Download Label ↗
-                </a>
+                <div>
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: fulfillmentError ? "#f87171" : "#6b8dd6",
+                      fontWeight: "bold",
+                      letterSpacing: "0.1em",
+                      margin: 0,
+                    }}
+                  >
+                    {fulfillmentError
+                      ? "⚠ Shiprocket Sync Error"
+                      : "⏳ Awaiting Shiprocket Sync"}
+                  </p>
+                  {fulfillmentError && (
+                    <p
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "10px",
+                        color: "rgba(248,113,113,0.7)",
+                        marginTop: "6px",
+                        margin: "6px 0 0",
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      {fulfillmentError}
+                    </p>
+                  )}
+                </div>
                 <button
-                  onClick={handleRequestPickup}
+                  onClick={() => {
+                    startTransition(async () => {
+                      const result = await retryLogisticsSync(orderId);
+                      if (!result.success)
+                        setShiprocketError(
+                          "Sync Failed: " + (result.error || "Unknown error"),
+                        );
+                    });
+                  }}
                   disabled={isPending}
-                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-white text-obsidian hover:bg-white/90 transition-colors disabled:opacity-50"
+                  style={{
+                    flexShrink: 0,
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    padding: "8px 14px",
+                    background: "rgba(107,141,214,0.15)",
+                    border: "1px solid rgba(107,141,214,0.4)",
+                    color: "#6b8dd6",
+                    borderRadius: "2px",
+                    cursor: isPending ? "not-allowed" : "pointer",
+                    opacity: isPending ? 0.5 : 1,
+                    whiteSpace: "nowrap",
+                  }}
                 >
-                  Request Pickup
+                  {isPending ? "Syncing…" : "↻ Retry Shiprocket Sync"}
                 </button>
+              </div>
+            )}
+
+          {/* ── Synced — show AWB + actions ── */}
+          {awbNumber && !isNaN(parseInt(awbNumber)) && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+                marginBottom: "20px",
+              }}
+            >
+              {/* Shipment Info */}
+              <div
+                style={{
+                  background: "rgba(107,141,214,0.04)",
+                  border: "1px solid rgba(107,141,214,0.15)",
+                  borderRadius: "2px",
+                  padding: "16px",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "#6b8dd6",
+                    margin: "0 0 14px",
+                    borderBottom: "1px solid rgba(107,141,214,0.1)",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  📦 Shiprocket Shipment
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "8px",
+                        color: "var(--muted, #666)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        margin: "0 0 2px",
+                      }}
+                    >
+                      Shiprocket Shipment ID
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "13px",
+                        color: "#6b8dd6",
+                        fontWeight: "600",
+                        margin: 0,
+                      }}
+                    >
+                      #{awbNumber}
+                    </p>
+                  </div>
+                  {trackingNumber && (
+                    <div>
+                      <p
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "8px",
+                          color: "var(--muted, #666)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.1em",
+                          margin: "0 0 2px",
+                        }}
+                      >
+                        Courier AWB / Tracking
+                      </p>
+                      <p
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "12px",
+                          color: "var(--primary, #fff)",
+                          margin: 0,
+                        }}
+                      >
+                        {trackingNumber}
+                      </p>
+                    </div>
+                  )}
+                  <a
+                    href={`https://shiprocket.co/tracking/${trackingNumber || awbNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: "#6b8dd6",
+                      textDecoration: "none",
+                      marginTop: "4px",
+                    }}
+                  >
+                    Track on Shiprocket ↗
+                  </a>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div
+                style={{
+                  background: "rgba(107,141,214,0.04)",
+                  border: "1px solid rgba(107,141,214,0.15)",
+                  borderRadius: "2px",
+                  padding: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "#6b8dd6",
+                    margin: "0 0 4px",
+                    borderBottom: "1px solid rgba(107,141,214,0.1)",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  🚚 Actions
+                </p>
+
+                {/* Book Pickup + Get Label — single primary action */}
+                <button
+                  onClick={handleBookShiprocketPickup}
+                  disabled={isBookingPickup}
+                  style={{
+                    width: "100%",
+                    padding: "11px 14px",
+                    background: isBookingPickup
+                      ? "rgba(107,141,214,0.2)"
+                      : "linear-gradient(135deg, #4c6ef5 0%, #7a9ff5 50%, #4c6ef5 100%)",
+                    border: "none",
+                    borderRadius: "2px",
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: isBookingPickup ? "#6b8dd6" : "#fff",
+                    cursor: isBookingPickup ? "not-allowed" : "pointer",
+                    transition: "all 0.2s",
+                    boxShadow: isBookingPickup
+                      ? "none"
+                      : "0 2px 12px rgba(107,141,214,0.3)",
+                  }}
+                >
+                  {isBookingPickup
+                    ? "Booking Pickup…"
+                    : "Book Pickup & Print Label ↗"}
+                </button>
+
+                {/* Separate: just fetch label if pickup already booked */}
+                <button
+                  onClick={handleFetchShiprocketLabel}
+                  disabled={isFetchingLabel}
+                  style={{
+                    width: "100%",
+                    padding: "9px 14px",
+                    background: "none",
+                    border: "1px solid rgba(107,141,214,0.35)",
+                    borderRadius: "2px",
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "#6b8dd6",
+                    cursor: isFetchingLabel ? "not-allowed" : "pointer",
+                    opacity: isFetchingLabel ? 0.5 : 1,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {isFetchingLabel
+                    ? "Fetching Label…"
+                    : "Download Shiprocket Label ↗"}
+                </button>
+
+                {/* Track Real-time */}
                 <button
                   onClick={handleTrackRealtime}
                   disabled={isPending}
-                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#059669] text-white hover:bg-[#047857] transition-colors disabled:opacity-50"
+                  style={{
+                    width: "100%",
+                    padding: "9px 14px",
+                    background: "none",
+                    border: "1px solid rgba(107,141,214,0.2)",
+                    borderRadius: "2px",
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "var(--muted, #666)",
+                    cursor: isPending ? "not-allowed" : "pointer",
+                    opacity: isPending ? 0.5 : 1,
+                    transition: "all 0.15s",
+                  }}
                 >
                   Track Real-time
                 </button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Shiprocket error message ── */}
+          {shiprocketError && (
+            <div
+              style={{
+                background: "rgba(248,113,113,0.08)",
+                border: "1px solid rgba(248,113,113,0.3)",
+                borderRadius: "2px",
+                padding: "12px 16px",
+                marginBottom: "16px",
+                fontFamily: "monospace",
+                fontSize: "11px",
+                color: "#f87171",
+              }}
+            >
+              ⚠ {shiprocketError}
+            </div>
+          )}
+
+          {/* ── Pickup booked success banner ── */}
+          {shiprocketResult && (
+            <div
+              style={{
+                background: "rgba(74,222,128,0.06)",
+                border: "1px solid rgba(74,222,128,0.25)",
+                borderRadius: "2px",
+                padding: "14px 18px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>✅</span>
+              <div>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    color: "#4ade80",
+                    fontWeight: "bold",
+                    letterSpacing: "0.1em",
+                    margin: 0,
+                  }}
+                >
+                  SHIPROCKET PICKUP BOOKED
+                </p>
+                {shiprocketLabelUrl && (
+                  <a
+                    href={shiprocketLabelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-block",
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      color: "#4ade80",
+                      textDecoration: "underline",
+                      marginTop: "6px",
+                    }}
+                  >
+                    Open Official Shiprocket Label PDF ↗
+                  </a>
+                )}
+                {!shiprocketResult.labelUrl && (
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      color: "rgba(74,222,128,0.6)",
+                      marginTop: "4px",
+                      margin: "4px 0 0",
+                    }}
+                  >
+                    Label may take a few minutes to generate after pickup is
+                    confirmed by Shiprocket.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Amazon Easy Ship Fulfillment Studio ──────────────────── */}
       {isAmazon && (

@@ -61,21 +61,94 @@ import {
   assignAWB,
 } from "@/lib/shiprocket";
 
-export async function generateOrderLabel(shipmentId: string) {
+/**
+ * Fetch the real Shiprocket label PDF URL for an order.
+ * Uses order.awbNumber as Shiprocket numeric shipment ID.
+ */
+export async function getShiprocketLabelAction(orderId: string) {
   try {
-    const url = await generateLabel([parseInt(shipmentId)]);
-    return { success: !!url, labelUrl: url };
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order?.awbNumber) {
+      return {
+        success: false,
+        error: "No Shiprocket shipment ID found for this order.",
+      };
+    }
+
+    const shipmentId = parseInt(order.awbNumber);
+    if (isNaN(shipmentId)) {
+      return {
+        success: false,
+        error: `awbNumber "${order.awbNumber}" is not a numeric Shiprocket shipment ID.`,
+      };
+    }
+
+    const url = await generateLabel([shipmentId]);
+    if (!url) {
+      return {
+        success: false,
+        error:
+          "Shiprocket returned no label URL. Pickup may not yet be scheduled.",
+      };
+    }
+    return { success: true, labelUrl: url };
   } catch (err: any) {
+    console.error("getShiprocketLabelAction error:", err);
     return { success: false, error: err.message };
   }
 }
 
-export async function requestOrderPickup(shipmentId: string) {
+/**
+ * Book Shiprocket pickup + fetch official label URL in one click.
+ * orderId → look up numeric shipment ID from DB → requestPickup → generateLabel.
+ */
+export async function bookShiprocketPickupAction(orderId: string) {
   try {
-    const result = await requestPickup([parseInt(shipmentId)]);
-    revalidatePath("/orders/[id]", "page");
-    return { success: true, result };
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order?.awbNumber) {
+      return {
+        success: false,
+        error:
+          "No Shiprocket shipment ID on record. Please retry Shiprocket sync first.",
+      };
+    }
+
+    const shipmentId = parseInt(order.awbNumber);
+    if (isNaN(shipmentId)) {
+      return {
+        success: false,
+        error: `Stored awbNumber "${order.awbNumber}" is not a numeric Shiprocket shipment ID.`,
+      };
+    }
+
+    // Step 1: Book pickup
+    const pickupResult = await requestPickup([shipmentId]);
+    console.log(
+      "[bookShiprocketPickup] requestPickup result:",
+      JSON.stringify(pickupResult),
+    );
+
+    // Shiprocket returns 409 if pickup already scheduled — treat as success
+    const pickupScheduled =
+      pickupResult?.status === 1 ||
+      pickupResult?.pickup_scheduled_date ||
+      pickupResult?.response?.data?.pickup_scheduled_date ||
+      pickupResult?.status === 409;
+
+    // Step 2: Generate the official Shiprocket label PDF
+    const labelUrl = await generateLabel([shipmentId]);
+    console.log("[bookShiprocketPickup] generateLabel URL:", labelUrl);
+
+    revalidatePath(`/orders/${orderId}`);
+
+    return {
+      success: true,
+      pickupScheduled,
+      pickupResult,
+      labelUrl,
+    };
   } catch (err: any) {
+    console.error("bookShiprocketPickupAction error:", err);
     return { success: false, error: err.message };
   }
 }
