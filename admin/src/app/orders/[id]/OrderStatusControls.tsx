@@ -87,27 +87,8 @@ export default function OrderStatusControls({
     });
   };
 
-  const [labelUrl, setLabelUrl] = useState<string | null>(null);
-
   const handleGenerateLabel = () => {
-    if (!awbNumber) return; // Note: awbNumber currently stores the shipment_id from automation
-    // Open window synchronously on user click to prevent browser pop-up blocking
-    const popup = window.open("about:blank", "_blank");
-    startTransition(async () => {
-      const result = await generateOrderLabel(awbNumber);
-      if (result.success && result.labelUrl) {
-        setLabelUrl(result.labelUrl);
-        if (popup) {
-          popup.location.href = result.labelUrl;
-        }
-      } else {
-        if (popup) popup.close();
-        alert(
-          "Failed to generate label: " +
-            (result.error || "Check if AWB is assigned"),
-        );
-      }
-    });
+    window.open(`/api/orders/${orderId}/label`, "_blank");
   };
 
   const handleRequestPickup = () => {
@@ -156,12 +137,10 @@ export default function OrderStatusControls({
         selectedServiceId,
       );
       if (result.success) {
-        if (result.labelUrl) {
-          setLabelUrl(result.labelUrl);
-        }
         alert(
           `✅ Amazon ATS Easy Ship pickup booked successfully!\n\nShipment ID: ${result.shipmentId || "Confirmed"}\nTracking: ${result.trackingNumber || "Assigned"}`,
         );
+        window.open(`/api/orders/${orderId}/label`, "_blank");
       } else {
         alert(
           "Failed to book Amazon shipment: " +
@@ -207,6 +186,14 @@ export default function OrderStatusControls({
                   ? "Booking ATS Pickup..."
                   : "Book Amazon ATS Pickup"}
               </button>
+              <a
+                href={`/api/orders/${orderId}/label`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
+              >
+                Download Label PDF ↗
+              </a>
             </>
           ) : (
             (currentStatus === "PAID" || currentStatus === "PROCESSING") &&
@@ -231,24 +218,14 @@ export default function OrderStatusControls({
           )}
           {awbNumber && (
             <>
-              {labelUrl ? (
-                <a
-                  href={labelUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
-                >
-                  Download Label PDF ↗
-                </a>
-              ) : (
-                <button
-                  onClick={handleGenerateLabel}
-                  disabled={isPending}
-                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent text-accent hover:bg-accent/10 transition-colors disabled:opacity-50"
-                >
-                  {isPending ? "Generating Label..." : "Download Label"}
-                </button>
-              )}
+              <a
+                href={`/api/orders/${orderId}/label`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
+              >
+                Download Label PDF ↗
+              </a>
               <button
                 onClick={handleRequestPickup}
                 disabled={isPending}
@@ -267,6 +244,62 @@ export default function OrderStatusControls({
           )}
         </div>
       </div>
+
+      {channel === "AMAZON" && (
+        <div className="p-4 bg-surface border border-border rounded space-y-3">
+          <div className="flex justify-between items-center border-b border-border/60 pb-2">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-accent font-semibold m-0">
+              Package Dimensions &amp; Weight Calculator (Auto-Calculated)
+            </p>
+            <span className="font-mono text-[9px] text-muted">
+              Shipped from Warehouse: Aligarh (202001)
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-3 text-left">
+            <div>
+              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
+                Length (cm)
+              </label>
+              <input
+                type="number"
+                defaultValue={20}
+                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-primary rounded focus:border-accent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
+                Width (cm)
+              </label>
+              <input
+                type="number"
+                defaultValue={20}
+                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-primary rounded focus:border-accent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
+                Height (cm)
+              </label>
+              <input
+                type="number"
+                defaultValue={40}
+                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-primary rounded focus:border-accent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
+                Weight (kg)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                defaultValue={2.0}
+                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-accent font-bold rounded focus:border-accent outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {mfnServices.length > 0 && (
         <div className="p-4 bg-surface-muted/60 border border-amber-500/30 rounded space-y-3">
