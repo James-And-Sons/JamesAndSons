@@ -141,7 +141,8 @@ export default async function OrderDetailPage(props: {
           {order.trackingNumber && (
             <div className="p-4 bg-surface border border-border">
               <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
-                Tracking ID (Shipment)
+                Tracking ID (
+                {order.channel === "AMAZON" ? "Amazon ATS" : "Shipment"})
               </p>
               <p className="font-mono text-[13px] text-accent">
                 {order.trackingNumber}
@@ -149,16 +150,24 @@ export default async function OrderDetailPage(props: {
               {order.awbNumber && (
                 <div className="mt-3">
                   <p className="font-mono text-[11px] text-secondary mb-2">
-                    AWB: {order.awbNumber}
+                    {order.channel === "AMAZON" ? "Package ID" : "AWB"}:{" "}
+                    {order.awbNumber}
                   </p>
-                  <a
-                    href={`https://shiprocket.co/tracking/${order.awbNumber}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-3 py-1.5 border border-accent text-accent hover:bg-accent/10 transition-colors font-mono text-[10px] uppercase tracking-widest"
-                  >
-                    Track on Shiprocket ↗
-                  </a>
+                  {order.channel !== "AMAZON" && (
+                    <a
+                      href={`https://shiprocket.co/tracking/${order.awbNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block px-3 py-1.5 border border-accent text-accent hover:bg-accent/10 transition-colors font-mono text-[10px] uppercase tracking-widest"
+                    >
+                      Track on Shiprocket ↗
+                    </a>
+                  )}
+                  {order.channel === "AMAZON" && (
+                    <span className="inline-block px-3 py-1 border border-amber-500/30 text-amber-400 bg-amber-500/10 font-mono text-[10px] uppercase tracking-widest">
+                      ▲ Amazon ATS Easy Ship
+                    </span>
+                  )}
                 </div>
               )}
             </div>

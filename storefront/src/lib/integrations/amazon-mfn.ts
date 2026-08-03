@@ -278,8 +278,7 @@ export async function createAmazonMfnShipment(
         status: "PROCESSING",
         trackingNumber: fallbackTracking,
         awbNumber: fallbackShipmentId,
-        fulfillmentError:
-          "Amazon ATS Easy Ship booked. Pick up scheduled from Aligarh warehouse.",
+        fulfillmentError: null,
       },
     });
 

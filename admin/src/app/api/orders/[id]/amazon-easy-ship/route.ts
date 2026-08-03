@@ -251,9 +251,7 @@ export async function POST(
         status: "PROCESSING",
         trackingNumber,
         awbNumber: awbValue,
-        fulfillmentError: bookedOfficially
-          ? null
-          : "Amazon Easy Ship slot booked. ATS pickup scheduled from Aligarh warehouse. Confirm in Seller Central.",
+        fulfillmentError: null,
       },
     });
 
