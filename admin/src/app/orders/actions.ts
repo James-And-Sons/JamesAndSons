@@ -132,3 +132,36 @@ export async function syncAmazonOrdersAction(minutesBack: number = 1440) {
     };
   }
 }
+
+export async function updateOrderAddressAction(
+  orderId: string,
+  data: {
+    shippingAddress?: string;
+    shippingCity?: string;
+    shippingState?: string;
+    shippingPincode?: string;
+    shippingPhone?: string;
+  },
+) {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        shippingAddress: data.shippingAddress,
+        shippingCity: data.shippingCity,
+        shippingState: data.shippingState,
+        shippingPincode: data.shippingPincode,
+        shippingPhone: data.shippingPhone,
+      },
+    });
+
+    revalidatePath(`/orders/${orderId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("updateOrderAddressAction error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to update shipping address",
+    };
+  }
+}

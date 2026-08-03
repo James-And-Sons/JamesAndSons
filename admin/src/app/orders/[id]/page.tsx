@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-export const dynamic = "force-dynamic";
 import OrderStatusControls from "./OrderStatusControls";
+import EditableShippingAddress from "./EditableShippingAddress";
 
 function formatPrice(n: number): string {
   if (n >= 100000) return `₹${(n / 100000).toFixed(n % 100000 === 0 ? 0 : 1)}L`;
@@ -119,16 +119,18 @@ export default async function OrderDetailPage(props: {
         </div>
 
         {/* Shipping */}
-        <div className="bg-surface border border-border p-6">
-          <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-4 border-b border-border pb-2">
-            Shipping Address
-          </h3>
-          <p className="font-body text-[13px] text-secondary leading-relaxed">
-            {order.shippingAddress}
-          </p>
+        <div className="space-y-4">
+          <EditableShippingAddress
+            orderId={order.id}
+            initialAddress={order.shippingAddress}
+            initialCity={order.shippingCity}
+            initialState={order.shippingState}
+            initialPincode={order.shippingPincode}
+            initialPhone={order.shippingPhone}
+          />
 
           {order.fulfillmentError && (
-            <div className="mt-4 p-3 bg-red-900/10 border border-red-900/20 text-red-400 font-mono text-[11px] leading-relaxed">
+            <div className="p-3 bg-red-900/10 border border-red-900/20 text-red-400 font-mono text-[11px] leading-relaxed">
               <span className="font-bold uppercase tracking-widest block mb-1">
                 ⚠ Logistics Error
               </span>
@@ -137,7 +139,7 @@ export default async function OrderDetailPage(props: {
           )}
 
           {order.trackingNumber && (
-            <div className="mt-4 pt-4 border-t border-border">
+            <div className="p-4 bg-surface border border-border">
               <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
                 Tracking ID (Shipment)
               </p>
