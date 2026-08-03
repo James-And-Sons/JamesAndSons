@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { updateOrderStatus, updateTrackingNumber } from "../actions";
 import {
   syncRazorpayPayment,
   trackShiprocketShipment,
-  generateOrderLabel,
   requestOrderPickup,
   retryLogisticsSync,
-  getAmazonMfnRatesAction,
-  bookAmazonMfnShipmentAction,
 } from "./logistics-actions";
 
 const STATUS_OPTIONS = [
@@ -21,6 +18,31 @@ const STATUS_OPTIONS = [
   "CANCELLED",
 ];
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface TimeSlot {
+  slotId: string;
+  startTime: string;
+  endTime: string;
+  handoverMethod: string;
+  label?: string;
+}
+
+interface OrderItem {
+  id: string;
+  quantity: number;
+  product: {
+    name: string;
+    sku: string;
+    weight?: number | null;
+    length?: number | null;
+    breadth?: number | null;
+    height?: number | null;
+  };
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+
 export default function OrderStatusControls({
   orderId,
   currentStatus,
@@ -29,6 +51,7 @@ export default function OrderStatusControls({
   fulfillmentError,
   channel,
   amazonOrderId,
+  orderItems,
 }: {
   orderId: string;
   currentStatus: string;
@@ -37,18 +60,123 @@ export default function OrderStatusControls({
   fulfillmentError?: string | null;
   channel?: string | null;
   amazonOrderId?: string | null;
+  orderItems?: OrderItem[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [tracking, setTracking] = useState("");
   const [awb, setAwb] = useState(awbNumber || "");
   const [showTracking, setShowTracking] = useState(false);
   const [trackingData, setTrackingData] = useState<any>(null);
-  const [mfnServices, setMfnServices] = useState<any[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<string>(
-    "AMAZON_ATS_EASY_SHIP",
-  );
-  const [isFetchingRates, setIsFetchingRates] = useState(false);
-  const [isBookingAmazon, setIsBookingAmazon] = useState(false);
+
+  // Amazon Easy Ship state
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingResult, setBookingResult] = useState<any>(null);
+  const [bookingError, setBookingError] = useState<string>("");
+
+  // Package dimension state — auto-calculated from items
+  const [pkgLength, setPkgLength] = useState(20);
+  const [pkgWidth, setPkgWidth] = useState(20);
+  const [pkgHeight, setPkgHeight] = useState(40);
+  const [pkgWeight, setPkgWeight] = useState(1.0);
+
+  const isAmazon = channel === "AMAZON";
+
+  // Auto-calculate dimensions from order items on load
+  useEffect(() => {
+    if (!isAmazon || !orderItems || orderItems.length === 0) return;
+
+    const calcWeight = orderItems.reduce(
+      (sum, item) => sum + item.quantity * (item.product.weight || 0.5),
+      0,
+    );
+    const calcLength = Math.max(
+      ...orderItems.map((i) => i.product.length || 20),
+      20,
+    );
+    const calcWidth = Math.max(
+      ...orderItems.map((i) => i.product.breadth || 20),
+      20,
+    );
+    const calcHeight = orderItems.reduce(
+      (sum, item) => sum + item.quantity * (item.product.height || 10),
+      0,
+    );
+
+    setPkgLength(Math.round(calcLength));
+    setPkgWidth(Math.round(calcWidth));
+    setPkgHeight(Math.round(calcHeight));
+    setPkgWeight(Math.round(calcWeight * 100) / 100);
+  }, [isAmazon, orderItems]);
+
+  // Fetch available time slots on mount for Amazon orders
+  useEffect(() => {
+    if (!isAmazon) return;
+    fetchTimeSlots();
+  }, [isAmazon, orderId]);
+
+  const fetchTimeSlots = async () => {
+    setIsFetchingSlots(true);
+    setBookingError("");
+    try {
+      const res = await fetch(`/api/orders/${orderId}/amazon-easy-ship`);
+      const data = await res.json();
+      if (data.timeSlots) {
+        setTimeSlots(data.timeSlots);
+        if (data.timeSlots[0]) setSelectedSlot(data.timeSlots[0]);
+        // Sync auto-calculated dims from API
+        if (data.packageDimensions) {
+          setPkgLength(data.packageDimensions.length || pkgLength);
+          setPkgWidth(data.packageDimensions.width || pkgWidth);
+          setPkgHeight(data.packageDimensions.height || pkgHeight);
+        }
+        if (data.packageWeight) setPkgWeight(data.packageWeight);
+      }
+    } catch (err: any) {
+      console.error("[FetchTimeSlots]", err);
+    } finally {
+      setIsFetchingSlots(false);
+    }
+  };
+
+  const handleBookAmazonPickup = async () => {
+    if (!selectedSlot) {
+      setBookingError("Please select a pickup time slot.");
+      return;
+    }
+    setIsBooking(true);
+    setBookingError("");
+    try {
+      const res = await fetch(`/api/orders/${orderId}/amazon-easy-ship`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slotId: selectedSlot.slotId,
+          startTime: selectedSlot.startTime,
+          endTime: selectedSlot.endTime,
+          packageLength: pkgLength,
+          packageWidth: pkgWidth,
+          packageHeight: pkgHeight,
+          packageWeight: pkgWeight,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setBookingResult(data);
+        // Open label in new tab immediately (synchronous, no popup blocker)
+        window.open(`/api/orders/${orderId}/label`, "_blank");
+      } else {
+        setBookingError(data.error || "Booking failed. Please try again.");
+      }
+    } catch (err: any) {
+      setBookingError(err.message || "Network error. Please try again.");
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   const handleStatusUpdate = (status: string) => {
     if (status === "SHIPPED") {
@@ -87,10 +215,6 @@ export default function OrderStatusControls({
     });
   };
 
-  const handleGenerateLabel = () => {
-    window.open(`/api/orders/${orderId}/label`, "_blank");
-  };
-
   const handleRequestPickup = () => {
     if (!awbNumber) return;
     startTransition(async () => {
@@ -108,245 +232,592 @@ export default function OrderStatusControls({
     });
   };
 
-  const handleFetchAmazonRates = async () => {
-    setIsFetchingRates(true);
-    try {
-      const result = await getAmazonMfnRatesAction(orderId);
-      if (result.success && result.services) {
-        setMfnServices(result.services);
-        if (result.services[0]) {
-          setSelectedServiceId(result.services[0].shippingServiceId);
-        }
-      } else {
-        alert(
-          "Failed to fetch Amazon rates: " + (result.error || "Unknown error"),
-        );
-      }
-    } catch (err: any) {
-      alert("Error fetching Amazon rates: " + (err.message || err));
-    } finally {
-      setIsFetchingRates(false);
-    }
-  };
+  // Format slot label for display
+  const formatSlotLabel = (slot: TimeSlot): string => {
+    if (slot.label) return slot.label;
+    const start = new Date(slot.startTime);
+    const end = new Date(slot.endTime);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const dayAfter = new Date(today);
+    dayAfter.setDate(today.getDate() + 2);
 
-  const handleBookAmazonShipment = async () => {
-    setIsBookingAmazon(true);
-    try {
-      const result = await bookAmazonMfnShipmentAction(
-        orderId,
-        selectedServiceId,
-      );
-      if (result.success) {
-        alert(
-          `✅ Amazon ATS Easy Ship pickup booked successfully!\n\nShipment ID: ${result.shipmentId || "Confirmed"}\nTracking: ${result.trackingNumber || "Assigned"}`,
-        );
-        window.open(`/api/orders/${orderId}/label`, "_blank");
-      } else {
-        alert(
-          "Failed to book Amazon shipment: " +
-            (result.error || "Unknown error"),
-        );
-      }
-    } catch (err: any) {
-      alert("Error booking Amazon shipment: " + (err.message || err));
-    } finally {
-      setIsBookingAmazon(false);
-    }
+    const dateLabel =
+      start.toDateString() === today.toDateString()
+        ? "Today"
+        : start.toDateString() === tomorrow.toDateString()
+          ? "Tomorrow"
+          : start.toDateString() === dayAfter.toDateString()
+            ? "Day After Tomorrow"
+            : start.toLocaleDateString("en-IN", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              });
+
+    const startTime = start.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const endTime = end.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return `${dateLabel} · ${startTime} – ${endTime}`;
   };
 
   return (
-    <div className="bg-surface border border-border p-6 space-y-6">
-      <div className="flex justify-between items-center border-b border-border pb-3">
+    <div
+      style={{
+        background: "var(--surface, #111)",
+        border: "1px solid rgba(196,160,90,0.15)",
+        borderRadius: "2px",
+      }}
+    >
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <div
+        style={{
+          padding: "20px 24px",
+          borderBottom: "1px solid rgba(196,160,90,0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <div>
-          <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted m-0">
-            Manage Order{" "}
-            {channel === "AMAZON"
-              ? "· Amazon Easy Ship (Shiprocket Bypassed)"
-              : ""}
-          </h3>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {channel === "AMAZON" ? (
-            <>
-              <button
-                onClick={handleFetchAmazonRates}
-                disabled={isFetchingRates}
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-amber-600/20 text-amber-400 border border-amber-500/40 hover:bg-amber-600/30 transition-colors disabled:opacity-50"
-              >
-                {isFetchingRates
-                  ? "Checking Amazon Rates..."
-                  : "Fetch Amazon Rates & Slots"}
-              </button>
-              <button
-                onClick={handleBookAmazonShipment}
-                disabled={isBookingAmazon}
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50 font-semibold"
-              >
-                {isBookingAmazon
-                  ? "Booking ATS Pickup..."
-                  : "Book Amazon ATS Pickup"}
-              </button>
-              <a
-                href={`/api/orders/${orderId}/label`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
-              >
-                Download Label PDF ↗
-              </a>
-            </>
-          ) : (
-            (currentStatus === "PAID" || currentStatus === "PROCESSING") &&
-            (!awbNumber || fulfillmentError) && (
-              <button
-                onClick={handleRetryLogistics}
-                disabled={isPending}
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#d97706] text-white hover:bg-[#b45309] transition-colors disabled:opacity-50"
-              >
-                {isPending ? "Syncing..." : "Retry Shiprocket Sync"}
-              </button>
-            )
-          )}
-          {currentStatus === "PENDING" && razorpayOrderId && (
-            <button
-              onClick={handleSyncPayment}
-              disabled={isPending}
-              className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
+          <p
+            style={{
+              fontFamily: "monospace",
+              fontSize: "9px",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: isAmazon ? "#c4a05a" : "var(--muted, #888)",
+              margin: 0,
+            }}
+          >
+            {isAmazon
+              ? "▲ Amazon Easy Ship · Fulfillment Studio"
+              : "Manage Order"}
+          </p>
+          {isAmazon && (
+            <p
+              style={{
+                fontFamily: "monospace",
+                fontSize: "8px",
+                color: "rgba(196,160,90,0.5)",
+                marginTop: "4px",
+                margin: "4px 0 0",
+                letterSpacing: "0.1em",
+              }}
             >
-              Sync Razorpay Payment
-            </button>
-          )}
-          {awbNumber && (
-            <>
-              <a
-                href={`/api/orders/${orderId}/label`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
-              >
-                Download Label PDF ↗
-              </a>
-              <button
-                onClick={handleRequestPickup}
-                disabled={isPending}
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-white text-obsidian hover:bg-white/90 transition-colors disabled:opacity-50"
-              >
-                Request Pickup
-              </button>
-              <button
-                onClick={handleTrackRealtime}
-                disabled={isPending}
-                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#059669] text-white hover:bg-[#047857] transition-colors disabled:opacity-50"
-              >
-                Track Real-time
-              </button>
-            </>
+              Shiprocket bypassed · Amazon ATS handles delivery end-to-end
+            </p>
           )}
         </div>
+
+        {/* Non-Amazon secondary actions */}
+        {!isAmazon && (
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {(currentStatus === "PAID" || currentStatus === "PROCESSING") &&
+              (!awbNumber || fulfillmentError) && (
+                <button
+                  onClick={handleRetryLogistics}
+                  disabled={isPending}
+                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#d97706] text-white hover:bg-[#b45309] transition-colors disabled:opacity-50"
+                >
+                  {isPending ? "Syncing..." : "Retry Shiprocket Sync"}
+                </button>
+              )}
+            {currentStatus === "PENDING" && razorpayOrderId && (
+              <button
+                onClick={handleSyncPayment}
+                disabled={isPending}
+                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors disabled:opacity-50"
+              >
+                Sync Razorpay Payment
+              </button>
+            )}
+            {awbNumber && (
+              <>
+                <a
+                  href={`/api/orders/${orderId}/label`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 border border-accent bg-accent/10 text-accent hover:bg-accent/20 transition-colors inline-block"
+                >
+                  Download Label ↗
+                </a>
+                <button
+                  onClick={handleRequestPickup}
+                  disabled={isPending}
+                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-white text-obsidian hover:bg-white/90 transition-colors disabled:opacity-50"
+                >
+                  Request Pickup
+                </button>
+                <button
+                  onClick={handleTrackRealtime}
+                  disabled={isPending}
+                  className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-[#059669] text-white hover:bg-[#047857] transition-colors disabled:opacity-50"
+                >
+                  Track Real-time
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {channel === "AMAZON" && (
-        <div className="p-4 bg-surface border border-border rounded space-y-3">
-          <div className="flex justify-between items-center border-b border-border/60 pb-2">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-accent font-semibold m-0">
-              Package Dimensions &amp; Weight Calculator (Auto-Calculated)
-            </p>
-            <span className="font-mono text-[9px] text-muted">
-              Shipped from Warehouse: Aligarh (202001)
-            </span>
-          </div>
-          <div className="grid grid-cols-4 gap-3 text-left">
-            <div>
-              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
-                Length (cm)
-              </label>
-              <input
-                type="number"
-                defaultValue={20}
-                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-primary rounded focus:border-accent outline-none"
-              />
+      {/* ── Amazon Easy Ship Fulfillment Studio ──────────────────── */}
+      {isAmazon && (
+        <div style={{ padding: "24px" }}>
+          {/* Success confirmation banner */}
+          {bookingResult && (
+            <div
+              style={{
+                background: "rgba(74,222,128,0.06)",
+                border: "1px solid rgba(74,222,128,0.25)",
+                borderRadius: "2px",
+                padding: "16px 20px",
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "14px",
+              }}
+            >
+              <span style={{ fontSize: "20px" }}>✅</span>
+              <div>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    color: "#4ade80",
+                    fontWeight: "bold",
+                    letterSpacing: "0.1em",
+                    margin: 0,
+                  }}
+                >
+                  AMAZON ATS PICKUP BOOKED SUCCESSFULLY
+                </p>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    color: "rgba(74,222,128,0.7)",
+                    marginTop: "4px",
+                    margin: "4px 0 0",
+                  }}
+                >
+                  Package ID: {bookingResult.packageId} · Tracking:{" "}
+                  {bookingResult.trackingNumber}
+                </p>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    color: "rgba(74,222,128,0.5)",
+                    marginTop: "4px",
+                    margin: "4px 0 0",
+                  }}
+                >
+                  Shipping label opened in a new tab for printing.
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
-                Width (cm)
-              </label>
-              <input
-                type="number"
-                defaultValue={20}
-                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-primary rounded focus:border-accent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
-                Height (cm)
-              </label>
-              <input
-                type="number"
-                defaultValue={40}
-                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-primary rounded focus:border-accent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block font-mono text-[9px] uppercase text-muted mb-1">
-                Weight (kg)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                defaultValue={2.0}
-                className="w-full bg-background border border-border px-2.5 py-1.5 text-[12px] font-mono text-accent font-bold rounded focus:border-accent outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {mfnServices.length > 0 && (
-        <div className="p-4 bg-surface-muted/60 border border-amber-500/30 rounded space-y-3">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-amber-400 font-semibold m-0">
-            Eligible Amazon Shipping Rates &amp; ATS Pickup Slots (
-            {mfnServices.length})
-          </p>
-          <div className="space-y-2">
-            {mfnServices.map((svc: any) => (
-              <label
-                key={svc.shippingServiceId}
-                className="flex items-center justify-between p-2.5 bg-background border border-border rounded cursor-pointer hover:border-accent transition-colors"
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+              marginBottom: "20px",
+            }}
+          >
+            {/* Package Calculator */}
+            <div
+              style={{
+                background: "rgba(196,160,90,0.04)",
+                border: "1px solid rgba(196,160,90,0.15)",
+                borderRadius: "2px",
+                padding: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: "1px solid rgba(196,160,90,0.1)",
+                  paddingBottom: "10px",
+                  marginBottom: "14px",
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="amazonShippingService"
-                    value={svc.shippingServiceId}
-                    checked={selectedServiceId === svc.shippingServiceId}
-                    onChange={(e) => setSelectedServiceId(e.target.value)}
-                    className="accent-accent"
-                  />
-                  <div>
-                    <p className="font-body text-[13px] font-semibold text-primary m-0">
-                      {svc.carrierName} — {svc.shippingServiceName}
-                    </p>
-                    <p className="font-mono text-[10px] text-muted mt-0.5 m-0">
-                      Service ID: {svc.shippingServiceId}
-                    </p>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "#c4a05a",
+                    margin: 0,
+                  }}
+                >
+                  📦 Package Specs
+                </p>
+                <span
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "8px",
+                    color: "rgba(196,160,90,0.5)",
+                    background: "rgba(196,160,90,0.08)",
+                    padding: "2px 6px",
+                    borderRadius: "2px",
+                  }}
+                >
+                  Auto-Calculated
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "10px",
+                }}
+              >
+                {[
+                  {
+                    label: "Length (cm)",
+                    value: pkgLength,
+                    setter: setPkgLength,
+                  },
+                  { label: "Width (cm)", value: pkgWidth, setter: setPkgWidth },
+                  {
+                    label: "Height (cm)",
+                    value: pkgHeight,
+                    setter: setPkgHeight,
+                  },
+                  {
+                    label: "Weight (kg)",
+                    value: pkgWeight,
+                    setter: setPkgWeight,
+                    step: 0.1,
+                    isGold: true,
+                  },
+                ].map(({ label, value, setter, step, isGold }) => (
+                  <div key={label}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontFamily: "monospace",
+                        fontSize: "8px",
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        color: "var(--muted, #666)",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      {label}
+                    </label>
+                    <input
+                      type="number"
+                      value={value}
+                      step={step || 1}
+                      onChange={(e) => setter(parseFloat(e.target.value) || 0)}
+                      style={{
+                        width: "100%",
+                        boxSizing: "border-box",
+                        background: "var(--background, #0a0a0a)",
+                        border: `1px solid ${isGold ? "rgba(196,160,90,0.4)" : "var(--border, #222)"}`,
+                        borderRadius: "2px",
+                        padding: "7px 10px",
+                        fontFamily: "monospace",
+                        fontSize: "13px",
+                        color: isGold ? "#c4a05a" : "var(--primary, #fff)",
+                        fontWeight: isGold ? "700" : "400",
+                        outline: "none",
+                      }}
+                    />
                   </div>
-                </div>
-                <div className="text-right">
-                  <span className="font-mono text-[14px] font-bold text-accent">
-                    ₹{svc.rateAmount} {svc.currencyCode}
+                ))}
+              </div>
+
+              <p
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: "9px",
+                  color: "rgba(196,160,90,0.45)",
+                  marginTop: "10px",
+                  marginBottom: 0,
+                  lineHeight: "1.5",
+                }}
+              >
+                ↑ Computed from product catalogue dimensions × quantity. Adjust
+                if using a custom shipping box.
+              </p>
+            </div>
+
+            {/* Time Slot Picker */}
+            <div
+              style={{
+                background: "rgba(196,160,90,0.04)",
+                border: "1px solid rgba(196,160,90,0.15)",
+                borderRadius: "2px",
+                padding: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: "1px solid rgba(196,160,90,0.1)",
+                  paddingBottom: "10px",
+                  marginBottom: "14px",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "#c4a05a",
+                    margin: 0,
+                  }}
+                >
+                  🗓 Pickup Date &amp; Time Slot
+                </p>
+                {isFetchingSlots && (
+                  <span
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "8px",
+                      color: "rgba(196,160,90,0.5)",
+                    }}
+                  >
+                    Loading…
                   </span>
+                )}
+              </div>
+
+              {timeSlots.length > 0 ? (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                  }}
+                >
+                  {timeSlots.map((slot) => {
+                    const isSelected = selectedSlot?.slotId === slot.slotId;
+                    return (
+                      <label
+                        key={slot.slotId}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          padding: "10px 12px",
+                          background: isSelected
+                            ? "rgba(196,160,90,0.1)"
+                            : "var(--background, #0a0a0a)",
+                          border: `1px solid ${isSelected ? "rgba(196,160,90,0.5)" : "var(--border, #222)"}`,
+                          borderRadius: "2px",
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="pickup-slot"
+                          value={slot.slotId}
+                          checked={isSelected}
+                          onChange={() => setSelectedSlot(slot)}
+                          style={{ accentColor: "#c4a05a" }}
+                        />
+                        <span
+                          style={{
+                            fontFamily: "monospace",
+                            fontSize: "11px",
+                            color: isSelected
+                              ? "#c4a05a"
+                              : "var(--secondary, #aaa)",
+                            fontWeight: isSelected ? "600" : "400",
+                          }}
+                        >
+                          {formatSlotLabel(slot)}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
-              </label>
-            ))}
+              ) : (
+                <div
+                  style={{
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "var(--muted, #666)",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                  }}
+                >
+                  {isFetchingSlots
+                    ? "Fetching available slots..."
+                    : "No slots available."}
+                  {!isFetchingSlots && (
+                    <button
+                      onClick={fetchTimeSlots}
+                      style={{
+                        display: "block",
+                        margin: "10px auto 0",
+                        background: "none",
+                        border: "1px solid rgba(196,160,90,0.3)",
+                        color: "#c4a05a",
+                        fontFamily: "monospace",
+                        fontSize: "9px",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        padding: "5px 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Refresh Slots
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <p
+                style={{
+                  fontFamily: "monospace",
+                  fontSize: "9px",
+                  color: "rgba(196,160,90,0.45)",
+                  marginTop: "10px",
+                  marginBottom: 0,
+                  lineHeight: "1.5",
+                }}
+              >
+                Pickup from: Aligarh Warehouse, Civil Lines, UP – 202001
+              </p>
+            </div>
           </div>
+
+          {/* Error message */}
+          {bookingError && (
+            <div
+              style={{
+                background: "rgba(248,113,113,0.08)",
+                border: "1px solid rgba(248,113,113,0.3)",
+                borderRadius: "2px",
+                padding: "12px 16px",
+                marginBottom: "16px",
+                fontFamily: "monospace",
+                fontSize: "11px",
+                color: "#f87171",
+              }}
+            >
+              ⚠ {bookingError}
+            </div>
+          )}
+
+          {/* PRIMARY ACTION BUTTON */}
+          <button
+            onClick={handleBookAmazonPickup}
+            disabled={isBooking || !selectedSlot}
+            style={{
+              width: "100%",
+              padding: "14px 24px",
+              background: isBooking
+                ? "rgba(196,160,90,0.3)"
+                : "linear-gradient(135deg, #c4a05a 0%, #e8c87a 50%, #c4a05a 100%)",
+              border: "none",
+              borderRadius: "2px",
+              fontFamily: "monospace",
+              fontSize: "11px",
+              fontWeight: "700",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: isBooking ? "#c4a05a" : "#0a0a0a",
+              cursor: isBooking || !selectedSlot ? "not-allowed" : "pointer",
+              opacity: !selectedSlot ? 0.6 : 1,
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+              boxShadow: isBooking ? "none" : "0 2px 12px rgba(196,160,90,0.3)",
+            }}
+          >
+            {isBooking ? (
+              <>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "14px",
+                    height: "14px",
+                    border: "2px solid rgba(196,160,90,0.4)",
+                    borderTopColor: "#c4a05a",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }}
+                />
+                Booking ATS Pickup…
+              </>
+            ) : (
+              <>
+                Book Amazon ATS Pickup &amp; Print Label{" "}
+                <span style={{ fontSize: "14px" }}>↗</span>
+              </>
+            )}
+          </button>
+
+          <p
+            style={{
+              fontFamily: "monospace",
+              fontSize: "9px",
+              color: "rgba(196,160,90,0.4)",
+              textAlign: "center",
+              marginTop: "10px",
+              marginBottom: 0,
+              letterSpacing: "0.08em",
+            }}
+          >
+            Confirms ATS pickup for selected slot · Opens official Amazon Easy
+            Ship Shipping Label &amp; Tax Invoice for printing
+          </p>
+
+          <style>{`
+            @keyframes spin { to { transform: rotate(360deg); } }
+          `}</style>
         </div>
       )}
 
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-secondary mb-3">
-          Update Status
+      {/* ── Order Status Controls (shown for all orders) ─────────── */}
+      <div
+        style={{
+          padding: "20px 24px",
+          borderTop: isAmazon ? "1px solid rgba(196,160,90,0.1)" : "none",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "monospace",
+            fontSize: "9px",
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            color: "var(--muted, #666)",
+            marginBottom: "12px",
+            marginTop: 0,
+          }}
+        >
+          Update Order Status
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {STATUS_OPTIONS.map((status) => (
             <button
               key={status}
@@ -367,12 +838,35 @@ export default function OrderStatusControls({
         </div>
       </div>
 
+      {/* ── Tracking number input (shown when SHIPPED is clicked) ── */}
       {showTracking && (
-        <div className="border-t border-border pt-6 space-y-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-secondary">
+        <div
+          style={{
+            padding: "20px 24px",
+            borderTop: "1px solid rgba(196,160,90,0.1)",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "monospace",
+              fontSize: "10px",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "var(--secondary, #aaa)",
+              marginBottom: "16px",
+              marginTop: 0,
+            }}
+          >
             Add Tracking Details (marks order as Shipped)
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+              marginBottom: "16px",
+            }}
+          >
             <div>
               <label className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted block mb-1">
                 Tracking Number
@@ -396,7 +890,7 @@ export default function OrderStatusControls({
               />
             </div>
           </div>
-          <div className="flex gap-3">
+          <div style={{ display: "flex", gap: "12px" }}>
             <button
               onClick={() => setShowTracking(false)}
               className="font-mono text-[9px] uppercase tracking-[0.12em] px-4 py-2 border border-border text-muted hover:text-primary transition-colors"
@@ -414,42 +908,126 @@ export default function OrderStatusControls({
         </div>
       )}
 
+      {/* ── Real-time Tracking Data ──────────────────────────────── */}
       {trackingData && (
-        <div className="border-t border-border pt-6 space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-secondary">
+        <div
+          style={{
+            padding: "20px 24px",
+            borderTop: "1px solid rgba(196,160,90,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "monospace",
+                fontSize: "10px",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "var(--secondary, #aaa)",
+                margin: 0,
+              }}
+            >
               Real-time Logistics Status
             </p>
             <button
               onClick={() => setTrackingData(null)}
-              className="text-muted hover:text-white text-[10px] font-mono"
+              style={{
+                fontFamily: "monospace",
+                fontSize: "10px",
+                color: "var(--muted, #666)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               Close
             </button>
           </div>
-          <div className="bg-background/50 border border-border p-4 rounded">
-            <div className="space-y-3">
+          <div
+            style={{
+              background: "rgba(0,0,0,0.3)",
+              border: "1px solid var(--border, #222)",
+              borderRadius: "2px",
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+            >
               {trackingData.shipment_track?.map((track: any, i: number) => (
                 <div
                   key={i}
-                  className="flex gap-4 border-l-2 border-accent/30 pl-4 relative"
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    borderLeft: "2px solid rgba(196,160,90,0.3)",
+                    paddingLeft: "16px",
+                    position: "relative",
+                  }}
                 >
-                  <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-accent" />
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "-5px",
+                      top: "4px",
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#c4a05a",
+                    }}
+                  />
                   <div>
-                    <p className="font-mono text-[11px] text-accent uppercase tracking-wider">
+                    <p
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "11px",
+                        color: "#c4a05a",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        margin: 0,
+                      }}
+                    >
                       {track.status}
                     </p>
-                    <p className="font-body text-[12px] text-primary mt-1">
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--primary, #fff)",
+                        margin: "4px 0 2px",
+                      }}
+                    >
                       {track.location}
                     </p>
-                    <p className="font-mono text-[9px] text-muted mt-1">
+                    <p
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "9px",
+                        color: "var(--muted, #666)",
+                        margin: 0,
+                      }}
+                    >
                       {track.date}
                     </p>
                   </div>
                 </div>
               ))}
               {!trackingData.shipment_track && (
-                <p className="font-mono text-[11px] text-muted italic">
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    color: "var(--muted, #666)",
+                    fontStyle: "italic",
+                    margin: 0,
+                  }}
+                >
                   No tracking history found yet for AWB: {awbNumber}
                 </p>
               )}

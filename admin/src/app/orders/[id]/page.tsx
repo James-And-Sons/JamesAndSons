@@ -262,6 +262,18 @@ export default async function OrderDetailPage(props: {
         fulfillmentError={order.fulfillmentError}
         channel={order.channel}
         amazonOrderId={order.amazonOrderId}
+        orderItems={order.items.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+          product: {
+            name: item.product.name,
+            sku: item.product.sku,
+            weight: item.product.weight,
+            length: item.product.length,
+            breadth: item.product.breadth,
+            height: item.product.height,
+          },
+        }))}
       />
     </div>
   );
