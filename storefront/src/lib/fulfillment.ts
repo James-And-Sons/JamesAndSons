@@ -8,6 +8,7 @@ export interface FulfillOrderParams {
   orderId: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
+  forceFulfillment?: boolean;
 }
 
 /**
@@ -18,6 +19,7 @@ export async function fulfillPaidOrder({
   orderId,
   razorpayPaymentId,
   razorpaySignature,
+  forceFulfillment = false,
 }: FulfillOrderParams) {
   console.log(
     `[FulfillPaidOrder] Initializing fulfillment for Order ID: ${orderId}`,
@@ -37,10 +39,14 @@ export async function fulfillPaidOrder({
     return { success: false, error: "Order not found" };
   }
 
-  // Idempotency check: If already paid or processing, skip re-fulfillment
-  if (order.status === "PAID" || order.status === "PROCESSING") {
+  // Idempotency check: If already paid or processing AND has AWB assigned, skip re-fulfillment
+  if (
+    !forceFulfillment &&
+    (order.status === "PAID" || order.status === "PROCESSING") &&
+    order.awbNumber
+  ) {
     console.log(
-      `[FulfillPaidOrder] Order ${order.orderNumber} is already marked as ${order.status}. Skipping fulfillment.`,
+      `[FulfillPaidOrder] Order ${order.orderNumber} is already marked as ${order.status} with AWB ${order.awbNumber}. Skipping fulfillment.`,
     );
     return { success: true, alreadyProcessed: true };
   }
@@ -151,13 +157,27 @@ export async function fulfillPaidOrder({
       updatedOrder.shippingPincode || parts.pop()?.split(" - ")[1] || "110030";
     const stateStr = updatedOrder.shippingState || parts.pop() || "";
     const cityStr = updatedOrder.shippingCity || parts.pop() || "";
-    const addrStr =
+    const rawAddr =
       updatedOrder.shippingPincode &&
       updatedOrder.shippingState &&
       updatedOrder.shippingCity
         ? updatedOrder.shippingAddress.split(", ").slice(0, -3).join(", ") ||
           updatedOrder.shippingAddress
         : parts.join(", ") || updatedOrder.shippingAddress;
+    const addrStr = (rawAddr || "Amazon Marketplace").slice(0, 95);
+
+    // Ensure valid 10-digit phone number for Shiprocket (avoid dummy repeated digits like 9999999999)
+    const rawPhone = (
+      updatedOrder.shippingPhone ||
+      updatedOrder.user.phone ||
+      ""
+    )
+      .replace(/\D/g, "")
+      .slice(-10);
+    const billingPhone =
+      rawPhone.length === 10 && !/^(\d)\1{9}$/.test(rawPhone)
+        ? rawPhone
+        : "9810098100";
 
     // Weight/dimensions defaults from first item or fallback to shipping box defaults
     const firstProduct = updatedOrder.items[0]?.product;
@@ -178,10 +198,7 @@ export async function fulfillPaidOrder({
       billing_state: stateStr,
       billing_country: "India",
       billing_email: updatedOrder.user.email.trim().toLowerCase(),
-      billing_phone:
-        (updatedOrder.shippingPhone || updatedOrder.user.phone || "9999999999")
-          .replace(/\D/g, "")
-          .slice(-10) || "9999999999",
+      billing_phone: billingPhone,
       shipping_is_billing: true,
       order_items: updatedOrder.items.map((item) => ({
         name: item.product.name,
@@ -264,7 +281,7 @@ export async function fulfillPaidOrder({
   // 6. Record Promotions, Coupons & Affiliate Conversions
   try {
     if (updatedOrder.couponCode) {
-      const { applyCouponToOrder } = await import("@/app/promotions/actions");
+      const { applyCouponToOrder } = await import("../app/promotions/actions");
       const coupon = await prisma.coupon.findUnique({
         where: { code: updatedOrder.couponCode },
       });
@@ -283,7 +300,7 @@ export async function fulfillPaidOrder({
 
     if (updatedOrder.affiliateCode) {
       const { recordAffiliateConversion } =
-        await import("@/app/promotions/actions");
+        await import("../app/promotions/actions");
       const orderSubtotal =
         updatedOrder.totalAmount -
         updatedOrder.taxAmount -

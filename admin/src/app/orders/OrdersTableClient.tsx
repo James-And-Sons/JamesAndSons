@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
+import { syncAmazonOrdersAction } from "./actions";
 
 interface OrderItem {
   id: string;
@@ -24,6 +25,23 @@ export default function OrdersTableClient({
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [isSyncingAmazon, setIsSyncingAmazon] = useState(false);
+
+  const handleSyncAmazon = async () => {
+    setIsSyncingAmazon(true);
+    try {
+      const res = await syncAmazonOrdersAction(1440);
+      if (res.success) {
+        alert(`✅ Amazon Order Sync Complete!\n\n${res.message}`);
+      } else {
+        alert(`❌ Sync failed: ${res.error}`);
+      }
+    } catch (err: any) {
+      alert(`❌ Sync error: ${err?.message || err}`);
+    } finally {
+      setIsSyncingAmazon(false);
+    }
+  };
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
@@ -110,6 +128,16 @@ export default function OrdersTableClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSyncAmazon}
+            disabled={isSyncingAmazon}
+            className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent border border-accent/40 bg-accent/5 px-4 py-2.5 hover:bg-accent/15 hover:border-accent transition-colors rounded-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+          >
+            <RefreshCw
+              className={`w-3 h-3 ${isSyncingAmazon ? "animate-spin" : ""}`}
+            />
+            {isSyncingAmazon ? "Syncing Amazon..." : "Sync Amazon Orders"}
+          </button>
           <button
             onClick={handleExportCSV}
             className="font-mono text-[10px] uppercase tracking-[0.14em] text-secondary border border-border px-4 py-2.5 hover:bg-surface-muted hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
