@@ -26,7 +26,6 @@ export default function Hero() {
           width={450}
           height={580}
           priority
-          unoptimized
           className="hero-svg live-chandelier object-contain"
         />
 
@@ -95,7 +94,6 @@ export default function Hero() {
             width={180}
             height={230}
             priority
-            unoptimized
             className="mobile-chandelier-svg live-chandelier object-contain"
           />
           <div className="mobile-hero-badge">

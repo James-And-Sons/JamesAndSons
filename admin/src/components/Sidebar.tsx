@@ -22,8 +22,8 @@ import {
   TicketCheck,
   Settings,
   Image,
-  LogOut,
   Truck,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export default function Sidebar({
@@ -783,6 +783,12 @@ export default function Sidebar({
                 Business
               </p>
               {renderLink("B2B Workspace", "/b2b", null, Building2)}
+              {renderLink(
+                "Accounting & GST",
+                "/accounting",
+                null,
+                FileSpreadsheet,
+              )}
               {renderLink("Blog", "/blog", null, BookOpen)}
               {renderLink("Marketing", "/campaigns", null, Megaphone)}
               {renderLink("Coupons", "/promotions", null, Tag)}

@@ -46,3 +46,8 @@ amazon-debug-log.txt
 jamesandsons-*.json
 admin/jamesandsons-*.json
 google-service-account.json
+
+# Scratch & test binary outputs
+scratch/
+*.xlsx
+*.docx
