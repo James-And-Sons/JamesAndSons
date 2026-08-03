@@ -8,6 +8,7 @@ import {
   syncAbandonedCartAction,
   getUserAddressesAction,
 } from "./actions";
+import { trackInitiateCheckout } from "@/lib/tracking";
 import { getCookie } from "cookies-next";
 import { useCartStore } from "@/store/cart";
 import { useRouter } from "next/navigation";
@@ -141,6 +142,21 @@ export default function CheckoutPageInner({
   const [applyShippingSavings, setApplyShippingSavings] = useState(false);
   const [shippingCalculated, setShippingCalculated] = useState(false);
   const [etd, setEtd] = useState("");
+
+  // Track InitiateCheckout for GA4 & Meta Pixel
+  useEffect(() => {
+    if (items && items.length > 0) {
+      trackInitiateCheckout(
+        items.map((i) => ({
+          id: i.product.id,
+          name: i.product.name,
+          price: i.product.d2cPrice || i.product.mrp || 0,
+          quantity: i.quantity,
+        })),
+        subtotal,
+      );
+    }
+  }, []);
 
   // Abandoned Cart Sync (Debounced)
   useEffect(() => {

@@ -100,6 +100,26 @@ Engineered as an enterprise **Yarn v4 Monorepo**, the platform integrates a D2C 
 - **Date Range & All-Time Export**: Interactive date controls (End Date defaulted to current date) plus **"Download Entire Data Up to Date"** one-click all-time export.
 - **Zero-Human-Intervention Automated GST Email Filing**: Automated monthly GitHub Actions workflow (`.github/workflows/monthly-gst-filing.yml`) generating and emailing GSTR-1 Excel filing packages directly to `accounts@jamesandsons.in` on the 1st of every month at midnight.
 
+### 🧾 Branded PDF Tax Invoice & Profile Download
+
+- **Custom Luxury Header PDF Generator**: Generates clean, tax-compliant PDF invoices (`/api/orders/[id]/invoice`) featuring James & Sons logo header, invoice number, date, billing/shipping address, customer GSTIN details, itemized HSN codes, and CGST/SGST/IGST breakdown.
+- **Customer Profile Download Action**: Provides a 1-click **"📄 Download Tax Invoice (PDF)"** button directly inside `/account/orders/[orderNumber]`.
+
+### 🛒 Multi-Channel Abandoned Cart Recovery (Email + Meta WhatsApp)
+
+- **Automated 2-Hour Recovery Engine**: `/api/recovery/cron` automatically detects carts abandoned for >30 minutes.
+- **Dual Notification Dispatch**: Triggers customized HTML email nudges via Resend and instant personalized WhatsApp reminder pings via Meta WhatsApp Cloud API with 1-click recovery links (`/checkout?recoverCart=email`).
+
+### 📈 Unified GA4 & Meta Pixel E-Commerce Analytics Engine
+
+- **Plug-and-Play Ad Tracking (`tracking.ts`)**: Standardized data layer helper firing `ViewContent`, `AddToCart`, `InitiateCheckout`, and `Purchase` events simultaneously across both Google Analytics 4 (`gtag`) and Meta Pixel (`fbq`).
+
+### 📱 Automated Meta WhatsApp Notifications
+
+- **Zero-Cost Direct Messaging**: Powered by Meta Official WhatsApp Cloud API (`WHATSAPP_TOKEN` & `WHATSAPP_PHONE_NUMBER_ID`).
+- **Instant Order Confirmation**: Sends automated WhatsApp pings upon payment confirmation with order summary and tracking link.
+- **Shipment Dispatch & AWB Pings**: Dispatches instant WhatsApp updates when Shiprocket assigns courier AWB numbers.
+
 ### 🤝 Affiliate & Partner Portal (`/affiliates`)
 
 - **Influencer Referral Tracking**: Assigns custom referral codes (e.g., `?ref=DESIGNERSTUDIO`) backed by 30-day tracking cookies (`jns_ref`).
