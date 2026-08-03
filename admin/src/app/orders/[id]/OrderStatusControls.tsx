@@ -451,14 +451,7 @@ export default function OrderStatusControls({
 
           {/* ── Synced — show AWB + actions ── */}
           {awbNumber && !isNaN(parseInt(awbNumber)) && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-                marginBottom: "20px",
-              }}
-            >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               {/* Shipment Info */}
               <div
                 style={{
@@ -808,14 +801,7 @@ export default function OrderStatusControls({
             </div>
           )}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "20px",
-            }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
             {/* Package Calculator */}
             <div
               style={{
@@ -861,13 +847,7 @@ export default function OrderStatusControls({
                 </span>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "10px",
-                }}
-              >
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
                   {
                     label: "Length (cm)",
@@ -1238,14 +1218,7 @@ export default function OrderStatusControls({
           >
             Add Tracking Details (marks order as Shipped)
           </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "16px",
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
               <label className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted block mb-1">
                 Tracking Number

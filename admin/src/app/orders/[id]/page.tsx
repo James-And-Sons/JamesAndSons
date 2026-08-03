@@ -36,12 +36,12 @@ export default async function OrderDetailPage(props: {
         ← Back to Orders
       </Link>
 
-      <div className="flex justify-between items-start bg-surface border border-border p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-0 bg-surface border border-border p-4 sm:p-6">
         <div>
-          <h1 className="font-mono text-[22px] text-primary tracking-[0.05em] m-0">
+          <h1 className="font-mono text-[18px] sm:text-[22px] text-primary tracking-[0.05em] m-0">
             {order.orderNumber}
           </h1>
-          <p className="font-body text-secondary text-[13px] mt-1">
+          <p className="font-body text-secondary text-[12px] sm:text-[13px] mt-1">
             {new Date(order.createdAt).toLocaleDateString("en-US", {
               dateStyle: "full",
             })}
@@ -63,51 +63,53 @@ export default async function OrderDetailPage(props: {
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-surface border border-border p-6">
-        <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-6">
+      <div className="bg-surface border border-border p-4 sm:p-6 overflow-hidden">
+        <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-4 sm:mb-6">
           Order Progress
         </h3>
-        <div className="flex items-center gap-0">
-          {STATUS_STEPS.map((status, idx) => (
-            <div key={status} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-mono transition-colors ${
-                    idx <= currentStatusIdx
-                      ? "border-accent bg-accent/20 text-accent"
-                      : "border-border bg-background text-muted"
-                  }`}
-                >
-                  {idx < currentStatusIdx ? "✓" : idx + 1}
+        <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">
+          <div className="flex items-center gap-0 min-w-[480px] md:min-w-0">
+            {STATUS_STEPS.map((status, idx) => (
+              <div key={status} className="flex items-center flex-1">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-mono transition-colors ${
+                      idx <= currentStatusIdx
+                        ? "border-accent bg-accent/20 text-accent"
+                        : "border-border bg-background text-muted"
+                    }`}
+                  >
+                    {idx < currentStatusIdx ? "✓" : idx + 1}
+                  </div>
+                  <span className="font-mono text-[7px] sm:text-[8px] uppercase tracking-widest text-muted mt-2 text-center">
+                    {status.replace("_", " ")}
+                  </span>
                 </div>
-                <span className="font-mono text-[8px] uppercase tracking-widest text-muted mt-2 text-center">
-                  {status.replace("_", " ")}
-                </span>
+                {idx < STATUS_STEPS.length - 1 && (
+                  <div
+                    className={`flex-1 h-px mx-1.5 sm:mx-2 mb-5 transition-colors ${idx < currentStatusIdx ? "bg-accent" : "bg-border"}`}
+                  />
+                )}
               </div>
-              {idx < STATUS_STEPS.length - 1 && (
-                <div
-                  className={`flex-1 h-px mx-2 mb-5 transition-colors ${idx < currentStatusIdx ? "bg-accent" : "bg-border"}`}
-                />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* Customer */}
-        <div className="bg-surface border border-border p-6">
+        <div className="bg-surface border border-border p-4 sm:p-6">
           <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-4 border-b border-border pb-2">
             Customer
           </h3>
-          <p className="font-serif text-[18px] text-primary">
+          <p className="font-serif text-[16px] sm:text-[18px] text-primary">
             {order.user.firstName} {order.user.lastName}
           </p>
-          <p className="font-body text-[13px] text-secondary mt-1">
+          <p className="font-body text-[12px] sm:text-[13px] text-secondary mt-1 break-all">
             {order.user.email}
           </p>
           {order.user.phone && (
-            <p className="font-body text-[13px] text-secondary">
+            <p className="font-body text-[12px] sm:text-[13px] text-secondary">
               {order.user.phone}
             </p>
           )}
@@ -175,7 +177,7 @@ export default async function OrderDetailPage(props: {
         </div>
 
         {/* Financials */}
-        <div className="bg-surface border border-border p-6">
+        <div className="bg-surface border border-border p-4 sm:p-6">
           <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-4 border-b border-border pb-2">
             Financials
           </h3>
@@ -203,7 +205,7 @@ export default async function OrderDetailPage(props: {
                 <span>{v}</span>
               </div>
             ))}
-            <div className="flex justify-between font-serif text-[20px] text-accent pt-3 border-t border-border">
+            <div className="flex justify-between font-serif text-[18px] sm:text-[20px] text-accent pt-3 border-t border-border">
               <span>Total</span>
               <span>{formatPrice(order.totalAmount)}</span>
             </div>
@@ -213,53 +215,55 @@ export default async function OrderDetailPage(props: {
 
       {/* Line Items */}
       <div className="bg-surface border border-border overflow-hidden">
-        <div className="p-6 border-b border-border">
+        <div className="p-4 sm:p-6 border-b border-border">
           <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted">
             Order Items ({order.items.length})
           </h3>
         </div>
-        <table className="w-full text-left">
-          <thead className="border-b border-border text-muted">
-            <tr>
-              <th className="py-3 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
-                Product
-              </th>
-              <th className="py-3 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
-                SKU
-              </th>
-              <th className="py-3 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
-                Qty
-              </th>
-              <th className="py-3 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
-                Unit Price
-              </th>
-              <th className="py-3 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal text-right">
-                Total
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((item) => (
-              <tr key={item.id} className="border-b border-border">
-                <td className="py-4 px-6 font-serif text-[16px] text-primary">
-                  {item.product.name}
-                </td>
-                <td className="py-4 px-6 font-mono text-[11px] text-muted">
-                  {item.product.sku}
-                </td>
-                <td className="py-4 px-6 font-mono text-[13px] text-primary">
-                  {item.quantity}
-                </td>
-                <td className="py-4 px-6 font-mono text-[13px] text-secondary">
-                  {formatPrice(item.unitPrice)}
-                </td>
-                <td className="py-4 px-6 font-serif text-[16px] text-accent text-right">
-                  {formatPrice(item.total)}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[500px]">
+            <thead className="border-b border-border text-muted">
+              <tr>
+                <th className="py-3 px-4 sm:px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
+                  Product
+                </th>
+                <th className="py-3 px-4 sm:px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
+                  SKU
+                </th>
+                <th className="py-3 px-4 sm:px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
+                  Qty
+                </th>
+                <th className="py-3 px-4 sm:px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
+                  Unit Price
+                </th>
+                <th className="py-3 px-4 sm:px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal text-right">
+                  Total
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.id} className="border-b border-border">
+                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-serif text-[14px] sm:text-[16px] text-primary">
+                    {item.product.name}
+                  </td>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[10px] sm:text-[11px] text-muted">
+                    {item.product.sku}
+                  </td>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-primary">
+                    {item.quantity}
+                  </td>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-secondary">
+                    {formatPrice(item.unitPrice)}
+                  </td>
+                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-serif text-[14px] sm:text-[16px] text-accent text-right">
+                    {formatPrice(item.total)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Status Controls */}
