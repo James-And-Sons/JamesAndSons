@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useTransition } from "react";
 import { updateOrderStatus, updateTrackingNumber } from "../actions";
 import {
@@ -8,6 +6,8 @@ import {
   generateOrderLabel,
   requestOrderPickup,
   retryLogisticsSync,
+  getAmazonMfnRatesAction,
+  bookAmazonMfnShipmentAction,
 } from "./logistics-actions";
 
 const STATUS_OPTIONS = [
@@ -25,18 +25,28 @@ export default function OrderStatusControls({
   razorpayOrderId,
   awbNumber,
   fulfillmentError,
+  channel,
+  amazonOrderId,
 }: {
   orderId: string;
   currentStatus: string;
   razorpayOrderId?: string | null;
   awbNumber?: string | null;
   fulfillmentError?: string | null;
+  channel?: string | null;
+  amazonOrderId?: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [tracking, setTracking] = useState("");
   const [awb, setAwb] = useState(awbNumber || "");
   const [showTracking, setShowTracking] = useState(false);
   const [trackingData, setTrackingData] = useState<any>(null);
+  const [mfnServices, setMfnServices] = useState<any[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>(
+    "AMAZON_ATS_EASY_SHIP",
+  );
+  const [isFetchingRates, setIsFetchingRates] = useState(false);
+  const [isBookingAmazon, setIsBookingAmazon] = useState(false);
 
   const handleStatusUpdate = (status: string) => {
     if (status === "SHIPPED") {
@@ -115,14 +125,89 @@ export default function OrderStatusControls({
     });
   };
 
+  const handleFetchAmazonRates = async () => {
+    setIsFetchingRates(true);
+    try {
+      const result = await getAmazonMfnRatesAction(orderId);
+      if (result.success && result.services) {
+        setMfnServices(result.services);
+        if (result.services[0]) {
+          setSelectedServiceId(result.services[0].shippingServiceId);
+        }
+      } else {
+        alert(
+          "Failed to fetch Amazon rates: " + (result.error || "Unknown error"),
+        );
+      }
+    } catch (err: any) {
+      alert("Error fetching Amazon rates: " + (err.message || err));
+    } finally {
+      setIsFetchingRates(false);
+    }
+  };
+
+  const handleBookAmazonShipment = async () => {
+    setIsBookingAmazon(true);
+    try {
+      const result = await bookAmazonMfnShipmentAction(
+        orderId,
+        selectedServiceId,
+      );
+      if (result.success) {
+        if (result.labelUrl) {
+          setLabelUrl(result.labelUrl);
+        }
+        alert(
+          `✅ Amazon ATS Easy Ship pickup booked successfully!\n\nShipment ID: ${result.shipmentId || "Confirmed"}\nTracking: ${result.trackingNumber || "Assigned"}`,
+        );
+      } else {
+        alert(
+          "Failed to book Amazon shipment: " +
+            (result.error || "Unknown error"),
+        );
+      }
+    } catch (err: any) {
+      alert("Error booking Amazon shipment: " + (err.message || err));
+    } finally {
+      setIsBookingAmazon(false);
+    }
+  };
+
   return (
     <div className="bg-surface border border-border p-6 space-y-6">
       <div className="flex justify-between items-center border-b border-border pb-3">
-        <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted m-0">
-          Manage Order
-        </h3>
-        <div className="flex gap-2">
-          {(currentStatus === "PAID" || currentStatus === "PROCESSING") &&
+        <div>
+          <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted m-0">
+            Manage Order{" "}
+            {channel === "AMAZON"
+              ? "· Amazon Easy Ship (Shiprocket Bypassed)"
+              : ""}
+          </h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {channel === "AMAZON" ? (
+            <>
+              <button
+                onClick={handleFetchAmazonRates}
+                disabled={isFetchingRates}
+                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-amber-600/20 text-amber-400 border border-amber-500/40 hover:bg-amber-600/30 transition-colors disabled:opacity-50"
+              >
+                {isFetchingRates
+                  ? "Checking Amazon Rates..."
+                  : "Fetch Amazon Rates & Slots"}
+              </button>
+              <button
+                onClick={handleBookAmazonShipment}
+                disabled={isBookingAmazon}
+                className="font-mono text-[8px] uppercase tracking-widest px-3 py-1 bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50 font-semibold"
+              >
+                {isBookingAmazon
+                  ? "Booking ATS Pickup..."
+                  : "Book Amazon ATS Pickup"}
+              </button>
+            </>
+          ) : (
+            (currentStatus === "PAID" || currentStatus === "PROCESSING") &&
             (!awbNumber || fulfillmentError) && (
               <button
                 onClick={handleRetryLogistics}
@@ -131,7 +216,8 @@ export default function OrderStatusControls({
               >
                 {isPending ? "Syncing..." : "Retry Shiprocket Sync"}
               </button>
-            )}
+            )
+          )}
           {currentStatus === "PENDING" && razorpayOrderId && (
             <button
               onClick={handleSyncPayment}
@@ -179,6 +265,47 @@ export default function OrderStatusControls({
           )}
         </div>
       </div>
+
+      {mfnServices.length > 0 && (
+        <div className="p-4 bg-surface-muted/60 border border-amber-500/30 rounded space-y-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-amber-400 font-semibold m-0">
+            Eligible Amazon Shipping Rates &amp; ATS Pickup Slots (
+            {mfnServices.length})
+          </p>
+          <div className="space-y-2">
+            {mfnServices.map((svc: any) => (
+              <label
+                key={svc.shippingServiceId}
+                className="flex items-center justify-between p-2.5 bg-background border border-border rounded cursor-pointer hover:border-accent transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="amazonShippingService"
+                    value={svc.shippingServiceId}
+                    checked={selectedServiceId === svc.shippingServiceId}
+                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                    className="accent-accent"
+                  />
+                  <div>
+                    <p className="font-body text-[13px] font-semibold text-primary m-0">
+                      {svc.carrierName} — {svc.shippingServiceName}
+                    </p>
+                    <p className="font-mono text-[10px] text-muted mt-0.5 m-0">
+                      Service ID: {svc.shippingServiceId}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="font-mono text-[14px] font-bold text-accent">
+                    ₹{svc.rateAmount} {svc.currencyCode}
+                  </span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-secondary mb-3">
