@@ -25,6 +25,7 @@ export async function GET(
 
     if (
       order.status === "CANCELLED" ||
+      order.status === "SHIPPED" ||
       order.status === "DELIVERED" ||
       order.status === "RETURNED"
     ) {
@@ -206,6 +207,7 @@ export async function POST(
 
     if (
       order.status === "CANCELLED" ||
+      order.status === "SHIPPED" ||
       order.status === "DELIVERED" ||
       order.status === "RETURNED"
     ) {

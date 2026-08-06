@@ -609,9 +609,9 @@ export default function OrderStatusControls({
                   📄 Download Tax Invoice (PDF) ↗
                 </a>
 
-                {/* Only allow initial pickup booking if shipment is NOT yet booked and order is active */}
-                {!awbNumber &&
-                  status !== "CANCELLED" &&
+                {/* Allow pickup booking for any active pre-shipping order (PAID, PROCESSING, PENDING) */}
+                {status !== "CANCELLED" &&
+                  status !== "SHIPPED" &&
                   status !== "DELIVERED" &&
                   status !== "RETURNED" && (
                     <button
@@ -782,12 +782,12 @@ export default function OrderStatusControls({
         </div>
       )}
 
-      {/* ── Amazon Easy Ship Fulfillment Studio (Only shown if active & not already booked) ──────────────────── */}
+      {/* ── Amazon Easy Ship Fulfillment Studio (Shown for active pre-shipping orders) ──────────────────── */}
       {isAmazon &&
         status !== "CANCELLED" &&
+        status !== "SHIPPED" &&
         status !== "DELIVERED" &&
-        status !== "RETURNED" &&
-        !awbNumber && (
+        status !== "RETURNED" && (
           <div style={{ padding: "24px" }}>
             {/* Success confirmation banner */}
             {bookingResult && (

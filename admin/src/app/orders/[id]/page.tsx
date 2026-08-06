@@ -220,7 +220,7 @@ export default async function OrderDetailPage(props: {
             Order Items ({order.items.length})
           </h3>
           <span className="font-mono text-[8px] uppercase tracking-widest text-muted hidden sm:inline-block">
-            Click product to view / edit in admin ↗
+            Click product to view on storefront ↗
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -247,14 +247,17 @@ export default async function OrderDetailPage(props: {
             <tbody>
               {order.items.map((item) => {
                 const imageUrl = item.product.images?.[0];
+                const storefrontProductUrl = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/products/${item.product.slug}`;
                 return (
                   <tr
                     key={item.id}
                     className="border-b border-border hover:bg-white/[0.02] transition-colors"
                   >
                     <td className="py-3 sm:py-4 px-4 sm:px-6">
-                      <Link
-                        href={`/products/${item.product.id}/edit`}
+                      <a
+                        href={storefrontProductUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 group/prod text-left"
                       >
                         <div className="w-12 h-12 rounded border border-border/80 bg-background overflow-hidden flex-shrink-0 flex items-center justify-center relative">
@@ -281,7 +284,7 @@ export default async function OrderDetailPage(props: {
                             </p>
                           )}
                         </div>
-                      </Link>
+                      </a>
                     </td>
                     <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[10px] sm:text-[11px] text-muted">
                       {item.product.sku}
