@@ -69,6 +69,27 @@ export default function ClientLoginPage({ searchParams, referer }: Props) {
     }
   };
 
+  const handlePasskeySignIn = async () => {
+    setLoading(true);
+    setLocalError(null);
+    try {
+      const { createClient } = await import("@/utils/supabase/client");
+      const supabase = createClient();
+      const { error: passkeyErr } = await (
+        supabase.auth as any
+      ).signInWithPasskey();
+      if (passkeyErr) {
+        setLocalError(passkeyErr.message || "Passkey sign-in failed");
+        setLoading(false);
+      } else {
+        window.location.href = nextUrl;
+      }
+    } catch (err: any) {
+      setLocalError(err?.message || "Passkey sign-in cancelled");
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
