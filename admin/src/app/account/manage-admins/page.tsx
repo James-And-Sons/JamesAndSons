@@ -9,12 +9,46 @@ export const dynamic = "force-dynamic";
 export default async function ManageAdminsPage() {
   await requireAdmin("manage_admins");
 
-  const admins = await prisma.user.findMany({
-    where: {
-      role: { in: ["ADMIN", "B2B_APPROVER"] },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  let admins: any[] = [];
+  try {
+    admins = await prisma.user.findMany({
+      where: {
+        role: { in: ["ADMIN", "B2B_APPROVER"] },
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        permissions: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err: any) {
+    if (err.code === "P2022" || err.message?.includes("permissions")) {
+      admins = await prisma.user.findMany({
+        where: {
+          role: { in: ["ADMIN", "B2B_APPROVER"] },
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      admins = admins.map((a) => ({ ...a, permissions: [] }));
+    } else {
+      throw err;
+    }
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
