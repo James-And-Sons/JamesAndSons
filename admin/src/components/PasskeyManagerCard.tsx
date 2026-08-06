@@ -16,7 +16,7 @@ export default function PasskeyManagerCard() {
 
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.addPasskey();
+      const { data, error } = await (supabase.auth as any).addPasskey();
 
       if (error) {
         setMsg({

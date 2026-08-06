@@ -102,6 +102,11 @@ export default function ClientLoginPage({ searchParams, referer }: Props) {
     }
 
     try {
+      const { createClient } = await import("@/utils/supabase/client");
+      const supabase = createClient();
+      const { error: passkeyErr } = await (
+        supabase.auth as any
+      ).signInWithPasskey();
       const res = (
         isLogin ? await login(formData) : await signup(formData)
       ) as any;
