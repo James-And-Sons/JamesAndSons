@@ -5,6 +5,7 @@ interface ShippingAddressProps {
   initialState?: string | null;
   initialPincode?: string | null;
   initialPhone?: string | null;
+  status?: string;
 }
 
 export default function EditableShippingAddress({
