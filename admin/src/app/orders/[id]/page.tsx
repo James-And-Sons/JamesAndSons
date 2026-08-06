@@ -132,6 +132,8 @@ export default async function OrderDetailPage(props: {
           id: i.id,
           quantity: i.quantity,
           product: {
+            name: i.product.name,
+            sku: i.product.sku,
             weight: i.product.weight,
             length: i.product.length,
             breadth: i.product.breadth,
