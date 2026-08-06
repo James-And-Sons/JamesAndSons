@@ -12,40 +12,47 @@ export async function requireAdmin(requiredPermission?: string) {
     redirect("/login");
   }
 
+  let dbUser: any = null;
   try {
-    const dbUser = await prisma.user.findUnique({
+    dbUser = await prisma.user.findUnique({
       where: { id: user.id },
       select: { role: true, permissions: true, email: true },
     });
-
-    if (
-      !dbUser ||
-      (dbUser.role !== "ADMIN" && dbUser.role !== "B2B_APPROVER")
-    ) {
-      console.warn(`Unauthorized admin access attempt: ${user.email}`);
-      await supabase.auth.signOut();
-      redirect("/login?error=Unauthorized");
-    }
-
-    // RBAC Section Access Lock
-    if (
-      requiredPermission &&
-      dbUser.permissions &&
-      dbUser.permissions.length > 0
-    ) {
-      if (!dbUser.permissions.includes(requiredPermission)) {
-        console.warn(
-          `Access Denied for user ${user.email} on section: ${requiredPermission}`,
-        );
-        redirect("/?error=AccessDenied");
-      }
-    }
-
-    return { ...user, permissions: dbUser.permissions || [] };
   } catch (err: any) {
-    if (err.message === "NEXT_REDIRECT") throw err;
-    console.error("requireAdmin DB check failed:", err);
+    if (err.code === "P2022" || err.message?.includes("permissions")) {
+      try {
+        dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true, email: true },
+        });
+        if (dbUser) dbUser.permissions = [];
+      } catch (innerErr) {
+        console.error("Fallback DB query failed:", innerErr);
+      }
+    } else {
+      console.error("requireAdmin DB check failed:", err);
+    }
   }
 
-  return { ...user, permissions: [] };
+  if (!dbUser || (dbUser.role !== "ADMIN" && dbUser.role !== "B2B_APPROVER")) {
+    console.warn(`Unauthorized admin access attempt: ${user?.email}`);
+    await supabase.auth.signOut();
+    redirect("/login?error=Unauthorized");
+  }
+
+  // RBAC Section Access Lock
+  if (
+    requiredPermission &&
+    dbUser.permissions &&
+    dbUser.permissions.length > 0
+  ) {
+    if (!dbUser.permissions.includes(requiredPermission)) {
+      console.warn(
+        `Access Denied for user ${user.email} on section: ${requiredPermission}`,
+      );
+      redirect("/?error=AccessDenied");
+    }
+  }
+
+  return { ...user, permissions: dbUser.permissions || [] };
 }
