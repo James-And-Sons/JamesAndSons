@@ -35,11 +35,18 @@ export async function updateSession(
     });
   }
 
-  // Bypass expensive Supabase network auth for API routes, webhooks, crons, and static files
+  const isPublicAssetOrManifest =
+    pathname.startsWith("/manifest") ||
+    pathname.startsWith("/sw.js") ||
+    pathname.startsWith("/pwa-") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/images/");
+
+  // Bypass expensive Supabase network auth for API routes, webhooks, crons, and static PWA assets
   const isApiOrWebhookOrCron =
+    isPublicAssetOrManifest ||
     pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname.startsWith("/favicon.ico");
+    pathname.startsWith("/_next/");
 
   if (isApiOrWebhookOrCron && !options?.protectAdmin) {
     return response;
@@ -52,6 +59,7 @@ export async function updateSession(
     pathname.startsWith("/update-password");
 
   const isPublicApi =
+    isPublicAssetOrManifest ||
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/admin/export") ||
     pathname.startsWith("/api/admin/sync-all") ||

@@ -1,15 +1,15 @@
 {
   "id": "/",
-  "name": "Admin J&S",
-  "short_name": "Admin J&S",
-  "description": "Management portal for James & Sons",
+  "name": "James & Sons",
+  "short_name": "James & Sons",
+  "description": "Bespoke luxury chandeliers & designer lighting by James & Sons",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0b",
   "theme_color": "#0a0a0b",
   "orientation": "any",
-  "categories": ["business", "productivity"],
+  "categories": ["shopping", "lifestyle"],
   "prefer_related_applications": false,
   "icons": [
     {
