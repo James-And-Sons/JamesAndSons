@@ -48,7 +48,7 @@ export async function inviteAdminAction(formData: FormData) {
       where: { email },
       update: {
         role: role as any,
-        permissions,
+        permissions: permissions as any,
         firstName,
         lastName,
       },
@@ -59,7 +59,7 @@ export async function inviteAdminAction(formData: FormData) {
         lastName,
         password: "INVITED_NOPASS",
         role: role as any,
-        permissions,
+        permissions: permissions as any,
       },
     });
 
@@ -80,7 +80,7 @@ export async function updateAdminPermissionsAction(
     await prisma.user.update({
       where: { id: userId },
       data: {
-        permissions,
+        permissions: permissions as any,
         ...(role ? { role: role as any } : {}),
       },
     });
