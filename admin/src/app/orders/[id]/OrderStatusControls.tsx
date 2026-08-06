@@ -580,86 +580,121 @@ export default function OrderStatusControls({
                     paddingBottom: "10px",
                   }}
                 >
-                  🚚 Actions
+                  🚚 Actions & Compliance Documents
                 </p>
 
-                {/* Book Pickup + Get Label — single primary action */}
-                <button
-                  onClick={handleBookShiprocketPickup}
-                  disabled={isBookingPickup}
-                  style={{
-                    width: "100%",
-                    padding: "11px 14px",
-                    background: isBookingPickup
-                      ? "rgba(107,141,214,0.2)"
-                      : "linear-gradient(135deg, #4c6ef5 0%, #7a9ff5 50%, #4c6ef5 100%)",
-                    border: "none",
-                    borderRadius: "2px",
-                    fontFamily: "monospace",
-                    fontSize: "10px",
-                    fontWeight: "700",
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: isBookingPickup ? "#6b8dd6" : "#fff",
-                    cursor: isBookingPickup ? "not-allowed" : "pointer",
-                    transition: "all 0.2s",
-                    boxShadow: isBookingPickup
-                      ? "none"
-                      : "0 2px 12px rgba(107,141,214,0.3)",
-                  }}
-                >
-                  {isBookingPickup
-                    ? "Booking Pickup…"
-                    : "Book Pickup & Print Label ↗"}
-                </button>
-
-                {/* Separate: just fetch label if pickup already booked */}
-                <button
-                  onClick={handleFetchShiprocketLabel}
-                  disabled={isFetchingLabel}
+                {/* Download GST Tax Invoice — Always available for valid orders */}
+                <a
+                  href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/api/orders/${orderId}/invoice`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     width: "100%",
                     padding: "9px 14px",
-                    background: "none",
+                    background: "rgba(107,141,214,0.1)",
                     border: "1px solid rgba(107,141,214,0.35)",
                     borderRadius: "2px",
                     fontFamily: "monospace",
                     fontSize: "9px",
+                    fontWeight: "600",
                     letterSpacing: "0.12em",
                     textTransform: "uppercase",
                     color: "#6b8dd6",
-                    cursor: isFetchingLabel ? "not-allowed" : "pointer",
-                    opacity: isFetchingLabel ? 0.5 : 1,
-                    transition: "all 0.15s",
+                    textDecoration: "none",
+                    textAlign: "center",
+                    display: "block",
+                    boxSizing: "border-box",
                   }}
                 >
-                  {isFetchingLabel
-                    ? "Fetching Label…"
-                    : "Download Shiprocket Label ↗"}
-                </button>
+                  📄 Download Tax Invoice (PDF) ↗
+                </a>
+
+                {/* Only allow initial pickup booking if shipment is NOT yet booked and order is active */}
+                {!awbNumber &&
+                  status !== "CANCELLED" &&
+                  status !== "DELIVERED" &&
+                  status !== "RETURNED" && (
+                    <button
+                      onClick={handleBookShiprocketPickup}
+                      disabled={isBookingPickup}
+                      style={{
+                        width: "100%",
+                        padding: "11px 14px",
+                        background: isBookingPickup
+                          ? "rgba(107,141,214,0.2)"
+                          : "linear-gradient(135deg, #4c6ef5 0%, #7a9ff5 50%, #4c6ef5 100%)",
+                        border: "none",
+                        borderRadius: "2px",
+                        fontFamily: "monospace",
+                        fontSize: "10px",
+                        fontWeight: "700",
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        color: isBookingPickup ? "#6b8dd6" : "#fff",
+                        cursor: isBookingPickup ? "not-allowed" : "pointer",
+                        transition: "all 0.2s",
+                        boxShadow: isBookingPickup
+                          ? "none"
+                          : "0 2px 12px rgba(107,141,214,0.3)",
+                      }}
+                    >
+                      {isBookingPickup
+                        ? "Booking Pickup…"
+                        : "Book Pickup & Print Label ↗"}
+                    </button>
+                  )}
+
+                {/* Download Label if pickup already booked */}
+                {awbNumber && status !== "CANCELLED" && (
+                  <button
+                    onClick={handleFetchShiprocketLabel}
+                    disabled={isFetchingLabel}
+                    style={{
+                      width: "100%",
+                      padding: "9px 14px",
+                      background: "none",
+                      border: "1px solid rgba(107,141,214,0.35)",
+                      borderRadius: "2px",
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: "#6b8dd6",
+                      cursor: isFetchingLabel ? "not-allowed" : "pointer",
+                      opacity: isFetchingLabel ? 0.5 : 1,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {isFetchingLabel
+                      ? "Fetching Label…"
+                      : "🏷️ Download Shipping Label ↗"}
+                  </button>
+                )}
 
                 {/* Track Real-time */}
-                <button
-                  onClick={handleTrackRealtime}
-                  disabled={isPending}
-                  style={{
-                    width: "100%",
-                    padding: "9px 14px",
-                    background: "none",
-                    border: "1px solid rgba(107,141,214,0.2)",
-                    borderRadius: "2px",
-                    fontFamily: "monospace",
-                    fontSize: "9px",
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: "var(--muted, #666)",
-                    cursor: isPending ? "not-allowed" : "pointer",
-                    opacity: isPending ? 0.5 : 1,
-                    transition: "all 0.15s",
-                  }}
-                >
-                  Track Real-time
-                </button>
+                {awbNumber && status !== "CANCELLED" && (
+                  <button
+                    onClick={handleTrackRealtime}
+                    disabled={isPending}
+                    style={{
+                      width: "100%",
+                      padding: "9px 14px",
+                      background: "none",
+                      border: "1px solid rgba(107,141,214,0.2)",
+                      borderRadius: "2px",
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: "var(--muted, #666)",
+                      cursor: isPending ? "not-allowed" : "pointer",
+                      opacity: isPending ? 0.5 : 1,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    Track Real-time
+                  </button>
+                )}
               </div>
             </div>
           )}
