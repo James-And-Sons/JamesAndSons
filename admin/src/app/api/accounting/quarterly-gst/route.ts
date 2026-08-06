@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       itemsSummary.push({
         orderNumber: o.orderNumber,
         date: o.createdAt.toISOString().split("T")[0],
-        channel: o.channel,
+        channel: o.channel || "D2C",
         customer: `${o.user.firstName} ${o.user.lastName}`.trim(),
         gstin: "N/A",
         taxable: Math.round(taxable * 100) / 100,
