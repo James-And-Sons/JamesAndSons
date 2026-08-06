@@ -23,14 +23,11 @@ export default function PasskeyManagerCard() {
       });
 
       if (error) {
-        const isMfaDisabled =
-          error.message?.includes("MFA enroll is disabled") ||
-          error.message?.includes("WebAuthn");
         setMsg({
           type: "error",
-          text: isMfaDisabled
-            ? "⚠️ WebAuthn Passkeys are disabled in Supabase Auth settings. Go to Supabase Dashboard ➔ Authentication ➔ Passkeys, toggle ON, and click 'Save changes'."
-            : error.message || "Failed to register passkey",
+          text:
+            error.message ||
+            "Failed to register passkey. Please ensure device biometrics are supported.",
         });
       } else {
         setMsg({
