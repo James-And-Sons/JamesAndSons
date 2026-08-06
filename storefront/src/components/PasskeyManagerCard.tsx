@@ -16,7 +16,11 @@ export default function PasskeyManagerCard() {
 
     try {
       const supabase = createClient();
-      const { data, error } = await (supabase.auth as any).addPasskey();
+      const { data, error } = await (
+        supabase.auth as any
+      ).mfa.webauthn.register({
+        friendlyName: "Customer Passkey",
+      });
 
       if (error) {
         setMsg({

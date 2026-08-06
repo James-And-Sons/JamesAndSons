@@ -77,7 +77,7 @@ export default function ClientLoginPage({ searchParams, referer }: Props) {
       const supabase = createClient();
       const { error: passkeyErr } = await (
         supabase.auth as any
-      ).signInWithPasskey();
+      ).mfa.webauthn.authenticate();
       if (passkeyErr) {
         setLocalError(passkeyErr.message || "Passkey sign-in failed");
         setLoading(false);
