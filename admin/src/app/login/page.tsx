@@ -24,8 +24,9 @@ function LoginForm() {
     try {
       const { createClient } = await import("@/utils/supabase/client");
       const supabase = createClient();
-      const { error: passkeyErr } =
-        await supabase.auth.mfa.webauthn.authenticate();
+      const { error: passkeyErr } = await (
+        supabase.auth.mfa.webauthn as any
+      ).authenticate({});
       if (passkeyErr) {
         setError(passkeyErr.message || "Passkey sign-in failed");
         setLoading(false);
