@@ -21,80 +21,106 @@ export async function updateSession(
     },
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
+  const pathname = request.nextUrl.pathname;
 
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
+  // Storefront Affiliate Attribution (Doesn't need Supabase Auth)
+  const refCode = request.nextUrl.searchParams.get("ref");
+  if (refCode && /^[A-Z0-9_-]{3,30}$/i.test(refCode)) {
+    response.cookies.set(AFFILIATE_COOKIE, refCode.toUpperCase(), {
+      maxAge: AFFILIATE_COOKIE_MAX_AGE,
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
+  // Bypass expensive Supabase network auth for API routes, webhooks, crons, and static files
+  const isApiOrWebhookOrCron =
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/favicon.ico");
+
+  if (isApiOrWebhookOrCron && !options?.protectAdmin) {
+    return response;
+  }
+
+  const isAuthPage =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/update-password");
+
+  const isPublicApi =
+    pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/admin/export") ||
+    pathname.startsWith("/api/admin/sync-all") ||
+    pathname.startsWith("/api/push") ||
+    pathname.startsWith("/api/notifications/summary") ||
+    pathname.startsWith("/api/health");
+
+  // Check if any Supabase session cookie exists before fetching from Supabase
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some((c) => c.name.includes("-auth-token"));
+
+  if (options?.protectAdmin && !hasAuthCookie && !isAuthPage && !isPublicApi) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Only validate user session if an auth cookie exists or page protection requires it
+  if (hasAuthCookie || (options?.protectAdmin && !isPublicApi)) {
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll();
             },
-          });
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value }) =>
+                request.cookies.set(name, value),
+              );
 
-          cookiesToSet.forEach(({ name, value, options: cookieOpts }) =>
-            response.cookies.set(name, value, {
-              ...COOKIE_OPTIONS,
-              ...cookieOpts,
-            }),
-          );
+              response = NextResponse.next({
+                request: {
+                  headers: request.headers,
+                },
+              });
+
+              cookiesToSet.forEach(({ name, value, options: cookieOpts }) =>
+                response.cookies.set(name, value, {
+                  ...COOKIE_OPTIONS,
+                  ...cookieOpts,
+                }),
+              );
+            },
+          },
         },
-      },
-    },
-  );
+      );
 
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    // Storefront Affiliate Attribution
-    const refCode = request.nextUrl.searchParams.get("ref");
-    if (refCode && /^[A-Z0-9_-]{3,30}$/i.test(refCode)) {
-      response.cookies.set(AFFILIATE_COOKIE, refCode.toUpperCase(), {
-        maxAge: AFFILIATE_COOKIE_MAX_AGE,
-        path: "/",
-        httpOnly: false,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      });
-    }
+      if (options?.protectAdmin) {
+        if (!user && !isAuthPage && !isPublicApi) {
+          const loginUrl = new URL("/login", request.url);
+          loginUrl.searchParams.set("redirectTo", pathname);
+          return NextResponse.redirect(loginUrl);
+        }
 
-    if (options?.protectAdmin) {
-      const pathname = request.nextUrl.pathname;
-      const isAuthPage =
-        pathname.startsWith("/login") ||
-        pathname.startsWith("/auth") ||
-        pathname.startsWith("/forgot-password") ||
-        pathname.startsWith("/update-password");
-
-      const isPublicApi =
-        pathname.startsWith("/api/webhooks") ||
-        pathname.startsWith("/api/admin/export") ||
-        pathname.startsWith("/api/admin/sync-all") ||
-        pathname.startsWith("/api/push");
-
-      if (!user && !isAuthPage && !isPublicApi) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirectTo", pathname);
-        return NextResponse.redirect(loginUrl);
+        if (user && isAuthPage && pathname !== "/auth/callback") {
+          return NextResponse.redirect(new URL("/", request.url));
+        }
       }
-
-      if (user && isAuthPage && pathname !== "/auth/callback") {
-        return NextResponse.redirect(new URL("/", request.url));
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Middleware session check suppressed error:", error);
       }
-    }
-  } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("Middleware session check suppressed error:", error);
     }
   }
 

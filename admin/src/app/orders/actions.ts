@@ -133,6 +133,48 @@ export async function syncAmazonOrdersAction(minutesBack: number = 1440) {
   }
 }
 
+export async function syncSingleAmazonOrderAction(
+  amazonOrderId: string,
+  orderId?: string,
+) {
+  try {
+    const storefrontUrl =
+      process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in";
+    const cronSecret =
+      process.env.CRON_SECRET || "james_and_sons_automation_secure_88";
+
+    const res = await fetch(
+      `${storefrontUrl}/api/cron/amazon-orders?amazonOrderId=${encodeURIComponent(amazonOrderId)}`,
+      {
+        headers: { Authorization: `Bearer ${cronSecret}` },
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Amazon sync endpoint returned ${res.status}: ${text}`);
+    }
+
+    const data = await res.json();
+    if (orderId) revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/orders");
+
+    return {
+      success: data.success !== false,
+      status: data.status,
+      message:
+        data.message || `Amazon status synced for order ${amazonOrderId}`,
+    };
+  } catch (error: any) {
+    console.error("[Amazon Single Sync Action] Error:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to sync Amazon order.",
+    };
+  }
+}
+
 export async function updateOrderAddressAction(
   orderId: string,
   data: {

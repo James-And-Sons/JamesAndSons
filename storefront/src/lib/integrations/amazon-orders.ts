@@ -57,18 +57,21 @@ interface AmazonOrder {
 // ---------------------------------------------------------------------------
 
 export async function fetchNewAmazonOrders(
-  minutesBack = 30,
+  minutesBack = 1440,
 ): Promise<AmazonOrder[]> {
   const config = getAmazonConfig();
   const accessToken = await getLwaAccessToken();
 
-  const createdAfter = new Date(
+  const lastUpdatedAfter = new Date(
     Date.now() - minutesBack * 60 * 1000,
   ).toISOString();
-  const path = `/orders/v0/orders?MarketplaceIds=${config.marketplaceId}&CreatedAfter=${encodeURIComponent(createdAfter)}&OrderStatuses=Unshipped&FulfillmentChannels=MFN`;
+
+  // Query unshipped, partially shipped, shipped, and canceled orders across MFN & AFN channels
+  const statuses = "Unshipped,PartiallyShipped,Shipped,Canceled";
+  const path = `/orders/v0/orders?MarketplaceIds=${config.marketplaceId}&LastUpdatedAfter=${encodeURIComponent(lastUpdatedAfter)}&OrderStatuses=${statuses}`;
 
   console.log(
-    `[Amazon Orders] Fetching MFN orders created after ${createdAfter}...`,
+    `[Amazon Orders] Fetching Amazon orders updated after ${lastUpdatedAfter}...`,
   );
   const res = await signedSpApiFetch(path, accessToken, config);
 
@@ -81,8 +84,55 @@ export async function fetchNewAmazonOrders(
 
   const data = await res.json();
   const orders: AmazonOrder[] = data?.payload?.Orders || [];
-  console.log(`[Amazon Orders] Found ${orders.length} unshipped orders.`);
+  console.log(`[Amazon Orders] Found ${orders.length} updated Amazon orders.`);
   return orders;
+}
+
+// ---------------------------------------------------------------------------
+// Sync single Amazon order by Amazon Order ID
+// ---------------------------------------------------------------------------
+
+export async function syncSingleAmazonOrder(
+  amazonOrderId: string,
+): Promise<{ success: boolean; status?: string; message?: string }> {
+  try {
+    const config = getAmazonConfig();
+    const accessToken = await getLwaAccessToken();
+    const path = `/orders/v0/orders/${amazonOrderId}`;
+
+    console.log(
+      `[Amazon Sync] Fetching SP-API details for Amazon order: ${amazonOrderId}`,
+    );
+    const res = await signedSpApiFetch(path, accessToken, config);
+    if (!res.ok) {
+      const text = await res.text();
+      return { success: false, message: `SP-API error ${res.status}: ${text}` };
+    }
+
+    const data = await res.json();
+    const amazonOrder: AmazonOrder = data?.payload;
+    if (!amazonOrder) {
+      return {
+        success: false,
+        message: "No order payload returned from Amazon SP-API",
+      };
+    }
+
+    const items = await getAmazonOrderItems(amazonOrderId);
+    const jnsId = await ingestAmazonOrder(amazonOrder, items);
+
+    return {
+      success: true,
+      status: amazonOrder.OrderStatus,
+      message: `Synced Amazon order ${amazonOrderId} successfully.`,
+    };
+  } catch (err: any) {
+    console.error(
+      `[Amazon Sync] Failed to sync single Amazon order ${amazonOrderId}:`,
+      err,
+    );
+    return { success: false, message: err?.message || "Internal sync error" };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -110,7 +160,7 @@ export async function getAmazonOrderItems(
 }
 
 // ---------------------------------------------------------------------------
-// Ingest a single Amazon order into JNS database (idempotent)
+// Ingest or update a single Amazon order in JNS database
 // ---------------------------------------------------------------------------
 
 export async function ingestAmazonOrder(
@@ -119,15 +169,63 @@ export async function ingestAmazonOrder(
 ): Promise<string | null> {
   const { AmazonOrderId } = amazonOrder;
 
-  // Idempotency — skip if already in DB
+  // Map Amazon OrderStatus to Prisma enum OrderStatus
+  let mappedStatus:
+    "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" =
+    "PAID";
+  const amzStatus = amazonOrder.OrderStatus;
+  if (amzStatus === "Shipped" || amzStatus === "PartiallyShipped") {
+    mappedStatus = "SHIPPED";
+  } else if (amzStatus === "Delivered") {
+    mappedStatus = "DELIVERED";
+  } else if (amzStatus === "Canceled") {
+    mappedStatus = "CANCELLED";
+  }
+
+  // If order already exists in DB, update status and tracking info
   const existing = await prisma.order.findUnique({
     where: { amazonOrderId: AmazonOrderId },
+    include: { items: true },
   });
+
   if (existing) {
-    console.log(
-      `[Amazon Orders] Order ${AmazonOrderId} already ingested (JNS: ${existing.orderNumber}). Skipping.`,
-    );
-    return null;
+    if (
+      existing.status !== mappedStatus ||
+      existing.amazonOrderStatus !== amzStatus
+    ) {
+      await prisma.order.update({
+        where: { id: existing.id },
+        data: {
+          status: mappedStatus as any,
+          amazonOrderStatus: amzStatus,
+        },
+      });
+
+      // If status changed to CANCELLED, restore inventory
+      if (mappedStatus === "CANCELLED" && existing.status !== "CANCELLED") {
+        for (const item of existing.items) {
+          if (item.variantId) {
+            await prisma.productVariant
+              .update({
+                where: { id: item.variantId },
+                data: { stockQuantity: { increment: item.quantity } },
+              })
+              .catch(() => {});
+          }
+          await prisma.product
+            .update({
+              where: { id: item.productId },
+              data: { stockQuantity: { increment: item.quantity } },
+            })
+            .catch(() => {});
+        }
+      }
+
+      console.log(
+        `[Amazon Orders] Updated existing Amazon order ${AmazonOrderId} status from ${existing.status} to ${mappedStatus} (Amazon Status: ${amzStatus}).`,
+      );
+    }
+    return existing.id;
   }
 
   // Find or create the system "Amazon Marketplace" user

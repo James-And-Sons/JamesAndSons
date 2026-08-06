@@ -215,13 +215,16 @@ export default async function OrderDetailPage(props: {
 
       {/* Line Items */}
       <div className="bg-surface border border-border overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-border">
+        <div className="p-4 sm:p-6 border-b border-border flex justify-between items-center">
           <h3 className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted">
             Order Items ({order.items.length})
           </h3>
+          <span className="font-mono text-[8px] uppercase tracking-widest text-muted hidden sm:inline-block">
+            Click product to view / edit in admin ↗
+          </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[500px]">
+          <table className="w-full text-left min-w-[550px]">
             <thead className="border-b border-border text-muted">
               <tr>
                 <th className="py-3 px-4 sm:px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
@@ -242,25 +245,59 @@ export default async function OrderDetailPage(props: {
               </tr>
             </thead>
             <tbody>
-              {order.items.map((item) => (
-                <tr key={item.id} className="border-b border-border">
-                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-serif text-[14px] sm:text-[16px] text-primary">
-                    {item.product.name}
-                  </td>
-                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[10px] sm:text-[11px] text-muted">
-                    {item.product.sku}
-                  </td>
-                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-primary">
-                    {item.quantity}
-                  </td>
-                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-secondary">
-                    {formatPrice(item.unitPrice)}
-                  </td>
-                  <td className="py-3 sm:py-4 px-4 sm:px-6 font-serif text-[14px] sm:text-[16px] text-accent text-right">
-                    {formatPrice(item.total)}
-                  </td>
-                </tr>
-              ))}
+              {order.items.map((item) => {
+                const imageUrl = item.product.images?.[0];
+                return (
+                  <tr
+                    key={item.id}
+                    className="border-b border-border hover:bg-white/[0.02] transition-colors"
+                  >
+                    <td className="py-3 sm:py-4 px-4 sm:px-6">
+                      <Link
+                        href={`/products/${item.product.id}/edit`}
+                        className="flex items-center gap-3 group/prod text-left"
+                      >
+                        <div className="w-12 h-12 rounded border border-border/80 bg-background overflow-hidden flex-shrink-0 flex items-center justify-center relative">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover group-hover/prod:scale-105 transition-transform duration-200"
+                            />
+                          ) : (
+                            <span className="text-[18px]">💡</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-serif text-[14px] sm:text-[16px] text-primary group-hover/prod:text-accent transition-colors m-0 flex items-center gap-1.5 font-medium">
+                            {item.product.name}
+                            <span className="font-mono text-[10px] text-accent opacity-0 group-hover/prod:opacity-100 transition-opacity">
+                              ↗
+                            </span>
+                          </p>
+                          {item.product.dimensions && (
+                            <p className="font-mono text-[10px] text-muted m-0 mt-0.5">
+                              {item.product.dimensions}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[10px] sm:text-[11px] text-muted">
+                      {item.product.sku}
+                    </td>
+                    <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-primary font-semibold">
+                      {item.quantity}
+                    </td>
+                    <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-secondary">
+                      {formatPrice(item.unitPrice)}
+                    </td>
+                    <td className="py-3 sm:py-4 px-4 sm:px-6 font-serif text-[14px] sm:text-[16px] text-accent text-right">
+                      {formatPrice(item.total)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

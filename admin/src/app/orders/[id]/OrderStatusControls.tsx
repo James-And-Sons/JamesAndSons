@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { updateOrderStatus, updateTrackingNumber } from "../actions";
+import {
+  updateOrderStatus,
+  updateTrackingNumber,
+  syncSingleAmazonOrderAction,
+} from "../actions";
 import {
   syncRazorpayPayment,
   trackShiprocketShipment,

@@ -37,7 +37,18 @@ export async function GET(request: Request) {
 
   // Parse options
   const url = new URL(request.url);
+  const amazonOrderId = url.searchParams.get("amazonOrderId");
   const minutesBack = parseInt(url.searchParams.get("minutes") || "1440", 10);
+
+  if (amazonOrderId) {
+    console.log(
+      `[Amazon Cron] Targeted single order sync for: ${amazonOrderId}`,
+    );
+    const { syncSingleAmazonOrder } =
+      await import("@/lib/integrations/amazon-orders");
+    const result = await syncSingleAmazonOrder(amazonOrderId);
+    return NextResponse.json(result);
+  }
 
   console.log(
     `[Amazon Cron] Triggered. Looking back ${minutesBack} minutes for new orders.`,
