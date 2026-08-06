@@ -1,19 +1,19 @@
-import { MetadataRoute } from "next";
+import { NextResponse } from "next/server";
 import { BRAND_CONFIG } from "@james-andsons/config";
 
-export default function manifest(): MetadataRoute.Manifest {
-  return {
+export async function GET() {
+  const manifestData = {
     id: "/",
-    name: BRAND_CONFIG.name,
-    short_name: BRAND_CONFIG.name,
-    description: BRAND_CONFIG.description,
+    name: BRAND_CONFIG.adminPwaName,
+    short_name: BRAND_CONFIG.adminPwaName,
+    description: `Management portal for ${BRAND_CONFIG.name}`,
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#0a0a0b",
     theme_color: "#0a0a0b",
     orientation: "any",
-    categories: ["shopping", "lifestyle"],
+    categories: ["business", "productivity"],
     prefer_related_applications: false,
     icons: [
       {
@@ -36,4 +36,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
   };
+
+  return NextResponse.json(manifestData, {
+    headers: {
+      "Content-Type": "application/manifest+json",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }
