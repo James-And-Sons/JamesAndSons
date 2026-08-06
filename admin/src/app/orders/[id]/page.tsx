@@ -177,7 +177,8 @@ export default async function OrderDetailPage(props: {
         razorpayPaymentId={order.razorpayPaymentId}
         razorpayOrderId={order.razorpayOrderId}
         amazonOrderId={order.amazonOrderId}
-        isAmazon={order.channel === "AMAZON"}
+        channel={order.channel}
+        isAmazon={order.channel === "AMAZON" || Boolean(order.amazonOrderId)}
         orderItems={order.items.map((i) => ({
           id: i.id,
           quantity: i.quantity,

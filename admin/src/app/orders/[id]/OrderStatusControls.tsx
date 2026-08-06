@@ -57,6 +57,7 @@ export default function OrderStatusControls({
   fulfillmentError,
   channel,
   amazonOrderId,
+  isAmazon: isAmazonProp,
   orderItems,
 }: {
   orderId: string;
@@ -98,7 +99,9 @@ export default function OrderStatusControls({
   const [pkgHeight, setPkgHeight] = useState(40);
   const [pkgWeight, setPkgWeight] = useState(1.0);
 
-  const isAmazon = channel === "AMAZON";
+  const isAmazon = Boolean(
+    isAmazonProp || channel === "AMAZON" || amazonOrderId,
+  );
 
   // Auto-calculate dimensions from order items on load
   useEffect(() => {
