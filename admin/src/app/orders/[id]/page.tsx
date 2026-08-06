@@ -129,6 +129,7 @@ export default async function OrderDetailPage(props: {
         amazonOrderId={order.amazonOrderId}
         isAmazon={order.channel === "AMAZON"}
         orderItems={order.items.map((i) => ({
+          id: i.id,
           quantity: i.quantity,
           product: {
             weight: i.product.weight,
