@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: BRAND_CONFIG.name,
     short_name: BRAND_CONFIG.name,
-    description: BRAND_CONFIG.description,
+    description: `Bespoke luxury chandeliers & designer lighting by ${BRAND_CONFIG.name}`,
     start_url: "/",
     scope: "/",
     display: "standalone",
