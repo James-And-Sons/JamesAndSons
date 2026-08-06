@@ -1,24 +1,24 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 // Fallback configuration default templates
 const DEFAULT_CONFIGS: Record<string, any> = {
   BRAND: {
-    name: 'James & Sons',
-    legalName: 'James and Sons Bespoke Interiors',
-    tagline: 'Luxury Artisanal Lighting & Home Accessories',
-    domain: 'jamesandsons.in',
-    storefrontUrl: 'https://jamesandsons.in',
-    supportEmail: 'support@jamesandsons.in',
-    ordersEmail: 'orders@jamesandsons.in',
-    currencySymbol: '₹',
-    currencyCode: 'INR',
+    name: "James & Sons",
+    legalName: "James and Sons Bespoke Interiors",
+    tagline: "Luxury Artisanal Lighting & Home Accessories",
+    domain: "jamesandsons.in",
+    storefrontUrl: "https://jamesandsons.in",
+    supportEmail: "support@jamesandsons.in",
+    ordersEmail: "orders@jamesandsons.in",
+    currencySymbol: "₹",
+    currencyCode: "INR",
     defaultGstRate: 18.0,
-    phone: '+91 9045 808115',
-    address: 'Mohalla Peer Mattha, Dhobi Wali Gali, Parav Dubey, Aligarh, Uttar Pradesh, 202001',
-    gstin: '09AABCJ8243A1ZX',
+    phone: "+91 9045 808115",
+    address: "Peer matha, parav dubey, Aligarh, Uttar Pradesh, India- 202001",
+    gstin: "09AABCJ8243A1ZX",
   },
 };
 
@@ -45,7 +45,7 @@ export async function adminGetSystemConfig(key: string) {
       }
       return config.value as any;
     } catch (err) {
-      console.warn('Prisma model load failed, falling back to raw query:', err);
+      console.warn("Prisma model load failed, falling back to raw query:", err);
     }
   }
 
@@ -53,7 +53,7 @@ export async function adminGetSystemConfig(key: string) {
   try {
     const rawResult: any[] = await prisma.$queryRawUnsafe(
       `SELECT value FROM system_configs WHERE key = $1 LIMIT 1`,
-      key
+      key,
     );
     if (rawResult && rawResult.length > 0) {
       return rawResult[0].value;
@@ -67,11 +67,11 @@ export async function adminGetSystemConfig(key: string) {
        VALUES ($1, $2::json, NOW(), NOW())
        ON CONFLICT (key) DO NOTHING`,
       key,
-      defaultValJson
+      defaultValJson,
     );
     return defaultVal;
   } catch (err) {
-    console.error('Raw queries read failed:', err);
+    console.error("Raw queries read failed:", err);
     return DEFAULT_CONFIGS[key] || {};
   }
 }
@@ -90,10 +90,13 @@ export async function adminSaveSystemConfig(key: string, data: any) {
         update: { value: data },
         create: { key, value: data },
       });
-      revalidatePath('/account');
+      revalidatePath("/account");
       return { success: true };
     } catch (err) {
-      console.warn('Prisma model upsert failed, falling back to raw query:', err);
+      console.warn(
+        "Prisma model upsert failed, falling back to raw query:",
+        err,
+      );
     }
   }
 
@@ -106,22 +109,25 @@ export async function adminSaveSystemConfig(key: string, data: any) {
        ON CONFLICT (key) 
        DO UPDATE SET value = $2::json, "updatedAt" = NOW()`,
       key,
-      valueJson
+      valueJson,
     );
-    revalidatePath('/account');
+    revalidatePath("/account");
     return { success: true };
   } catch (err: any) {
-    console.error('Raw query upsert failed:', err);
-    throw new Error(err.message || 'Failed to save configuration');
+    console.error("Raw query upsert failed:", err);
+    throw new Error(err.message || "Failed to save configuration");
   }
 }
 
-export async function adminTogglePagePublishStatus(id: string, currentStatus: boolean) {
+export async function adminTogglePagePublishStatus(
+  id: string,
+  currentStatus: boolean,
+) {
   const p = prisma as any;
   await p.page.update({
     where: { id },
-    data: { isPublished: !currentStatus }
+    data: { isPublished: !currentStatus },
   });
-  revalidatePath('/account');
+  revalidatePath("/account");
   return { success: true };
 }
