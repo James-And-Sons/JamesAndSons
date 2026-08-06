@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Settings, Store, FileText, BookOpen, Search } from "lucide-react";
 import PWAInstallButton from "@/components/PWAInstallButton";
 import PwaInstallHelper from "@/components/PwaInstallHelper";
+import PasskeyManagerCard from "@/components/PasskeyManagerCard";
 import CaEmailSettingsForm from "./CaEmailSettingsForm";
 import BrandSettingsForm from "./BrandSettingsForm";
 import { adminTogglePagePublishStatus } from "./config-actions";
@@ -153,6 +154,9 @@ export default function SettingsTabsContainer({
 
           {/* PWA App Installation Section with Platform Detection */}
           <PwaInstallHelper />
+
+          {/* Admin Passkey & Biometric Security Settings */}
+          <PasskeyManagerCard />
 
           {/* CA Email Settings for GST Quarterly Reports */}
           <CaEmailSettingsForm />
