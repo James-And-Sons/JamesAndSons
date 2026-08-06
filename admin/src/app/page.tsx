@@ -23,12 +23,27 @@ function formatTimeAgo(date: Date): string {
 export default async function Dashboard() {
   const results = await Promise.allSettled([
     prisma.order.findMany({
-      include: { user: true },
+      select: {
+        id: true,
+        orderNumber: true,
+        totalAmount: true,
+        status: true,
+        channel: true,
+        createdAt: true,
+        user: { select: { firstName: true, lastName: true, email: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
     prisma.rFQ.findMany({
-      include: { user: true, items: true },
+      select: {
+        id: true,
+        rfqNumber: true,
+        status: true,
+        createdAt: true,
+        items: true,
+        user: { select: { firstName: true, lastName: true, email: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
@@ -36,7 +51,14 @@ export default async function Dashboard() {
     prisma.user.count({ where: { role: "B2B_APPROVER" } }),
     prisma.ticket.findMany({
       where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
-      include: { user: true },
+      select: {
+        id: true,
+        ticketNumber: true,
+        subject: true,
+        status: true,
+        createdAt: true,
+        user: { select: { firstName: true, lastName: true, email: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),

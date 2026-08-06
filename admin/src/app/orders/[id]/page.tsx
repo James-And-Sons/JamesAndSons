@@ -4,6 +4,8 @@ import Link from "next/link";
 import OrderStatusControls from "./OrderStatusControls";
 import EditableShippingAddress from "./EditableShippingAddress";
 
+import { requireAdmin } from "@/lib/auth";
+
 function formatPrice(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;
 }
@@ -13,12 +15,60 @@ const STATUS_STEPS = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED"];
 export default async function OrderDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAdmin("orders");
   const params = await props.params;
   const order = await prisma.order.findUnique({
     where: { id: params.id },
-    include: {
-      user: { include: { company: true } },
-      items: { include: { product: true } },
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      channel: true,
+      createdAt: true,
+      totalAmount: true,
+      taxAmount: true,
+      shippingAmount: true,
+      trackingNumber: true,
+      awbNumber: true,
+      razorpayPaymentId: true,
+      razorpayOrderId: true,
+      amazonOrderId: true,
+      shippingAddress: true,
+      shippingPhone: true,
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          company: {
+            select: {
+              name: true,
+              gstin: true,
+            },
+          },
+        },
+      },
+      items: {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          product: {
+            select: {
+              name: true,
+              slug: true,
+              sku: true,
+              dimensions: true,
+              images: true,
+              weight: true,
+              length: true,
+              breadth: true,
+              height: true,
+            },
+          },
+        },
+      },
     },
   });
 
