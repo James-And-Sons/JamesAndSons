@@ -782,418 +782,430 @@ export default function OrderStatusControls({
         </div>
       )}
 
-      {/* ── Amazon Easy Ship Fulfillment Studio ──────────────────── */}
-      {isAmazon && (
-        <div style={{ padding: "24px" }}>
-          {/* Success confirmation banner */}
-          {bookingResult && (
-            <div
-              style={{
-                background: "rgba(74,222,128,0.06)",
-                border: "1px solid rgba(74,222,128,0.25)",
-                borderRadius: "2px",
-                padding: "16px 20px",
-                marginBottom: "20px",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "14px",
-              }}
-            >
-              <span style={{ fontSize: "20px" }}>✅</span>
-              <div>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "11px",
-                    color: "#4ade80",
-                    fontWeight: "bold",
-                    letterSpacing: "0.1em",
-                    margin: 0,
-                  }}
-                >
-                  AMAZON ATS PICKUP BOOKED SUCCESSFULLY
-                </p>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "10px",
-                    color: "rgba(74,222,128,0.7)",
-                    marginTop: "4px",
-                    margin: "4px 0 0",
-                  }}
-                >
-                  Package ID: {bookingResult.packageId} · Tracking:{" "}
-                  {bookingResult.trackingNumber}
-                </p>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "10px",
-                    color: "rgba(74,222,128,0.5)",
-                    marginTop: "4px",
-                    margin: "4px 0 0",
-                  }}
-                >
-                  Shipping label opened in a new tab for printing.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-            {/* Package Calculator */}
-            <div
-              style={{
-                background: "rgba(196,160,90,0.04)",
-                border: "1px solid rgba(196,160,90,0.15)",
-                borderRadius: "2px",
-                padding: "16px",
-              }}
-            >
+      {/* ── Amazon Easy Ship Fulfillment Studio (Only shown if active & not already booked) ──────────────────── */}
+      {isAmazon &&
+        status !== "CANCELLED" &&
+        status !== "DELIVERED" &&
+        status !== "RETURNED" &&
+        !awbNumber && (
+          <div style={{ padding: "24px" }}>
+            {/* Success confirmation banner */}
+            {bookingResult && (
               <div
                 style={{
+                  background: "rgba(74,222,128,0.06)",
+                  border: "1px solid rgba(74,222,128,0.25)",
+                  borderRadius: "2px",
+                  padding: "16px 20px",
+                  marginBottom: "20px",
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderBottom: "1px solid rgba(196,160,90,0.1)",
-                  paddingBottom: "10px",
-                  marginBottom: "14px",
+                  alignItems: "flex-start",
+                  gap: "14px",
                 }}
               >
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "9px",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: "#c4a05a",
-                    margin: 0,
-                  }}
-                >
-                  📦 Package Specs
-                </p>
-                <span
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "8px",
-                    color: "rgba(196,160,90,0.5)",
-                    background: "rgba(196,160,90,0.08)",
-                    padding: "2px 6px",
-                    borderRadius: "2px",
-                  }}
-                >
-                  Auto-Calculated
-                </span>
+                <span style={{ fontSize: "20px" }}>✅</span>
+                <div>
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "11px",
+                      color: "#4ade80",
+                      fontWeight: "bold",
+                      letterSpacing: "0.1em",
+                      margin: 0,
+                    }}
+                  >
+                    AMAZON ATS PICKUP BOOKED SUCCESSFULLY
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: "rgba(74,222,128,0.7)",
+                      marginTop: "4px",
+                      margin: "4px 0 0",
+                    }}
+                  >
+                    Package ID: {bookingResult.packageId} · Tracking:{" "}
+                    {bookingResult.trackingNumber}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: "rgba(74,222,128,0.5)",
+                      marginTop: "4px",
+                      margin: "4px 0 0",
+                    }}
+                  >
+                    Shipping label opened in a new tab for printing.
+                  </p>
+                </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  {
-                    label: "Length (cm)",
-                    value: pkgLength,
-                    setter: setPkgLength,
-                  },
-                  { label: "Width (cm)", value: pkgWidth, setter: setPkgWidth },
-                  {
-                    label: "Height (cm)",
-                    value: pkgHeight,
-                    setter: setPkgHeight,
-                  },
-                  {
-                    label: "Weight (kg)",
-                    value: pkgWeight,
-                    setter: setPkgWeight,
-                    step: 0.1,
-                    isGold: true,
-                  },
-                ].map(({ label, value, setter, step, isGold }) => (
-                  <div key={label}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontFamily: "monospace",
-                        fontSize: "8px",
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        color: "var(--muted, #666)",
-                        marginBottom: "5px",
-                      }}
-                    >
-                      {label}
-                    </label>
-                    <input
-                      type="number"
-                      value={value}
-                      step={step || 1}
-                      onChange={(e) => setter(parseFloat(e.target.value) || 0)}
-                      style={{
-                        width: "100%",
-                        boxSizing: "border-box",
-                        background: "var(--background, #0a0a0a)",
-                        border: `1px solid ${isGold ? "rgba(196,160,90,0.4)" : "var(--border, #222)"}`,
-                        borderRadius: "2px",
-                        padding: "7px 10px",
-                        fontFamily: "monospace",
-                        fontSize: "13px",
-                        color: isGold ? "#c4a05a" : "var(--primary, #fff)",
-                        fontWeight: isGold ? "700" : "400",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <p
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: "9px",
-                  color: "rgba(196,160,90,0.45)",
-                  marginTop: "10px",
-                  marginBottom: 0,
-                  lineHeight: "1.5",
-                }}
-              >
-                ↑ Computed from product catalogue dimensions × quantity. Adjust
-                if using a custom shipping box.
-              </p>
-            </div>
-
-            {/* Time Slot Picker */}
-            <div
-              style={{
-                background: "rgba(196,160,90,0.04)",
-                border: "1px solid rgba(196,160,90,0.15)",
-                borderRadius: "2px",
-                padding: "16px",
-              }}
-            >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+              {/* Package Calculator */}
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderBottom: "1px solid rgba(196,160,90,0.1)",
-                  paddingBottom: "10px",
-                  marginBottom: "14px",
+                  background: "rgba(196,160,90,0.04)",
+                  border: "1px solid rgba(196,160,90,0.15)",
+                  borderRadius: "2px",
+                  padding: "16px",
                 }}
               >
-                <p
+                <div
                   style={{
-                    fontFamily: "monospace",
-                    fontSize: "9px",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: "#c4a05a",
-                    margin: 0,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderBottom: "1px solid rgba(196,160,90,0.1)",
+                    paddingBottom: "10px",
+                    marginBottom: "14px",
                   }}
                 >
-                  🗓 Pickup Date &amp; Time Slot
-                </p>
-                {isFetchingSlots && (
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      color: "#c4a05a",
+                      margin: 0,
+                    }}
+                  >
+                    📦 Package Specs
+                  </p>
                   <span
                     style={{
                       fontFamily: "monospace",
                       fontSize: "8px",
                       color: "rgba(196,160,90,0.5)",
+                      background: "rgba(196,160,90,0.08)",
+                      padding: "2px 6px",
+                      borderRadius: "2px",
                     }}
                   >
-                    Loading…
+                    Auto-Calculated
                   </span>
-                )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    {
+                      label: "Length (cm)",
+                      value: pkgLength,
+                      setter: setPkgLength,
+                    },
+                    {
+                      label: "Width (cm)",
+                      value: pkgWidth,
+                      setter: setPkgWidth,
+                    },
+                    {
+                      label: "Height (cm)",
+                      value: pkgHeight,
+                      setter: setPkgHeight,
+                    },
+                    {
+                      label: "Weight (kg)",
+                      value: pkgWeight,
+                      setter: setPkgWeight,
+                      step: 0.1,
+                      isGold: true,
+                    },
+                  ].map(({ label, value, setter, step, isGold }) => (
+                    <div key={label}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontFamily: "monospace",
+                          fontSize: "8px",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          color: "var(--muted, #666)",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        {label}
+                      </label>
+                      <input
+                        type="number"
+                        value={value}
+                        step={step || 1}
+                        onChange={(e) =>
+                          setter(parseFloat(e.target.value) || 0)
+                        }
+                        style={{
+                          width: "100%",
+                          boxSizing: "border-box",
+                          background: "var(--background, #0a0a0a)",
+                          border: `1px solid ${isGold ? "rgba(196,160,90,0.4)" : "var(--border, #222)"}`,
+                          borderRadius: "2px",
+                          padding: "7px 10px",
+                          fontFamily: "monospace",
+                          fontSize: "13px",
+                          color: isGold ? "#c4a05a" : "var(--primary, #fff)",
+                          fontWeight: isGold ? "700" : "400",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    color: "rgba(196,160,90,0.45)",
+                    marginTop: "10px",
+                    marginBottom: 0,
+                    lineHeight: "1.5",
+                  }}
+                >
+                  ↑ Computed from product catalogue dimensions × quantity.
+                  Adjust if using a custom shipping box.
+                </p>
               </div>
 
-              {timeSlots.length > 0 ? (
+              {/* Time Slot Picker */}
+              <div
+                style={{
+                  background: "rgba(196,160,90,0.04)",
+                  border: "1px solid rgba(196,160,90,0.15)",
+                  borderRadius: "2px",
+                  padding: "16px",
+                }}
+              >
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderBottom: "1px solid rgba(196,160,90,0.1)",
+                    paddingBottom: "10px",
+                    marginBottom: "14px",
                   }}
                 >
-                  {timeSlots.map((slot) => {
-                    const isSelected = selectedSlot?.slotId === slot.slotId;
-                    return (
-                      <label
-                        key={slot.slotId}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          padding: "10px 12px",
-                          background: isSelected
-                            ? "rgba(196,160,90,0.1)"
-                            : "var(--background, #0a0a0a)",
-                          border: `1px solid ${isSelected ? "rgba(196,160,90,0.5)" : "var(--border, #222)"}`,
-                          borderRadius: "2px",
-                          cursor: "pointer",
-                          transition: "all 0.15s",
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="pickup-slot"
-                          value={slot.slotId}
-                          checked={isSelected}
-                          onChange={() => setSelectedSlot(slot)}
-                          style={{ accentColor: "#c4a05a" }}
-                        />
-                        <span
-                          style={{
-                            fontFamily: "monospace",
-                            fontSize: "11px",
-                            color: isSelected
-                              ? "#c4a05a"
-                              : "var(--secondary, #aaa)",
-                            fontWeight: isSelected ? "600" : "400",
-                          }}
-                        >
-                          {formatSlotLabel(slot)}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    padding: "20px",
-                    textAlign: "center",
-                    color: "var(--muted, #666)",
-                    fontFamily: "monospace",
-                    fontSize: "11px",
-                  }}
-                >
-                  {isFetchingSlots
-                    ? "Fetching available slots..."
-                    : "No slots available."}
-                  {!isFetchingSlots && (
-                    <button
-                      onClick={fetchTimeSlots}
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      color: "#c4a05a",
+                      margin: 0,
+                    }}
+                  >
+                    🗓 Pickup Date &amp; Time Slot
+                  </p>
+                  {isFetchingSlots && (
+                    <span
                       style={{
-                        display: "block",
-                        margin: "10px auto 0",
-                        background: "none",
-                        border: "1px solid rgba(196,160,90,0.3)",
-                        color: "#c4a05a",
                         fontFamily: "monospace",
-                        fontSize: "9px",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        padding: "5px 12px",
-                        cursor: "pointer",
+                        fontSize: "8px",
+                        color: "rgba(196,160,90,0.5)",
                       }}
                     >
-                      Refresh Slots
-                    </button>
+                      Loading…
+                    </span>
                   )}
                 </div>
-              )}
 
-              <p
+                {timeSlots.length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                    }}
+                  >
+                    {timeSlots.map((slot) => {
+                      const isSelected = selectedSlot?.slotId === slot.slotId;
+                      return (
+                        <label
+                          key={slot.slotId}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "10px 12px",
+                            background: isSelected
+                              ? "rgba(196,160,90,0.1)"
+                              : "var(--background, #0a0a0a)",
+                            border: `1px solid ${isSelected ? "rgba(196,160,90,0.5)" : "var(--border, #222)"}`,
+                            borderRadius: "2px",
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="pickup-slot"
+                            value={slot.slotId}
+                            checked={isSelected}
+                            onChange={() => setSelectedSlot(slot)}
+                            style={{ accentColor: "#c4a05a" }}
+                          />
+                          <span
+                            style={{
+                              fontFamily: "monospace",
+                              fontSize: "11px",
+                              color: isSelected
+                                ? "#c4a05a"
+                                : "var(--secondary, #aaa)",
+                              fontWeight: isSelected ? "600" : "400",
+                            }}
+                          >
+                            {formatSlotLabel(slot)}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: "20px",
+                      textAlign: "center",
+                      color: "var(--muted, #666)",
+                      fontFamily: "monospace",
+                      fontSize: "11px",
+                    }}
+                  >
+                    {isFetchingSlots
+                      ? "Fetching available slots..."
+                      : "No slots available."}
+                    {!isFetchingSlots && (
+                      <button
+                        onClick={fetchTimeSlots}
+                        style={{
+                          display: "block",
+                          margin: "10px auto 0",
+                          background: "none",
+                          border: "1px solid rgba(196,160,90,0.3)",
+                          color: "#c4a05a",
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          padding: "5px 12px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Refresh Slots
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    color: "rgba(196,160,90,0.45)",
+                    marginTop: "10px",
+                    marginBottom: 0,
+                    lineHeight: "1.5",
+                  }}
+                >
+                  Pickup from: Aligarh Warehouse, Civil Lines, UP – 202001
+                </p>
+              </div>
+            </div>
+
+            {/* Error message */}
+            {bookingError && (
+              <div
                 style={{
+                  background: "rgba(248,113,113,0.08)",
+                  border: "1px solid rgba(248,113,113,0.3)",
+                  borderRadius: "2px",
+                  padding: "12px 16px",
+                  marginBottom: "16px",
                   fontFamily: "monospace",
-                  fontSize: "9px",
-                  color: "rgba(196,160,90,0.45)",
-                  marginTop: "10px",
-                  marginBottom: 0,
-                  lineHeight: "1.5",
+                  fontSize: "11px",
+                  color: "#f87171",
                 }}
               >
-                Pickup from: Aligarh Warehouse, Civil Lines, UP – 202001
-              </p>
-            </div>
-          </div>
+                ⚠ {bookingError}
+              </div>
+            )}
 
-          {/* Error message */}
-          {bookingError && (
-            <div
+            {/* PRIMARY ACTION BUTTON */}
+            <button
+              onClick={handleBookAmazonPickup}
+              disabled={isBooking || !selectedSlot}
               style={{
-                background: "rgba(248,113,113,0.08)",
-                border: "1px solid rgba(248,113,113,0.3)",
+                width: "100%",
+                padding: "14px 24px",
+                background: isBooking
+                  ? "rgba(196,160,90,0.3)"
+                  : "linear-gradient(135deg, #c4a05a 0%, #e8c87a 50%, #c4a05a 100%)",
+                border: "none",
                 borderRadius: "2px",
-                padding: "12px 16px",
-                marginBottom: "16px",
                 fontFamily: "monospace",
                 fontSize: "11px",
-                color: "#f87171",
+                fontWeight: "700",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: isBooking ? "#c4a05a" : "#0a0a0a",
+                cursor: isBooking || !selectedSlot ? "not-allowed" : "pointer",
+                opacity: !selectedSlot ? 0.6 : 1,
+                transition: "all 0.2s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                boxShadow: isBooking
+                  ? "none"
+                  : "0 2px 12px rgba(196,160,90,0.3)",
               }}
             >
-              ⚠ {bookingError}
-            </div>
-          )}
+              {isBooking ? (
+                <>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: "14px",
+                      height: "14px",
+                      border: "2px solid rgba(196,160,90,0.4)",
+                      borderTopColor: "#c4a05a",
+                      borderRadius: "50%",
+                      animation: "spin 0.8s linear infinite",
+                    }}
+                  />
+                  Booking ATS Pickup…
+                </>
+              ) : (
+                <>
+                  Book Amazon ATS Pickup &amp; Print Label{" "}
+                  <span style={{ fontSize: "14px" }}>↗</span>
+                </>
+              )}
+            </button>
 
-          {/* PRIMARY ACTION BUTTON */}
-          <button
-            onClick={handleBookAmazonPickup}
-            disabled={isBooking || !selectedSlot}
-            style={{
-              width: "100%",
-              padding: "14px 24px",
-              background: isBooking
-                ? "rgba(196,160,90,0.3)"
-                : "linear-gradient(135deg, #c4a05a 0%, #e8c87a 50%, #c4a05a 100%)",
-              border: "none",
-              borderRadius: "2px",
-              fontFamily: "monospace",
-              fontSize: "11px",
-              fontWeight: "700",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: isBooking ? "#c4a05a" : "#0a0a0a",
-              cursor: isBooking || !selectedSlot ? "not-allowed" : "pointer",
-              opacity: !selectedSlot ? 0.6 : 1,
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              boxShadow: isBooking ? "none" : "0 2px 12px rgba(196,160,90,0.3)",
-            }}
-          >
-            {isBooking ? (
-              <>
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: "14px",
-                    height: "14px",
-                    border: "2px solid rgba(196,160,90,0.4)",
-                    borderTopColor: "#c4a05a",
-                    borderRadius: "50%",
-                    animation: "spin 0.8s linear infinite",
-                  }}
-                />
-                Booking ATS Pickup…
-              </>
-            ) : (
-              <>
-                Book Amazon ATS Pickup &amp; Print Label{" "}
-                <span style={{ fontSize: "14px" }}>↗</span>
-              </>
-            )}
-          </button>
+            <p
+              style={{
+                fontFamily: "monospace",
+                fontSize: "9px",
+                color: "rgba(196,160,90,0.4)",
+                textAlign: "center",
+                marginTop: "10px",
+                marginBottom: 0,
+                letterSpacing: "0.08em",
+              }}
+            >
+              Confirms ATS pickup for selected slot · Opens official Amazon Easy
+              Ship Shipping Label &amp; Tax Invoice for printing
+            </p>
 
-          <p
-            style={{
-              fontFamily: "monospace",
-              fontSize: "9px",
-              color: "rgba(196,160,90,0.4)",
-              textAlign: "center",
-              marginTop: "10px",
-              marginBottom: 0,
-              letterSpacing: "0.08em",
-            }}
-          >
-            Confirms ATS pickup for selected slot · Opens official Amazon Easy
-            Ship Shipping Label &amp; Tax Invoice for printing
-          </p>
-
-          <style>{`
+            <style>{`
             @keyframes spin { to { transform: rotate(360deg); } }
           `}</style>
-        </div>
-      )}
+          </div>
+        )}
 
       {/* ── Order Status Controls (shown for all orders) ─────────── */}
       <div

@@ -23,6 +23,29 @@ export async function GET(
       );
     }
 
+    if (
+      order.status === "CANCELLED" ||
+      order.status === "DELIVERED" ||
+      order.status === "RETURNED"
+    ) {
+      return NextResponse.json(
+        {
+          error: `Cannot fetch pickup time slots for an order with status "${order.status}".`,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (order.awbNumber || order.trackingNumber) {
+      return NextResponse.json(
+        {
+          error:
+            "A shipment/pickup is already booked for this Amazon order. Double booking is disabled.",
+        },
+        { status: 400 },
+      );
+    }
+
     const { getLwaAccessToken, getAmazonConfig, signedSpApiFetch } =
       await import("../../../../../../../storefront/src/lib/amazon-sp-api");
 
@@ -177,6 +200,29 @@ export async function POST(
     if (!order?.amazonOrderId) {
       return NextResponse.json(
         { error: "Not an Amazon order" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      order.status === "CANCELLED" ||
+      order.status === "DELIVERED" ||
+      order.status === "RETURNED"
+    ) {
+      return NextResponse.json(
+        {
+          error: `Cannot book pickup for an order with status "${order.status}".`,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (order.awbNumber || order.trackingNumber) {
+      return NextResponse.json(
+        {
+          error:
+            "A shipment/pickup is already booked for this Amazon order. Double booking is disabled.",
+        },
         { status: 400 },
       );
     }
