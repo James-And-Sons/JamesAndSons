@@ -70,6 +70,7 @@ model User {
   firstName String
   lastName  String
   role      Role     @default(CUSTOMER)
+  permissions String[] @default([])
   phone     String?
   companyId String?
   lastPincode String?

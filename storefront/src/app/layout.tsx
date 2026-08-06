@@ -10,6 +10,7 @@ import { PWAInstallPrompt } from "@james-andsons/ui";
 import MetaPixel from "@/components/MetaPixel";
 import ThemeColorSync from "@/components/ThemeColorSync";
 import Navigation from "@/components/Navigation";
+import PwaInstallHelper from "@/components/PwaInstallHelper";
 import { BRAND_CONFIG } from "@james-andsons/config";
 import "./globals.css";
 
@@ -225,6 +226,7 @@ export default function RootLayout({
             `,
           }}
         />
+        <PwaInstallHelper />
       </body>
     </html>
   );

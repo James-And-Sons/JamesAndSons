@@ -4,6 +4,8 @@ import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { Settings, Store, FileText, BookOpen, Search } from "lucide-react";
 import PWAInstallButton from "@/components/PWAInstallButton";
+import PwaInstallHelper from "@/components/PwaInstallHelper";
+import CaEmailSettingsForm from "./CaEmailSettingsForm";
 import BrandSettingsForm from "./BrandSettingsForm";
 import { adminTogglePagePublishStatus } from "./config-actions";
 import CataloguesClient from "../catalogues/CataloguesClient";
@@ -149,19 +151,11 @@ export default function SettingsTabsContainer({
             </div>
           </div>
 
-          {/* PWA App Installation Section */}
-          <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
-            <h2 className="font-serif text-[20px] text-primary mb-2">
-              Install App
-            </h2>
-            <p className="font-body text-[13px] text-muted mb-6">
-              Install the James & Sons Admin portal on your device for quick
-              access, offline mode, and push notifications.
-            </p>
-            <div className="max-w-sm">
-              <PWAInstallButton />
-            </div>
-          </div>
+          {/* PWA App Installation Section with Platform Detection */}
+          <PwaInstallHelper />
+
+          {/* CA Email Settings for GST Quarterly Reports */}
+          <CaEmailSettingsForm />
 
           {/* Profile info */}
           <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
