@@ -62,11 +62,13 @@ export default function OrderStatusControls({
   orderId: string;
   currentStatus: string;
   razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
   awbNumber?: string | null;
   trackingNumber?: string | null;
   fulfillmentError?: string | null;
   channel?: string | null;
   amazonOrderId?: string | null;
+  isAmazon?: boolean;
   orderItems?: OrderItem[];
 }) {
   const [isPending, startTransition] = useTransition();
