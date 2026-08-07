@@ -7,11 +7,21 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Handle directory resolution safely for both ESM and CJS contexts
+let currentDirname: string;
+try {
+  if (typeof __dirname !== "undefined") {
+    currentDirname = __dirname;
+  } else {
+    const __filename = fileURLToPath(import.meta.url);
+    currentDirname = path.dirname(__filename);
+  }
+} catch {
+  currentDirname = process.cwd();
+}
 
 // Load environment variables
-const envPath = path.resolve(__dirname, "../../../admin/.env.local");
+const envPath = path.resolve(currentDirname, "../../../admin/.env.local");
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
@@ -19,12 +29,7 @@ dotenv.config();
 
 const dbUrl = process.env.DATABASE_URL;
 
-if (!dbUrl) {
-  console.error("❌ Error: DATABASE_URL environment variable is missing.");
-  process.exit(1);
-}
-
-const backupDir = path.resolve(__dirname, "../backups");
+const backupDir = path.resolve(currentDirname, "../backups");
 if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
@@ -120,41 +125,54 @@ async function uploadToS3(filePath: string, s3Key: string): Promise<boolean> {
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
   if (!bucketName || !accessKeyId || !secretAccessKey) {
-    console.log(
-      "ℹ️ AWS S3 credentials or bucket name (AWS_S3_BACKUP_BUCKET) not set. Skipping AWS S3 upload.",
+    console.warn(
+      "⚠️ AWS S3 credentials or bucket name (AWS_S3_BACKUP_BUCKET) not set. Skipping S3 upload.",
     );
     return false;
   }
 
   console.log(
-    `☁️ Uploading compressed backup to AWS S3 bucket: ${bucketName}...`,
+    `☁️ Uploading compressed backup to AWS S3 bucket: ${bucketName} (region: ${region})...`,
   );
 
-  const s3Client = new S3Client({
-    region,
-    credentials: {
-      accessKeyId,
-      secretAccessKey,
-    },
-  });
+  try {
+    const s3Client = new S3Client({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
 
-  const fileContent = fs.readFileSync(filePath);
+    const fileContent = fs.readFileSync(filePath);
 
-  const command = new PutObjectCommand({
-    Bucket: bucketName,
-    Key: s3Key,
-    Body: fileContent,
-    ContentType: "application/gzip",
-    ServerSideEncryption: "AES256",
-  });
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: s3Key,
+      Body: fileContent,
+      ContentType: "application/gzip",
+      ServerSideEncryption: "AES256",
+    });
 
-  await s3Client.send(command);
-  console.log(`✅ AWS S3 Upload Successful: s3://${bucketName}/${s3Key}`);
-  return true;
+    await s3Client.send(command);
+    console.log(`✅ AWS S3 Upload Successful: s3://${bucketName}/${s3Key}`);
+    return true;
+  } catch (err: any) {
+    console.error("❌ AWS S3 Upload Failed:", err?.message || err);
+    throw err;
+  }
 }
 
 async function main() {
   console.log("🚀 Starting James & Sons Secondary Database Backup...");
+
+  if (!dbUrl) {
+    console.error("❌ Error: DATABASE_URL environment variable is missing.");
+    console.error(
+      "Please configure the DATABASE_URL repository secret in GitHub Settings -> Secrets and variables -> Actions.",
+    );
+    process.exit(1);
+  }
 
   let success = false;
 
@@ -163,25 +181,32 @@ async function main() {
     console.log("Trying native pg_dump export...");
     execSync(
       `pg_dump "${dbUrl}" --no-owner --no-privileges -f "${backupFilePath}"`,
-      { stdio: "ignore" },
+      { stdio: "pipe", timeout: 30000 },
     );
     const rawSql = fs.readFileSync(backupFilePath);
     const compressed = zlib.gzipSync(rawSql);
     fs.writeFileSync(compressedFilePath, compressed);
-    fs.unlinkSync(backupFilePath);
+    if (fs.existsSync(backupFilePath)) {
+      fs.unlinkSync(backupFilePath);
+    }
     success = true;
     console.log(`✅ Native pg_dump export complete: ${compressedFilePath}`);
-  } catch (err) {
+  } catch (err: any) {
     console.log(
-      "ℹ️ Native pg_dump not installed or restricted. Falling back to Node.js JS SQL Exporter...",
+      `ℹ️ Native pg_dump not installed, restricted, or timed out (${err?.message || err}). Falling back to Node.js JS SQL Exporter...`,
     );
   }
 
   // Option 2: Fallback JS SQL Exporter
   if (!success) {
+    console.log("🚀 Executing Node.js JS SQL Exporter...");
     const pool = new Pool({
       connectionString: dbUrl,
-      ssl: { rejectUnauthorized: false },
+      ssl:
+        dbUrl.includes("localhost") || dbUrl.includes("127.0.0.1")
+          ? false
+          : { rejectUnauthorized: false },
+      connectionTimeoutMillis: 15000,
     });
 
     try {
@@ -191,6 +216,9 @@ async function main() {
       console.log(
         `✅ Database exported & compressed successfully: ${compressedFilePath}`,
       );
+    } catch (err: any) {
+      console.error("❌ JS SQL Exporter failed:", err?.message || err);
+      throw err;
     } finally {
       await pool.end();
     }
@@ -209,6 +237,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("❌ Backup Failed:", err);
+  console.error("❌ Backup Failed:", err?.message || err);
   process.exit(1);
 });
