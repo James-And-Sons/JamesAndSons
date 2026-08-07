@@ -25,6 +25,7 @@ import {
   Truck,
   FileSpreadsheet,
   Mail,
+  Bell,
 } from "lucide-react";
 
 // Persistent module-level cache to prevent flickering / unmounting resets
@@ -858,6 +859,7 @@ function Sidebar({
               )}
               {renderLink("Blog", "/blog", null, BookOpen)}
               {renderLink("Marketing", "/campaigns", null, Megaphone)}
+              {renderLink("Push Campaigns", "/promotions/push", null, Bell)}
               {renderLink("Coupons", "/promotions", null, Tag)}
               {renderLink("Affiliates", "/affiliates", null, Users)}
               {renderLink("Tickets", "/tickets", openTickets, TicketCheck)}

@@ -11,6 +11,7 @@ import MetaPixel from "@/components/MetaPixel";
 import ThemeColorSync from "@/components/ThemeColorSync";
 import Navigation from "@/components/Navigation";
 import PwaInstallHelper from "@/components/PwaInstallHelper";
+import StorefrontPushManager from "@/components/StorefrontPushManager";
 import { BRAND_CONFIG } from "@james-andsons/config";
 import "./globals.css";
 
@@ -227,6 +228,7 @@ export default function RootLayout({
           }}
         />
         <PwaInstallHelper />
+        <StorefrontPushManager />
       </body>
     </html>
   );
