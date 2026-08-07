@@ -9,6 +9,7 @@
  *   GET /orders/v0/orders/{orderId}/orderItems
  */
 import { prisma } from "../prisma";
+import { sendNotificationToAllAdmins } from "../push";
 import {
   getLwaAccessToken,
   getAmazonConfig,
@@ -201,8 +202,17 @@ export async function ingestAmazonOrder(
         },
       });
 
-      // If status changed to CANCELLED, restore inventory
+      // If status changed to CANCELLED, restore inventory and send push notification
       if (mappedStatus === "CANCELLED" && existing.status !== "CANCELLED") {
+        sendNotificationToAllAdmins({
+          title: `⚠️ Amazon Order Cancelled #${AmazonOrderId}`,
+          body: `Amazon Order #${AmazonOrderId} status changed to Cancelled.`,
+          url: "/orders",
+          type: "ORDER",
+        }).catch((err) =>
+          console.error("[Amazon Push] Cancellation notification error:", err),
+        );
+
         for (const item of existing.items) {
           if (item.variantId) {
             await prisma.productVariant
@@ -391,6 +401,17 @@ export async function ingestAmazonOrder(
   console.log(
     `[Amazon Orders] ✅ Ingested Amazon order ${AmazonOrderId} → JNS ${orderNumber} (ID: ${jnsOrder.id})`,
   );
+
+  // Dispatch real-time PWA Push Notification to all admins
+  sendNotificationToAllAdmins({
+    title: `📦 New Amazon Order #${AmazonOrderId}`,
+    body: `Amazon Order received: ₹${totalAmount.toLocaleString("en-IN")} (${orderItemsData.length} item(s))`,
+    url: `/orders/${jnsOrder.id}`,
+    type: "ORDER",
+  }).catch((err) =>
+    console.error("[Amazon Push] New order notification error:", err),
+  );
+
   return jnsOrder.id;
 }
 

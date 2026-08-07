@@ -3,6 +3,7 @@ import { sendInvoiceEmail } from "./email";
 import { generateSequentialInvoiceNumber } from "./invoice";
 import { sendWhatsAppMessage } from "./whatsapp";
 import { createShiprocketOrder, assignAWB } from "./shiprocket";
+import { sendNotificationToAllAdmins } from "./push";
 
 export interface FulfillOrderParams {
   orderId: string;
@@ -73,6 +74,24 @@ export async function fulfillPaidOrder({
   console.log(
     `[FulfillPaidOrder] Order ${order.orderNumber} status set to PAID. Invoice: ${invoiceNumber}`,
   );
+
+  // Send real-time PWA push notification to all admin devices
+  try {
+    const custName =
+      `${updatedOrder.user.firstName || ""} ${updatedOrder.user.lastName || ""}`.trim() ||
+      "Customer";
+    const channelName = updatedOrder.channel || "STOREFRONT";
+    sendNotificationToAllAdmins({
+      title: `🛒 New ${channelName} Order #${updatedOrder.orderNumber}`,
+      body: `New order from ${custName} for ₹${updatedOrder.totalAmount.toLocaleString("en-IN")}`,
+      url: `/orders/${updatedOrder.id}`,
+      type: "ORDER",
+    }).catch((err) =>
+      console.error("[FulfillPaidOrder] Push notification error:", err),
+    );
+  } catch (pushErr) {
+    console.error("[FulfillPaidOrder] Push dispatch error:", pushErr);
+  }
 
   // Decrement inventory for each item in the order
   try {

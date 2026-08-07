@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { cancelShiprocketOrder } from "@/lib/shiprocket";
 import { refundRazorpayPayment } from "@/lib/razorpay";
+import { sendNotificationToAllAdmins } from "@/lib/push";
 import {
   validateStateTransition,
   createCreditNoteForOrder,
@@ -123,6 +124,15 @@ export async function updateOrderStatus(orderId: string, status: string) {
         data: { status: status as any },
       });
     }
+
+    sendNotificationToAllAdmins({
+      title: `${isCancellation ? "🛑 Order Cancelled" : isReturn ? "↩️ Order Returned" : "📦 Order Updated"} #${order.orderNumber}`,
+      body: `Order #${order.orderNumber} status updated to ${status}.`,
+      url: `/orders/${order.id}`,
+      type: "ORDER",
+    }).catch((err) =>
+      console.error("[Admin Order Actions] Push notification failed:", err),
+    );
 
     revalidatePath(`/orders/${orderId}`);
     revalidatePath("/orders");
