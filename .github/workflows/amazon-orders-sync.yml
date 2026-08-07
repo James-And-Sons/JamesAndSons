@@ -1,0 +1,33 @@
+name: Automated Amazon Orders Ingestion Sync
+
+on:
+  schedule:
+    # Runs every 15 minutes
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  sync-amazon-orders:
+    name: Ingest Amazon SP-API Orders
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Amazon Order Ingestion Cron Endpoint
+        run: |
+          echo "⚡ Triggering Amazon Order Ingestion via Storefront API..."
+          STOREFRONT_URL="${{ secrets.STOREFRONT_URL || 'https://jamesandsons.in' }}"
+          CRON_SECRET="${{ secrets.CRON_SECRET || 'james_and_sons_automation_secure_88' }}"
+
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${STOREFRONT_URL}/api/cron/amazon-orders?minutes=1440")
+
+          echo "Response from Storefront Cron Endpoint:"
+          echo "$RESPONSE"
+
+          if echo "$RESPONSE" | grep -q "HTTP_STATUS:200"; then
+            echo "✅ Amazon Order Sync completed successfully!"
+          else
+            echo "⚠️ Amazon Order Sync returned non-200 status code."
+            exit 1
+          fi

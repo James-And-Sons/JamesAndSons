@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Search,
@@ -9,6 +10,7 @@ import {
   PackageCheck,
   AlertCircle,
   ShoppingBag,
+  Clock,
 } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
 import { syncAmazonOrdersAction } from "./actions";
@@ -30,25 +32,72 @@ export default function OrdersTableClient({
 }: {
   records: OrderItem[];
 }) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [channelFilter, setChannelFilter] = useState("ALL");
   const [isSyncingAmazon, setIsSyncingAmazon] = useState(false);
+  const [lastSyncText, setLastSyncText] = useState<string | null>(null);
 
-  const handleSyncAmazon = async () => {
-    setIsSyncingAmazon(true);
-    try {
-      const res = await syncAmazonOrdersAction(1440);
-      if (res.success) {
-        alert(`✅ Amazon Order Sync Complete!\n\n${res.message}`);
-      } else {
-        alert(`❌ Sync failed: ${res.error}`);
+  const performAmazonSync = useCallback(
+    async (forceManual = false) => {
+      const STORAGE_KEY = "jns_amazon_last_sync_timestamp";
+      const COOLDOWN_MS = 10 * 60 * 1000; // 10-minute resource optimization throttle
+
+      const lastSyncStr =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem(STORAGE_KEY)
+          : null;
+      const lastSyncTime = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+      const now = Date.now();
+
+      if (!forceManual && lastSyncTime && now - lastSyncTime < COOLDOWN_MS) {
+        const minutesAgo = Math.floor((now - lastSyncTime) / 60000);
+        setLastSyncText(
+          minutesAgo === 0 ? "Synced < 1m ago" : `Synced ${minutesAgo}m ago`,
+        );
+        return;
       }
-    } catch (err: any) {
-      alert(`❌ Sync error: ${err?.message || err}`);
-    } finally {
-      setIsSyncingAmazon(false);
-    }
+
+      setIsSyncingAmazon(true);
+      try {
+        const res = await syncAmazonOrdersAction(1440);
+        if (res.success) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(STORAGE_KEY, String(now));
+          }
+          setLastSyncText("Just synced");
+          router.refresh();
+          if (forceManual) {
+            alert(`✅ Amazon Order Sync Complete!\n\n${res.message}`);
+          }
+        } else if (forceManual) {
+          alert(`❌ Sync failed: ${res.error}`);
+        }
+      } catch (err: any) {
+        if (forceManual) {
+          alert(`❌ Sync error: ${err?.message || err}`);
+        }
+      } finally {
+        setIsSyncingAmazon(false);
+      }
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    performAmazonSync(false);
+    const interval = setInterval(
+      () => {
+        performAmazonSync(false);
+      },
+      5 * 60 * 1000,
+    ); // Check every 5 minutes
+    return () => clearInterval(interval);
+  }, [performAmazonSync]);
+
+  const handleSyncAmazon = () => {
+    performAmazonSync(true);
   };
 
   const metrics = useMemo(() => {
@@ -219,7 +268,13 @@ export default function OrdersTableClient({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          {lastSyncText && (
+            <span className="font-mono text-[9px] text-amber-400/80 bg-amber-500/5 border border-amber-500/20 px-2.5 py-1.5 rounded-xs flex items-center gap-1.5">
+              <Clock className="w-3 h-3 text-amber-400" />
+              <span>{lastSyncText}</span>
+            </span>
+          )}
           <button
             onClick={handleSyncAmazon}
             disabled={isSyncingAmazon}
