@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { logoutAction } from "@/app/actions";
 import { useEffect, useState } from "react";
 import { useSidebar } from "@/lib/context/SidebarContext";
@@ -27,6 +27,22 @@ import {
   Mail,
 } from "lucide-react";
 
+// Persistent module-level cache to prevent flickering / unmounting resets
+let cachedTickets: number | null = null;
+let cachedRfqs: number | null = null;
+let cachedInquiries: number | null = null;
+let cachedCategories: {
+  id: string;
+  name: string;
+  _count?: { products: number };
+}[] = [];
+let cachedSpaces: {
+  id: string;
+  name: string;
+  _count?: { products: number };
+}[] = [];
+let cachedNavScrollTop = 0;
+
 export default function Sidebar({
   isOpen,
   onClose,
@@ -36,7 +52,6 @@ export default function Sidebar({
 }) {
   const config = useTenantConfig();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { productFormState, isPageDirty } = useSidebar();
 
@@ -51,42 +66,59 @@ export default function Sidebar({
       }
     }
   };
-  const [openTickets, setOpenTickets] = useState<number | null>(null);
-  const [openRfqs, setOpenRfqs] = useState<number | null>(null);
-  const [openInquiries, setOpenInquiries] = useState<number | null>(null);
-  const [categories, setCategories] = useState<
-    { id: string; name: string; _count?: { products: number } }[]
-  >([]);
-  const [spaces, setSpaces] = useState<
-    { id: string; name: string; _count?: { products: number } }[]
-  >([]);
-  const [searchVal, setSearchVal] = useState(searchParams.get("q") || "");
+  const [openTickets, setOpenTickets] = useState<number | null>(cachedTickets);
+  const [openRfqs, setOpenRfqs] = useState<number | null>(cachedRfqs);
+  const [openInquiries, setOpenInquiries] = useState<number | null>(
+    cachedInquiries,
+  );
+  const [categories, setCategories] =
+    useState<{ id: string; name: string; _count?: { products: number } }[]>(
+      cachedCategories,
+    );
+  const [spaces, setSpaces] =
+    useState<{ id: string; name: string; _count?: { products: number } }[]>(
+      cachedSpaces,
+    );
+  const [searchVal, setSearchVal] = useState("");
+  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
+    null,
+  );
+  const [currentEditCategoryId, setCurrentEditCategoryId] = useState<
+    string | null
+  >(null);
+  const [currentManageId, setCurrentManageId] = useState<string | null>(null);
+
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
     collections: false,
     spaces: false,
     catalog: false,
   });
 
-  const currentCategoryId = searchParams.get("categoryId");
-  const currentEditCategoryId = searchParams.get("edit");
-  const currentManageId = searchParams.get("manage");
-
   if (pathname === "/login") return null;
 
   useEffect(() => {
     fetch("/api/tickets/count")
       .then((r) => r.json())
-      .then((d) => setOpenTickets(d.count))
+      .then((d) => {
+        cachedTickets = d.count;
+        setOpenTickets(d.count);
+      })
       .catch(() => {});
 
     fetch("/api/rfqs/count")
       .then((r) => r.json())
-      .then((d) => setOpenRfqs(d.count))
+      .then((d) => {
+        cachedRfqs = d.count;
+        setOpenRfqs(d.count);
+      })
       .catch(() => {});
 
     fetch("/api/inquiries/count")
       .then((r) => r.json())
-      .then((d) => setOpenInquiries(d.count))
+      .then((d) => {
+        cachedInquiries = d.count;
+        setOpenInquiries(d.count);
+      })
       .catch(() => {});
 
     // Fetch collections (categories)
@@ -94,7 +126,9 @@ export default function Sidebar({
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
+          const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+          cachedCategories = sorted;
+          setCategories(sorted);
         }
       })
       .catch(() => {});
@@ -104,36 +138,40 @@ export default function Sidebar({
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setSpaces(data.sort((a, b) => a.name.localeCompare(b.name)));
+          const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+          cachedSpaces = sorted;
+          setSpaces(sorted);
         }
       })
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    setSearchVal(searchParams.get("q") || "");
-  }, [searchParams]);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q") || "";
+      const catId = params.get("categoryId");
+      const editId = params.get("edit");
+      const manageId = params.get("manage");
 
-  useEffect(() => {
-    // Auto-expand active groups ONLY if a sub-item query parameter or edit path is active, NOT on root pages
-    if (currentCategoryId || currentEditCategoryId) {
-      setOpenDropdowns((prev) => ({ ...prev, collections: true }));
+      setSearchVal(q);
+      setCurrentCategoryId(catId);
+      setCurrentEditCategoryId(editId);
+      setCurrentManageId(manageId);
+
+      if (catId || editId) {
+        setOpenDropdowns((prev) => ({ ...prev, collections: true }));
+      }
+      const isSpaceEditPage =
+        pathname.startsWith("/spaces/") && pathname.endsWith("/edit");
+      if (manageId || isSpaceEditPage) {
+        setOpenDropdowns((prev) => ({ ...prev, spaces: true }));
+      }
+      if (pathname === "/products/add" || q) {
+        setOpenDropdowns((prev) => ({ ...prev, catalog: true }));
+      }
     }
-    const isSpaceEditPage =
-      pathname.startsWith("/spaces/") && pathname.endsWith("/edit");
-    if (currentManageId || isSpaceEditPage) {
-      setOpenDropdowns((prev) => ({ ...prev, spaces: true }));
-    }
-    if (pathname === "/products/add" || searchParams.get("q")) {
-      setOpenDropdowns((prev) => ({ ...prev, catalog: true }));
-    }
-  }, [
-    currentCategoryId,
-    currentEditCategoryId,
-    currentManageId,
-    pathname,
-    searchParams,
-  ]);
+  }, [pathname]);
 
   const renderLink = (
     name: string,
@@ -424,7 +462,7 @@ export default function Sidebar({
             className={`
               group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
               ${
-                pathname === "/products" && !searchParams.get("q")
+                pathname === "/products" && !searchVal
                   ? "text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium"
                   : "text-muted border-l-transparent hover:text-accent hover:bg-surface-muted"
               }
@@ -750,7 +788,17 @@ export default function Sidebar({
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav
+          ref={(el) => {
+            if (el && cachedNavScrollTop > 0) {
+              el.scrollTop = cachedNavScrollTop;
+            }
+          }}
+          onScroll={(e) => {
+            cachedNavScrollTop = e.currentTarget.scrollTop;
+          }}
+          className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto"
+        >
           {productFormState ? (
             renderProductFormOutline()
           ) : (
