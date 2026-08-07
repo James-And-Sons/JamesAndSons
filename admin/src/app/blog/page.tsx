@@ -72,7 +72,7 @@ export default async function BlogAdminPage() {
                   </div>
                 </td>
                 <td className="px-6 py-5 font-body text-[13px] text-secondary">
-                  {post.author.firstName}
+                  {post.author?.firstName || "Admin"}
                 </td>
                 <td className="px-6 py-5">
                   <span

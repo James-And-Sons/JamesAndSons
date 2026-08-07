@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { cancelShiprocketOrder } from "@/lib/shiprocket";
 import { refundRazorpayPayment } from "@/lib/razorpay";
+import {
+  validateStateTransition,
+  createCreditNoteForOrder,
+} from "@/lib/accounting/state-machine";
 
 export async function updateOrderStatus(orderId: string, status: string) {
   try {
@@ -15,7 +19,21 @@ export async function updateOrderStatus(orderId: string, status: string) {
       throw new Error("Order not found");
     }
 
-    if (status === "CANCELLED" && order.status !== "CANCELLED") {
+    // Validate state transition compliance
+    const isValidTransition = validateStateTransition(order.status, status);
+    if (!isValidTransition) {
+      throw new Error(
+        `Illegal state transition from ${order.status} to ${status}. GST compliance rules violated.`,
+      );
+    }
+
+    const isCancellation =
+      status === "CANCELLED" ||
+      status === "CANCELLED_PRE_INVOICE" ||
+      status === "CANCELLED_POST_INVOICE";
+    const isReturn = status === "RETURNED" || status === "RTO_COMPLETED";
+
+    if (isCancellation && order.status !== "CANCELLED") {
       let notes = [];
 
       // 1. If there's a Shiprocket order synced, cancel it
@@ -51,13 +69,52 @@ export async function updateOrderStatus(orderId: string, status: string) {
         }
       }
 
+      // 3. Issue GST Credit Note if tax invoice was issued
+      try {
+        const cnReason =
+          status === "CANCELLED_PRE_INVOICE"
+            ? "PRE_DISPATCH_CANCEL"
+            : "PRE_DISPATCH_CANCEL";
+        const cn = await createCreditNoteForOrder(order.id, cnReason);
+        notes.push(
+          `Credit Note issued: ${cn.creditNoteNumber} (${cn.creditNoteType}).`,
+        );
+      } catch (cnError: any) {
+        console.warn(
+          "[CancelOrder] Credit Note creation notice:",
+          cnError.message,
+        );
+      }
+
       const fulfillmentError = notes.join(" | ");
 
       await prisma.order.update({
         where: { id: orderId },
         data: {
-          status: "CANCELLED",
+          status: status as any,
           fulfillmentError: fulfillmentError || null,
+        },
+      });
+    } else if (isReturn) {
+      let notes = [];
+      try {
+        const cnReason = status === "RTO_COMPLETED" ? "RTO" : "CUSTOMER_RETURN";
+        const cn = await createCreditNoteForOrder(order.id, cnReason);
+        notes.push(
+          `Credit Note issued: ${cn.creditNoteNumber} (${cn.creditNoteType}).`,
+        );
+      } catch (cnError: any) {
+        console.warn(
+          "[ReturnOrder] Credit Note creation notice:",
+          cnError.message,
+        );
+      }
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: status as any,
+          fulfillmentError: notes.join(" | ") || null,
         },
       });
     } else {

@@ -29,7 +29,9 @@ function HeaderTitle() {
 
     if (pathname === "/") return [{ label: "Dashboard", href: "/" }];
     if (pathname === "/orders") return [{ label: "Orders", href: "/orders" }];
-    if (pathname === "/rfqs") return [{ label: "Inquiries", href: "/rfqs" }];
+    if (pathname === "/inquiries")
+      return [{ label: "Contact Inquiries", href: "/inquiries" }];
+    if (pathname === "/rfqs") return [{ label: "Trade RFQs", href: "/rfqs" }];
     if (pathname === "/products")
       return [{ label: "Catalog & Pricing", href: "/products" }];
     if (pathname === "/products/add") {

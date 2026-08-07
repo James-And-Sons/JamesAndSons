@@ -345,6 +345,53 @@ export async function generateFinancialStatementWorkbook(
     });
   }
 
+  // --- SHEET 5: GSTR-1 Credit Notes & Reversals (Table 9B) ---
+  const sheet5 = workbook.addWorksheet("Credit Notes (Table 9B)");
+  sheet5.columns = [
+    { header: "Credit Note No", key: "cnNumber", width: 22 },
+    { header: "Original Invoice No", key: "invoiceNumber", width: 22 },
+    { header: "Date Issued", key: "date", width: 14 },
+    { header: "Reason", key: "reason", width: 20 },
+    { header: "CN Type", key: "cnType", width: 20 },
+    { header: "Sec 34 Compliant", key: "sec34", width: 18 },
+    { header: "Reversed Taxable (₹)", key: "subtotal", width: 20 },
+    { header: "CGST Reversed (₹)", key: "cgst", width: 18 },
+    { header: "SGST Reversed (₹)", key: "sgst", width: 18 },
+    { header: "IGST Reversed (₹)", key: "igst", width: 18 },
+    { header: "Total Tax Reversed (₹)", key: "totalTax", width: 22 },
+    { header: "Total Credit Note (₹)", key: "totalAmount", width: 22 },
+  ];
+  sheet5.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+  sheet5.getRow(1).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF991B1B" },
+  };
+
+  const creditNotes = await prisma.creditNote.findMany({
+    include: {
+      invoice: true,
+    },
+    orderBy: { issuedAt: "asc" },
+  });
+
+  for (const cn of creditNotes) {
+    sheet5.addRow({
+      cnNumber: cn.creditNoteNumber,
+      invoiceNumber: cn.invoice?.invoiceNumber || "N/A",
+      date: new Date(cn.issuedAt).toISOString().split("T")[0],
+      reason: cn.reason,
+      cnType: cn.creditNoteType,
+      sec34: cn.section34Compliant ? "YES" : "NO (EXPIRED)",
+      subtotal: cn.subtotalReversed,
+      cgst: cn.cgstReversed,
+      sgst: cn.sgstReversed,
+      igst: cn.igstReversed,
+      totalTax: cn.totalTaxReversed,
+      totalAmount: cn.totalCreditNoteAmount,
+    });
+  }
+
   const arrayBuffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);
 }

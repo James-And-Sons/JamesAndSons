@@ -39,6 +39,14 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   RETURNED
+  CANCELLED_PRE_INVOICE
+  CANCELLED_POST_INVOICE
+  RTO_INITIATED
+  RTO_INSPECTED
+  RTO_COMPLETED
+  RETURN_REQUESTED
+  RETURN_INSPECTED
+  CREDIT_NOTE_ISSUED
 }
 
 enum RFQStatus {
@@ -776,6 +784,133 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 
   @@map("system_configs")
+}
+
+model FinancialPeriod {
+  id          String    @id @default(uuid())
+  periodCode  String    @unique // e.g. "2026-04"
+  startDate   DateTime
+  endDate     DateTime
+  isClosed    Boolean   @default(false)
+  closedAt    DateTime?
+  closedBy    String?
+  createdAt   DateTime  @default(now())
+
+  invoices    Invoice[]
+
+  @@map("financial_periods")
+}
+
+model Invoice {
+  id                 String           @id @default(uuid())
+  invoiceNumber      String           @unique
+  orderId            String
+  financialPeriodId  String?
+  billingName        String
+  billingGstin       String?
+  shippingState      String
+  placeOfSupplyCode  String           // e.g. "09"
+  isB2B              Boolean          @default(false)
+  irn                String?          @unique
+  irnStatus          String           @default("GENERATED") // GENERATED, CANCELLED
+  irnGeneratedAt     DateTime?
+  subtotalAmount     Float
+  discountAmount     Float            @default(0.0)
+  shippingAmount     Float            @default(0.0)
+  cgstAmount         Float            @default(0.0)
+  sgstAmount         Float            @default(0.0)
+  igstAmount         Float            @default(0.0)
+  totalTaxAmount     Float            @default(0.0)
+  totalInvoiceAmount Float
+  isLocked           Boolean          @default(false)
+  lockedAt           DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  financialPeriod    FinancialPeriod? @relation(fields: [financialPeriodId], references: [id])
+  creditNotes        CreditNote[]
+
+  @@map("invoices")
+}
+
+model CreditNote {
+  id                    String           @id @default(uuid())
+  creditNoteNumber      String           @unique
+  invoiceId             String
+  orderId               String
+  reason                String           // PRE_DISPATCH_CANCEL, RTO, CUSTOMER_RETURN, DEFECTIVE
+  creditNoteType        String           @default("GST_TAX") // GST_TAX or COMMERCIAL_NON_GST
+  irn                   String?          @unique
+  irnStatus             String?
+  subtotalReversed      Float
+  cgstReversed          Float            @default(0.0)
+  sgstReversed          Float            @default(0.0)
+  igstReversed          Float            @default(0.0)
+  totalTaxReversed      Float            @default(0.0)
+  totalCreditNoteAmount Float
+  section34Compliant    Boolean          @default(true)
+  issuedAt              DateTime         @default(now())
+  gstr1FilingPeriod     String?          // YYYY-MM
+
+  invoice               Invoice          @relation(fields: [invoiceId], references: [id])
+  items                 CreditNoteItem[]
+  refunds               Refund[]
+
+  @@map("credit_notes")
+}
+
+model CreditNoteItem {
+  id               String     @id @default(uuid())
+  creditNoteId     String
+  productId        String
+  variantId        String?
+  hsnCode          String
+  quantityReturned Int
+  unitPrice        Float
+  taxableValue     Float
+  taxRate          Float      @default(18.0)
+  cgstAmount       Float      @default(0.0)
+  sgstAmount       Float      @default(0.0)
+  igstAmount       Float      @default(0.0)
+  createdAt        DateTime   @default(now())
+
+  creditNote       CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+
+  @@map("credit_note_items")
+}
+
+model Refund {
+  id                 String      @id @default(uuid())
+  orderId            String
+  creditNoteId       String?
+  gatewayName        String      // RAZORPAY, AMAZON_PAY, CASH_ON_DELIVERY
+  gatewayRefundId    String?     @unique
+  gatewayPaymentId   String
+  refundAmount       Float
+  gatewayFeeDeducted Float       @default(0.0)
+  gatewayGstOnFee    Float       @default(0.0)
+  tcsReversedAmount  Float       @default(0.0)
+  status             String      @default("INITIATED") // INITIATED, PROCESSED, FAILED
+  processedAt        DateTime?
+
+  creditNote         CreditNote? @relation(fields: [creditNoteId], references: [id])
+
+  @@map("refunds")
+}
+
+model InventoryQuarantine {
+  id           String    @id @default(uuid())
+  orderId      String
+  productId    String
+  variantId    String?
+  quantity     Int
+  sourceType   String    // RTO, CUSTOMER_RETURN
+  qcStatus     String    @default("PENDING_INSPECTION") // PENDING_INSPECTION, PASSED_RESTOCKED, DAMAGED_SCRAPPED
+  inspectedBy  String?
+  inspectedAt  DateTime?
+  notes        String?
+
+  @@map("inventory_quarantine")
 }
 
 
