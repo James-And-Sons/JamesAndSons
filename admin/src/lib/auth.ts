@@ -46,7 +46,15 @@ export async function requireAdmin(requiredPermission?: string) {
     dbUser.permissions &&
     dbUser.permissions.length > 0
   ) {
-    if (!dbUser.permissions.includes(requiredPermission)) {
+    const hasPermission =
+      dbUser.permissions.includes(requiredPermission) ||
+      (requiredPermission === "push_campaigns" &&
+        (dbUser.permissions.includes("promotions") ||
+          dbUser.permissions.includes("marketing"))) ||
+      (requiredPermission === "promotions" &&
+        dbUser.permissions.includes("push_campaigns"));
+
+    if (!hasPermission) {
       console.warn(
         `Access Denied for user ${user.email} on section: ${requiredPermission}`,
       );

@@ -5,7 +5,7 @@ import PushCampaignBuilderClient from "./PushCampaignBuilderClient";
 export const dynamic = "force-dynamic";
 
 export default async function PushCampaignPage() {
-  await requireAdmin("promotions");
+  await requireAdmin("push_campaigns");
 
   const stats = await getPushCampaignStats();
 

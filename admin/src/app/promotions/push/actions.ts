@@ -21,7 +21,7 @@ const initWebPush = () => {
 
 export async function getPushCampaignStats() {
   try {
-    await requireAdmin("promotions");
+    await requireAdmin("push_campaigns");
     const totalSubscriptions = await prisma.pushSubscription.count();
     const adminSubscriptions = await prisma.pushSubscription.count({
       where: { user: { role: "ADMIN" } },
@@ -53,7 +53,7 @@ export async function sendPushBroadcastAction(payload: {
   targetAudience?: "ALL" | "STOREFRONT" | "ADMIN";
 }) {
   try {
-    await requireAdmin("promotions");
+    await requireAdmin("push_campaigns");
     const isInitialized = initWebPush();
     if (!isInitialized) {
       throw new Error("Web Push VAPID keys not configured in environment.");
