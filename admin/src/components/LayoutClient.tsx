@@ -144,14 +144,9 @@ function UnsavedChangesListener() {
 function ServiceWorkerRegistrar() {
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
-        .then((reg) => {
-          reg.update();
-        })
-        .catch(() => {
-          /* silent */
-        });
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+        /* silent */
+      });
     }
   }, []);
   return null;
