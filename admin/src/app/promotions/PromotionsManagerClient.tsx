@@ -49,12 +49,32 @@ interface Coupon {
   affiliate?: { name: string } | null;
 }
 
+interface OrderStats {
+  totalDiscountSaved: number;
+  totalRevenueGenerated: number;
+  orderCount: number;
+}
+
+const getEffectiveStatus = (
+  c: Coupon,
+): "ACTIVE" | "PAUSED" | "EXPIRED" | "EXHAUSTED" => {
+  if (c.status === "PAUSED") return "PAUSED";
+  const now = new Date();
+  if (c.expiresAt && new Date(c.expiresAt) < now) return "EXPIRED";
+  if (c.startsAt && new Date(c.startsAt) > now) return "PAUSED";
+  if (c.usageLimit && c.usageLimit > 0 && c.usedCount >= c.usageLimit)
+    return "EXHAUSTED";
+  return c.status || "ACTIVE";
+};
+
 export default function PromotionsManagerClient({
   initialCoupons,
   affiliates,
+  orderStats,
 }: {
   initialCoupons: Coupon[];
   affiliates: Affiliate[];
+  orderStats?: OrderStats;
 }) {
   const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
@@ -208,22 +228,17 @@ export default function PromotionsManagerClient({
         setIsCreateModalOpen(false);
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || "Failed to save coupon", "err");
+        showToast(err.message || "An error occurred", "err");
       }
     });
   };
 
   // Toggle Status
-  const handleToggleStatus = async (coupon: Coupon) => {
+  const handleToggleStatus = (coupon: Coupon) => {
     const newStatus = coupon.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
     startTransition(async () => {
       try {
-        await adminUpdateCoupon(coupon.id, {
-          code: coupon.code,
-          type: coupon.type,
-          value: coupon.value,
-          status: newStatus,
-        });
+        await adminUpdateCoupon(coupon.id, { status: newStatus });
         showToast(`Coupon ${coupon.code} is now ${newStatus.toLowerCase()}`);
         router.refresh();
       } catch (err: any) {
@@ -233,14 +248,13 @@ export default function PromotionsManagerClient({
   };
 
   // Delete Coupon
-  const handleDelete = async (coupon: Coupon) => {
+  const handleDeleteCoupon = (coupon: Coupon) => {
     if (!confirm(`Are you sure you want to delete coupon ${coupon.code}?`))
       return;
-
     startTransition(async () => {
       try {
         await adminDeleteCoupon(coupon.id);
-        showToast(`Coupon ${coupon.code} deleted successfully`);
+        showToast(`Coupon ${coupon.code} deleted`);
         router.refresh();
       } catch (err: any) {
         showToast(err.message || "Failed to delete coupon", "err");
@@ -251,31 +265,31 @@ export default function PromotionsManagerClient({
   // Submit Bulk Generate
   const handleBulkGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const count = Number(bulkCount);
-    if (isNaN(count) || count < 1 || count > 500) {
-      showToast("Bulk count must be between 1 and 500", "err");
-      return;
-    }
+    const payload = {
+      count: Number(bulkCount) || 10,
+      prefix: bulkPrefix.trim().toUpperCase() || "JNS",
+      type: bulkType,
+      value: Number(bulkValue) || 0,
+      minOrderAmount: bulkMinOrderAmount
+        ? Number(bulkMinOrderAmount)
+        : undefined,
+      expiresAt: bulkExpiresAt ? new Date(bulkExpiresAt) : undefined,
+      source: bulkSource,
+      affiliateId: bulkAffiliateId || undefined,
+    };
 
     startTransition(async () => {
       try {
-        const createdCodes = await adminBulkGenerateCoupons({
-          count,
-          type: bulkType,
-          value: Number(bulkValue) || 0,
-          expiresAt: bulkExpiresAt ? new Date(bulkExpiresAt) : undefined,
-          source: bulkSource,
-          affiliateId: bulkAffiliateId || undefined,
-          minOrderAmount: bulkMinOrderAmount
-            ? Number(bulkMinOrderAmount)
-            : undefined,
-          prefix: bulkPrefix || "JNS",
-        });
-        showToast(`Successfully generated ${createdCodes.length} coupons`);
-        setIsBulkModalOpen(false);
-        router.refresh();
+        const createdCodes = await adminBulkGenerateCoupons(payload);
+        if (Array.isArray(createdCodes) && createdCodes.length > 0) {
+          showToast(`Generated ${createdCodes.length} coupons!`);
+          setIsBulkModalOpen(false);
+          router.refresh();
+        } else {
+          showToast("Failed to generate coupons", "err");
+        }
       } catch (err: any) {
-        showToast(err.message || "Failed to bulk generate coupons", "err");
+        showToast(err.message || "An error occurred", "err");
       }
     });
   };
@@ -290,7 +304,9 @@ export default function PromotionsManagerClient({
           .includes(searchTerm.toLowerCase()) ||
         (c.source || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus = statusFilter === "ALL" || c.status === statusFilter;
+      const effectiveStatus = getEffectiveStatus(c);
+      const matchesStatus =
+        statusFilter === "ALL" || effectiveStatus === statusFilter;
       const matchesType = typeFilter === "ALL" || c.type === typeFilter;
 
       return matchesSearch && matchesStatus && matchesType;
@@ -302,11 +318,19 @@ export default function PromotionsManagerClient({
     setCoupons(initialCoupons);
   }, [initialCoupons]);
 
-  // Statistics
+  // Statistics Calculation
   const totalCouponsCount = coupons.length;
-  const activeCount = coupons.filter((c) => c.status === "ACTIVE").length;
-  const totalRedemptions = coupons.reduce((sum, c) => sum + c.usedCount, 0);
-  const exhaustedCount = coupons.filter((c) => c.status === "EXHAUSTED").length;
+  const activeCount = coupons.filter(
+    (c) => getEffectiveStatus(c) === "ACTIVE",
+  ).length;
+  const expiredCount = coupons.filter(
+    (c) => getEffectiveStatus(c) === "EXPIRED",
+  ).length;
+  const exhaustedCount = coupons.filter(
+    (c) => getEffectiveStatus(c) === "EXHAUSTED",
+  ).length;
+  const totalRedemptions =
+    orderStats?.orderCount ?? coupons.reduce((sum, c) => sum + c.usedCount, 0);
 
   return (
     <div className="space-y-6">
@@ -337,29 +361,41 @@ export default function PromotionsManagerClient({
       </div>
 
       {/* Analytics Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           {
             label: "Total Coupons",
-            value: totalCouponsCount,
+            value: totalCouponsCount.toLocaleString("en-IN"),
             Icon: Ticket,
             colorClass: "text-primary",
           },
           {
-            label: "Active",
-            value: activeCount,
+            label: "Active & Valid",
+            value: activeCount.toLocaleString("en-IN"),
             Icon: CheckCircle2,
             colorClass: "text-emerald-400",
           },
           {
             label: "Total Redemptions",
-            value: totalRedemptions,
+            value: totalRedemptions.toLocaleString("en-IN"),
             Icon: RefreshCw,
             colorClass: "text-accent",
           },
           {
-            label: "Exhausted",
-            value: exhaustedCount,
+            label: "Revenue Generated",
+            value: `₹${(orderStats?.totalRevenueGenerated || 0).toLocaleString("en-IN")}`,
+            Icon: Zap,
+            colorClass: "text-amber-400",
+          },
+          {
+            label: "Customer Savings",
+            value: `₹${(orderStats?.totalDiscountSaved || 0).toLocaleString("en-IN")}`,
+            Icon: Tag,
+            colorClass: "text-blue-400",
+          },
+          {
+            label: "Expired / Exhausted",
+            value: (expiredCount + exhaustedCount).toLocaleString("en-IN"),
             Icon: AlertTriangle,
             colorClass: "text-red-400",
           },
@@ -368,19 +404,19 @@ export default function PromotionsManagerClient({
           return (
             <div
               key={idx}
-              className="premium-card p-5 rounded-lg flex items-center justify-between"
+              className="premium-card p-4 rounded-lg flex flex-col justify-between space-y-2"
             >
-              <div>
-                <div className="font-mono text-[10px] text-muted uppercase tracking-wider">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[9px] text-muted uppercase tracking-wider">
                   {stat.label}
-                </div>
-                <div
-                  className={`font-serif text-[26px] mt-1.5 font-light ${stat.colorClass}`}
-                >
-                  {stat.value}
-                </div>
+                </span>
+                <StatIcon className={`w-4 h-4 opacity-75 ${stat.colorClass}`} />
               </div>
-              <StatIcon className={`w-6 h-6 opacity-75 ${stat.colorClass}`} />
+              <div
+                className={`font-serif text-[22px] font-light ${stat.colorClass}`}
+              >
+                {stat.value}
+              </div>
             </div>
           );
         })}
@@ -629,7 +665,7 @@ export default function PromotionsManagerClient({
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDelete(coupon)}
+                              onClick={() => handleDeleteCoupon(coupon)}
                               className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer flex items-center justify-center"
                               title="Delete Coupon"
                             >
