@@ -67,19 +67,15 @@ function Sidebar({
       }
     }
   };
-  const [openTickets, setOpenTickets] = useState<number | null>(cachedTickets);
-  const [openRfqs, setOpenRfqs] = useState<number | null>(cachedRfqs);
-  const [openInquiries, setOpenInquiries] = useState<number | null>(
-    cachedInquiries,
-  );
-  const [categories, setCategories] =
-    useState<{ id: string; name: string; _count?: { products: number } }[]>(
-      cachedCategories,
-    );
-  const [spaces, setSpaces] =
-    useState<{ id: string; name: string; _count?: { products: number } }[]>(
-      cachedSpaces,
-    );
+  const [openTickets, setOpenTickets] = useState<number | null>(null);
+  const [openRfqs, setOpenRfqs] = useState<number | null>(null);
+  const [openInquiries, setOpenInquiries] = useState<number | null>(null);
+  const [categories, setCategories] = useState<
+    { id: string; name: string; _count?: { products: number } }[]
+  >([]);
+  const [spaces, setSpaces] = useState<
+    { id: string; name: string; _count?: { products: number } }[]
+  >([]);
   const [searchVal, setSearchVal] = useState("");
   const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
     null,
@@ -753,6 +749,7 @@ function Sidebar({
       )}
 
       <aside
+        suppressHydrationWarning={true}
         className={`
         w-[260px] fixed inset-y-0 left-0 z-50 h-screen bg-surface flex flex-col border-r border-border shrink-0 transition-transform duration-300 lg:translate-x-0
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
