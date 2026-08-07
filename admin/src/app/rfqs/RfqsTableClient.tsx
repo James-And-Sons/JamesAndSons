@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import ClickableRow from '@/components/ClickableRow';
-import PullLeadsButton from './PullLeadsButton';
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import ClickableRow from "@/components/ClickableRow";
+import PullLeadsButton from "./PullLeadsButton";
 
 interface RFQItem {
   id: string;
@@ -23,14 +23,14 @@ interface RFQItem {
 }
 
 export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const filteredRfqs = useMemo(() => {
     return rfqs.filter((r) => {
       const query = searchTerm.toLowerCase();
       const name = `${r.user.firstName} ${r.user.lastName}`.toLowerCase();
-      const company = (r.user.company?.name || '').toLowerCase();
+      const company = (r.user.company?.name || "").toLowerCase();
 
       const matchesSearch =
         !query ||
@@ -42,12 +42,12 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
 
       const s = r.status.toUpperCase();
       let matchesStatus = true;
-      if (statusFilter === 'SUBMITTED') {
-        matchesStatus = ['SUBMITTED', 'DRAFT', 'UNDER_REVIEW'].includes(s);
-      } else if (statusFilter === 'APPROVED') {
-        matchesStatus = ['APPROVED', 'QUOTE_SENT'].includes(s);
-      } else if (statusFilter === 'REJECTED') {
-        matchesStatus = ['REJECTED', 'CANCELLED', 'EXPIRED'].includes(s);
+      if (statusFilter === "SUBMITTED") {
+        matchesStatus = ["SUBMITTED", "DRAFT", "UNDER_REVIEW"].includes(s);
+      } else if (statusFilter === "APPROVED") {
+        matchesStatus = ["APPROVED", "QUOTE_SENT"].includes(s);
+      } else if (statusFilter === "REJECTED") {
+        matchesStatus = ["REJECTED", "CANCELLED", "EXPIRED"].includes(s);
       }
 
       return matchesSearch && matchesStatus;
@@ -55,8 +55,11 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
   }, [rfqs, searchTerm, statusFilter]);
 
   const pendingCount = useMemo(
-    () => rfqs.filter((r) => ['SUBMITTED', 'DRAFT', 'UNDER_REVIEW'].includes(r.status.toUpperCase())).length,
-    [rfqs]
+    () =>
+      rfqs.filter((r) =>
+        ["SUBMITTED", "DRAFT", "UNDER_REVIEW"].includes(r.status.toUpperCase()),
+      ).length,
+    [rfqs],
   );
 
   return (
@@ -68,7 +71,8 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
             Inquiries
           </h1>
           <p className="font-body text-muted text-[13px] mt-1 m-0">
-            Commercial quotation requests, IndiaMART lead sync, and trade inquiries ({pendingCount} pending review).
+            Commercial quotation requests, IndiaMART lead sync, and trade
+            inquiries ({pendingCount} pending review).
           </p>
         </div>
         <div>
@@ -81,7 +85,9 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
         {/* Controls Bar */}
         <div className="p-4 md:p-6 border-b border-border flex flex-col sm:flex-row gap-3 bg-surface-muted/40 items-stretch sm:items-center justify-between">
           <div className="flex-1 flex items-center gap-2 border border-border bg-background px-3 py-2.5 rounded-sm focus-within:border-accent min-h-[44px]">
-            <span className="text-muted text-xs" aria-hidden="true">🔍</span>
+            <span className="text-muted text-xs" aria-hidden="true">
+              🔍
+            </span>
             <input
               type="text"
               value={searchTerm}
@@ -90,7 +96,12 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
               className="bg-transparent text-primary font-mono text-[12px] focus:outline-none focus-visible:outline-none w-full placeholder:text-muted/60"
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="text-muted hover:text-primary font-mono text-[10px] uppercase">Clear</button>
+              <button
+                onClick={() => setSearchTerm("")}
+                className="text-muted hover:text-primary font-mono text-[10px] uppercase"
+              >
+                Clear
+              </button>
             )}
           </div>
 
@@ -112,45 +123,136 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
         {/* Desktop Table (md+) */}
         <div className="hidden md:block table-responsive flex-1">
           <table className="w-full text-left border-collapse">
-            <caption className="sr-only">Quotations and trade inquiry requests</caption>
+            <caption className="sr-only">
+              Quotations and trade inquiry requests
+            </caption>
             <thead className="border-b border-border bg-surface-muted/20">
               <tr>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">RFQ ID / Origin</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Customer & Project</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Units Req.</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">Status</th>
-                <th scope="col" className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right">Action</th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  RFQ ID / Origin
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Customer & Project
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Units Req.
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                >
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
               {filteredRfqs.map((rfq) => {
-                const s = (rfq.status || '').toUpperCase();
-                const isPaid = ['APPROVED', 'QUOTE_SENT'].includes(s);
-                const isProcessing = ['SUBMITTED', 'DRAFT', 'UNDER_REVIEW'].includes(s);
-                const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
-                const totalUnits = rfq.items.reduce((acc, curr) => acc + curr.quantity, 0);
+                const s = (rfq.status || "").toUpperCase();
+                const isPaid = ["APPROVED", "QUOTE_SENT"].includes(s);
+                const isProcessing = [
+                  "SUBMITTED",
+                  "DRAFT",
+                  "UNDER_REVIEW",
+                ].includes(s);
+                const pillClass = isPaid
+                  ? "status-paid"
+                  : isProcessing
+                    ? "status-processing"
+                    : "status-pending";
+                const totalUnits = rfq.items.reduce(
+                  (acc, curr) => acc + curr.quantity,
+                  0,
+                );
                 return (
-                  <ClickableRow key={rfq.id} href={`/rfqs/${rfq.id}`} className="hover:bg-surface-muted/40 transition-colors">
+                  <ClickableRow
+                    key={rfq.id}
+                    href={`/rfqs/${rfq.id}`}
+                    className="hover:bg-surface-muted/40 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-[12px] text-accent font-semibold">{rfq.rfqNumber}</span>
-                        <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">{rfq.channel ? rfq.channel.replace(/_/g, ' ') : 'STOREFRONT'}</span>
+                        <Link
+                          href={`/rfqs/${rfq.id}`}
+                          className="font-mono text-[12px] text-accent font-semibold hover:underline"
+                        >
+                          {rfq.rfqNumber}
+                        </Link>
+                        <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
+                          {rfq.channel
+                            ? rfq.channel.replace(/_/g, " ")
+                            : "STOREFRONT"}
+                        </span>
                       </div>
-                      <div className="font-mono text-[11px] text-muted">{new Date(rfq.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                      <div className="font-mono text-[11px] text-muted">
+                        {new Date(rfq.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-serif text-[15px] text-primary">{rfq.user.company?.name || `${rfq.user.firstName} ${rfq.user.lastName}`}</div>
-                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{rfq.user.email} {rfq.user.phone ? `· ${rfq.user.phone}` : ''}</div>
-                      {rfq.projectName && <div className="font-mono text-[9px] text-accent/80 uppercase tracking-wider mt-1">Project: {rfq.projectName}</div>}
+                      <Link
+                        href={`/rfqs/${rfq.id}`}
+                        className="font-serif text-[15px] text-primary hover:text-accent font-medium block"
+                      >
+                        {rfq.user.company?.name ||
+                          `${rfq.user.firstName} ${rfq.user.lastName}`}
+                      </Link>
+                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">
+                        {rfq.user.email}{" "}
+                        {rfq.user.phone ? `· ${rfq.user.phone}` : ""}
+                      </div>
+                      {rfq.projectName && (
+                        <div className="font-mono text-[9px] text-accent/80 uppercase tracking-wider mt-1">
+                          Project: {rfq.projectName}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-6 py-4 font-mono text-[13px] text-primary">{totalUnits} {totalUnits === 1 ? 'unit' : 'units'}</td>
-                    <td className="px-6 py-4"><span className={`status-pill ${pillClass}`}><span className="dot" aria-hidden="true" /><span>{s.replace(/_/g, ' ')}</span></span></td>
-                    <td className="px-6 py-4 text-right"><Link href={`/rfqs/${rfq.id}`} className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors">Review Request →</Link></td>
+                    <td className="px-6 py-4 font-mono text-[13px] text-primary">
+                      {totalUnits} {totalUnits === 1 ? "unit" : "units"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`status-pill ${pillClass}`}>
+                        <span className="dot" aria-hidden="true" />
+                        <span>{s.replace(/_/g, " ")}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link
+                        href={`/rfqs/${rfq.id}`}
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors"
+                      >
+                        Review Request →
+                      </Link>
+                    </td>
                   </ClickableRow>
                 );
               })}
               {filteredRfqs.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest">No quotation requests found.</td></tr>
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest"
+                  >
+                    No quotation requests found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -159,26 +261,46 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
         {/* Mobile Card View (< md) */}
         <div className="block md:hidden p-4 space-y-3">
           {filteredRfqs.map((rfq) => {
-            const s = (rfq.status || '').toUpperCase();
-            const isPaid = ['APPROVED', 'QUOTE_SENT'].includes(s);
-            const isProcessing = ['SUBMITTED', 'DRAFT', 'UNDER_REVIEW'].includes(s);
-            const pillClass = isPaid ? 'status-paid' : isProcessing ? 'status-processing' : 'status-pending';
-            const totalUnits = rfq.items.reduce((acc, curr) => acc + curr.quantity, 0);
-            const customerName = rfq.user.company?.name || `${rfq.user.firstName} ${rfq.user.lastName}`;
+            const s = (rfq.status || "").toUpperCase();
+            const isPaid = ["APPROVED", "QUOTE_SENT"].includes(s);
+            const isProcessing = [
+              "SUBMITTED",
+              "DRAFT",
+              "UNDER_REVIEW",
+            ].includes(s);
+            const pillClass = isPaid
+              ? "status-paid"
+              : isProcessing
+                ? "status-processing"
+                : "status-pending";
+            const totalUnits = rfq.items.reduce(
+              (acc, curr) => acc + curr.quantity,
+              0,
+            );
+            const customerName =
+              rfq.user.company?.name ||
+              `${rfq.user.firstName} ${rfq.user.lastName}`;
 
             return (
-              <div key={rfq.id} className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div
+                key={rfq.id}
+                className="bg-surface border border-border rounded-lg overflow-hidden"
+              >
                 {/* Card Header */}
                 <div className="flex items-center justify-between px-4 py-3 bg-surface-muted/30 border-b border-border/40">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[12px] text-accent font-semibold">{rfq.rfqNumber}</span>
+                    <span className="font-mono text-[12px] text-accent font-semibold">
+                      {rfq.rfqNumber}
+                    </span>
                     <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
-                      {rfq.channel ? rfq.channel.replace(/_/g, ' ') : 'STOREFRONT'}
+                      {rfq.channel
+                        ? rfq.channel.replace(/_/g, " ")
+                        : "STOREFRONT"}
                     </span>
                   </div>
                   <span className={`status-pill ${pillClass}`}>
                     <span className="dot" aria-hidden="true" />
-                    <span>{s.replace(/_/g, ' ')}</span>
+                    <span>{s.replace(/_/g, " ")}</span>
                   </span>
                 </div>
 
@@ -186,20 +308,36 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                 <div className="px-4 py-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="font-serif text-[15px] text-primary leading-snug truncate">{customerName}</div>
-                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">{rfq.user.email}</div>
+                      <div className="font-serif text-[15px] text-primary leading-snug truncate">
+                        {customerName}
+                      </div>
+                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">
+                        {rfq.user.email}
+                      </div>
                       {rfq.projectName && (
-                        <div className="font-mono text-[9px] text-accent/80 uppercase tracking-wider mt-1">Project: {rfq.projectName}</div>
+                        <div className="font-mono text-[9px] text-accent/80 uppercase tracking-wider mt-1">
+                          Project: {rfq.projectName}
+                        </div>
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-mono text-[10px] text-muted">Items</div>
-                      <div className="font-mono text-[16px] text-primary font-semibold">{totalUnits}</div>
-                      <div className="font-mono text-[9px] text-muted">{totalUnits === 1 ? 'unit' : 'units'}</div>
+                      <div className="font-mono text-[10px] text-muted">
+                        Items
+                      </div>
+                      <div className="font-mono text-[16px] text-primary font-semibold">
+                        {totalUnits}
+                      </div>
+                      <div className="font-mono text-[9px] text-muted">
+                        {totalUnits === 1 ? "unit" : "units"}
+                      </div>
                     </div>
                   </div>
                   <div className="font-mono text-[10px] text-muted/60">
-                    {new Date(rfq.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(rfq.createdAt).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </div>
                 </div>
 

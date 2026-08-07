@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import DeleteBlogButton from "./DeleteBlogButton";
+import ClickableRow from "@/components/ClickableRow";
+
 export const dynamic = "force-dynamic";
 
-export default async function BlogAdminPage() {
+export default async function BlogPage() {
   const posts = await prisma.blogPost.findMany({
     orderBy: { createdAt: "desc" },
     include: { author: true },
@@ -11,33 +13,33 @@ export default async function BlogAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center premium-card p-6">
+      <div className="flex justify-between items-center bg-surface p-6 border border-border">
         <div>
           <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">
             Blog Posts
           </h1>
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-2">
-            {posts.length} articles published
+          <p className="font-mono text-[9px] uppercase tracking-widest text-muted mt-1 m-0">
+            {posts.length} published articles &amp; drafts
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/blog/import"
-            className="btn-secondary font-mono text-[10px] uppercase tracking-[0.12em] px-6 py-3 border border-accent/30 text-accent hover:bg-accent/10 transition-all flex items-center gap-2"
+            className="font-mono text-[9px] uppercase tracking-[0.15em] text-secondary border border-border px-5 py-2.5 hover:text-primary hover:border-accent transition-colors bg-background rounded-sm"
           >
-            📥 Import .DOCX File
+            📄 Import Word Doc
           </Link>
           <Link
             href="/blog/new"
-            className="btn-primary font-mono text-[10px] uppercase tracking-[0.12em] px-8 py-3 shadow-lg shadow-accent/20"
+            className="btn-primary font-mono text-[9px] uppercase tracking-[0.15em] px-6 py-2.5 shadow-lg shadow-accent/20"
           >
-            + New Post
+            + Create New Post
           </Link>
         </div>
       </div>
 
       <div className="premium-card overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left border-collapse">
           <thead className="border-b border-border bg-surface-muted/30">
             <tr>
               <th className="px-6 py-4 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal">
@@ -59,14 +61,18 @@ export default async function BlogAdminPage() {
           </thead>
           <tbody className="divide-y divide-border/50">
             {posts.map((post) => (
-              <tr
+              <ClickableRow
                 key={post.id}
-                className="hover:bg-surface-muted/50 transition-colors"
+                href={`/blog/${post.id}/edit`}
+                className="hover:bg-surface-muted/50 transition-colors cursor-pointer"
               >
                 <td className="px-6 py-5">
-                  <div className="font-serif text-[17px] text-primary">
+                  <Link
+                    href={`/blog/${post.id}/edit`}
+                    className="font-serif text-[17px] text-primary hover:text-accent transition-colors font-medium block"
+                  >
                     {post.title}
-                  </div>
+                  </Link>
                   <div className="font-mono text-[11px] text-muted mt-1">
                     /{post.slug}
                   </div>
@@ -91,13 +97,13 @@ export default async function BlogAdminPage() {
                 <td className="px-6 py-5 text-right flex gap-4 justify-end items-center">
                   <Link
                     href={`/blog/${post.id}/edit`}
-                    className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted hover:text-white transition-colors"
+                    className="font-mono text-[9px] uppercase tracking-[0.15em] text-accent hover:text-white transition-colors font-semibold"
                   >
-                    Edit
+                    Edit →
                   </Link>
                   <DeleteBlogButton id={post.id} />
                 </td>
-              </tr>
+              </ClickableRow>
             ))}
             {posts.length === 0 && (
               <tr>

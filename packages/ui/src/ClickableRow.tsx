@@ -27,15 +27,19 @@ export function ClickableRow({
       target.closest("a") ||
       target.closest("button");
 
-    if (!isInteractive) {
-      router.push(href);
+    if (!isInteractive && href) {
+      if (e.ctrlKey || e.metaKey) {
+        window.open(href, "_blank");
+      } else {
+        router.push(href);
+      }
     }
   };
 
   return (
     <tr
       onClick={handleRowClick}
-      className={`cursor-pointer hover:bg-surface-muted transition-colors ${className}`}
+      className={`cursor-pointer hover:bg-surface-muted/60 transition-colors ${className}`}
     >
       {children}
     </tr>

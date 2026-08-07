@@ -522,7 +522,12 @@ export default function ProductsTableClient({
                         </div>
                         <div>
                           <div className="font-serif text-[16px] text-primary flex items-center gap-2">
-                            <span>{product.name}</span>
+                            <Link
+                              href={`/products/${product.id}/edit`}
+                              className="hover:text-accent font-serif text-[16px] text-primary"
+                            >
+                              {product.name}
+                            </Link>
                             {isAnomaly && (
                               <span
                                 className="text-[10px] font-mono text-[#C97E6A] bg-[#C97E6A]/15 border border-[#C97E6A]/30 px-1.5 py-0.5 rounded"

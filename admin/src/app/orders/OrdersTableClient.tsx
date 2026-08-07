@@ -334,7 +334,12 @@ export default function OrdersTableClient({
               {filteredRecords.map((r) => (
                 <ClickableRow key={r.id} href={`/orders/${r.id}`}>
                   <td className="py-4 px-6 font-mono text-[13px] text-accent font-semibold">
-                    {r.displayId}
+                    <Link
+                      href={`/orders/${r.id}`}
+                      className="hover:underline text-accent"
+                    >
+                      {r.displayId}
+                    </Link>
                   </td>
                   <td className="py-4 px-6 font-mono text-[11px] text-muted">
                     {new Date(r.date).toLocaleDateString("en-IN", {
@@ -344,9 +349,12 @@ export default function OrdersTableClient({
                     })}
                   </td>
                   <td className="py-4 px-6">
-                    <p className="font-serif text-[14px] text-primary font-medium m-0">
+                    <Link
+                      href={`/orders/${r.id}`}
+                      className="font-serif text-[14px] text-primary hover:text-accent font-medium m-0 block"
+                    >
                       {r.customerName}
-                    </p>
+                    </Link>
                     <p className="font-mono text-[10px] text-muted m-0">
                       {r.email}
                     </p>

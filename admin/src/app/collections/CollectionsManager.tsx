@@ -690,9 +690,16 @@ export default function CategoryManager({
                       </div>
                     )}
                     <div>
-                      <div className="font-serif text-[17px] text-primary">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(cat);
+                        }}
+                        className="font-serif text-[17px] text-primary hover:text-accent transition-colors text-left bg-transparent border-none p-0 cursor-pointer block font-normal"
+                      >
                         {cat.name}
-                      </div>
+                      </button>
                       <div className="font-mono text-[10px] text-muted">
                         {cat.slug}
                       </div>
