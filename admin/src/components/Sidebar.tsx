@@ -191,10 +191,14 @@ function Sidebar({
     const isActive =
       href === "/"
         ? pathname === "/"
-        : (pathname === href || pathname.startsWith(href + "/")) &&
-          !(href === "/products" && currentCategoryId) &&
-          !(href === "/spaces" && currentManageId) &&
-          !(href === "/collections" && currentCategoryId);
+        : href === "/promotions"
+          ? pathname === "/promotions" ||
+            (pathname.startsWith("/promotions/") &&
+              !pathname.startsWith("/promotions/push"))
+          : (pathname === href || pathname.startsWith(href + "/")) &&
+            !(href === "/products" && currentCategoryId) &&
+            !(href === "/spaces" && currentManageId) &&
+            !(href === "/collections" && currentCategoryId);
 
     return (
       <Link
