@@ -201,10 +201,12 @@ export default function LayoutClient({
           <PWAInstallPrompt appName="Admin J&S" />
 
           {!isLoginPage && (
-            <Sidebar
-              isOpen={isSidebarOpen}
-              onClose={() => setIsSidebarOpen(false)}
-            />
+            <Suspense fallback={null}>
+              <Sidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+              />
+            </Suspense>
           )}
 
           <div
