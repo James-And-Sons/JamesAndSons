@@ -131,22 +131,22 @@ export default function CategoryManager({
   }, [categories]);
 
   const handleDiscard = () => {
-    if (isDirty) {
-      if (!confirm("You have unsaved changes. Discard them?")) return;
-    }
-    if (typeof window !== "undefined") {
-      window.history.replaceState({}, "", "/collections");
-    }
+    try {
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", "/collections");
+      }
+    } catch {}
     setShowForm(false);
     setEditing(null);
     setError("");
   };
 
   const openAdd = () => {
-    if (isDirty && !confirm("You have unsaved changes. Discard them?")) return;
-    if (typeof window !== "undefined") {
-      window.history.replaceState({}, "", "/collections");
-    }
+    try {
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", "/collections");
+      }
+    } catch {}
     setEditing(null);
     setName("");
     setDescription("");
@@ -164,10 +164,11 @@ export default function CategoryManager({
   };
 
   const openEdit = (cat: Category) => {
-    if (isDirty && !confirm("You have unsaved changes. Discard them?")) return;
-    if (typeof window !== "undefined") {
-      window.history.replaceState({}, "", `/collections?edit=${cat.id}`);
-    }
+    try {
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", `/collections?edit=${cat.id}`);
+      }
+    } catch {}
     setEditing(cat);
     setName(cat.name);
     setDescription(cat.description || "");
@@ -185,10 +186,11 @@ export default function CategoryManager({
   };
 
   const openManage = (cat: Category) => {
-    if (isDirty && !confirm("You have unsaved changes. Discard them?")) return;
-    if (typeof window !== "undefined") {
-      window.history.replaceState({}, "", `/collections?manage=${cat.id}`);
-    }
+    try {
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", `/collections?manage=${cat.id}`);
+      }
+    } catch {}
     setManagingProducts(cat);
     setShowForm(false);
     setEditing(null);

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutAction } from "@/app/actions";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, memo } from "react";
 import { useSidebar } from "@/lib/context/SidebarContext";
 import SyncButton from "@/components/SyncButton";
 import { BrandLogo, useTenantConfig } from "@james-andsons/ui";
@@ -43,7 +43,7 @@ let cachedSpaces: {
 }[] = [];
 let cachedNavScrollTop = 0;
 
-export default function Sidebar({
+function Sidebar({
   isOpen,
   onClose,
 }: {
@@ -173,6 +173,14 @@ export default function Sidebar({
     }
   }, [pathname]);
 
+  const navRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (navRef.current && cachedNavScrollTop > 0) {
+      navRef.current.scrollTop = cachedNavScrollTop;
+    }
+  }, []);
+
   const renderLink = (
     name: string,
     href: string,
@@ -186,7 +194,7 @@ export default function Sidebar({
     const isActive =
       href === "/"
         ? pathname === "/"
-        : pathname.startsWith(href) &&
+        : (pathname === href || pathname.startsWith(href + "/")) &&
           !(href === "/products" && currentCategoryId) &&
           !(href === "/spaces" && currentManageId) &&
           !(href === "/collections" && currentCategoryId);
@@ -250,7 +258,9 @@ export default function Sidebar({
         [dropdownKey]: !prev[dropdownKey],
       }));
     const isGroupActive =
-      pathname.startsWith(manageHref) || subItems.some((item) => item.active);
+      pathname === manageHref ||
+      pathname.startsWith(manageHref + "/") ||
+      subItems.some((item) => item.active);
 
     return (
       <div className="space-y-1">
@@ -789,11 +799,7 @@ export default function Sidebar({
         </div>
 
         <nav
-          ref={(el) => {
-            if (el && cachedNavScrollTop > 0) {
-              el.scrollTop = cachedNavScrollTop;
-            }
-          }}
+          ref={navRef}
           onScroll={(e) => {
             cachedNavScrollTop = e.currentTarget.scrollTop;
           }}
@@ -879,3 +885,5 @@ export default function Sidebar({
     </>
   );
 }
+
+export default memo(Sidebar);
