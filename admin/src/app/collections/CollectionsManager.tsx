@@ -55,16 +55,17 @@ export default function CategoryManager({
 
   const { setIsPageDirty } = useSidebar();
 
+  // Accurate dirtiness check (comparing defaults so pristine forms are NOT marked dirty)
   const isDirty =
     showForm &&
     (editing === null
-      ? name !== "" ||
-        description !== "" ||
-        technicalSubheading !== "" ||
-        hsnCode !== "" ||
+      ? name.trim() !== "" ||
+        description.trim() !== "" ||
+        technicalSubheading.trim() !== "" ||
+        hsnCode.trim() !== "" ||
         gstRate !== 18 ||
-        bisStandard !== "" ||
-        bisStatus !== "" ||
+        bisStandard.trim() !== "" ||
+        bisStatus !== "Pending Application" ||
         images.length > 0 ||
         baseShippingLimit !== "" ||
         freeShippingThreshold !== ""
@@ -72,22 +73,11 @@ export default function CategoryManager({
         description !== (editing.description || "") ||
         technicalSubheading !== (editing.technicalSubheading || "") ||
         hsnCode !== (editing.hsnCode || "") ||
-        gstRate !==
-          (editing.gstRate !== null && editing.gstRate !== undefined
-            ? editing.gstRate
-            : 18) ||
+        gstRate !== (editing.gstRate ?? 18) ||
         bisStandard !== (editing.bisStandard || "") ||
-        bisStatus !== (editing.bisStatus || "") ||
-        baseShippingLimit !==
-          (editing.baseShippingLimit !== null &&
-          editing.baseShippingLimit !== undefined
-            ? editing.baseShippingLimit
-            : "") ||
-        freeShippingThreshold !==
-          (editing.freeShippingThreshold !== null &&
-          editing.freeShippingThreshold !== undefined
-            ? editing.freeShippingThreshold
-            : "") ||
+        bisStatus !== (editing.bisStatus || "Pending Application") ||
+        baseShippingLimit !== (editing.baseShippingLimit ?? "") ||
+        freeShippingThreshold !== (editing.freeShippingThreshold ?? "") ||
         JSON.stringify(images) !== JSON.stringify(editing.images || []));
 
   useEffect(() => {
@@ -105,9 +95,9 @@ export default function CategoryManager({
     }
   }, [categories]);
 
-  // Initial load check for search params (?edit=id or ?manage=id)
+  // Initial load check for search params (?edit=id or ?manage=id) when categories are loaded
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && categories.length > 0) {
       const params = new URLSearchParams(window.location.search);
       const manageId = params.get("manage");
       const editId = params.get("edit");
@@ -127,32 +117,18 @@ export default function CategoryManager({
           setDescription(cat.description || "");
           setTechnicalSubheading(cat.technicalSubheading || "");
           setHsnCode(cat.hsnCode || "");
-          setGstRate(
-            cat.gstRate !== null && cat.gstRate !== undefined
-              ? cat.gstRate
-              : 18,
-          );
+          setGstRate(cat.gstRate ?? 18);
           setBisStandard(cat.bisStandard || "");
-          setBisStatus(cat.bisStatus || "");
+          setBisStatus(cat.bisStatus || "Pending Application");
           setImages(cat.images || []);
-          setBaseShippingLimit(
-            cat.baseShippingLimit !== null &&
-              cat.baseShippingLimit !== undefined
-              ? cat.baseShippingLimit
-              : "",
-          );
-          setFreeShippingThreshold(
-            cat.freeShippingThreshold !== null &&
-              cat.freeShippingThreshold !== undefined
-              ? cat.freeShippingThreshold
-              : "",
-          );
+          setBaseShippingLimit(cat.baseShippingLimit ?? "");
+          setFreeShippingThreshold(cat.freeShippingThreshold ?? "");
           setShowForm(true);
           setManagingProducts(null);
         }
       }
     }
-  }, []);
+  }, [categories]);
 
   const handleDiscard = () => {
     if (isDirty) {
@@ -197,23 +173,12 @@ export default function CategoryManager({
     setDescription(cat.description || "");
     setTechnicalSubheading(cat.technicalSubheading || "");
     setHsnCode(cat.hsnCode || "");
-    setGstRate(
-      cat.gstRate !== null && cat.gstRate !== undefined ? cat.gstRate : 18,
-    );
+    setGstRate(cat.gstRate ?? 18);
     setBisStandard(cat.bisStandard || "");
-    setBisStatus(cat.bisStatus || "");
+    setBisStatus(cat.bisStatus || "Pending Application");
     setImages(cat.images || []);
-    setBaseShippingLimit(
-      cat.baseShippingLimit !== null && cat.baseShippingLimit !== undefined
-        ? cat.baseShippingLimit
-        : "",
-    );
-    setFreeShippingThreshold(
-      cat.freeShippingThreshold !== null &&
-        cat.freeShippingThreshold !== undefined
-        ? cat.freeShippingThreshold
-        : "",
-    );
+    setBaseShippingLimit(cat.baseShippingLimit ?? "");
+    setFreeShippingThreshold(cat.freeShippingThreshold ?? "");
     setShowForm(true);
     setManagingProducts(null);
     setError("");
@@ -232,7 +197,7 @@ export default function CategoryManager({
 
   const handleSave = () => {
     if (!name.trim()) {
-      setError("Name is required");
+      setError("Category Name is required");
       return;
     }
     setError("");
@@ -249,13 +214,13 @@ export default function CategoryManager({
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: name.trim(),
           slug,
-          description,
-          technicalSubheading,
-          hsnCode,
+          description: description.trim(),
+          technicalSubheading: technicalSubheading.trim(),
+          hsnCode: hsnCode.trim(),
           gstRate: parseFloat(String(gstRate)) || 18,
-          bisStandard,
+          bisStandard: bisStandard.trim(),
           bisStatus,
           baseShippingLimit:
             baseShippingLimit !== ""
@@ -270,7 +235,8 @@ export default function CategoryManager({
         }),
       });
       if (!res.ok) {
-        setError(await res.text());
+        const errorText = await res.text();
+        setError(errorText || "Failed to save category");
         return;
       }
       if (typeof window !== "undefined") {
@@ -361,6 +327,7 @@ export default function CategoryManager({
           )}
         </div>
         <button
+          type="button"
           onClick={openAdd}
           className="btn-primary font-mono text-[10px] uppercase tracking-[0.12em] px-8 py-3 shadow-lg shadow-accent/20 cursor-pointer"
         >
@@ -382,6 +349,7 @@ export default function CategoryManager({
                 </h2>
               </div>
               <button
+                type="button"
                 onClick={handleDiscard}
                 className="text-muted hover:text-primary font-mono text-[16px] cursor-pointer bg-transparent border-none focus:outline-none"
               >
@@ -532,12 +500,14 @@ export default function CategoryManager({
             {/* Footer */}
             <div className="px-6 py-4 border-t border-border bg-surface-muted/40 flex justify-end gap-3">
               <button
+                type="button"
                 onClick={handleDiscard}
                 className="font-mono text-[9px] uppercase tracking-widest text-muted border border-border px-6 py-2.5 hover:text-primary transition-colors bg-background rounded-sm cursor-pointer"
               >
                 Discard
               </button>
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={isPending}
                 className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 rounded-sm cursor-pointer"
@@ -559,6 +529,7 @@ export default function CategoryManager({
               </span>
             </h3>
             <button
+              type="button"
               onClick={() => {
                 setManagingProducts(null);
                 if (typeof window !== "undefined")
@@ -598,6 +569,7 @@ export default function CategoryManager({
                 </select>
               </div>
               <button
+                type="button"
                 onClick={handleAddProduct}
                 disabled={!selectedProductId || isPending}
                 className="px-6 py-2.5 font-mono text-[9px] uppercase tracking-widest bg-accent text-black hover:bg-accent-hover transition-colors font-bold disabled:opacity-50 cursor-pointer"
@@ -645,6 +617,7 @@ export default function CategoryManager({
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
+                          type="button"
                           onClick={() => handleRemoveProduct(p.id)}
                           disabled={isPending}
                           className="font-mono text-[9px] uppercase text-rose-400 hover:text-rose-500 transition-colors cursor-pointer disabled:opacity-50"
@@ -774,6 +747,7 @@ export default function CategoryManager({
                 </td>
                 <td className="px-6 py-4 text-right flex gap-4 justify-end items-center">
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       openManage(cat);
@@ -783,6 +757,7 @@ export default function CategoryManager({
                     Products
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       openEdit(cat);
@@ -792,6 +767,7 @@ export default function CategoryManager({
                     Edit
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(cat.id, cat._count?.products || 0);
