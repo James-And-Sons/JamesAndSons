@@ -101,14 +101,52 @@ export default function OrdersTableClient({
   };
 
   const metrics = useMemo(() => {
-    const totalRev = records.reduce((sum, r) => sum + (r.totalValue || 0), 0);
-    const paidCount = records.filter((r) =>
-      ["PAID", "PROCESSING"].includes(r.status.toUpperCase()),
-    ).length;
-    const amazonCount = records.filter((r) => r.channel === "AMAZON").length;
-    const b2bCount = records.filter((r) => r.channel === "B2B").length;
+    const netRev = records
+      .filter(
+        (r) =>
+          !["CANCELLED", "REFUNDED", "FAILED"].includes(r.status.toUpperCase()),
+      )
+      .reduce((sum, r) => sum + (r.totalValue || 0), 0);
 
-    return { totalRev, paidCount, amazonCount, b2bCount };
+    const readyCount = records.filter((r) =>
+      ["PAID", "PROCESSING", "UNSHIPPED", "PENDING"].includes(
+        r.status.toUpperCase(),
+      ),
+    ).length;
+
+    const shippedCount = records.filter((r) =>
+      ["SHIPPED", "DELIVERED"].includes(r.status.toUpperCase()),
+    ).length;
+
+    const cancelledCount = records.filter((r) =>
+      ["CANCELLED", "REFUNDED", "FAILED"].includes(r.status.toUpperCase()),
+    ).length;
+
+    const amazonCount = records.filter(
+      (r) => (r.channel || "").toUpperCase() === "AMAZON",
+    ).length;
+
+    const b2bCount = records.filter(
+      (r) => (r.channel || "").toUpperCase() === "B2B",
+    ).length;
+
+    const storefrontCount = records.filter(
+      (r) =>
+        !r.channel ||
+        ["D2C", "STOREFRONT", "JNS_STOREFRONT"].includes(
+          r.channel.toUpperCase(),
+        ),
+    ).length;
+
+    return {
+      netRev,
+      readyCount,
+      shippedCount,
+      cancelledCount,
+      amazonCount,
+      b2bCount,
+      storefrontCount,
+    };
   }, [records]);
 
   const filteredRecords = useMemo(() => {
@@ -124,7 +162,9 @@ export default function OrdersTableClient({
       const s = r.status.toUpperCase();
       let matchesStatus = true;
       if (statusFilter === "READY_FOR_PICKUP") {
-        matchesStatus = ["PAID", "PROCESSING"].includes(s);
+        matchesStatus = ["PAID", "PROCESSING", "UNSHIPPED", "PENDING"].includes(
+          s,
+        );
       } else if (statusFilter === "SHIPPED") {
         matchesStatus = ["SHIPPED", "DELIVERED"].includes(s);
       } else if (statusFilter === "CANCELLED") {
@@ -133,12 +173,15 @@ export default function OrdersTableClient({
 
       let matchesChannel = true;
       if (channelFilter === "AMAZON") {
-        matchesChannel = r.channel === "AMAZON";
+        matchesChannel = (r.channel || "").toUpperCase() === "AMAZON";
       } else if (channelFilter === "B2B") {
-        matchesChannel = r.channel === "B2B";
+        matchesChannel = (r.channel || "").toUpperCase() === "B2B";
       } else if (channelFilter === "STOREFRONT") {
         matchesChannel =
-          !r.channel || r.channel === "D2C" || r.channel === "STOREFRONT";
+          !r.channel ||
+          ["D2C", "STOREFRONT", "JNS_STOREFRONT"].includes(
+            r.channel.toUpperCase(),
+          );
       }
 
       return matchesSearch && matchesStatus && matchesChannel;
@@ -190,7 +233,7 @@ export default function OrdersTableClient({
 
   const getStatusBadge = (status: string) => {
     const s = status.toUpperCase();
-    if (["PAID", "PROCESSING"].includes(s)) {
+    if (["PAID", "PROCESSING", "UNSHIPPED", "PENDING"].includes(s)) {
       return (
         <span className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
           Ready for Pickup
@@ -200,20 +243,13 @@ export default function OrdersTableClient({
     if (["SHIPPED", "DELIVERED"].includes(s)) {
       return (
         <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
-          {s}
-        </span>
-      );
-    }
-    if (["CANCELLED", "REFUNDED"].includes(s)) {
-      return (
-        <span className="px-2.5 py-1 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
-          {s}
+          Shipped
         </span>
       );
     }
     return (
-      <span className="px-2.5 py-1 bg-surface border border-border text-muted font-mono text-[9px] uppercase tracking-wider rounded-xs">
-        {s}
+      <span className="px-2.5 py-1 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
+        Cancelled
       </span>
     );
   };
@@ -221,37 +257,53 @@ export default function OrdersTableClient({
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* ── Stat Cards Header ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="p-4 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
-            Total Revenue
+            Net Sales Revenue
           </p>
-          <p className="font-serif text-[24px] text-accent font-light">
-            ₹{metrics.totalRev.toLocaleString("en-IN")}
+          <p className="font-serif text-[22px] text-accent font-light">
+            ₹{metrics.netRev.toLocaleString("en-IN")}
           </p>
         </div>
         <div className="p-4 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Total Orders
           </p>
-          <p className="font-serif text-[24px] text-primary font-light">
-            {records.length}
+          <p className="font-serif text-[22px] text-primary font-light">
+            {records.length.toLocaleString("en-IN")}
           </p>
         </div>
         <div className="p-4 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
-            Awaiting Pickup
+            Ready for Pickup
           </p>
-          <p className="font-serif text-[24px] text-amber-400 font-light">
-            {metrics.paidCount}
+          <p className="font-serif text-[22px] text-amber-400 font-light">
+            {metrics.readyCount.toLocaleString("en-IN")}
           </p>
         </div>
         <div className="p-4 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
-            Amazon Orders
+            Shipped & Delivered
           </p>
-          <p className="font-serif text-[24px] text-orange-400 font-light">
-            {metrics.amazonCount}
+          <p className="font-serif text-[22px] text-emerald-400 font-light">
+            {metrics.shippedCount.toLocaleString("en-IN")}
+          </p>
+        </div>
+        <div className="p-4 bg-surface border border-border rounded-sm">
+          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
+            Amazon.in Orders
+          </p>
+          <p className="font-serif text-[22px] text-orange-400 font-light">
+            {metrics.amazonCount.toLocaleString("en-IN")}
+          </p>
+        </div>
+        <div className="p-4 bg-surface border border-border rounded-sm">
+          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
+            Cancelled / Refunded
+          </p>
+          <p className="font-serif text-[22px] text-red-400 font-light">
+            {metrics.cancelledCount.toLocaleString("en-IN")}
           </p>
         </div>
       </div>
