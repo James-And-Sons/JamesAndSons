@@ -146,20 +146,35 @@ export async function bookShiprocketPickupAction(
   courierId?: number | null,
 ) {
   try {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order?.awbNumber) {
-      return {
-        success: false,
-        error:
-          "No Shiprocket shipment ID on record. Please retry Shiprocket sync first.",
-      };
+    let order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      return { success: false, error: "Order not found." };
     }
 
-    const shipmentId = parseInt(order.awbNumber);
+    // If order has no shipment ID on record yet, auto-create the shipment on Shiprocket first!
+    if (!order.awbNumber) {
+      console.log(
+        `[bookShiprocketPickup] Order ${order.orderNumber} has no shipment ID. Auto-creating Shiprocket order...`,
+      );
+      const syncRes = await retryLogisticsSync(orderId);
+      if (!syncRes.success) {
+        return {
+          success: false,
+          error: syncRes.error || "Failed to create shipment on Shiprocket.",
+        };
+      }
+      // Reload order with new awbNumber
+      const reloaded = await prisma.order.findUnique({
+        where: { id: orderId },
+      });
+      if (reloaded) order = reloaded;
+    }
+
+    const shipmentId = parseInt(order.awbNumber || "");
     if (isNaN(shipmentId)) {
       return {
         success: false,
-        error: `Stored awbNumber "${order.awbNumber}" is not a numeric Shiprocket shipment ID.`,
+        error: `Stored awbNumber "${order.awbNumber}" is not a valid Shiprocket shipment ID.`,
       };
     }
 
@@ -697,9 +712,16 @@ export async function estimateShiprocketFreightAction(
     const token = await getShiprocketToken();
     if (!token) return { success: false, error: "Shiprocket auth failed" };
 
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { shippingPincode: true },
+    });
+    const targetPincode =
+      order?.shippingPincode || specs.deliveryPincode || "110001";
+
     const pickupPincode = "202001";
     const res = await fetch(
-      `https://apiv2.shiprocket.in/v1/external/courier/serviceability?pickup_postcode=${pickupPincode}&delivery_postcode=${specs.deliveryPincode}&weight=${specs.weight}&cod=0&length=${specs.length}&breadth=${specs.width}&height=${specs.height}`,
+      `https://apiv2.shiprocket.in/v1/external/courier/serviceability?pickup_postcode=${pickupPincode}&delivery_postcode=${targetPincode}&weight=${specs.weight}&cod=0&length=${specs.length}&breadth=${specs.width}&height=${specs.height}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
