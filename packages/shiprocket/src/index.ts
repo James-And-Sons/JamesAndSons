@@ -473,9 +473,20 @@ export async function assignAWB(
       };
     } else {
       console.error("AWB Assignment Failed:", data);
+      let errMsg =
+        data.response?.data?.awb_assign_error ||
+        data.message ||
+        "AWB Assignment failed";
+      if (typeof errMsg === "object") {
+        errMsg = JSON.stringify(errMsg);
+      }
+      if (errMsg.includes("Insufficient amount")) {
+        errMsg =
+          "Insufficient Shiprocket Wallet Balance. Please recharge your Shiprocket wallet balance to generate AWB label.";
+      }
       return {
         success: false,
-        message: data.message || "AWB Assignment failed",
+        message: errMsg,
       };
     }
   } catch (err) {
