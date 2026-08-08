@@ -50,12 +50,26 @@ export async function POST(
     const config = getAmazonConfig();
     const accessToken = await getLwaAccessToken();
 
+    const knownCarriers = [
+      "BlueDart",
+      "Delhivery",
+      "DTDC",
+      "India Post",
+      "FedEx",
+      "DHL",
+    ];
+    const isKnown = knownCarriers.some(
+      (c) => c.toLowerCase() === carrierName.trim().toLowerCase(),
+    );
+    const finalCarrierCode = isKnown ? carrierName.trim() : "Other";
+
     const shipmentPayload = {
       marketplaceId: config.marketplaceId,
       packageDetail: {
-        carrierCode,
-        carrierName,
-        shippingService,
+        packageReferenceId: "1",
+        carrierCode: finalCarrierCode,
+        carrierName: carrierName || "Shiprocket",
+        shippingService: shippingService || "Standard",
         trackingNumber: awbToUse,
         shipDate: new Date().toISOString(),
       },
