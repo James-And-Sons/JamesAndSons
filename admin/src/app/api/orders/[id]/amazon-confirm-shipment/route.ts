@@ -63,6 +63,29 @@ export async function POST(
     );
     const finalCarrierCode = isKnown ? carrierName.trim() : "Other";
 
+    // Fetch Amazon OrderItems from SP-API to satisfy OrderItemList requirement
+    let orderItemsPayload: { orderItemId: string; quantity: number }[] = [];
+    try {
+      const itemsRes = await signedSpApiFetch(
+        `/orders/v0/orders/${order.amazonOrderId}/orderItems`,
+        accessToken,
+        config,
+      );
+      if (itemsRes.ok) {
+        const itemsData = await itemsRes.json();
+        const rawItems: any[] = itemsData?.payload?.OrderItems || [];
+        orderItemsPayload = rawItems.map((it) => ({
+          orderItemId: it.OrderItemId,
+          quantity: Number(it.QuantityOrdered) || 1,
+        }));
+      }
+    } catch (err) {
+      console.warn(
+        "[Amazon Confirm Shipment] Could not fetch OrderItems from SP-API:",
+        err,
+      );
+    }
+
     const shipmentPayload = {
       marketplaceId: config.marketplaceId,
       packageDetail: {
@@ -72,6 +95,7 @@ export async function POST(
         shippingService: shippingService || "Standard",
         trackingNumber: awbToUse,
         shipDate: new Date().toISOString(),
+        orderItems: orderItemsPayload,
       },
     };
 
