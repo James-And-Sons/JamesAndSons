@@ -469,6 +469,215 @@ export default function OrderStatusControls({
         )}
       </div>
 
+      {/* ── ALWAYS-VISIBLE OFFICIAL DOCUMENTS STUDIO BAR ────────────────── */}
+      <div
+        style={{
+          padding: "16px 24px",
+          borderBottom: "1px solid rgba(196,160,90,0.1)",
+          background: "rgba(255,255,255,0.02)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "12px",
+          }}
+        >
+          <div>
+            <h4
+              style={{
+                fontFamily: "monospace",
+                fontSize: "10px",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "#4ade80",
+                margin: 0,
+                fontWeight: "bold",
+              }}
+            >
+              📄 Official Order &amp; Compliance Documents Studio
+            </h4>
+            <p
+              style={{
+                fontFamily: "sans-serif",
+                fontSize: "11px",
+                color: "var(--muted, #aaa)",
+                margin: "2px 0 0",
+              }}
+            >
+              Download original barcode shipping labels, courier pickup
+              manifests, and GST tax invoices.
+            </p>
+          </div>
+
+          {(awbNumber || trackingNumber) && (
+            <button
+              onClick={fetchDocUrls}
+              disabled={docLoading}
+              style={{
+                background: "rgba(107,141,214,0.1)",
+                border: "1px solid rgba(107,141,214,0.3)",
+                color: "#6b8dd6",
+                fontFamily: "monospace",
+                fontSize: "9px",
+                fontWeight: "bold",
+                padding: "6px 12px",
+                borderRadius: "2px",
+                cursor: docLoading ? "not-allowed" : "pointer",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}
+            >
+              {docLoading
+                ? "Refreshing PDF Links…"
+                : "↻ Fetch All Original PDFs"}
+            </button>
+          )}
+        </div>
+
+        {/* Grid of 4 Original PDF Downloads */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "10px",
+          }}
+        >
+          {/* 1. Barcode Shipping Label */}
+          <a
+            href={shiprocketLabelUrl || "#"}
+            onClick={async (e) => {
+              if (!shiprocketLabelUrl) {
+                e.preventDefault();
+                const res = await getShiprocketLabelAction(orderId);
+                if (res.success && res.labelUrl) {
+                  window.open(res.labelUrl, "_blank");
+                }
+              }
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "12px 14px",
+              background: "rgba(74,222,128,0.08)",
+              border: "1px solid rgba(74,222,128,0.3)",
+              borderRadius: "2px",
+              fontFamily: "monospace",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#4ade80",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>🏷️ Shipping Label (PDF)</span>
+            <span style={{ fontSize: "11px" }}>↗</span>
+          </a>
+
+          {/* 2. Pickup Manifest */}
+          <a
+            href={manifestUrl || "#"}
+            onClick={async (e) => {
+              if (!manifestUrl) {
+                e.preventDefault();
+                const res = await getShiprocketDocumentUrlsAction(orderId);
+                if (res.success && res.manifestUrl) {
+                  window.open(res.manifestUrl, "_blank");
+                }
+              }
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "12px 14px",
+              background: "rgba(107,141,214,0.08)",
+              border: "1px solid rgba(107,141,214,0.3)",
+              borderRadius: "2px",
+              fontFamily: "monospace",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#6b8dd6",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>📋 Pickup Manifest (PDF)</span>
+            <span style={{ fontSize: "11px" }}>↗</span>
+          </a>
+
+          {/* 3. Shiprocket / Carrier Invoice */}
+          <a
+            href={shiprocketInvoiceUrl || "#"}
+            onClick={async (e) => {
+              if (!shiprocketInvoiceUrl) {
+                e.preventDefault();
+                const res = await getShiprocketDocumentUrlsAction(orderId);
+                if (res.success && res.invoiceUrl) {
+                  window.open(res.invoiceUrl, "_blank");
+                }
+              }
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "12px 14px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: "2px",
+              fontFamily: "monospace",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#ddd",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>🧾 Carrier Invoice (PDF)</span>
+            <span style={{ fontSize: "11px" }}>↗</span>
+          </a>
+
+          {/* 4. GST Tax Invoice */}
+          <a
+            href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/api/orders/${orderId}/invoice`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: "12px 14px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: "2px",
+              fontFamily: "monospace",
+              fontSize: "10px",
+              fontWeight: "bold",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#ddd",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>📜 GST Tax Invoice (PDF)</span>
+            <span style={{ fontSize: "11px" }}>↗</span>
+          </a>
+        </div>
+      </div>
+
       {/* ── Shiprocket Fulfillment Studio (non-Amazon) ───────────── */}
       {!isAmazon && (
         <div style={{ padding: "24px" }}>
