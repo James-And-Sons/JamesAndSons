@@ -143,6 +143,7 @@ export async function bookShiprocketPickupAction(
     weight?: number;
     boxCount?: number;
   },
+  courierId?: number | null,
 ) {
   try {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
@@ -160,6 +161,11 @@ export async function bookShiprocketPickupAction(
         success: false,
         error: `Stored awbNumber "${order.awbNumber}" is not a numeric Shiprocket shipment ID.`,
       };
+    }
+
+    // Step 1: Assign selected Courier ID + AWB
+    if (courierId) {
+      await assignAWB(shipmentId, courierId);
     }
 
     // Step 1: Book selected pickup date
@@ -719,13 +725,15 @@ export async function estimateShiprocketFreightAction(
     const recommended = couriers[0];
     return {
       success: true,
+      courierId: recommended.courier_company_id || recommended.id,
       courierName: recommended.courier_name || recommended.sr_courier_name,
       rate: Number(recommended.rate || recommended.freight_charge || 285.5),
       etd: recommended.etd || "3-5 Business Days",
-      availableCouriers: couriers.slice(0, 5).map((c: any) => ({
-        name: c.courier_name,
-        rate: Number(c.rate || 0),
-        etd: c.etd,
+      availableCouriers: couriers.slice(0, 8).map((c: any) => ({
+        id: c.courier_company_id || c.id,
+        name: c.courier_name || c.sr_courier_name,
+        rate: Number(c.rate || c.freight_charge || 0),
+        etd: c.etd || "3-5 Days",
       })),
     };
   } catch (err: any) {

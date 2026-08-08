@@ -475,18 +475,24 @@ export default function OrderStatusControls({
     d: PackageDims,
     pd: string,
     bc: number,
+    courierId?: number | null,
   ) => {
     setIsBookingPickup(true);
     setShiprocketError("");
     setShowPreviewModal(false);
     try {
-      const result = await bookShiprocketPickupAction(orderId, pd, {
-        length: d.length,
-        width: d.width,
-        height: d.height,
-        weight: d.weight,
-        boxCount: bc,
-      });
+      const result = await bookShiprocketPickupAction(
+        orderId,
+        pd,
+        {
+          length: d.length,
+          width: d.width,
+          height: d.height,
+          weight: d.weight,
+          boxCount: bc,
+        },
+        courierId,
+      );
       if (result.success) {
         setShiprocketResult(result);
         if (result.labelUrl) {

@@ -438,6 +438,7 @@ export async function requestPickup(
  */
 export async function assignAWB(
   shipmentId: number,
+  courierId?: number | null,
   config: IShiprocketConfig = {},
 ) {
   const token = await getShiprocketToken(config);
@@ -445,6 +446,11 @@ export async function assignAWB(
     return { success: false, message: "Logistics service unavailable" };
 
   try {
+    const payload: any = { shipment_id: shipmentId };
+    if (courierId) {
+      payload.courier_id = courierId;
+    }
+
     const res = await fetch(
       "https://apiv2.shiprocket.in/v1/external/courier/assign/awb",
       {
@@ -453,7 +459,7 @@ export async function assignAWB(
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ shipment_id: shipmentId }),
+        body: JSON.stringify(payload),
         cache: "no-store",
       },
     );

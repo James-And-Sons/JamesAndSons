@@ -24,10 +24,22 @@ interface PackageDims {
   weight: number;
 }
 
+export interface CourierOption {
+  id?: number;
+  name: string;
+  rate: number;
+  etd: string;
+}
+
 interface LogisticsPreviewModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (dims: PackageDims, pickupDate: string, boxCount: number) => void;
+  onConfirm: (
+    dims: PackageDims,
+    pickupDate: string,
+    boxCount: number,
+    selectedCourierId?: number | null,
+  ) => void;
   initialDims: PackageDims;
   initialPickupDate: string;
   initialBoxCount: number;
@@ -40,7 +52,8 @@ interface LogisticsPreviewModalProps {
     rate: number;
     courierName: string;
     etd: string;
-    availableCouriers?: Array<{ name: string; rate: number; etd: string }>;
+    courierId?: number;
+    availableCouriers?: CourierOption[];
   } | null;
   onEstimateFreight?: (dims: PackageDims) => Promise<void>;
 }
@@ -68,18 +81,35 @@ export default function LogisticsPreviewModal({
     "EARLIEST" | "TOMORROW" | "CUSTOM"
   >("EARLIEST");
 
+  const [selectedCourier, setSelectedCourier] = useState<CourierOption | null>(
+    null,
+  );
+
   // Keep internal state in sync with props when opened & auto-fetch live courier rates
   useEffect(() => {
     if (open) {
       setDims(initialDims);
       setPickupDate(initialPickupDate);
       setBoxCount(initialBoxCount);
+      setSelectedCourier(null);
       if (onEstimateFreight && !freightEstimate) {
         setEstimating(true);
         onEstimateFreight(initialDims).finally(() => setEstimating(false));
       }
     }
   }, [open]);
+
+  // When freightEstimate updates, sync selected courier if not user-selected
+  useEffect(() => {
+    if (freightEstimate && !selectedCourier) {
+      setSelectedCourier({
+        id: freightEstimate.courierId,
+        name: freightEstimate.courierName,
+        rate: freightEstimate.rate,
+        etd: freightEstimate.etd,
+      });
+    }
+  }, [freightEstimate]);
 
   if (!open) return null;
 
@@ -99,12 +129,19 @@ export default function LogisticsPreviewModal({
     setScheduleSlot(slot);
     if (slot === "EARLIEST") {
       const now = new Date();
-      if (now.getHours() >= 14) setPickupDate(tomorrowStr);
+      if (now.getHours() >= 15) setPickupDate(tomorrowStr);
       else setPickupDate(todayStr);
     } else if (slot === "TOMORROW") {
       setPickupDate(tomorrowStr);
     }
   };
+
+  const activeCourierName =
+    selectedCourier?.name ||
+    freightEstimate?.courierName ||
+    "Recommended Partner";
+  const activeRate = selectedCourier?.rate ?? freightEstimate?.rate ?? 0;
+  const activeEtd = selectedCourier?.etd || freightEstimate?.etd || "3-5 Days";
 
   return (
     <>
@@ -254,7 +291,7 @@ export default function LogisticsPreviewModal({
                     value={pickupDate}
                     min={todayStr}
                     onChange={(e) => setPickupDate(e.target.value)}
-                    className="w-full bg-black border border-amber-500/40 text-primary font-mono text-[12px] px-3 py-2 focus:outline-none rounded-xs"
+                    className="w-full bg-black border border-accent/40 text-primary font-mono text-[12px] px-3 py-2 focus:outline-none rounded-xs"
                   />
                 </div>
               )}
@@ -263,13 +300,13 @@ export default function LogisticsPreviewModal({
             {/* 3. Package Specs & Dimensions */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="font-mono text-[10px] uppercase tracking-widest text-[#c4a05a] font-bold flex items-center gap-1.5">
+                <label className="font-mono text-[10px] uppercase tracking-widest text-accent font-bold flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
                   <span>Package Dimensions &amp; Weight</span>
                 </label>
                 <span className="font-mono text-[9px] text-muted">
                   Total Volumetric:{" "}
-                  <strong className="text-amber-400">
+                  <strong className="text-accent font-bold">
                     {((dims.length * dims.width * dims.height) / 5000).toFixed(
                       2,
                     )}{" "}
@@ -291,12 +328,11 @@ export default function LogisticsPreviewModal({
                           min={field === "weight" ? 0.1 : 1}
                           step={field === "weight" ? 0.1 : 1}
                           value={dims[field]}
-                          onChange={(e) =>
-                            setDims((d) => ({
-                              ...d,
-                              [field]: parseFloat(e.target.value) || 0,
-                            }))
-                          }
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            const updated = { ...dims, [field]: val };
+                            setDims(updated);
+                          }}
                           className="w-full bg-transparent text-primary font-mono text-[12px] px-2 py-1.5 focus:outline-none"
                         />
                       </div>
@@ -310,7 +346,7 @@ export default function LogisticsPreviewModal({
             <div className="flex items-center justify-between p-3 bg-surface border border-border rounded-xs">
               <div>
                 <span className="font-mono text-[10px] uppercase tracking-wider text-primary font-bold block flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5 text-amber-400" />
+                  <Package className="w-3.5 h-3.5 text-accent" />
                   <span>Box Count</span>
                 </span>
                 <span className="font-sans text-[10px] text-muted block mt-0.5">
@@ -321,29 +357,29 @@ export default function LogisticsPreviewModal({
                 <button
                   type="button"
                   onClick={() => setBoxCount((b) => Math.max(1, b - 1))}
-                  className="w-8 h-8 flex items-center justify-center bg-black border border-border hover:border-amber-500/40 text-primary rounded-xs font-mono text-base cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center bg-black border border-border hover:border-accent/40 text-primary rounded-xs font-mono text-base cursor-pointer"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="font-mono text-[16px] text-amber-400 font-bold w-6 text-center">
+                <span className="font-mono text-[16px] text-accent font-bold w-6 text-center">
                   {boxCount}
                 </span>
                 <button
                   type="button"
                   onClick={() => setBoxCount((b) => b + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-black border border-border hover:border-amber-500/40 text-primary rounded-xs font-mono text-base cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center bg-black border border-border hover:border-accent/40 text-primary rounded-xs font-mono text-base cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            {/* 5. Courier Rate & Serviceability */}
+            {/* 5. Interactive Courier Partner Selection */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-[#c4a05a] font-bold flex items-center gap-1.5">
                   <Truck className="w-3.5 h-3.5" />
-                  <span>Courier Partner &amp; Shipping Cost</span>
+                  <span>Select Delivery Partner &amp; Shipping Rate</span>
                 </label>
                 {onEstimateFreight && (
                   <button
@@ -370,15 +406,15 @@ export default function LogisticsPreviewModal({
                 </div>
               ) : freightEstimate ? (
                 <div className="space-y-2">
-                  {/* Selected / Recommended Main Courier Banner */}
+                  {/* Selected Courier Summary Banner */}
                   <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xs flex flex-wrap justify-between items-center gap-3">
                     <div>
                       <span className="font-mono text-[8px] text-muted uppercase block">
-                        Recommended Partner
+                        Selected Courier Partner
                       </span>
                       <span className="font-mono text-[13px] text-emerald-400 font-bold flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>{freightEstimate.courierName}</span>
+                        <span>{activeCourierName}</span>
                       </span>
                     </div>
                     <div className="text-center">
@@ -386,7 +422,7 @@ export default function LogisticsPreviewModal({
                         Est. Delivery
                       </span>
                       <span className="font-mono text-[11px] text-accent font-bold">
-                        {freightEstimate.etd}
+                        {activeEtd}
                       </span>
                     </div>
                     <div className="text-right">
@@ -394,42 +430,62 @@ export default function LogisticsPreviewModal({
                         Freight Charge
                       </span>
                       <span className="font-mono text-[18px] text-emerald-400 font-bold">
-                        ₹{freightEstimate.rate}
+                        ₹{activeRate}
                       </span>
                     </div>
                   </div>
 
-                  {/* All Available Couriers List */}
+                  {/* Clickable Courier Options Grid */}
                   {freightEstimate.availableCouriers &&
                     freightEstimate.availableCouriers.length > 0 && (
                       <div className="space-y-1.5 pt-1">
                         <span className="font-mono text-[8px] uppercase tracking-wider text-muted block">
-                          Available Courier Options (
-                          {freightEstimate.availableCouriers.length})
+                          Click to select delivery partner (
+                          {freightEstimate.availableCouriers.length} Available)
                         </span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {freightEstimate.availableCouriers.map((c, idx) => (
-                            <div
-                              key={idx}
-                              className={`p-2.5 border rounded-xs font-mono text-[10px] flex items-center justify-between transition-colors ${
-                                c.name === freightEstimate.courierName
-                                  ? "border-emerald-500/40 bg-emerald-500/5 text-primary"
-                                  : "border-border bg-surface text-muted"
-                              }`}
-                            >
-                              <div>
-                                <span className="font-bold text-primary block">
-                                  {c.name}
+                          {freightEstimate.availableCouriers.map((c, idx) => {
+                            const isSelected =
+                              (selectedCourier?.id &&
+                                c.id === selectedCourier.id) ||
+                              (!selectedCourier &&
+                                c.name === freightEstimate.courierName) ||
+                              selectedCourier?.name === c.name;
+
+                            return (
+                              <button
+                                type="button"
+                                key={c.id || idx}
+                                onClick={() => setSelectedCourier(c)}
+                                className={`p-3 border rounded-xs font-mono text-[10px] flex items-center justify-between transition-all cursor-pointer text-left ${
+                                  isSelected
+                                    ? "border-emerald-500 bg-emerald-500/10 text-primary ring-1 ring-emerald-500/50 shadow-sm"
+                                    : "border-border bg-surface text-muted hover:border-accent/40 hover:text-primary"
+                                }`}
+                              >
+                                <div>
+                                  <span className="font-bold text-primary flex items-center gap-1">
+                                    {isSelected && (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                                    )}
+                                    <span>{c.name}</span>
+                                  </span>
+                                  <span className="text-[9px] text-muted block mt-0.5">
+                                    ETD: {c.etd}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`font-bold ${
+                                    isSelected
+                                      ? "text-emerald-400 text-[13px]"
+                                      : "text-accent"
+                                  }`}
+                                >
+                                  ₹{c.rate}
                                 </span>
-                                <span className="text-[9px] text-muted block">
-                                  ETD: {c.etd}
-                                </span>
-                              </div>
-                              <span className="font-bold text-accent">
-                                ₹{c.rate}
-                              </span>
-                            </div>
-                          ))}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -463,15 +519,17 @@ export default function LogisticsPreviewModal({
             </button>
             <button
               type="button"
-              onClick={() => onConfirm(dims, pickupDate, boxCount)}
+              onClick={() =>
+                onConfirm(dims, pickupDate, boxCount, selectedCourier?.id)
+              }
               disabled={isLoading}
-              className="w-full sm:flex-[2] font-mono text-[11px] sm:text-[12px] uppercase tracking-[0.12em] py-3.5 bg-accent text-obsidian hover:bg-[#d4af37] font-semibold rounded-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 min-h-[44px]"
+              className="w-full sm:flex-[2] font-mono text-[11px] sm:text-[12px] uppercase tracking-[0.12em] py-3.5 bg-accent text-[#0a0a0b] hover:bg-[#d4af37] font-bold rounded-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 min-h-[44px]"
             >
               <Truck className="w-4 h-4 flex-shrink-0" />
               <span>
                 {isLoading
                   ? "Booking Shiprocket…"
-                  : "Confirm & Book Shipment on Shiprocket"}
+                  : `Book ${activeCourierName} (₹${activeRate})`}
               </span>
             </button>
           </div>
