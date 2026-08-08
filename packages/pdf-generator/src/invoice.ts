@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { WEBSITE_QR_BASE64 } from "./qr-asset";
 
 const INDIAN_STATE_CODES: Record<string, string> = {
   "jammu and kashmir": "01",
@@ -360,20 +361,70 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
 
   doc.line(14, finalY + 12, 196, finalY + 12);
 
-  // 5. Watermark Logo Banner Box at bottom
-  const logoBannerY = finalY + 20;
+  // 5. Website Promotional Banner & QR Code Box
+  const promoY = finalY + 16;
+
+  // Background box with gold accent border
   doc.setFillColor(253, 248, 242);
-  doc.rect(14, logoBannerY, 182, 24, "F");
+  doc.rect(14, promoY, 182, 32, "F");
+
+  doc.setDrawColor(140, 107, 66);
+  doc.setLineWidth(0.5);
+  doc.rect(14, promoY, 182, 32, "D");
+
+  // Render QR Code Image (24mm x 24mm)
+  if (WEBSITE_QR_BASE64) {
+    doc.addImage(WEBSITE_QR_BASE64, "PNG", 18, promoY + 4, 24, 24);
+  }
+
+  // Promotional Text Block
+  const textX = 46;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(140, 107, 66);
+  doc.text("EXPLORE OUR EXCLUSIVE COLLECTION ONLINE", textX, promoY + 9);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(50, 50, 50);
+  doc.text(
+    "Scan the QR code to discover our full range of handcrafted chandeliers, brass lighting & luxury home decor.",
+    textX,
+    promoY + 15,
+  );
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(30, 30, 30);
+  doc.text(
+    "Official Website: https://jamesandsons.in   |   Direct Manufacturer Pricing & Customization",
+    textX,
+    promoY + 21,
+  );
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    "Thank you for shopping with James & Sons. For support & bespoke orders: operations@jamesandsons.in",
+    textX,
+    promoY + 26,
+  );
+
+  // 6. Watermark Logo Banner Box at bottom
+  const logoBannerY = promoY + 38;
+  doc.setFillColor(253, 248, 242);
+  doc.rect(14, logoBannerY, 182, 22, "F");
 
   doc.setFont("times", "normal");
-  doc.setFontSize(26);
+  doc.setFontSize(24);
   doc.setTextColor(140, 107, 66);
-  doc.text("J A M E S   &   S O N S", 105, logoBannerY + 16, {
+  doc.text("J A M E S   &   S O N S", 105, logoBannerY + 15, {
     align: "center",
   });
 
-  // 6. Authorized Signature Line & Round Logo Stamp/Seal
-  const sigY = logoBannerY + 36;
+  // 7. Authorized Signature Line & Round Logo Stamp/Seal
+  const sigY = logoBannerY + 32;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(30, 30, 30);
@@ -381,7 +432,7 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
 
   // Render Round Logo ONLY as an official seal stamp next to signature line
   if (logoBase64) {
-    doc.addImage(logoBase64, "PNG", 160, sigY - 24, 26, 26);
+    doc.addImage(logoBase64, "PNG", 160, sigY - 24, 24, 24);
   }
 
   const arrayBuffer = doc.output("arraybuffer");
