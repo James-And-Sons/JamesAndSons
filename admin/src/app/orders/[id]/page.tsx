@@ -163,7 +163,7 @@ export default async function OrderDetailPage(props: {
 
   const channelBadge = isAmazonOrder
     ? {
-        label: "▲ Amazon",
+        label: "Amazon",
         color: "text-amber-400/90 bg-amber-500/5 border-amber-500/20",
       }
     : order.channel === "B2B"

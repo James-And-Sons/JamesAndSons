@@ -11,6 +11,8 @@ import {
   AlertCircle,
   ShoppingBag,
   Clock,
+  Truck,
+  ExternalLink,
 } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
 import { syncAmazonOrdersAction } from "./actions";
@@ -25,6 +27,9 @@ interface OrderItem {
   totalValue: number;
   status: string;
   channel?: string | null;
+  trackingNumber?: string | null;
+  awbNumber?: string | null;
+  trackingCode?: string | null;
 }
 
 export default function OrdersTableClient({
@@ -367,7 +372,7 @@ export default function OrdersTableClient({
             {[
               { id: "ALL", label: "All Channels" },
               { id: "STOREFRONT", label: "D2C Storefront" },
-              { id: "AMAZON", label: "Amazon.in" },
+              { id: "AMAZON", label: "Amazon" },
               { id: "B2B", label: "B2B Wholesale" },
             ].map((c) => (
               <button
@@ -385,31 +390,64 @@ export default function OrdersTableClient({
           </div>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-border/60">
-          {[
-            { id: "ALL", label: "All Statuses" },
-            { id: "READY_FOR_PICKUP", label: "Ready for Pickup" },
-            { id: "SHIPPED", label: "Shipped & Delivered" },
-            { id: "CANCELLED", label: "Cancelled / Refunds" },
-          ].map((s) => (
+        {/* Status Filter Tabs & Action Buttons */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/60">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "ALL", label: "All Statuses" },
+              { id: "READY", label: "Ready for Pickup" },
+              { id: "SHIPPED", label: "Shipped & Delivered" },
+              { id: "CANCELLED", label: "Cancelled / Refunds" },
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setStatusFilter(s.id)}
+                className={`px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-wider border rounded-xs transition-all ${
+                  statusFilter === s.id
+                    ? "border-accent bg-accent/10 text-accent font-semibold"
+                    : "border-border/60 bg-transparent text-muted hover:border-border"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Sync Amazon Manual Trigger Button */}
             <button
-              key={s.id}
-              onClick={() => setStatusFilter(s.id)}
-              className={`px-3.5 py-1.5 font-mono text-[9px] uppercase tracking-wider border rounded-xs transition-all ${
-                statusFilter === s.id
-                  ? "border-accent bg-accent/10 text-accent font-semibold"
-                  : "border-border/60 bg-transparent text-muted hover:border-border"
-              }`}
+              onClick={handleSyncAmazon}
+              disabled={isSyncingAmazon}
+              className="font-mono text-[11px] uppercase tracking-wider px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xs transition-colors flex items-center gap-1.5 font-bold cursor-pointer disabled:opacity-50"
+              title="Manual Trigger: Fetch recent 24h Amazon orders from SP-API"
             >
-              {s.label}
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isSyncingAmazon ? "animate-spin" : ""}`}
+              />
+              <span>{isSyncingAmazon ? "Syncing..." : "Sync Amazon"}</span>
             </button>
-          ))}
+
+            {/* CSV Export Button */}
+            <button
+              onClick={handleExportCSV}
+              className="font-mono text-[11px] uppercase tracking-wider px-3 py-1.5 border border-border text-muted hover:text-accent hover:border-accent/40 rounded-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export CSV</span>
+            </button>
+          </div>
         </div>
+
+        {lastSyncText && (
+          <div className="flex justify-between items-center text-[10px] font-mono text-muted/70 pt-1 border-t border-border/40">
+            <span>Amazon SP-API Status: Connected</span>
+            <span>{lastSyncText}</span>
+          </div>
+        )}
       </div>
 
-      {/* ── Desktop Orders Table ────────────────────────────────────────── */}
-      <div className="bg-surface border border-border overflow-hidden rounded-sm hidden md:block">
+      {/* ── Orders Table (Desktop) ───────────────────────────────────────── */}
+      <div className="bg-surface border border-border rounded-sm overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="border-b border-border text-muted bg-background/50">
@@ -431,6 +469,9 @@ export default function OrdersTableClient({
                 </th>
                 <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
                   Status
+                </th>
+                <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
+                  Tracking Link
                 </th>
                 <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal text-right">
                   Action
@@ -474,7 +515,7 @@ export default function OrdersTableClient({
                   <td className="py-4 px-6">
                     {r.channel === "AMAZON" ? (
                       <span className="px-2 py-0.5 bg-amber-500/5 border border-amber-500/20 text-amber-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
-                        ▲ Amazon.in
+                        Amazon
                       </span>
                     ) : r.channel === "B2B" ? (
                       <span className="px-2 py-0.5 bg-purple-500/5 border border-purple-500/20 text-purple-300/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
@@ -490,6 +531,26 @@ export default function OrdersTableClient({
                     ₹{r.totalValue.toLocaleString("en-IN")}
                   </td>
                   <td className="py-4 px-6">{getStatusBadge(r.status)}</td>
+                  <td className="py-4 px-6 font-mono text-[11px]">
+                    {r.trackingCode ? (
+                      <a
+                        href={`https://shiprocket.co/tracking/${r.trackingCode}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1 text-accent hover:underline font-semibold bg-accent/10 px-2 py-1 rounded-xs border border-accent/30 text-[10px]"
+                        title={`Track shipment ${r.trackingCode}`}
+                      >
+                        <Truck className="w-3 h-3 text-accent flex-shrink-0" />
+                        <span>{r.trackingCode}</span>
+                        <ExternalLink className="w-2.5 h-2.5 opacity-70 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <span className="text-muted/40 font-mono text-[10px] uppercase">
+                        —
+                      </span>
+                    )}
+                  </td>
                   <td className="py-4 px-6 text-right font-mono text-[10px] text-accent uppercase tracking-widest">
                     View Details ↗
                   </td>

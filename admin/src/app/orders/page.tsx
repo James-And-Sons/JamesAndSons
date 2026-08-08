@@ -17,6 +17,8 @@ export default async function OrdersPage() {
       totalAmount: true,
       status: true,
       channel: true,
+      trackingNumber: true,
+      awbNumber: true,
       recipientName: true,
       recipientEmail: true,
       shippingCity: true,
@@ -69,7 +71,7 @@ export default async function OrdersPage() {
       (o.shippingCity && o.shippingState
         ? `${o.shippingCity}, ${o.shippingState}`
         : isAmazon
-          ? "Amazon.in Order"
+          ? "Amazon Order"
           : "Direct Purchase");
 
     return {
@@ -82,6 +84,9 @@ export default async function OrdersPage() {
       totalValue: o.totalAmount,
       status: o.status,
       channel: o.channel,
+      trackingNumber: o.trackingNumber,
+      awbNumber: o.awbNumber,
+      trackingCode: o.trackingNumber || o.awbNumber || null,
     };
   });
 
