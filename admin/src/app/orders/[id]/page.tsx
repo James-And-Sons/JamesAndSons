@@ -229,7 +229,11 @@ export default async function OrderDetailPage(props: {
             👤 Customer Information
           </h3>
           <p className="font-serif text-[18px] text-primary font-medium m-0">
-            {order.user.firstName} {order.user.lastName}
+            {order.user.firstName &&
+            !order.user.firstName.includes("Amazon Marketplace") &&
+            !order.user.firstName.includes("Not Authorized")
+              ? `${order.user.firstName} ${order.user.lastName || ""}`.trim()
+              : "Amazon Buyer"}
           </p>
           <p className="font-mono text-[11px] text-muted mt-1 break-all">
             {order.user.email}
