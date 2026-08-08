@@ -167,10 +167,19 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 50);
 
-  const customerName = user
-    ? `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-      "Not Authorized Not Authorized"
-    : "Hymavathiamma, Hymavath";
+  let customerName = "Amazon Buyer";
+  if (user) {
+    const fn = (user.firstName || "").trim();
+    const ln = (user.lastName || "").trim();
+    const fullName = `${fn} ${ln}`.trim();
+    if (
+      fullName &&
+      !fullName.includes("Not Authorized") &&
+      !fullName.includes("Amazon Marketplace")
+    ) {
+      customerName = fullName;
+    }
+  }
 
   doc.text(customerName, col1X, 60);
 

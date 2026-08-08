@@ -33,7 +33,12 @@ export default function CustomerAddressEditor({
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [customerName, setCustomerName] = useState(initialName);
+  const cleanInitialName =
+    initialName && !initialName.includes("Amazon Marketplace")
+      ? initialName
+      : "Amazon Buyer";
+
+  const [customerName, setCustomerName] = useState(cleanInitialName);
   const [customerEmail, setCustomerEmail] = useState(initialEmail);
   const [customerPhone, setCustomerPhone] = useState(initialPhone || "");
   const [address, setAddress] = useState(initialAddress);
@@ -42,6 +47,64 @@ export default function CustomerAddressEditor({
   const [pincode, setPincode] = useState(initialPincode || "");
   const [companyName, setCompanyName] = useState(initialCompanyName || "");
   const [gstin, setGstin] = useState(initialGstin || "");
+  const [rawPasteText, setRawPasteText] = useState("");
+
+  const handleParseRawAmazonAddress = () => {
+    if (!rawPasteText.trim()) return;
+    const lines = rawPasteText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    let parsedName = "";
+    let parsedPhone = "";
+    let addressLines: string[] = [];
+    let parsedState = "";
+    let parsedPincode = "";
+    let parsedCity = "";
+
+    for (const line of lines) {
+      if (line.toLowerCase().startsWith("phone:")) {
+        parsedPhone = line.replace(/phone:\s*/i, "").trim();
+        continue;
+      }
+      if (line.toLowerCase().includes("contact buyer:")) {
+        const contactBuyer = line.replace(/.*contact buyer:\s*/i, "").trim();
+        if (contactBuyer) parsedName = contactBuyer;
+        continue;
+      }
+
+      const pinMatch = line.match(/(.*),\s*([A-Za-z\s]+)\s+(\d{6})/);
+      if (pinMatch) {
+        parsedCity = pinMatch[1].trim();
+        parsedState = pinMatch[2].trim();
+        parsedPincode = pinMatch[3].trim();
+        continue;
+      }
+
+      addressLines.push(line);
+    }
+
+    // If no explicit Contact Buyer line, pick top 2 lines as Recipient Name
+    if (!parsedName && addressLines.length > 0) {
+      if (addressLines.length >= 2) {
+        parsedName = `${addressLines[0]} ${addressLines[1]}`;
+        addressLines = addressLines.slice(2);
+      } else {
+        parsedName = addressLines[0];
+        addressLines = [];
+      }
+    }
+
+    if (parsedName) setCustomerName(parsedName);
+    if (parsedPhone) setCustomerPhone(parsedPhone);
+    if (addressLines.length > 0) setAddress(addressLines.join(", "));
+    if (parsedCity) setCity(parsedCity);
+    if (parsedState) setState(parsedState);
+    if (parsedPincode) setPincode(parsedPincode);
+
+    setSuccessMsg("Auto-parsed Amazon order details successfully!");
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,8 +174,8 @@ export default function CustomerAddressEditor({
                 margin: "4px 0 0",
               }}
             >
-              ⚠ Amazon Restricted PII: Manual inputs entered here automatically
-              override placeholders on Tax Invoices &amp; Shipping Labels.
+              ⚡ Amazon Address Parser: Paste raw Seller Central details below
+              to auto-extract name, phone, address, state &amp; pincode!
             </p>
           )}
         </div>
@@ -136,7 +199,7 @@ export default function CustomerAddressEditor({
             textTransform: "uppercase",
           }}
         >
-          {isEditing ? "✕ Cancel" : "✏ Edit Customer & Address"}
+          {isEditing ? "✕ Cancel" : "📋 Auto-Import / Edit Address"}
         </button>
       </div>
 
@@ -171,6 +234,70 @@ export default function CustomerAddressEditor({
           }}
         >
           ⚠ {errorMsg}
+        </div>
+      )}
+
+      {/* ── 1-Click Amazon Raw Paste & Auto-Parse Box ── */}
+      {isEditing && (
+        <div
+          style={{
+            background: "rgba(245,158,11,0.05)",
+            border: "1px solid rgba(245,158,11,0.25)",
+            borderRadius: "2px",
+            padding: "12px",
+            marginBottom: "14px",
+          }}
+        >
+          <label
+            style={{
+              display: "block",
+              fontFamily: "monospace",
+              fontSize: "8.5px",
+              color: "#f59e0b",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              marginBottom: "4px",
+              fontWeight: "bold",
+            }}
+          >
+            📋 Paste Raw Amazon Seller Central Order Details Here
+          </label>
+          <textarea
+            rows={4}
+            value={rawPasteText}
+            onChange={(e) => setRawPasteText(e.target.value)}
+            placeholder={`Paste here:\nHymavathiamma\nHymavath\nSanatanapuram P O, Kalarcode, Alleppey\nPUNNAPARA, KERALA 688003\nContact Buyer:\tSajeeve\nPhone:\t9567931371`}
+            style={{
+              width: "100%",
+              padding: "8px",
+              background: "#000",
+              border: "1px solid rgba(245,158,11,0.3)",
+              borderRadius: "2px",
+              color: "#fff",
+              fontFamily: "monospace",
+              fontSize: "11px",
+              marginBottom: "8px",
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleParseRawAmazonAddress}
+            style={{
+              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+              border: "none",
+              color: "#000",
+              fontFamily: "monospace",
+              fontSize: "9px",
+              fontWeight: "bold",
+              padding: "6px 14px",
+              borderRadius: "2px",
+              cursor: "pointer",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            ⚡ Auto-Extract &amp; Fill Fields Below
+          </button>
         </div>
       )}
 
@@ -500,7 +627,7 @@ export default function CustomerAddressEditor({
                   marginBottom: "4px",
                 }}
               >
-                State (e.g. Kerala, UP)
+                State (e.g. KERALA, UTTAR PRADESH)
               </label>
               <input
                 type="text"
