@@ -240,15 +240,22 @@ export async function getShiprocketDocumentUrlsAction(orderId: string) {
 
         if (match) {
           shiprocketOrderDbId = match.id;
+          const srInvoiceNo = match.invoice_no || match.invoice_number;
           if (match.shipments && match.shipments.length > 0) {
             const foundShipmentId = match.shipments[0].id;
             shipmentId = foundShipmentId;
-            if (order.awbNumber !== foundShipmentId.toString()) {
-              await prisma.order.update({
-                where: { id: orderId },
-                data: { awbNumber: foundShipmentId.toString() },
-              });
-            }
+            await prisma.order.update({
+              where: { id: orderId },
+              data: {
+                awbNumber: foundShipmentId.toString(),
+                ...(srInvoiceNo ? { invoiceNumber: srInvoiceNo } : {}),
+              },
+            });
+          } else if (srInvoiceNo) {
+            await prisma.order.update({
+              where: { id: orderId },
+              data: { invoiceNumber: srInvoiceNo },
+            });
           }
         }
       }
