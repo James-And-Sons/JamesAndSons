@@ -450,8 +450,12 @@ export async function cancelShiprocketOrder(
     }
 
     const getData = await getRes.json();
-    const orderData = getData.data?.find(
-      (o: any) => o.order_id === channelOrderId,
+    const ordersList: any[] = getData.data || [];
+    const orderData = ordersList.find(
+      (o: any) =>
+        o.channel_order_id === channelOrderId ||
+        o.order_id === channelOrderId ||
+        String(o.id) === channelOrderId,
     );
     if (!orderData || !orderData.id) {
       console.warn(
