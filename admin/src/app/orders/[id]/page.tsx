@@ -34,6 +34,9 @@ export default async function OrderDetailPage(props: {
       razorpayOrderId: true,
       amazonOrderId: true,
       shippingAddress: true,
+      shippingCity: true,
+      shippingState: true,
+      shippingPincode: true,
       shippingPhone: true,
       user: {
         select: {
@@ -229,17 +232,15 @@ export default async function OrderDetailPage(props: {
         </div>
 
         {/* Shipping Address */}
-        <div className="bg-surface border border-border p-6 rounded-sm">
-          <h3 className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted mb-4 border-b border-border pb-2">
-            📍 Delivery Address
-          </h3>
-          <EditableShippingAddress
-            orderId={order.id}
-            initialAddress={order.shippingAddress}
-            initialPhone={order.shippingPhone}
-            status={order.status}
-          />
-        </div>
+        <EditableShippingAddress
+          orderId={order.id}
+          initialAddress={order.shippingAddress}
+          initialCity={order.shippingCity}
+          initialState={order.shippingState}
+          initialPincode={order.shippingPincode}
+          initialPhone={order.shippingPhone}
+          status={order.status}
+        />
 
         {/* Financial Summary */}
         <div className="bg-surface border border-border p-6 rounded-sm">
