@@ -289,7 +289,31 @@ export async function retryLogisticsSync(orderId: string) {
         weight,
       };
 
-      const shipRes = await createShiprocketOrder(shiprocketParams);
+      let shipRes = await createShiprocketOrder(shiprocketParams);
+
+      // If order_id already exists or was cancelled on Shiprocket catalog, retry with a fresh unique order_id suffix
+      if (!shipRes.success) {
+        const errorMsg =
+          typeof shipRes.message === "object"
+            ? JSON.stringify(shipRes.message)
+            : String(shipRes.message || "");
+
+        if (
+          errorMsg.includes("already assigned") ||
+          errorMsg.includes("already exists") ||
+          errorMsg.includes("CANCELLED") ||
+          errorMsg.includes("CANCELED")
+        ) {
+          const uniqueOrderId = `${order.orderNumber}-R${Date.now().toString().slice(-4)}`;
+          console.log(
+            `[RetryLogistics] Previous Shiprocket order collision detected. Retrying with unique order_id: ${uniqueOrderId}...`,
+          );
+          shipRes = await createShiprocketOrder({
+            ...shiprocketParams,
+            order_id: uniqueOrderId,
+          });
+        }
+      }
 
       if (shipRes.success) {
         awbNumber = shipRes.shipment_id?.toString();
