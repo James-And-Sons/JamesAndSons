@@ -239,10 +239,23 @@ export async function retryLogisticsSync(orderId: string) {
           getEarliestPickupDate(),
         );
       } else {
-        fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
-        throw new Error(awbRes.message || "AWB Assignment failed");
+        const errorMsg = String(awbRes.message || "");
+        if (
+          errorMsg.includes("CANCELLED") ||
+          errorMsg.includes("already assigned")
+        ) {
+          console.log(
+            `[RetryLogistics] Stored shipment ID ${order.awbNumber} has cancelled AWB. Creating fresh shipment order on Shiprocket...`,
+          );
+          awbNumber = null;
+        } else {
+          fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
+          throw new Error(awbRes.message || "AWB Assignment failed");
+        }
       }
-    } else {
+    }
+
+    if (!awbNumber || !trackingNumber) {
       // Case 2: Order was never created in Shiprocket. Create order + assign AWB + request pickup.
       console.log(`[RetryLogistics] Creating new Shiprocket order...`);
       const parts = order.shippingAddress.split(", ");

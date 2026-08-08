@@ -61,6 +61,10 @@ export default function OrderStatusControls({
   amazonOrderId,
   isAmazon: isAmazonProp,
   orderItems,
+  shippingAddress,
+  shippingCity,
+  shippingState,
+  shippingPincode,
 }: {
   orderId: string;
   currentStatus: string;
@@ -73,6 +77,10 @@ export default function OrderStatusControls({
   amazonOrderId?: string | null;
   isAmazon?: boolean;
   orderItems?: OrderItem[];
+  shippingAddress?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  shippingPincode?: string | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -108,6 +116,7 @@ export default function OrderStatusControls({
   const [isConfirmingAmzShipment, setIsConfirmingAmzShipment] = useState(false);
   const [amzConfirmResult, setAmzConfirmResult] = useState<string | null>(null);
   const [amzConfirmError, setAmzConfirmError] = useState<string | null>(null);
+  const [showLogisticsPreview, setShowLogisticsPreview] = useState(false);
 
   const handleConfirmAmazonShipment = async (
     overrideAwb?: string,
@@ -848,10 +857,10 @@ export default function OrderStatusControls({
 
       {/* ── Amazon Easy Ship Fulfillment Studio (Shown for active pre-shipping orders) ──────────────────── */}
       {isAmazon &&
-        status !== "CANCELLED" &&
-        status !== "SHIPPED" &&
-        status !== "DELIVERED" &&
-        status !== "RETURNED" && (
+        currentStatus !== "CANCELLED" &&
+        currentStatus !== "SHIPPED" &&
+        currentStatus !== "DELIVERED" &&
+        currentStatus !== "RETURNED" && (
           <div style={{ padding: "24px" }}>
             {/* Success confirmation banner */}
             {bookingResult && (
@@ -1384,31 +1393,35 @@ export default function OrderStatusControls({
 
                   <button
                     onClick={() => {
-                      startTransition(async () => {
-                        const result = await retryLogisticsSync(orderId);
-                        if (result.success) {
-                          const awbToUse =
-                            result.trackingNumber ||
-                            result.awbNumber ||
-                            trackingNumber ||
-                            awbNumber;
-                          if (awbToUse) {
-                            const carrierToUse =
-                              result.courierName ||
-                              manualCarrier ||
-                              "Delhivery";
-                            await handleConfirmAmazonShipment(
-                              awbToUse,
-                              carrierToUse,
+                      if (awbNumber || trackingNumber) {
+                        startTransition(async () => {
+                          const result = await retryLogisticsSync(orderId);
+                          if (result.success) {
+                            const awbToUse =
+                              result.trackingNumber ||
+                              result.awbNumber ||
+                              trackingNumber ||
+                              awbNumber;
+                            if (awbToUse) {
+                              const carrierToUse =
+                                result.courierName ||
+                                manualCarrier ||
+                                "Delhivery";
+                              await handleConfirmAmazonShipment(
+                                awbToUse,
+                                carrierToUse,
+                              );
+                            }
+                          } else {
+                            setAmzConfirmError(
+                              "Shiprocket Booking Error: " +
+                                (result.error || "Failed"),
                             );
                           }
-                        } else {
-                          setAmzConfirmError(
-                            "Shiprocket Booking Error: " +
-                              (result.error || "Failed"),
-                          );
-                        }
-                      });
+                        });
+                      } else {
+                        setShowLogisticsPreview(true);
+                      }
                     }}
                     disabled={isPending || isConfirmingAmzShipment}
                     style={{
@@ -1437,7 +1450,7 @@ export default function OrderStatusControls({
                         ? "↻ Retry Fulfillment & Amazon Sync"
                         : awbNumber || trackingNumber
                           ? `⚡ Re-sync Amazon SP-API (AWB #${trackingNumber || awbNumber})`
-                          : "🚀 Book Shiprocket & Confirm on Amazon"}
+                          : "🚀 Review Details & Book Shipment"}
                   </button>
 
                   {(awbNumber || trackingNumber) && (
@@ -1842,6 +1855,367 @@ export default function OrderStatusControls({
                   No tracking history found yet for AWB: {awbNumber}
                 </p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LOGISTICS PRE-BOOKING VERIFICATION MODAL ────────────────── */}
+      {showLogisticsPreview && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "#111",
+              border: "1px solid rgba(107,141,214,0.3)",
+              borderRadius: "4px",
+              maxWidth: "600px",
+              width: "100%",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(107,141,214,0.08)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    color: "#6b8dd6",
+                    margin: 0,
+                    fontWeight: "bold",
+                  }}
+                >
+                  🔍 Verify Shipment &amp; Pickup Details
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "sans-serif",
+                    fontSize: "11px",
+                    color: "var(--muted, #aaa)",
+                    margin: "2px 0 0",
+                  }}
+                >
+                  Review courier partner, pickup schedule, and delivery details
+                  before booking on Shiprocket.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLogisticsPreview(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#aaa",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Details Grid */}
+            <div style={{ padding: "20px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "14px",
+                  marginBottom: "20px",
+                }}
+              >
+                {/* 1. Earliest Pickup Schedule */}
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    padding: "12px",
+                    borderRadius: "2px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      color: "#6b8dd6",
+                      textTransform: "uppercase",
+                      margin: "0 0 4px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    📅 Earliest Pickup Schedule
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "sans-serif",
+                      fontSize: "13px",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      margin: 0,
+                    }}
+                  >
+                    {new Date().getHours() >= 15
+                      ? "Tomorrow Morning (Next-Day Slot)"
+                      : "Today (Immediate Same-Day Slot)"}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: "#888",
+                      margin: "2px 0 0",
+                    }}
+                  >
+                    Cut-off logic: Auto-booked for earliest available courier
+                    slot
+                  </p>
+                </div>
+
+                {/* 2. Courier Partner */}
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    padding: "12px",
+                    borderRadius: "2px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      color: "#6b8dd6",
+                      textTransform: "uppercase",
+                      margin: "0 0 4px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    🚚 Courier Selection
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "sans-serif",
+                      fontSize: "13px",
+                      color: "#4ade80",
+                      fontWeight: "bold",
+                      margin: 0,
+                    }}
+                  >
+                    Delhivery / Best Serviceable Partner
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: "#888",
+                      margin: "2px 0 0",
+                    }}
+                  >
+                    Auto-selected via Shiprocket Serviceability API
+                  </p>
+                </div>
+
+                {/* 3. Pickup Origin */}
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    padding: "12px",
+                    borderRadius: "2px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      color: "#aaa",
+                      textTransform: "uppercase",
+                      margin: "0 0 4px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    📍 Pickup Location
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "sans-serif",
+                      fontSize: "12px",
+                      color: "#ddd",
+                      margin: 0,
+                    }}
+                  >
+                    Primary / Home Warehouse (Pincode: 202001)
+                  </p>
+                </div>
+
+                {/* 4. Delivery Destination */}
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    padding: "12px",
+                    borderRadius: "2px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      color: "#aaa",
+                      textTransform: "uppercase",
+                      margin: "0 0 4px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    📦 Delivery Destination
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "sans-serif",
+                      fontSize: "12px",
+                      color: "#ddd",
+                      margin: 0,
+                    }}
+                  >
+                    {shippingCity || "City"}, {shippingState || "State"} -{" "}
+                    {shippingPincode || "Pincode"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Package Specifications */}
+              <div
+                style={{
+                  background: "rgba(107,141,214,0.06)",
+                  border: "1px solid rgba(107,141,214,0.2)",
+                  padding: "12px 14px",
+                  borderRadius: "2px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: "#aaa",
+                    }}
+                  >
+                    PACKAGE SPECS: {pkgLength}cm × {pkgWidth}cm × {pkgHeight}
+                    cm | {pkgWeight}kg
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      color: "#4ade80",
+                    }}
+                  >
+                    ⚡ AUTO AMAZON SP-API SYNC ENABLED
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={() => setShowLogisticsPreview(false)}
+                  style={{
+                    flex: 1,
+                    padding: "12px",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#aaa",
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    borderRadius: "2px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogisticsPreview(false);
+                    startTransition(async () => {
+                      const result = await retryLogisticsSync(orderId);
+                      if (result.success) {
+                        const awbToUse =
+                          result.trackingNumber ||
+                          result.awbNumber ||
+                          trackingNumber ||
+                          awbNumber;
+                        if (awbToUse) {
+                          const carrierToUse =
+                            result.courierName || manualCarrier || "Delhivery";
+                          await handleConfirmAmazonShipment(
+                            awbToUse,
+                            carrierToUse,
+                          );
+                        }
+                      } else {
+                        setAmzConfirmError(
+                          "Shiprocket Booking Error: " +
+                            (result.error || "Failed"),
+                        );
+                      }
+                    });
+                  }}
+                  disabled={isPending || isConfirmingAmzShipment}
+                  style={{
+                    flex: 2,
+                    padding: "12px",
+                    background: "#6b8dd6",
+                    border: "none",
+                    color: "#000",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    fontWeight: "bold",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    borderRadius: "2px",
+                    cursor:
+                      isPending || isConfirmingAmzShipment
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {isPending || isConfirmingAmzShipment
+                    ? "Booking & Syncing…"
+                    : "🚀 Confirm & Book Shipment Now"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

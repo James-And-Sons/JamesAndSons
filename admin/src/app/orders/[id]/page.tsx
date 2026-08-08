@@ -181,7 +181,10 @@ export default async function OrderDetailPage(props: {
         razorpayOrderId={order.razorpayOrderId}
         amazonOrderId={order.amazonOrderId}
         channel={order.channel}
-        isAmazon={order.channel === "AMAZON" || Boolean(order.amazonOrderId)}
+        shippingAddress={order.shippingAddress}
+        shippingCity={order.shippingCity}
+        shippingState={order.shippingState}
+        shippingPincode={order.shippingPincode}
         orderItems={order.items.map((i) => ({
           id: i.id,
           quantity: i.quantity,
