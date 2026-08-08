@@ -172,6 +172,20 @@ export async function retryLogisticsSync(orderId: string) {
     let fulfillmentError = order.fulfillmentError;
     let finalStatus = order.status;
 
+    // Case 0: Order is ALREADY fully booked in Shiprocket (has both awbNumber and trackingNumber)
+    if (order.awbNumber && order.trackingNumber) {
+      console.log(
+        `[RetryLogistics] Order #${order.orderNumber} is already fully booked in Shiprocket (AWB: ${order.trackingNumber}). Skipping duplicate creation.`,
+      );
+      return {
+        success: true,
+        trackingNumber: order.trackingNumber,
+        awbNumber: order.awbNumber,
+        alreadyBooked: true,
+        message: `Order #${order.orderNumber} is already booked in Shiprocket (AWB: ${order.trackingNumber}).`,
+      };
+    }
+
     // Case 1: Order already created in Shiprocket (we have shipment ID in awbNumber), but AWB assignment failed.
     if (
       order.awbNumber &&

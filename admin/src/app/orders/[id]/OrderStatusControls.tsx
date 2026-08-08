@@ -1386,10 +1386,14 @@ export default function OrderStatusControls({
                       startTransition(async () => {
                         const result = await retryLogisticsSync(orderId);
                         if (result.success) {
-                          const awb = result.trackingNumber || result.awbNumber;
-                          if (awb) {
+                          const awbToUse =
+                            result.trackingNumber ||
+                            result.awbNumber ||
+                            trackingNumber ||
+                            awbNumber;
+                          if (awbToUse) {
                             await handleConfirmAmazonShipment(
-                              awb,
+                              awbToUse,
                               "Shiprocket",
                             );
                           }
@@ -1423,8 +1427,12 @@ export default function OrderStatusControls({
                     }}
                   >
                     {isPending || isConfirmingAmzShipment
-                      ? "Booking & Syncing…"
-                      : "🚀 Book Shiprocket & Confirm on Amazon"}
+                      ? "Processing & Syncing…"
+                      : fulfillmentError
+                        ? "↻ Retry Fulfillment & Amazon Sync"
+                        : awbNumber || trackingNumber
+                          ? `⚡ Re-sync Amazon SP-API (AWB #${trackingNumber || awbNumber})`
+                          : "🚀 Book Shiprocket & Confirm on Amazon"}
                   </button>
                 </div>
 
