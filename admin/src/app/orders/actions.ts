@@ -278,9 +278,20 @@ export async function resetAmazonOrderShipmentAction(orderId: string) {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) throw new Error("Order not found");
 
+    if (order.awbNumber) {
+      console.log(
+        `[ResetAmazonOrder] Cancelling active courier AWB/Shipment ${order.awbNumber}...`,
+      );
+      const { cancelShiprocketShipment } =
+        await import("@james-andsons/shiprocket");
+      await cancelShiprocketShipment(order.awbNumber).catch((err) =>
+        console.warn("[ResetAmazonOrder] Shiprocket AWB cancel warning:", err),
+      );
+    }
+
     if (order.orderNumber) {
       console.log(
-        `[ResetAmazonOrder] Cancelling Shiprocket shipment for order ${order.orderNumber}...`,
+        `[ResetAmazonOrder] Cancelling Shiprocket order ${order.orderNumber}...`,
       );
       await cancelShiprocketOrder(order.orderNumber).catch((err) =>
         console.warn("[ResetAmazonOrder] Shiprocket cancel warning:", err),
