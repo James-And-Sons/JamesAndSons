@@ -187,28 +187,82 @@ export async function bookShiprocketPickupAction(orderId: string) {
 export async function getShiprocketDocumentUrlsAction(orderId: string) {
   try {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order?.awbNumber) {
-      return {
-        success: false,
-        error: "No shipment ID on record for this order.",
-      };
+    if (!order) {
+      return { success: false, error: "Order not found" };
     }
 
-    const shipmentId = parseInt(order.awbNumber);
-    if (isNaN(shipmentId)) {
-      return {
-        success: false,
-        error: "Stored shipment ID is not a numeric Shiprocket shipment ID.",
-      };
+    const {
+      getShiprocketToken,
+      generateLabel,
+      generateManifest,
+      generateInvoice,
+    } = await import("@james-andsons/shiprocket");
+
+    let shipmentId: number | null = null;
+    let shiprocketOrderDbId: number | null = null;
+
+    // Check if order.awbNumber is a valid numeric shipment ID (shipment IDs in Shiprocket are ~10 digits, whereas AWBs are ~13+ digits)
+    if (
+      order.awbNumber &&
+      !isNaN(parseInt(order.awbNumber)) &&
+      order.awbNumber.length < 12
+    ) {
+      shipmentId = parseInt(order.awbNumber);
     }
 
-    const { generateLabel, generateManifest, generateInvoice } =
-      await import("@james-andsons/shiprocket");
+    // If awbNumber is missing or is an AWB string rather than numeric shipment ID, query Shiprocket API dynamically
+    if (!shipmentId) {
+      const token = await getShiprocketToken();
+      if (token) {
+        const getRes = await fetch(
+          `https://apiv2.shiprocket.in/v1/external/orders?per_page=20`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          },
+        );
+        if (getRes.ok) {
+          const getData = await getRes.json();
+          const ordersList: any[] = getData.data || [];
+          const match = ordersList.find((o: any) => {
+            const channelId = String(o.channel_order_id || "");
+            const orderNum = String(order.orderNumber || "");
+            return (
+              channelId.includes(orderNum) ||
+              orderNum.includes(channelId) ||
+              String(o.order_id || "").includes(orderNum)
+            );
+          });
+
+          if (match) {
+            shiprocketOrderDbId = match.id;
+            if (match.shipments && match.shipments.length > 0) {
+              const foundShipmentId = match.shipments[0].id;
+              shipmentId = foundShipmentId;
+              // Persist the true numeric shipment ID back to awbNumber in DB!
+              await prisma.order.update({
+                where: { id: orderId },
+                data: { awbNumber: foundShipmentId.toString() },
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (!shipmentId) {
+      return {
+        success: false,
+        error: "Shipment ID not found on Shiprocket catalog for this order.",
+      };
+    }
 
     const [labelUrl, manifestUrl, invoiceUrl] = await Promise.all([
       generateLabel([shipmentId]),
       generateManifest([shipmentId]),
-      generateInvoice([shipmentId]),
+      shiprocketOrderDbId
+        ? generateInvoice([shiprocketOrderDbId])
+        : generateInvoice([shipmentId]),
     ]);
 
     return {

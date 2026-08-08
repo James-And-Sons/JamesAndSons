@@ -127,7 +127,7 @@ export default function OrderStatusControls({
   >(null);
 
   const fetchDocUrls = async () => {
-    if (!awbNumber) return;
+    if (!orderId) return;
     setDocLoading(true);
     const res = await getShiprocketDocumentUrlsAction(orderId);
     if (res.success) {
@@ -139,10 +139,10 @@ export default function OrderStatusControls({
   };
 
   useEffect(() => {
-    if (awbNumber) {
+    if (awbNumber || trackingNumber) {
       fetchDocUrls();
     }
-  }, [awbNumber]);
+  }, [awbNumber, trackingNumber]);
 
   const handleConfirmAmazonShipment = async (
     overrideAwb?: string,
@@ -551,8 +551,13 @@ export default function OrderStatusControls({
             onClick={async (e) => {
               if (!shiprocketLabelUrl) {
                 e.preventDefault();
-                const res = await getShiprocketLabelAction(orderId);
+                setDocLoading(true);
+                const res = await getShiprocketDocumentUrlsAction(orderId);
+                setDocLoading(false);
                 if (res.success && res.labelUrl) {
+                  setShiprocketLabelUrl(res.labelUrl);
+                  if (res.manifestUrl) setManifestUrl(res.manifestUrl);
+                  if (res.invoiceUrl) setShiprocketInvoiceUrl(res.invoiceUrl);
                   window.open(res.labelUrl, "_blank");
                 }
               }
@@ -582,13 +587,19 @@ export default function OrderStatusControls({
 
           {/* 2. Pickup Manifest */}
           <a
-            href={manifestUrl || "#"}
+            href={manifestUrl || shiprocketLabelUrl || "#"}
             onClick={async (e) => {
               if (!manifestUrl) {
                 e.preventDefault();
+                setDocLoading(true);
                 const res = await getShiprocketDocumentUrlsAction(orderId);
-                if (res.success && res.manifestUrl) {
-                  window.open(res.manifestUrl, "_blank");
+                setDocLoading(false);
+                if (res.success) {
+                  if (res.labelUrl) setShiprocketLabelUrl(res.labelUrl);
+                  if (res.manifestUrl) setManifestUrl(res.manifestUrl);
+                  if (res.invoiceUrl) setShiprocketInvoiceUrl(res.invoiceUrl);
+                  const target = res.manifestUrl || res.labelUrl;
+                  if (target) window.open(target, "_blank");
                 }
               }
             }}
@@ -621,8 +632,13 @@ export default function OrderStatusControls({
             onClick={async (e) => {
               if (!shiprocketInvoiceUrl) {
                 e.preventDefault();
+                setDocLoading(true);
                 const res = await getShiprocketDocumentUrlsAction(orderId);
+                setDocLoading(false);
                 if (res.success && res.invoiceUrl) {
+                  if (res.labelUrl) setShiprocketLabelUrl(res.labelUrl);
+                  if (res.manifestUrl) setManifestUrl(res.manifestUrl);
+                  setShiprocketInvoiceUrl(res.invoiceUrl);
                   window.open(res.invoiceUrl, "_blank");
                 }
               }
