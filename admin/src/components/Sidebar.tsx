@@ -628,13 +628,12 @@ function Sidebar({
               }
             }}
             className="w-full text-left font-mono text-[9px] uppercase tracking-wider px-3 py-2 bg-accent text-black hover:bg-accent-hover font-bold rounded-xs transition-colors flex items-center justify-between mb-2 cursor-pointer shadow-sm"
-            title="Download all selected documents as separate PDF files"
+            title="Download all selected documents as a bundled package"
           >
             <span className="flex items-center gap-1.5">
               <Download className="w-3.5 h-3.5 text-black" />
               <span>Download All Documents</span>
             </span>
-            <span>📥</span>
           </button>
 
           {/* 1. GST Tax Invoice */}

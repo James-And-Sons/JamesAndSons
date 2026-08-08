@@ -442,72 +442,14 @@ export default function OrderStatusControls({
   const handleDownloadAllDocs = async () => {
     setIsDownloadingAll(true);
     try {
-      const { getDocDownloadPrefs } =
-        await import("../../account/DocumentDownloadSettingsForm");
-      const prefs = getDocDownloadPrefs();
-      const docs: { name: string; url: string }[] = [];
-
-      if (prefs.gstInvoice) {
-        docs.push({
-          name: `GST_Invoice_${orderId}.pdf`,
-          url: `/api/orders/${orderId}/invoice`,
-        });
-      }
-      if (prefs.shippingLabel && shiprocketLabelUrl) {
-        docs.push({
-          name: `Shipping_Label_${orderId}.pdf`,
-          url: shiprocketLabelUrl,
-        });
-      }
-      if (prefs.pickupManifest && manifestUrl) {
-        docs.push({
-          name: `Pickup_Manifest_${orderId}.pdf`,
-          url: manifestUrl,
-        });
-      }
-      if (prefs.courierInvoice && shiprocketInvoiceUrl) {
-        docs.push({
-          name: `Courier_Invoice_${orderId}.pdf`,
-          url: shiprocketInvoiceUrl,
-        });
-      }
-
-      if (docs.length === 0) {
-        alert(
-          "No document types selected in Settings > Order Document Download Preferences.",
-        );
-        return;
-      }
-
-      for (let i = 0; i < docs.length; i++) {
-        const doc = docs[i];
-        try {
-          // Fetch blob to enforce direct standalone file save to disk
-          const response = await fetch(doc.url);
-          const blob = await response.blob();
-          const blobUrl = window.URL.createObjectURL(blob);
-
-          const link = document.createElement("a");
-          link.href = blobUrl;
-          link.download = doc.name;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(blobUrl);
-        } catch (e) {
-          // Fallback to direct download
-          const link = document.createElement("a");
-          link.href = doc.url;
-          link.target = "_blank";
-          link.download = doc.name;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-        await new Promise((res) => setTimeout(res, 400));
-      }
+      const link = document.createElement("a");
+      link.href = `/api/orders/${orderId}/download-all-docs`;
+      link.download = `Order_Documents_${orderId}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
-      console.error("Error downloading all documents:", err);
+      console.error("Error downloading document bundle:", err);
     } finally {
       setIsDownloadingAll(false);
     }
@@ -1354,7 +1296,7 @@ export default function OrderStatusControls({
                 <span>
                   {isDownloadingAll
                     ? "Downloading All…"
-                    : "Download All PDFs 📥"}
+                    : "Download All Documents"}
                 </span>
               </button>
 

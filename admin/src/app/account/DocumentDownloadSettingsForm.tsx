@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
   FileText,
   CheckCircle2,
   Package,
   Tag,
   FileSpreadsheet,
+  RefreshCw,
 } from "lucide-react";
+import { adminGetSystemConfig, adminSaveSystemConfig } from "./config-actions";
 
 export interface DocDownloadPrefs {
   gstInvoice: boolean;
@@ -23,36 +25,48 @@ export const DEFAULT_DOC_PREFS: DocDownloadPrefs = {
   courierInvoice: true,
 };
 
-export const DOC_PREFS_KEY = "jns_download_docs_prefs";
-
-export function getDocDownloadPrefs(): DocDownloadPrefs {
-  if (typeof window === "undefined") return DEFAULT_DOC_PREFS;
-  try {
-    const raw = localStorage.getItem(DOC_PREFS_KEY);
-    if (raw) return { ...DEFAULT_DOC_PREFS, ...JSON.parse(raw) };
-  } catch (e) {
-    // fallback
-  }
-  return DEFAULT_DOC_PREFS;
-}
-
 export default function DocumentDownloadSettingsForm() {
   const [prefs, setPrefs] = useState<DocDownloadPrefs>(DEFAULT_DOC_PREFS);
+  const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setPrefs(getDocDownloadPrefs());
+    async function loadConfig() {
+      try {
+        const loaded = await adminGetSystemConfig("DOC_DOWNLOAD_PREFS");
+        if (loaded) {
+          setPrefs({ ...DEFAULT_DOC_PREFS, ...loaded });
+        }
+      } catch (err) {
+        console.error("Failed to load account doc download prefs:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadConfig();
   }, []);
 
   const handleToggle = (key: keyof DocDownloadPrefs) => {
     const updated = { ...prefs, [key]: !prefs[key] };
     setPrefs(updated);
-    localStorage.setItem(DOC_PREFS_KEY, JSON.stringify(updated));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("jns:doc-prefs-updated"));
-    }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+
+    startTransition(async () => {
+      try {
+        await adminSaveSystemConfig("DOC_DOWNLOAD_PREFS", updated);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            "jns_download_docs_prefs",
+            JSON.stringify(updated),
+          );
+          window.dispatchEvent(new CustomEvent("jns:doc-prefs-updated"));
+        }
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      } catch (err) {
+        console.error("Failed to save doc download prefs:", err);
+      }
+    });
   };
 
   return (
@@ -63,15 +77,21 @@ export default function DocumentDownloadSettingsForm() {
             Order Document Download Preferences
           </h2>
           <p className="font-body text-[13px] text-muted m-0">
-            Select which compliance &amp; shipping PDFs are downloaded as
-            separate files when you click{" "}
+            Account-level setting: Select which compliance &amp; shipping PDFs
+            are bundled into the single ZIP download file when you click{" "}
             <strong>"Download All Documents"</strong>.
           </p>
         </div>
         {saved && (
           <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-xs flex items-center gap-1.5 font-bold">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Preferences Saved</span>
+            <span>Account Settings Saved</span>
+          </span>
+        )}
+        {loading && (
+          <span className="font-mono text-[10px] text-muted flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <span>Loading preferences...</span>
           </span>
         )}
       </div>
@@ -87,6 +107,7 @@ export default function DocumentDownloadSettingsForm() {
           <input
             type="checkbox"
             checked={prefs.gstInvoice}
+            disabled={isPending || loading}
             onChange={() => handleToggle("gstInvoice")}
             className="mt-1 accent-amber-500 w-4 h-4 cursor-pointer"
           />
@@ -111,6 +132,7 @@ export default function DocumentDownloadSettingsForm() {
           <input
             type="checkbox"
             checked={prefs.shippingLabel}
+            disabled={isPending || loading}
             onChange={() => handleToggle("shippingLabel")}
             className="mt-1 accent-amber-500 w-4 h-4 cursor-pointer"
           />
@@ -135,6 +157,7 @@ export default function DocumentDownloadSettingsForm() {
           <input
             type="checkbox"
             checked={prefs.pickupManifest}
+            disabled={isPending || loading}
             onChange={() => handleToggle("pickupManifest")}
             className="mt-1 accent-amber-500 w-4 h-4 cursor-pointer"
           />
@@ -159,6 +182,7 @@ export default function DocumentDownloadSettingsForm() {
           <input
             type="checkbox"
             checked={prefs.courierInvoice}
+            disabled={isPending || loading}
             onChange={() => handleToggle("courierInvoice")}
             className="mt-1 accent-amber-500 w-4 h-4 cursor-pointer"
           />

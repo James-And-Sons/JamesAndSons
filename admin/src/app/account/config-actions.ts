@@ -20,6 +20,12 @@ const DEFAULT_CONFIGS: Record<string, any> = {
     address: "Peer matha, parav dubey, Aligarh, Uttar Pradesh, India- 202001",
     gstin: "09AABCJ8243A1ZX",
   },
+  DOC_DOWNLOAD_PREFS: {
+    gstInvoice: true,
+    shippingLabel: true,
+    pickupManifest: true,
+    courierInvoice: true,
+  },
 };
 
 /**
