@@ -178,6 +178,12 @@ function Sidebar({
     }
   }, []);
 
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const renderLink = (
     name: string,
     href: string,
@@ -199,6 +205,8 @@ function Sidebar({
             !(href === "/products" && currentCategoryId) &&
             !(href === "/spaces" && currentManageId) &&
             !(href === "/collections" && currentCategoryId);
+
+    const activeBadge = isMounted ? badge : null;
 
     return (
       <Link
@@ -237,11 +245,13 @@ function Sidebar({
           ) : null}
           <span>{name}</span>
         </span>
-        {badge !== null && badge !== undefined && badge > 0 && (
-          <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
-            {badge}
-          </span>
-        )}
+        {activeBadge !== null &&
+          activeBadge !== undefined &&
+          activeBadge > 0 && (
+            <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
+              {activeBadge}
+            </span>
+          )}
       </Link>
     );
   };
