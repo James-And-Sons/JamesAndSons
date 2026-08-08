@@ -691,8 +691,12 @@ export default function OrderStatusControls({
               <button
                 onClick={() =>
                   startTransition(async () => {
-                    const r = await syncSingleAmazonOrderAction(orderId);
-                    if (!r.success) alert("Sync failed: " + r.message);
+                    const r = await syncSingleAmazonOrderAction(
+                      amazonOrderId || orderId,
+                      orderId,
+                    );
+                    if (!r.success)
+                      alert("Sync failed: " + (r.error || r.message));
                     else router.refresh();
                   })
                 }

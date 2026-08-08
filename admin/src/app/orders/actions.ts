@@ -201,17 +201,34 @@ export async function syncAmazonOrdersAction(minutesBack: number = 1440) {
 }
 
 export async function syncSingleAmazonOrderAction(
-  amazonOrderId: string,
+  targetId: string,
   orderId?: string,
 ) {
   try {
+    let resolvedAmazonOrderId = targetId;
+    let resolvedDbOrderId = orderId || targetId;
+
+    // Check if targetId is a DB UUID or internal orderNumber rather than an Amazon Order ID (format: 40X-XXXXXXX-XXXXXXX)
+    if (!targetId.includes("-") || targetId.length > 25) {
+      const order = await prisma.order.findFirst({
+        where: {
+          OR: [{ id: targetId }, { orderNumber: targetId }],
+        },
+        select: { id: true, amazonOrderId: true, orderNumber: true },
+      });
+      if (order?.amazonOrderId) {
+        resolvedAmazonOrderId = order.amazonOrderId;
+        resolvedDbOrderId = order.id;
+      }
+    }
+
     const storefrontUrl =
       process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in";
     const cronSecret =
       process.env.CRON_SECRET || "james_and_sons_automation_secure_88";
 
     const res = await fetch(
-      `${storefrontUrl}/api/cron/amazon-orders?amazonOrderId=${encodeURIComponent(amazonOrderId)}`,
+      `${storefrontUrl}/api/cron/amazon-orders?amazonOrderId=${encodeURIComponent(resolvedAmazonOrderId)}`,
       {
         headers: { Authorization: `Bearer ${cronSecret}` },
         cache: "no-store",
@@ -224,20 +241,22 @@ export async function syncSingleAmazonOrderAction(
     }
 
     const data = await res.json();
-    if (orderId) revalidatePath(`/orders/${orderId}`);
+    if (resolvedDbOrderId) revalidatePath(`/orders/${resolvedDbOrderId}`);
     revalidatePath("/orders");
 
     return {
       success: data.success !== false,
       status: data.status,
       message:
-        data.message || `Amazon status synced for order ${amazonOrderId}`,
+        data.message ||
+        `Amazon status synced for order ${resolvedAmazonOrderId}`,
     };
   } catch (error: any) {
     console.error("[Amazon Single Sync Action] Error:", error);
     return {
       success: false,
       error: error.message || "Failed to sync Amazon order.",
+      message: error.message || "Failed to sync Amazon order.",
     };
   }
 }
