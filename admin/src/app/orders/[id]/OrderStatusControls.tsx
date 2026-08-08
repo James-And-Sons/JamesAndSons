@@ -551,6 +551,7 @@ export default function OrderStatusControls({
             onClick={async (e) => {
               if (!shiprocketLabelUrl) {
                 e.preventDefault();
+                const win = window.open("about:blank", "_blank");
                 setDocLoading(true);
                 const res = await getShiprocketDocumentUrlsAction(orderId);
                 setDocLoading(false);
@@ -558,7 +559,12 @@ export default function OrderStatusControls({
                   setShiprocketLabelUrl(res.labelUrl);
                   if (res.manifestUrl) setManifestUrl(res.manifestUrl);
                   if (res.invoiceUrl) setShiprocketInvoiceUrl(res.invoiceUrl);
-                  window.open(res.labelUrl, "_blank");
+                  if (win) win.location.href = res.labelUrl;
+                } else if (win) {
+                  win.close();
+                  alert(
+                    res.error || "Shipping Label PDF is not available yet.",
+                  );
                 }
               }
             }}
@@ -591,6 +597,7 @@ export default function OrderStatusControls({
             onClick={async (e) => {
               if (!manifestUrl) {
                 e.preventDefault();
+                const win = window.open("about:blank", "_blank");
                 setDocLoading(true);
                 const res = await getShiprocketDocumentUrlsAction(orderId);
                 setDocLoading(false);
@@ -599,7 +606,10 @@ export default function OrderStatusControls({
                   if (res.manifestUrl) setManifestUrl(res.manifestUrl);
                   if (res.invoiceUrl) setShiprocketInvoiceUrl(res.invoiceUrl);
                   const target = res.manifestUrl || res.labelUrl;
-                  if (target) window.open(target, "_blank");
+                  if (target && win) win.location.href = target;
+                } else if (win) {
+                  win.close();
+                  alert(res.error || "Manifest PDF is not available yet.");
                 }
               }
             }}
@@ -632,6 +642,7 @@ export default function OrderStatusControls({
             onClick={async (e) => {
               if (!shiprocketInvoiceUrl) {
                 e.preventDefault();
+                const win = window.open("about:blank", "_blank");
                 setDocLoading(true);
                 const res = await getShiprocketDocumentUrlsAction(orderId);
                 setDocLoading(false);
@@ -639,7 +650,12 @@ export default function OrderStatusControls({
                   if (res.labelUrl) setShiprocketLabelUrl(res.labelUrl);
                   if (res.manifestUrl) setManifestUrl(res.manifestUrl);
                   setShiprocketInvoiceUrl(res.invoiceUrl);
-                  window.open(res.invoiceUrl, "_blank");
+                  if (win) win.location.href = res.invoiceUrl;
+                } else if (win) {
+                  win.close();
+                  alert(
+                    res.error || "Carrier Invoice PDF is not available yet.",
+                  );
                 }
               }
             }}

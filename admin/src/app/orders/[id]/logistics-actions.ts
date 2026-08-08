@@ -201,7 +201,6 @@ export async function getShiprocketDocumentUrlsAction(orderId: string) {
     let shipmentId: number | null = null;
     let shiprocketOrderDbId: number | null = null;
 
-    // Check if order.awbNumber is a valid numeric shipment ID (shipment IDs in Shiprocket are ~10 digits, whereas AWBs are ~13+ digits)
     if (
       order.awbNumber &&
       !isNaN(parseInt(order.awbNumber)) &&
@@ -210,36 +209,41 @@ export async function getShiprocketDocumentUrlsAction(orderId: string) {
       shipmentId = parseInt(order.awbNumber);
     }
 
-    // If awbNumber is missing or is an AWB string rather than numeric shipment ID, query Shiprocket API dynamically
-    if (!shipmentId) {
-      const token = await getShiprocketToken();
-      if (token) {
-        const getRes = await fetch(
-          `https://apiv2.shiprocket.in/v1/external/orders?per_page=20`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          },
-        );
-        if (getRes.ok) {
-          const getData = await getRes.json();
-          const ordersList: any[] = getData.data || [];
-          const match = ordersList.find((o: any) => {
-            const channelId = String(o.channel_order_id || "");
-            const orderNum = String(order.orderNumber || "");
-            return (
-              channelId.includes(orderNum) ||
-              orderNum.includes(channelId) ||
-              String(o.order_id || "").includes(orderNum)
-            );
-          });
+    // Always fetch order details from Shiprocket catalog to resolve both shipmentId AND numeric orderDbId
+    const token = await getShiprocketToken();
+    if (token) {
+      const getRes = await fetch(
+        `https://apiv2.shiprocket.in/v1/external/orders?per_page=50`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        },
+      );
+      if (getRes.ok) {
+        const getData = await getRes.json();
+        const ordersList: any[] = getData.data || [];
+        const match = ordersList.find((o: any) => {
+          const channelId = String(o.channel_order_id || "");
+          const orderNum = String(order.orderNumber || "");
+          const awbInShipment = o.shipments?.some(
+            (s: any) =>
+              String(s.id) === String(order.awbNumber) ||
+              String(s.awb) === String(order.trackingNumber),
+          );
+          return (
+            channelId.includes(orderNum) ||
+            orderNum.includes(channelId) ||
+            String(o.order_id || "").includes(orderNum) ||
+            awbInShipment
+          );
+        });
 
-          if (match) {
-            shiprocketOrderDbId = match.id;
-            if (match.shipments && match.shipments.length > 0) {
-              const foundShipmentId = match.shipments[0].id;
-              shipmentId = foundShipmentId;
-              // Persist the true numeric shipment ID back to awbNumber in DB!
+        if (match) {
+          shiprocketOrderDbId = match.id;
+          if (match.shipments && match.shipments.length > 0) {
+            const foundShipmentId = match.shipments[0].id;
+            shipmentId = foundShipmentId;
+            if (order.awbNumber !== foundShipmentId.toString()) {
               await prisma.order.update({
                 where: { id: orderId },
                 data: { awbNumber: foundShipmentId.toString() },
@@ -262,14 +266,17 @@ export async function getShiprocketDocumentUrlsAction(orderId: string) {
       generateManifest([shipmentId]),
       shiprocketOrderDbId
         ? generateInvoice([shiprocketOrderDbId])
-        : generateInvoice([shipmentId]),
+        : generateLabel([shipmentId]),
     ]);
+
+    const finalInvoiceUrl = invoiceUrl || labelUrl;
+    const finalManifestUrl = manifestUrl || labelUrl;
 
     return {
       success: true,
       labelUrl,
-      manifestUrl,
-      invoiceUrl,
+      manifestUrl: finalManifestUrl,
+      invoiceUrl: finalInvoiceUrl,
       shipmentId,
     };
   } catch (err: any) {
