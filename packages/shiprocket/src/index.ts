@@ -337,12 +337,18 @@ export async function generateLabel(
  */
 export async function requestPickup(
   shipmentIds: number[],
+  pickupDate?: string,
   config: IShiprocketConfig = {},
 ) {
   const token = await getShiprocketToken(config);
   if (!token) return null;
 
   try {
+    const payload: any = { shipment_id: shipmentIds };
+    if (pickupDate) {
+      payload.pickup_date = [pickupDate];
+    }
+
     const res = await fetch(
       "https://apiv2.shiprocket.in/v1/external/courier/generate/pickup",
       {
@@ -351,7 +357,7 @@ export async function requestPickup(
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ shipment_id: shipmentIds }),
+        body: JSON.stringify(payload),
         cache: "no-store",
       },
     );

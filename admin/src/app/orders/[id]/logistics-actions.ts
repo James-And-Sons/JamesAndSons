@@ -98,6 +98,32 @@ export async function getShiprocketLabelAction(orderId: string) {
   }
 }
 
+function getEarliestPickupDate(): string {
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(now.getTime() + istOffset);
+  // Cut-off at 3:00 PM IST (15:00). If past 3 PM IST, schedule for tomorrow
+  if (istNow.getUTCHours() >= 15) {
+    istNow.setUTCDate(istNow.getUTCDate() + 1);
+  }
+  return istNow.toISOString().split("T")[0];
+}
+
+function parseCourierName(rawName?: string): string {
+  if (!rawName) return "Delhivery";
+  const lower = rawName.toLowerCase();
+  if (lower.includes("bluedart") || lower.includes("blue dart"))
+    return "BlueDart";
+  if (lower.includes("delhivery")) return "Delhivery";
+  if (lower.includes("dtdc")) return "DTDC";
+  if (lower.includes("india") || lower.includes("post")) return "India Post";
+  if (lower.includes("ecom")) return "Ecom Express";
+  if (lower.includes("xpress")) return "Xpressbees";
+  if (lower.includes("fedex")) return "FedEx";
+  if (lower.includes("dhl")) return "DHL";
+  return rawName.split(" ")[0] || "Other";
+}
+
 /**
  * Book Shiprocket pickup + fetch official label URL in one click.
  * orderId → look up numeric shipment ID from DB → requestPickup → generateLabel.
@@ -121,10 +147,11 @@ export async function bookShiprocketPickupAction(orderId: string) {
       };
     }
 
-    // Step 1: Book pickup
-    const pickupResult = await requestPickup([shipmentId]);
+    // Step 1: Book earliest pickup (Today / Tomorrow Morning)
+    const earliestDate = getEarliestPickupDate();
+    const pickupResult = await requestPickup([shipmentId], earliestDate);
     console.log(
-      "[bookShiprocketPickup] requestPickup result:",
+      `[bookShiprocketPickup] requestPickup for date ${earliestDate} result:`,
       JSON.stringify(pickupResult),
     );
 
@@ -146,6 +173,7 @@ export async function bookShiprocketPickupAction(orderId: string) {
       pickupScheduled,
       pickupResult,
       labelUrl,
+      scheduledDate: earliestDate,
     };
   } catch (err: any) {
     console.error("bookShiprocketPickupAction error:", err);
@@ -171,6 +199,7 @@ export async function retryLogisticsSync(orderId: string) {
     let awbNumber = order.awbNumber;
     let fulfillmentError = order.fulfillmentError;
     let finalStatus = order.status;
+    let courierName = "Delhivery";
 
     // Case 0: Order is ALREADY fully booked in Shiprocket (has both awbNumber and trackingNumber)
     if (order.awbNumber && order.trackingNumber) {
@@ -181,6 +210,7 @@ export async function retryLogisticsSync(orderId: string) {
         success: true,
         trackingNumber: order.trackingNumber,
         awbNumber: order.awbNumber,
+        courierName: "Delhivery",
         alreadyBooked: true,
         message: `Order #${order.orderNumber} is already booked in Shiprocket (AWB: ${order.trackingNumber}).`,
       };
@@ -199,14 +229,21 @@ export async function retryLogisticsSync(orderId: string) {
 
       if (awbRes.success) {
         trackingNumber = awbRes.awb_code;
+        courierName = parseCourierName(awbRes.courier_name);
         fulfillmentError = null;
         finalStatus = "PROCESSING";
+
+        // Schedule earliest pickup immediately
+        await requestPickup(
+          [parseInt(order.awbNumber)],
+          getEarliestPickupDate(),
+        );
       } else {
         fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
         throw new Error(awbRes.message || "AWB Assignment failed");
       }
     } else {
-      // Case 2: Order was never created in Shiprocket. Create order + assign AWB.
+      // Case 2: Order was never created in Shiprocket. Create order + assign AWB + request pickup.
       console.log(`[RetryLogistics] Creating new Shiprocket order...`);
       const parts = order.shippingAddress.split(", ");
       const pincodeStr =
@@ -264,8 +301,12 @@ export async function retryLogisticsSync(orderId: string) {
 
         if (awbRes.success) {
           trackingNumber = awbRes.awb_code;
+          courierName = parseCourierName(awbRes.courier_name);
           fulfillmentError = null;
           finalStatus = "PROCESSING";
+
+          // Schedule earliest pickup immediately
+          await requestPickup([shipRes.shipment_id], getEarliestPickupDate());
         } else {
           fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
           throw new Error(awbRes.message || "AWB Assignment failed");
@@ -292,7 +333,7 @@ export async function retryLogisticsSync(orderId: string) {
     });
 
     revalidatePath(`/orders/${orderId}`);
-    return { success: true, trackingNumber, awbNumber };
+    return { success: true, trackingNumber, awbNumber, courierName };
   } catch (error: any) {
     console.error("retryLogisticsSync error:", error);
     // Update the error note on database

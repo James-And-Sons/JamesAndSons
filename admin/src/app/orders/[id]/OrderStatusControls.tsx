@@ -1392,9 +1392,13 @@ export default function OrderStatusControls({
                             trackingNumber ||
                             awbNumber;
                           if (awbToUse) {
+                            const carrierToUse =
+                              result.courierName ||
+                              manualCarrier ||
+                              "Delhivery";
                             await handleConfirmAmazonShipment(
                               awbToUse,
-                              "Shiprocket",
+                              carrierToUse,
                             );
                           }
                         } else {
