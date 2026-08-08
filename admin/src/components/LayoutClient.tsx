@@ -3,8 +3,10 @@ import { useState, Suspense, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
+import dynamic from "next/dynamic";
 import BottomNav from "@/components/BottomNav";
+
+const Sidebar = dynamic(() => import("@/components/Sidebar"), { ssr: false });
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import { ThemeProvider } from "@/components/ThemeProvider";

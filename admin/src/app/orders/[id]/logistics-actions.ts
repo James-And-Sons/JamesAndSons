@@ -323,13 +323,42 @@ export async function retryLogisticsSync(orderId: string) {
         }
       }
 
-      if (shipRes.success) {
-        awbNumber = shipRes.shipment_id?.toString();
+      if (shipRes.success && shipRes.shipment_id) {
+        awbNumber = shipRes.shipment_id.toString();
         console.log(
           `[RetryLogistics] Shiprocket order created successfully. Shipment ID: ${shipRes.shipment_id}`,
         );
 
-        const awbRes = await assignAWB(shipRes.shipment_id);
+        let awbRes = await assignAWB(shipRes.shipment_id);
+
+        // If assignAWB fails because Shiprocket returned an old cancelled shipment ID, force fresh unique order creation
+        if (!awbRes.success) {
+          const errorMsg =
+            typeof awbRes.message === "object"
+              ? JSON.stringify(awbRes.message)
+              : String(awbRes.message || "");
+
+          if (
+            errorMsg.includes("already assigned") ||
+            errorMsg.includes("CANCELLED") ||
+            errorMsg.includes("CANCELED")
+          ) {
+            const uniqueOrderId = `${order.orderNumber}-R${Date.now().toString().slice(-4)}`;
+            console.log(
+              `[RetryLogistics] Shipment ID ${shipRes.shipment_id} returned cancelled AWB error. Creating fresh order with unique ID ${uniqueOrderId}...`,
+            );
+
+            const freshShipRes = await createShiprocketOrder({
+              ...shiprocketParams,
+              order_id: uniqueOrderId,
+            });
+
+            if (freshShipRes.success && freshShipRes.shipment_id) {
+              awbNumber = freshShipRes.shipment_id.toString();
+              awbRes = await assignAWB(freshShipRes.shipment_id);
+            }
+          }
+        }
 
         if (awbRes.success) {
           trackingNumber = awbRes.awb_code;
@@ -338,7 +367,9 @@ export async function retryLogisticsSync(orderId: string) {
           finalStatus = "PROCESSING";
 
           // Schedule earliest pickup immediately
-          await requestPickup([shipRes.shipment_id], getEarliestPickupDate());
+          if (awbNumber) {
+            await requestPickup([parseInt(awbNumber)], getEarliestPickupDate());
+          }
         } else {
           fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
           throw new Error(awbRes.message || "AWB Assignment failed");
