@@ -210,6 +210,7 @@ function Sidebar({
 
     return (
       <Link
+        suppressHydrationWarning
         href={href}
         aria-current={isActive ? "page" : undefined}
         onClick={(e) => {
