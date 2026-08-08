@@ -131,19 +131,14 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
   const doc = new jsPDF() as any;
   const logoBase64 = loadLogoBase64();
 
-  // 1. Top Logo Box Header
-  if (logoBase64) {
-    // Add official high-res logo PNG
-    doc.addImage(logoBase64, "PNG", 65, 8, 80, 24);
-  } else {
-    // Fallback gold styled brand box
-    doc.setFillColor(253, 248, 242);
-    doc.rect(60, 10, 90, 20, "F");
-    doc.setFont("times", "normal");
-    doc.setFontSize(22);
-    doc.setTextColor(140, 107, 66);
-    doc.text("J A M E S   &   S O N S", 105, 23, { align: "center" });
-  }
+  // 1. Top Header Wordmark Box (Desktop Navbar Typography)
+  doc.setFillColor(253, 248, 242); // Warm light beige background
+  doc.rect(60, 10, 90, 20, "F");
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(22);
+  doc.setTextColor(140, 107, 66); // Elegant gold brown logo color
+  doc.text("J A M E S   &   S O N S", 105, 23, { align: "center" });
 
   // Title: TAX INVOICE bounded by top & bottom lines
   doc.setDrawColor(80, 80, 80);
@@ -351,26 +346,27 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
 
   // 5. Watermark Logo Banner Box at bottom
   const logoBannerY = finalY + 20;
+  doc.setFillColor(253, 248, 242);
+  doc.rect(14, logoBannerY, 182, 24, "F");
 
-  if (logoBase64) {
-    doc.addImage(logoBase64, "PNG", 65, logoBannerY, 80, 24);
-  } else {
-    doc.setFillColor(253, 248, 242);
-    doc.rect(14, logoBannerY, 182, 24, "F");
-    doc.setFont("times", "normal");
-    doc.setFontSize(26);
-    doc.setTextColor(140, 107, 66);
-    doc.text("J A M E S   &   S O N S", 105, logoBannerY + 16, {
-      align: "center",
-    });
-  }
+  doc.setFont("times", "normal");
+  doc.setFontSize(26);
+  doc.setTextColor(140, 107, 66);
+  doc.text("J A M E S   &   S O N S", 105, logoBannerY + 16, {
+    align: "center",
+  });
 
-  // 6. Authorized Signature Line
+  // 6. Authorized Signature Line & Round Logo Stamp/Seal
   const sigY = logoBannerY + 36;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(30, 30, 30);
   doc.text("Authorized Signature for M/S JAMES & SONS", 14, sigY);
+
+  // Render Round Logo ONLY as an official seal stamp next to signature line
+  if (logoBase64) {
+    doc.addImage(logoBase64, "PNG", 160, sigY - 24, 26, 26);
+  }
 
   const arrayBuffer = doc.output("arraybuffer");
   return Buffer.from(arrayBuffer);
