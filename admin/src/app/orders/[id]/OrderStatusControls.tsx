@@ -14,6 +14,7 @@ import {
   retryLogisticsSync,
   bookShiprocketPickupAction,
   getShiprocketLabelAction,
+  getShiprocketDocumentUrlsAction,
 } from "./logistics-actions";
 
 const STATUS_OPTIONS = [
@@ -117,6 +118,31 @@ export default function OrderStatusControls({
   const [amzConfirmResult, setAmzConfirmResult] = useState<string | null>(null);
   const [amzConfirmError, setAmzConfirmError] = useState<string | null>(null);
   const [showLogisticsPreview, setShowLogisticsPreview] = useState(false);
+
+  // Logistics PDF Documents state
+  const [docLoading, setDocLoading] = useState(false);
+  const [manifestUrl, setManifestUrl] = useState<string | null>(null);
+  const [shiprocketInvoiceUrl, setShiprocketInvoiceUrl] = useState<
+    string | null
+  >(null);
+
+  const fetchDocUrls = async () => {
+    if (!awbNumber) return;
+    setDocLoading(true);
+    const res = await getShiprocketDocumentUrlsAction(orderId);
+    if (res.success) {
+      if (res.labelUrl) setShiprocketLabelUrl(res.labelUrl);
+      if (res.manifestUrl) setManifestUrl(res.manifestUrl);
+      if (res.invoiceUrl) setShiprocketInvoiceUrl(res.invoiceUrl);
+    }
+    setDocLoading(false);
+  };
+
+  useEffect(() => {
+    if (awbNumber) {
+      fetchDocUrls();
+    }
+  }, [awbNumber]);
 
   const handleConfirmAmazonShipment = async (
     overrideAwb?: string,
@@ -681,6 +707,186 @@ export default function OrderStatusControls({
                 >
                   📄 Download Tax Invoice (PDF) ↗
                 </a>
+
+                {/* Official Shipping Documents Grid (Shown when shipment is booked) */}
+                {awbNumber && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      marginTop: "6px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          textTransform: "uppercase",
+                          color: "#4ade80",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        ⚡ Official Logistics Documents (Shipment #{awbNumber})
+                      </span>
+                      <button
+                        onClick={fetchDocUrls}
+                        disabled={docLoading}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#6b8dd6",
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        {docLoading ? "Refreshing…" : "↻ Refresh URLs"}
+                      </button>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "8px",
+                      }}
+                    >
+                      {/* 1. Barcode Shipping Label */}
+                      <a
+                        href={shiprocketLabelUrl || "#"}
+                        onClick={async (e) => {
+                          if (!shiprocketLabelUrl) {
+                            e.preventDefault();
+                            const res = await getShiprocketLabelAction(orderId);
+                            if (res.success && res.labelUrl) {
+                              window.open(res.labelUrl, "_blank");
+                            }
+                          }
+                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px",
+                          background: "rgba(74,222,128,0.08)",
+                          border: "1px solid rgba(74,222,128,0.3)",
+                          borderRadius: "2px",
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          fontWeight: "bold",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          color: "#4ade80",
+                          textDecoration: "none",
+                          textAlign: "center",
+                          display: "block",
+                        }}
+                      >
+                        🏷️ Barcode Label (PDF) ↗
+                      </a>
+
+                      {/* 2. Pickup Manifest */}
+                      <a
+                        href={manifestUrl || "#"}
+                        onClick={async (e) => {
+                          if (!manifestUrl) {
+                            e.preventDefault();
+                            const res =
+                              await getShiprocketDocumentUrlsAction(orderId);
+                            if (res.success && res.manifestUrl) {
+                              window.open(res.manifestUrl, "_blank");
+                            }
+                          }
+                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px",
+                          background: "rgba(107,141,214,0.08)",
+                          border: "1px solid rgba(107,141,214,0.3)",
+                          borderRadius: "2px",
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          fontWeight: "bold",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          color: "#6b8dd6",
+                          textDecoration: "none",
+                          textAlign: "center",
+                          display: "block",
+                        }}
+                      >
+                        📋 Pickup Manifest (PDF) ↗
+                      </a>
+
+                      {/* 3. Shiprocket Invoice */}
+                      <a
+                        href={shiprocketInvoiceUrl || "#"}
+                        onClick={async (e) => {
+                          if (!shiprocketInvoiceUrl) {
+                            e.preventDefault();
+                            const res =
+                              await getShiprocketDocumentUrlsAction(orderId);
+                            if (res.success && res.invoiceUrl) {
+                              window.open(res.invoiceUrl, "_blank");
+                            }
+                          }
+                        }}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px",
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          borderRadius: "2px",
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          fontWeight: "bold",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          color: "#ddd",
+                          textDecoration: "none",
+                          textAlign: "center",
+                          display: "block",
+                        }}
+                      >
+                        🧾 Carrier Invoice (PDF) ↗
+                      </a>
+
+                      {/* 4. Store GST Tax Invoice */}
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/api/orders/${orderId}/invoice`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "10px",
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          borderRadius: "2px",
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          fontWeight: "bold",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          color: "#ddd",
+                          textDecoration: "none",
+                          textAlign: "center",
+                          display: "block",
+                        }}
+                      >
+                        📜 GST Tax Invoice (PDF) ↗
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Allow pickup booking for any active pre-shipping order (PAID, PROCESSING, PENDING) */}
                 {status !== "CANCELLED" &&

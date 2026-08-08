@@ -333,6 +333,70 @@ export async function generateLabel(
 }
 
 /**
+ * Generate Shipping Manifest PDF (Courier Pickup Handover)
+ */
+export async function generateManifest(
+  shipmentIds: number[],
+  config: IShiprocketConfig = {},
+) {
+  const token = await getShiprocketToken(config);
+  if (!token) return null;
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/manifests/generate",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ shipment_id: shipmentIds }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json();
+    return data.manifest_url || data.url || null;
+  } catch (err) {
+    console.error("generateManifest Error:", err);
+    return null;
+  }
+}
+
+/**
+ * Generate Shiprocket Invoice PDF
+ */
+export async function generateInvoice(
+  orderIds: number[],
+  config: IShiprocketConfig = {},
+) {
+  const token = await getShiprocketToken(config);
+  if (!token) return null;
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/orders/print/invoice",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: orderIds }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json();
+    return data.invoice_url || data.url || null;
+  } catch (err) {
+    console.error("generateInvoice Error:", err);
+    return null;
+  }
+}
+
+/**
  * Request Pickup for shipments
  */
 export async function requestPickup(

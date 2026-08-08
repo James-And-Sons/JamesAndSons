@@ -181,6 +181,49 @@ export async function bookShiprocketPickupAction(orderId: string) {
   }
 }
 
+/**
+ * Fetch all official Shiprocket logistics documents (Label PDF, Manifest PDF, Invoice PDF)
+ */
+export async function getShiprocketDocumentUrlsAction(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order?.awbNumber) {
+      return {
+        success: false,
+        error: "No shipment ID on record for this order.",
+      };
+    }
+
+    const shipmentId = parseInt(order.awbNumber);
+    if (isNaN(shipmentId)) {
+      return {
+        success: false,
+        error: "Stored shipment ID is not a numeric Shiprocket shipment ID.",
+      };
+    }
+
+    const { generateLabel, generateManifest, generateInvoice } =
+      await import("@james-andsons/shiprocket");
+
+    const [labelUrl, manifestUrl, invoiceUrl] = await Promise.all([
+      generateLabel([shipmentId]),
+      generateManifest([shipmentId]),
+      generateInvoice([shipmentId]),
+    ]);
+
+    return {
+      success: true,
+      labelUrl,
+      manifestUrl,
+      invoiceUrl,
+      shipmentId,
+    };
+  } catch (err: any) {
+    console.error("getShiprocketDocumentUrlsAction error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function retryLogisticsSync(orderId: string) {
   try {
     const order = await prisma.order.findUnique({
