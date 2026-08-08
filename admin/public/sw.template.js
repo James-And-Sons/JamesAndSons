@@ -3,12 +3,13 @@
  * Strategy:
  *   - Static assets (_next/static, fonts, images): Cache-First
  *   - Page navigations: Network-First with offline fallback (satisfies Chrome PWA requirement)
- *   - API routes (/api/): Network-Only
+ *   - API routes (/api/): Network-Only (bypassed)
+ *   - Next.js RSC requests (_rsc=...): Network-Only (bypassed)
+ *   - Service Worker script (/sw.js): Network-Only (bypassed)
  */
 
 const CACHE_NAME = "jas-admin-__BUILD_TS__";
 const STATIC_CACHE = "jas-admin-static-v1";
-const OFFLINE_URL = "/login";
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -54,12 +55,19 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET, non-same-origin, and Next.js HMR requests
+  // ── BYPASS ALL NON-CACHEABLE & DYNAMIC ROUTER REQUESTS ──
+  // Bypasses /api/, /sw.js, and Next.js App Router RSC payload prefetching
   if (
     request.method !== "GET" ||
     url.origin !== self.location.origin ||
+    url.pathname === "/sw.js" ||
+    url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/_next/webpack-hmr") ||
-    url.pathname.startsWith("/_next/on-demand-entries-ping")
+    url.pathname.startsWith("/_next/on-demand-entries-ping") ||
+    url.searchParams.has("_rsc") ||
+    request.headers.get("RSC") === "1" ||
+    request.headers.get("Next-Router-State-Tree") ||
+    request.headers.get("Next-Url")
   ) {
     return;
   }
@@ -77,7 +85,8 @@ self.addEventListener("fetch", (event) => {
   // 2. Page Navigations: MUST call event.respondWith to satisfy Chrome PWA Installability requirements
   if (
     request.mode === "navigate" ||
-    request.headers.get("accept")?.includes("text/html")
+    (request.headers.get("accept")?.includes("text/html") &&
+      !url.searchParams.has("_rsc"))
   ) {
     event.respondWith(
       fetch(request).catch(async () => {
