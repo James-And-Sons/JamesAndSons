@@ -106,6 +106,11 @@ function getEarliestPickupDate(): string {
   if (istNow.getUTCHours() >= 15) {
     istNow.setUTCDate(istNow.getUTCDate() + 1);
   }
+  // Couriers (Delhivery, BlueDart, Xpressbees, etc.) do NOT pick up on Sundays (day 0)
+  // If calculated date lands on Sunday, automatically roll over to Monday
+  if (istNow.getUTCDay() === 0) {
+    istNow.setUTCDate(istNow.getUTCDate() + 1);
+  }
   return istNow.toISOString().split("T")[0];
 }
 
