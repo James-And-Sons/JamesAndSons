@@ -40,19 +40,43 @@ export async function GET(
     const zip = new JSZip();
     let fileCount = 0;
 
-    // 1. GST Tax Invoice
+    // 1. GST Tax Invoice PDF
     if (docPrefs.gstInvoice) {
       try {
-        const invRes = await fetch(`${host}/api/orders/${id}/invoice`, {
-          cache: "no-store",
+        const fullOrder = await prisma.order.findUnique({
+          where: { id },
+          include: {
+            user: true,
+            items: { include: { product: true } },
+          },
         });
-        if (invRes.ok) {
-          const invBuffer = await invRes.arrayBuffer();
-          zip.file(`GST_Tax_Invoice_${order.orderNumber || id}.pdf`, invBuffer);
+        if (fullOrder) {
+          if (!fullOrder.invoiceNumber) {
+            try {
+              const { generateSequentialInvoiceNumber } =
+                await import("../../../../../../../storefront/src/lib/invoice");
+              const newInvNum = await generateSequentialInvoiceNumber();
+              await prisma.order.update({
+                where: { id: fullOrder.id },
+                data: { invoiceNumber: newInvNum },
+              });
+              fullOrder.invoiceNumber = newInvNum;
+            } catch (err) {
+              const fallbackInv = `JS${fullOrder.orderNumber.replace(/[^0-9]/g, "").slice(-5) || "07429"}`;
+              fullOrder.invoiceNumber = fallbackInv;
+            }
+          }
+          const { generateInvoicePdfBuffer } =
+            await import("@james-andsons/pdf-generator");
+          const pdfBuffer = generateInvoicePdfBuffer(fullOrder);
+          zip.file(
+            `GST_Tax_Invoice_${fullOrder.invoiceNumber || fullOrder.orderNumber}.pdf`,
+            pdfBuffer,
+          );
           fileCount++;
         }
       } catch (err) {
-        console.warn("[DownloadAllDocs] GST Invoice fetch warning:", err);
+        console.warn("[DownloadAllDocs] GST Invoice generation warning:", err);
       }
     }
 

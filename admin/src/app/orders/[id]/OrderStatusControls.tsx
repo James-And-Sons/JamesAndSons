@@ -440,18 +440,44 @@ export default function OrderStatusControls({
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   const handleDownloadAllDocs = async () => {
+    if (isDownloadingAll) return;
     setIsDownloadingAll(true);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("jns:download-status", {
+          detail: { downloading: true },
+        }),
+      );
+    }
     try {
+      const res = await fetch(`/api/orders/${orderId}/download-all-docs`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Unable to prepare document package.");
+        return;
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = `/api/orders/${orderId}/download-all-docs`;
+      link.href = blobUrl;
       link.download = `Order_Documents_${orderId}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (err) {
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err: any) {
       console.error("Error downloading document bundle:", err);
+      alert("Network error downloading document package.");
     } finally {
       setIsDownloadingAll(false);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("jns:download-status", {
+            detail: { downloading: false },
+          }),
+        );
+      }
     }
   };
 
@@ -1290,12 +1316,14 @@ export default function OrderStatusControls({
                 className="font-mono text-[10px] uppercase tracking-wider px-3 py-1 bg-accent/10 border border-accent/40 text-accent hover:bg-accent/20 rounded-xs transition-colors disabled:opacity-50 flex items-center gap-1.5 font-bold cursor-pointer"
                 title="Download all available compliance & logistics PDFs in 1 click"
               >
-                <Download
-                  className={`w-3.5 h-3.5 ${isDownloadingAll ? "animate-bounce" : ""}`}
-                />
+                {isDownloadingAll ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-accent" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-accent" />
+                )}
                 <span>
                   {isDownloadingAll
-                    ? "Downloading All…"
+                    ? "Preparing Package..."
                     : "Download All Documents"}
                 </span>
               </button>

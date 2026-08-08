@@ -32,6 +32,7 @@ import {
   CreditCard,
   FileCheck,
   Download,
+  RefreshCw,
 } from "lucide-react";
 
 // Persistent module-level cache to prevent flickering / unmounting resets
@@ -540,6 +541,22 @@ function Sidebar({
       shiprocketInvoiceUrl,
     } = orderDetailState;
 
+    const [isDownloadingSidebar, setIsDownloadingSidebar] = useState(false);
+
+    useEffect(() => {
+      const handleStatus = (e: any) => {
+        if (e.detail && typeof e.detail.downloading === "boolean") {
+          setIsDownloadingSidebar(e.detail.downloading);
+        }
+      };
+      if (typeof window !== "undefined") {
+        window.addEventListener("jns:download-status", handleStatus);
+        return () => {
+          window.removeEventListener("jns:download-status", handleStatus);
+        };
+      }
+    }, []);
+
     const navSections = [
       { id: "customer-info", label: "Customer Details", icon: User },
       { id: "fulfillment-studio", label: "Fulfillment Studio", icon: Truck },
@@ -622,17 +639,26 @@ function Sidebar({
           {/* Download All Button (triggers exact same PDF bundle download) */}
           <button
             type="button"
+            disabled={isDownloadingSidebar}
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent("jns:download-all-docs"));
               }
             }}
-            className="w-full text-left font-mono text-[9px] uppercase tracking-wider px-3 py-2 bg-accent text-black hover:bg-accent-hover font-bold rounded-xs transition-colors flex items-center justify-between mb-2 cursor-pointer shadow-sm"
+            className="w-full text-left font-mono text-[9px] uppercase tracking-wider px-3 py-2 bg-accent text-black hover:bg-accent-hover font-bold rounded-xs transition-colors flex items-center justify-between mb-2 cursor-pointer shadow-sm disabled:opacity-60"
             title="Download all selected documents as a bundled package"
           >
             <span className="flex items-center gap-1.5">
-              <Download className="w-3.5 h-3.5 text-black" />
-              <span>Download All Documents</span>
+              {isDownloadingSidebar ? (
+                <RefreshCw className="w-3.5 h-3.5 text-black animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-black" />
+              )}
+              <span>
+                {isDownloadingSidebar
+                  ? "Preparing Package..."
+                  : "Download All Documents"}
+              </span>
             </span>
           </button>
 
