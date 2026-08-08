@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   updateOrderStatus,
   updateTrackingNumber,
@@ -72,6 +73,7 @@ export default function OrderStatusControls({
   isAmazon?: boolean;
   orderItems?: OrderItem[];
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [tracking, setTracking] = useState("");
   const [awb, setAwb] = useState(awbNumber || "");
@@ -86,18 +88,74 @@ export default function OrderStatusControls({
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [bookingError, setBookingError] = useState<string>("");
 
-  // Shiprocket Fulfillment panel state (non-Amazon)
+  // Shiprocket Fulfillment state
   const [isBookingPickup, setIsBookingPickup] = useState(false);
   const [shiprocketResult, setShiprocketResult] = useState<any>(null);
   const [shiprocketError, setShiprocketError] = useState("");
   const [shiprocketLabelUrl, setShiprocketLabelUrl] = useState("");
   const [isFetchingLabel, setIsFetchingLabel] = useState(false);
 
-  // Package dimension state — auto-calculated from items
+  // Package dimensions state
   const [pkgLength, setPkgLength] = useState(20);
   const [pkgWidth, setPkgWidth] = useState(20);
   const [pkgHeight, setPkgHeight] = useState(40);
   const [pkgWeight, setPkgWeight] = useState(1.0);
+
+  // Amazon Self-Ship (MFN) Confirmation state
+  const [manualCarrier, setManualCarrier] = useState("Shiprocket");
+  const [manualAwb, setManualAwb] = useState(awbNumber || trackingNumber || "");
+  const [isConfirmingAmzShipment, setIsConfirmingAmzShipment] = useState(false);
+  const [amzConfirmResult, setAmzConfirmResult] = useState<string | null>(null);
+  const [amzConfirmError, setAmzConfirmError] = useState<string | null>(null);
+
+  const handleConfirmAmazonShipment = async (
+    overrideAwb?: string,
+    overrideCarrier?: string,
+  ) => {
+    const awbToSubmit = (overrideAwb || manualAwb).trim();
+    const carrierToSubmit = overrideCarrier || manualCarrier || "Shiprocket";
+    if (!awbToSubmit) {
+      setAmzConfirmError("Please enter a Tracking ID / AWB Number.");
+      return;
+    }
+
+    setIsConfirmingAmzShipment(true);
+    setAmzConfirmError(null);
+    setAmzConfirmResult(null);
+
+    try {
+      const res = await fetch(
+        `/api/orders/${orderId}/amazon-confirm-shipment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            carrierCode: carrierToSubmit,
+            carrierName: carrierToSubmit,
+            trackingNumber: awbToSubmit,
+          }),
+        },
+      );
+
+      const data = await res.json();
+      if (data.success || data.warning) {
+        setAmzConfirmResult(
+          data.message || `Confirmed on Amazon with AWB ${awbToSubmit}!`,
+        );
+        router.refresh();
+      } else {
+        setAmzConfirmError(
+          data.error || data.message || "Failed to confirm shipment on Amazon.",
+        );
+      }
+    } catch (err: any) {
+      setAmzConfirmError(
+        err.message || "Network error confirming Amazon shipment.",
+      );
+    } finally {
+      setIsConfirmingAmzShipment(false);
+    }
+  };
 
   const isAmazon = Boolean(
     isAmazonProp || channel === "AMAZON" || amazonOrderId,
@@ -1209,6 +1267,293 @@ export default function OrderStatusControls({
             <style>{`
             @keyframes spin { to { transform: rotate(360deg); } }
           `}</style>
+
+            {/* ── Amazon Self-Ship (MFN) & Shiprocket Fulfillment Studio ────────── */}
+            <div
+              style={{
+                marginTop: "24px",
+                paddingTop: "20px",
+                borderTop: "1px dashed rgba(196,160,90,0.2)",
+              }}
+            >
+              <div style={{ marginBottom: "14px" }}>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "#6b8dd6",
+                    margin: 0,
+                  }}
+                >
+                  🚀 Amazon Self-Ship (MFN) &amp; Shiprocket Integration
+                </p>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: "9px",
+                    color: "var(--muted, #888)",
+                    marginTop: "4px",
+                  }}
+                >
+                  If this is a Self-Ship order, book via Shiprocket to
+                  auto-transmit AWB tracking back to Amazon SP-API, or enter
+                  tracking details manually.
+                </p>
+              </div>
+
+              {/* Success / Warning banner */}
+              {amzConfirmResult && (
+                <div
+                  style={{
+                    background: "rgba(74,222,128,0.08)",
+                    border: "1px solid rgba(74,222,128,0.3)",
+                    borderRadius: "2px",
+                    padding: "12px 16px",
+                    marginBottom: "16px",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    color: "#4ade80",
+                  }}
+                >
+                  ✅ {amzConfirmResult}
+                </div>
+              )}
+
+              {/* Error banner */}
+              {amzConfirmError && (
+                <div
+                  style={{
+                    background: "rgba(248,113,113,0.08)",
+                    border: "1px solid rgba(248,113,113,0.3)",
+                    borderRadius: "2px",
+                    padding: "12px 16px",
+                    marginBottom: "16px",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    color: "#f87171",
+                  }}
+                >
+                  ⚠ {amzConfirmError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Option A: 1-Click Shiprocket Booking + SP-API Sync */}
+                <div
+                  style={{
+                    background: "rgba(107,141,214,0.04)",
+                    border: "1px solid rgba(107,141,214,0.2)",
+                    borderRadius: "2px",
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: "9px",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        color: "#6b8dd6",
+                        margin: "0 0 6px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Option A: 1-Click Shiprocket &amp; Amazon SP-API Sync
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "sans-serif",
+                        fontSize: "12px",
+                        color: "var(--muted, #aaa)",
+                        lineHeight: "1.4",
+                        margin: 0,
+                      }}
+                    >
+                      Creates shipment on Shiprocket, assigns courier AWB, and
+                      automatically pushes the Tracking ID to Amazon Seller
+                      Central via SP-API.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      startTransition(async () => {
+                        const result = await retryLogisticsSync(orderId);
+                        if (result.success) {
+                          const awb = result.trackingNumber || result.awbNumber;
+                          if (awb) {
+                            await handleConfirmAmazonShipment(
+                              awb,
+                              "Shiprocket",
+                            );
+                          }
+                        } else {
+                          setAmzConfirmError(
+                            "Shiprocket Booking Error: " +
+                              (result.error || "Failed"),
+                          );
+                        }
+                      });
+                    }}
+                    disabled={isPending || isConfirmingAmzShipment}
+                    style={{
+                      marginTop: "16px",
+                      width: "100%",
+                      padding: "10px 14px",
+                      background: "rgba(107,141,214,0.15)",
+                      border: "1px solid rgba(107,141,214,0.4)",
+                      color: "#6b8dd6",
+                      fontFamily: "monospace",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      borderRadius: "2px",
+                      cursor:
+                        isPending || isConfirmingAmzShipment
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity: isPending || isConfirmingAmzShipment ? 0.6 : 1,
+                    }}
+                  >
+                    {isPending || isConfirmingAmzShipment
+                      ? "Booking & Syncing…"
+                      : "🚀 Book Shiprocket & Confirm on Amazon"}
+                  </button>
+                </div>
+
+                {/* Option B: Manual Amazon SP-API Shipment Confirmation */}
+                <div
+                  style={{
+                    background: "rgba(196,160,90,0.04)",
+                    border: "1px solid rgba(196,160,90,0.2)",
+                    borderRadius: "2px",
+                    padding: "16px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: "9px",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: "#c4a05a",
+                      margin: "0 0 10px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Option B: Manual Courier AWB to Amazon SP-API
+                  </p>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                    }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontFamily: "monospace",
+                          fontSize: "8px",
+                          color: "var(--muted, #888)",
+                          textTransform: "uppercase",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Carrier Name
+                      </label>
+                      <input
+                        type="text"
+                        value={manualCarrier}
+                        onChange={(e) => setManualCarrier(e.target.value)}
+                        placeholder="e.g. Shiprocket, BlueDart, Delhivery, DTDC, India Post"
+                        style={{
+                          width: "100%",
+                          background: "var(--background, #000)",
+                          border: "1px solid var(--border, #333)",
+                          color: "var(--primary, #fff)",
+                          padding: "6px 10px",
+                          fontFamily: "monospace",
+                          fontSize: "12px",
+                          borderRadius: "2px",
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontFamily: "monospace",
+                          fontSize: "8px",
+                          color: "var(--muted, #888)",
+                          textTransform: "uppercase",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Tracking ID / AWB Number
+                      </label>
+                      <input
+                        type="text"
+                        value={manualAwb}
+                        onChange={(e) => setManualAwb(e.target.value)}
+                        placeholder="Enter AWB / Tracking number"
+                        style={{
+                          width: "100%",
+                          background: "var(--background, #000)",
+                          border: "1px solid var(--border, #333)",
+                          color: "var(--primary, #fff)",
+                          padding: "6px 10px",
+                          fontFamily: "monospace",
+                          fontSize: "12px",
+                          borderRadius: "2px",
+                        }}
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => handleConfirmAmazonShipment()}
+                      disabled={isConfirmingAmzShipment || !manualAwb.trim()}
+                      style={{
+                        marginTop: "4px",
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: "rgba(196,160,90,0.15)",
+                        border: "1px solid rgba(196,160,90,0.4)",
+                        color: "#c4a05a",
+                        fontFamily: "monospace",
+                        fontSize: "10px",
+                        fontWeight: "bold",
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        borderRadius: "2px",
+                        cursor:
+                          isConfirmingAmzShipment || !manualAwb.trim()
+                            ? "not-allowed"
+                            : "pointer",
+                        opacity:
+                          isConfirmingAmzShipment || !manualAwb.trim()
+                            ? 0.6
+                            : 1,
+                      }}
+                    >
+                      {isConfirmingAmzShipment
+                        ? "Transmitting to Amazon SP-API…"
+                        : "Confirm Shipment on Amazon (SP-API)"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

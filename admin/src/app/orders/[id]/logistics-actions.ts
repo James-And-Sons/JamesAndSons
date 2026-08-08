@@ -278,7 +278,7 @@ export async function retryLogisticsSync(orderId: string) {
     });
 
     revalidatePath(`/orders/${orderId}`);
-    return { success: true };
+    return { success: true, trackingNumber, awbNumber };
   } catch (error: any) {
     console.error("retryLogisticsSync error:", error);
     // Update the error note on database
