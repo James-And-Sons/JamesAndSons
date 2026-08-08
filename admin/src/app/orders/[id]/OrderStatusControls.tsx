@@ -297,6 +297,7 @@ export default function OrderStatusControls({
     rate: number;
     courierName: string;
     etd: string;
+    availableCouriers?: Array<{ name: string; rate: number; etd: string }>;
   } | null>(null);
 
   // Option B (Manual AWB) toggle
@@ -516,6 +517,7 @@ export default function OrderStatusControls({
         rate: res.rate,
         courierName: res.courierName || "Best Partner",
         etd: res.etd || "3-5 Days",
+        availableCouriers: res.availableCouriers || [],
       });
     }
   };

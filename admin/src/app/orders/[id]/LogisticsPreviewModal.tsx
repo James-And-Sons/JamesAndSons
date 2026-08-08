@@ -36,7 +36,12 @@ interface LogisticsPreviewModalProps {
   shippingState?: string | null;
   shippingPincode?: string | null;
   isLoading?: boolean;
-  freightEstimate?: { rate: number; courierName: string; etd: string } | null;
+  freightEstimate?: {
+    rate: number;
+    courierName: string;
+    etd: string;
+    availableCouriers?: Array<{ name: string; rate: number; etd: string }>;
+  } | null;
   onEstimateFreight?: (dims: PackageDims) => Promise<void>;
 }
 
@@ -63,14 +68,18 @@ export default function LogisticsPreviewModal({
     "EARLIEST" | "TOMORROW" | "CUSTOM"
   >("EARLIEST");
 
-  // Keep internal state in sync with props when opened
+  // Keep internal state in sync with props when opened & auto-fetch live courier rates
   useEffect(() => {
     if (open) {
       setDims(initialDims);
       setPickupDate(initialPickupDate);
       setBoxCount(initialBoxCount);
+      if (onEstimateFreight && !freightEstimate) {
+        setEstimating(true);
+        onEstimateFreight(initialDims).finally(() => setEstimating(false));
+      }
     }
-  }, [open, initialDims, initialPickupDate, initialBoxCount]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -341,52 +350,103 @@ export default function LogisticsPreviewModal({
                     type="button"
                     onClick={handleEstimate}
                     disabled={estimating}
-                    className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                    className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-1 bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 rounded-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
                   >
                     <CreditCard className="w-3 h-3" />
                     <span>
-                      {estimating ? "Estimating Cost…" : "Check Live Rate"}
+                      {estimating ? "Refreshing Rates…" : "Refresh Rates"}
                     </span>
                   </button>
                 )}
               </div>
 
-              {freightEstimate ? (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xs flex flex-wrap justify-between items-center gap-3">
-                  <div>
-                    <span className="font-mono text-[8px] text-muted uppercase block">
-                      Auto-Selected Courier
-                    </span>
-                    <span className="font-mono text-[13px] text-emerald-400 font-bold">
-                      {freightEstimate.courierName}
-                    </span>
+              {estimating ? (
+                <div className="p-4 bg-surface border border-border rounded-xs text-left font-mono text-[10px] text-accent flex items-center gap-2">
+                  <Truck className="w-4 h-4 animate-bounce text-accent" />
+                  <span>
+                    Fetching live courier partner rates &amp; ETDs from
+                    Shiprocket API…
+                  </span>
+                </div>
+              ) : freightEstimate ? (
+                <div className="space-y-2">
+                  {/* Selected / Recommended Main Courier Banner */}
+                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xs flex flex-wrap justify-between items-center gap-3">
+                    <div>
+                      <span className="font-mono text-[8px] text-muted uppercase block">
+                        Recommended Partner
+                      </span>
+                      <span className="font-mono text-[13px] text-emerald-400 font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>{freightEstimate.courierName}</span>
+                      </span>
+                    </div>
+                    <div className="text-center">
+                      <span className="font-mono text-[8px] text-muted uppercase block">
+                        Est. Delivery
+                      </span>
+                      <span className="font-mono text-[11px] text-accent font-bold">
+                        {freightEstimate.etd}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono text-[8px] text-muted uppercase block">
+                        Freight Charge
+                      </span>
+                      <span className="font-mono text-[18px] text-emerald-400 font-bold">
+                        ₹{freightEstimate.rate}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <span className="font-mono text-[8px] text-muted uppercase block">
-                      Estimated Delivery
-                    </span>
-                    <span className="font-mono text-[11px] text-amber-300 font-bold">
-                      {freightEstimate.etd}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono text-[8px] text-muted uppercase block">
-                      Freight Charge
-                    </span>
-                    <span className="font-mono text-[18px] text-emerald-400 font-bold">
-                      ₹{freightEstimate.rate}
-                    </span>
-                  </div>
+
+                  {/* All Available Couriers List */}
+                  {freightEstimate.availableCouriers &&
+                    freightEstimate.availableCouriers.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <span className="font-mono text-[8px] uppercase tracking-wider text-muted block">
+                          Available Courier Options (
+                          {freightEstimate.availableCouriers.length})
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {freightEstimate.availableCouriers.map((c, idx) => (
+                            <div
+                              key={idx}
+                              className={`p-2.5 border rounded-xs font-mono text-[10px] flex items-center justify-between transition-colors ${
+                                c.name === freightEstimate.courierName
+                                  ? "border-emerald-500/40 bg-emerald-500/5 text-primary"
+                                  : "border-border bg-surface text-muted"
+                              }`}
+                            >
+                              <div>
+                                <span className="font-bold text-primary block">
+                                  {c.name}
+                                </span>
+                                <span className="text-[9px] text-muted block">
+                                  ETD: {c.etd}
+                                </span>
+                              </div>
+                              <span className="font-bold text-accent">
+                                ₹{c.rate}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div className="p-3 bg-surface border border-border rounded-xs text-left font-mono text-[10px] text-muted flex items-center justify-between">
                   <span>
                     Auto-selected via Shiprocket Serviceability API (Delhivery /
-                    BlueDart / Best Rate)
+                    BlueDart / Xpressbees)
                   </span>
-                  <span className="text-amber-400">
-                    Rate calculated at booking
-                  </span>
+                  <button
+                    type="button"
+                    onClick={handleEstimate}
+                    className="text-accent underline font-bold cursor-pointer"
+                  >
+                    Check Live Rates ↗
+                  </button>
                 </div>
               )}
             </div>
