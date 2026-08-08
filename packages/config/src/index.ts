@@ -123,7 +123,7 @@ export const BRAND_CONFIG: IBrandConfig = {
   phone: process.env.BRAND_PHONE || "+91 98765 43210",
   address:
     process.env.BRAND_ADDRESS ||
-    "Peer matha, parav dubey, Aligarh, Uttar Pradesh, India- 202001",
+    "CNI Church Compound Civil Lines, Aligarh, Uttar Pradesh India - 202001",
   social: {
     instagram: "https://instagram.com/jamesandsons",
     pinterest: "https://pin.it/1KZxSIww1",

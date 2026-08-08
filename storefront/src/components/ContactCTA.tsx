@@ -223,9 +223,9 @@ export default function ContactCTA() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Peer matha, parav dubey,
+                  CNI Church Compound Civil Lines,
                   <br />
-                  Aligarh, Uttar Pradesh, India- 202001
+                  Aligarh, Uttar Pradesh India - 202001
                 </div>
               </div>
             </div>

@@ -17,7 +17,8 @@ const DEFAULT_CONFIGS: Record<string, any> = {
     currencyCode: "INR",
     defaultGstRate: 18.0,
     phone: "+91 9045 808115",
-    address: "Peer matha, parav dubey, Aligarh, Uttar Pradesh, India- 202001",
+    address:
+      "CNI Church Compound Civil Lines, Aligarh, Uttar Pradesh India - 202001",
     gstin: "09AABCJ8243A1ZX",
   },
   DOC_DOWNLOAD_PREFS: {

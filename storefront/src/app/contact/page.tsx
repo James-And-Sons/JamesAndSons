@@ -4,7 +4,7 @@ import ContactClient from "./ContactClient";
 export const metadata: Metadata = {
   title: "Contact Concierge | James & Sons",
   description:
-    "Reach our luxury illumination customer service and design desks at Peer matha, parav dubey, Aligarh, Uttar Pradesh, India- 202001. Access tickets or launch our live chat help desk.",
+    "Reach our luxury illumination customer service and design desks at CNI Church Compound Civil Lines, Aligarh, Uttar Pradesh India - 202001. Access tickets or launch our live chat help desk.",
 };
 
 export default function ContactPage() {
