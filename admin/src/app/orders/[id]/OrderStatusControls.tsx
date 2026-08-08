@@ -15,6 +15,7 @@ import {
   bookShiprocketPickupAction,
   getShiprocketLabelAction,
   getShiprocketDocumentUrlsAction,
+  estimateShiprocketFreightAction,
 } from "./logistics-actions";
 
 const STATUS_OPTIONS = [
@@ -335,6 +336,35 @@ export default function OrderStatusControls({
     if (d.getHours() >= 14) d.setDate(d.getDate() + 1);
     return d.toISOString().split("T")[0];
   });
+  const [freightEstimate, setFreightEstimate] = useState<{
+    rate: number;
+    courierName: string;
+    etd: string;
+  } | null>(null);
+  const [isEstimatingFreight, setIsEstimatingFreight] = useState(false);
+
+  const handleEstimateFreight = async () => {
+    setIsEstimatingFreight(true);
+    const res = await estimateShiprocketFreightAction(orderId, {
+      deliveryPincode: shippingPincode || "688003",
+      weight: pkgWeight,
+      length: pkgLength,
+      width: pkgWidth,
+      height: pkgHeight,
+    });
+    setIsEstimatingFreight(false);
+    if (res.success && res.rate) {
+      setFreightEstimate({
+        rate: res.rate,
+        courierName: res.courierName || "Delhivery Surface",
+        etd: res.etd || "3-5 Days",
+      });
+    } else {
+      alert(
+        "Freight Rate Calculation: " + (res.error || "Pincode unserviceable"),
+      );
+    }
+  };
 
   const handleBookShiprocketPickup = async () => {
     setIsBookingPickup(true);
@@ -1141,6 +1171,297 @@ export default function OrderStatusControls({
                     </div>
                   </div>
                 )}
+
+                {/* ── Interactive Package Specs, Pickup Schedule & Freight Rate Studio Panel ── */}
+                {status !== "CANCELLED" &&
+                  status !== "SHIPPED" &&
+                  status !== "DELIVERED" &&
+                  status !== "RETURNED" && (
+                    <div
+                      style={{
+                        background: "rgba(0,0,0,0.4)",
+                        border: "1px solid rgba(107,141,214,0.2)",
+                        borderRadius: "2px",
+                        padding: "14px",
+                        marginBottom: "14px",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "9px",
+                          letterSpacing: "0.15em",
+                          textTransform: "uppercase",
+                          color: "#6b8dd6",
+                          margin: "0 0 10px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        📦 Package Specs, Schedule &amp; Freight Studio
+                      </p>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                          gap: "8px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              fontFamily: "monospace",
+                              fontSize: "7.5px",
+                              color: "var(--muted, #888)",
+                              textTransform: "uppercase",
+                              marginBottom: "2px",
+                            }}
+                          >
+                            Weight (kg)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={pkgWeight}
+                            onChange={(e) =>
+                              setPkgWeight(parseFloat(e.target.value) || 0.1)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              background: "#111",
+                              border: "1px solid rgba(107,141,214,0.3)",
+                              color: "#fff",
+                              fontFamily: "monospace",
+                              fontSize: "11px",
+                              borderRadius: "2px",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              fontFamily: "monospace",
+                              fontSize: "7.5px",
+                              color: "var(--muted, #888)",
+                              textTransform: "uppercase",
+                              marginBottom: "2px",
+                            }}
+                          >
+                            Length (cm)
+                          </label>
+                          <input
+                            type="number"
+                            value={pkgLength}
+                            onChange={(e) =>
+                              setPkgLength(parseInt(e.target.value) || 10)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              background: "#111",
+                              border: "1px solid rgba(107,141,214,0.3)",
+                              color: "#fff",
+                              fontFamily: "monospace",
+                              fontSize: "11px",
+                              borderRadius: "2px",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              fontFamily: "monospace",
+                              fontSize: "7.5px",
+                              color: "var(--muted, #888)",
+                              textTransform: "uppercase",
+                              marginBottom: "2px",
+                            }}
+                          >
+                            Width (cm)
+                          </label>
+                          <input
+                            type="number"
+                            value={pkgWidth}
+                            onChange={(e) =>
+                              setPkgWidth(parseInt(e.target.value) || 10)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              background: "#111",
+                              border: "1px solid rgba(107,141,214,0.3)",
+                              color: "#fff",
+                              fontFamily: "monospace",
+                              fontSize: "11px",
+                              borderRadius: "2px",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              fontFamily: "monospace",
+                              fontSize: "7.5px",
+                              color: "var(--muted, #888)",
+                              textTransform: "uppercase",
+                              marginBottom: "2px",
+                            }}
+                          >
+                            Height (cm)
+                          </label>
+                          <input
+                            type="number"
+                            value={pkgHeight}
+                            onChange={(e) =>
+                              setPkgHeight(parseInt(e.target.value) || 10)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              background: "#111",
+                              border: "1px solid rgba(107,141,214,0.3)",
+                              color: "#fff",
+                              fontFamily: "monospace",
+                              fontSize: "11px",
+                              borderRadius: "2px",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "8px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              fontFamily: "monospace",
+                              fontSize: "7.5px",
+                              color: "var(--muted, #888)",
+                              textTransform: "uppercase",
+                              marginBottom: "2px",
+                            }}
+                          >
+                            Multi-Box / Box Count
+                          </label>
+                          <select
+                            value={boxCount}
+                            onChange={(e) =>
+                              setBoxCount(parseInt(e.target.value))
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              background: "#111",
+                              border: "1px solid rgba(107,141,214,0.3)",
+                              color: "#fff",
+                              fontFamily: "monospace",
+                              fontSize: "10px",
+                              borderRadius: "2px",
+                            }}
+                          >
+                            <option value={1}>1 Box (Single Package)</option>
+                            <option value={2}>2 Boxes (Multi-Package)</option>
+                            <option value={3}>3 Boxes (Multi-Package)</option>
+                            <option value={4}>4 Boxes (Multi-Package)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              fontFamily: "monospace",
+                              fontSize: "7.5px",
+                              color: "var(--muted, #888)",
+                              textTransform: "uppercase",
+                              marginBottom: "2px",
+                            }}
+                          >
+                            Pickup Date Schedule
+                          </label>
+                          <input
+                            type="date"
+                            value={pickupDate}
+                            onChange={(e) => setPickupDate(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "5px 8px",
+                              background: "#111",
+                              border: "1px solid rgba(107,141,214,0.3)",
+                              color: "#fff",
+                              fontFamily: "monospace",
+                              fontSize: "10px",
+                              borderRadius: "2px",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Estimate Freight Rate Button */}
+                      <button
+                        type="button"
+                        onClick={handleEstimateFreight}
+                        disabled={isEstimatingFreight}
+                        style={{
+                          width: "100%",
+                          padding: "6px 10px",
+                          background: "rgba(107,141,214,0.12)",
+                          border: "1px solid rgba(107,141,214,0.3)",
+                          color: "#6b8dd6",
+                          fontFamily: "monospace",
+                          fontSize: "8.5px",
+                          fontWeight: "bold",
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          borderRadius: "2px",
+                          cursor: isEstimatingFreight
+                            ? "not-allowed"
+                            : "pointer",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        {isEstimatingFreight
+                          ? "Calculating Courier Rates…"
+                          : "⚡ Calculate Shipping Cost / Freight Rate"}
+                      </button>
+
+                      {freightEstimate && (
+                        <div
+                          style={{
+                            background: "rgba(74,222,128,0.08)",
+                            border: "1px solid rgba(74,222,128,0.3)",
+                            padding: "8px 10px",
+                            borderRadius: "2px",
+                            fontFamily: "monospace",
+                            fontSize: "10px",
+                            color: "#4ade80",
+                            textAlign: "center",
+                          }}
+                        >
+                          💸 Estimated Freight:{" "}
+                          <strong>₹{freightEstimate.rate.toFixed(2)}</strong>{" "}
+                          via {freightEstimate.courierName} (
+                          {freightEstimate.etd})
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                 {/* Allow pickup booking for any active pre-shipping order (PAID, PROCESSING, PENDING) */}
                 {status !== "CANCELLED" &&

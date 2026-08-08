@@ -584,7 +584,128 @@ export async function bookAmazonMfnShipmentAction(
     console.error("bookAmazonMfnShipmentAction error:", error);
     return {
       success: false,
-      error: error.message || "Failed to book Amazon shipment",
+      error: error.message || "Failed to book Amazon MFN shipment",
     };
+  }
+}
+
+export async function updateOrderCustomerAddressAction(
+  orderId: string,
+  data: {
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    shippingAddress?: string;
+    shippingCity?: string;
+    shippingState?: string;
+    shippingPincode?: string;
+    gstin?: string;
+    companyName?: string;
+  },
+) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true },
+    });
+    if (!order) return { success: false, error: "Order not found" };
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        ...(data.shippingAddress
+          ? { shippingAddress: data.shippingAddress }
+          : {}),
+        ...(data.customerPhone ? { shippingPhone: data.customerPhone } : {}),
+        ...(data.shippingCity ? { shippingCity: data.shippingCity } : {}),
+        ...(data.shippingState ? { shippingState: data.shippingState } : {}),
+        ...(data.shippingPincode
+          ? { shippingPincode: data.shippingPincode }
+          : {}),
+        ...(data.gstin !== undefined ? { gstin: data.gstin } : {}),
+        ...(data.companyName !== undefined
+          ? { companyName: data.companyName }
+          : {}),
+      },
+    });
+
+    if (data.customerName || data.customerEmail || data.customerPhone) {
+      const parts = (data.customerName || "").trim().split(" ");
+      const firstName = parts[0] || order.user.firstName || "Customer";
+      const lastName = parts.slice(1).join(" ") || order.user.lastName || "";
+
+      await prisma.user.update({
+        where: { id: order.userId },
+        data: {
+          ...(data.customerName ? { firstName, lastName } : {}),
+          ...(data.customerEmail ? { email: data.customerEmail } : {}),
+          ...(data.customerPhone ? { phone: data.customerPhone } : {}),
+        },
+      });
+    }
+
+    revalidatePath(`/orders/${orderId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error("updateOrderCustomerAddressAction error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function estimateShiprocketFreightAction(
+  orderId: string,
+  specs: {
+    deliveryPincode: string;
+    weight: number;
+    length: number;
+    width: number;
+    height: number;
+  },
+) {
+  try {
+    const { getShiprocketToken } = await import("@james-andsons/shiprocket");
+    const token = await getShiprocketToken();
+    if (!token) return { success: false, error: "Shiprocket auth failed" };
+
+    const pickupPincode = "202001";
+    const res = await fetch(
+      `https://apiv2.shiprocket.in/v1/external/courier/serviceability?pickup_postcode=${pickupPincode}&delivery_postcode=${specs.deliveryPincode}&weight=${specs.weight}&cod=0&length=${specs.length}&breadth=${specs.width}&height=${specs.height}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: "Courier rate serviceability request failed",
+      };
+    }
+
+    const data = await res.json();
+    const couriers = data.data?.available_courier_companies || [];
+    if (couriers.length === 0) {
+      return {
+        success: false,
+        error: "No courier serviceability for this pincode",
+      };
+    }
+
+    const recommended = couriers[0];
+    return {
+      success: true,
+      courierName: recommended.courier_name || recommended.sr_courier_name,
+      rate: Number(recommended.rate || recommended.freight_charge || 285.5),
+      etd: recommended.etd || "3-5 Business Days",
+      availableCouriers: couriers.slice(0, 5).map((c: any) => ({
+        name: c.courier_name,
+        rate: Number(c.rate || 0),
+        etd: c.etd,
+      })),
+    };
+  } catch (err: any) {
+    console.error("estimateShiprocketFreightAction error:", err);
+    return { success: false, error: err.message };
   }
 }

@@ -6,6 +6,8 @@ import EditableShippingAddress from "./EditableShippingAddress";
 
 import { requireAdmin } from "@/lib/auth";
 
+import CustomerAddressEditor from "./CustomerAddressEditor";
+
 function formatPrice(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;
 }
@@ -38,6 +40,8 @@ export default async function OrderDetailPage(props: {
       shippingState: true,
       shippingPincode: true,
       shippingPhone: true,
+      companyName: true,
+      gstin: true,
       user: {
         select: {
           firstName: true,
@@ -197,6 +201,24 @@ export default async function OrderDetailPage(props: {
             height: i.product.height,
           },
         }))}
+      />
+
+      {/* ── Interactive Customer & Shipping Address Studio ─────────────────── */}
+      <CustomerAddressEditor
+        orderId={order.id}
+        initialName={
+          `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim() ||
+          "Customer"
+        }
+        initialEmail={order.user.email}
+        initialPhone={order.user.phone || order.shippingPhone}
+        initialAddress={order.shippingAddress}
+        initialCity={order.shippingCity}
+        initialState={order.shippingState}
+        initialPincode={order.shippingPincode}
+        initialCompanyName={order.companyName || order.user.company?.name}
+        initialGstin={order.gstin || order.user.company?.gstin}
+        isAmazon={order.channel === "AMAZON" || Boolean(order.amazonOrderId)}
       />
 
       {/* ── Customer & Logistics Details Grid ─────────────────────────────── */}
