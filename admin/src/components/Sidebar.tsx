@@ -26,6 +26,11 @@ import {
   FileSpreadsheet,
   Mail,
   Bell,
+  User,
+  ArrowLeft,
+  Radio,
+  CreditCard,
+  FileCheck,
 } from "lucide-react";
 
 // Persistent module-level cache to prevent flickering / unmounting resets
@@ -54,7 +59,7 @@ function Sidebar({
   const config = useTenantConfig();
   const pathname = usePathname();
   const router = useRouter();
-  const { productFormState, isPageDirty } = useSidebar();
+  const { productFormState, orderDetailState, isPageDirty } = useSidebar();
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const isDirty = productFormState?.isDirty || isPageDirty;
@@ -519,6 +524,205 @@ function Sidebar({
     );
   };
 
+  const renderOrderFormOutline = () => {
+    if (!orderDetailState) return null;
+    const {
+      orderId,
+      orderNumber,
+      status,
+      totalAmount,
+      customerName,
+      itemCount,
+      awbNumber,
+      shiprocketLabelUrl,
+      manifestUrl,
+      shiprocketInvoiceUrl,
+    } = orderDetailState;
+
+    const navSections = [
+      { id: "customer-info", label: "Customer Details", icon: User },
+      { id: "fulfillment-studio", label: "Fulfillment Studio", icon: Truck },
+      { id: "order-items", label: `Order Items (${itemCount})`, icon: Package },
+      { id: "payment-summary", label: "Financial Summary", icon: CreditCard },
+      { id: "compliance-documents", label: "Documents Studio", icon: FileText },
+      { id: "live-tracking", label: "Live Tracking", icon: Radio },
+    ];
+
+    const scrollToSection = (id: string) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Back Link */}
+        <Link
+          href="/orders"
+          onClick={handleNavClick}
+          className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted hover:text-accent transition-colors px-1"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>All Orders</span>
+        </Link>
+
+        {/* Order Header Summary Card */}
+        <div className="bg-surface border border-border p-3.5 rounded-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[13px] font-bold text-primary">
+              {orderNumber}
+            </span>
+            <span className="font-mono text-[9px] uppercase px-2 py-0.5 bg-amber-500/5 border border-amber-500/20 text-amber-400/90 font-bold rounded-xs">
+              {status}
+            </span>
+          </div>
+          {customerName && (
+            <p className="font-serif text-[12px] text-muted truncate m-0">
+              {customerName}
+            </p>
+          )}
+          <div className="flex justify-between items-center pt-1.5 border-t border-border/60">
+            <span className="font-mono text-[9px] text-muted uppercase">
+              Total Value
+            </span>
+            <span className="font-mono text-[12px] font-bold text-accent">
+              ₹{totalAmount.toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+
+        {/* Section Jump Nav */}
+        <div className="space-y-1">
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted px-2 py-1 m-0">
+            Quick Jump Nav
+          </p>
+          {navSections.map((sec) => {
+            const Icon = sec.icon;
+            return (
+              <button
+                key={sec.id}
+                onClick={() => scrollToSection(sec.id)}
+                className="w-full text-left font-mono text-[11px] text-muted hover:text-accent hover:bg-accent/10 px-3 py-2 rounded-xs transition-colors flex items-center gap-2 cursor-pointer group"
+              >
+                <Icon className="w-3.5 h-3.5 text-muted group-hover:text-accent flex-shrink-0" />
+                <span className="truncate">{sec.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Downloadable Documents List */}
+        <div className="pt-2 border-t border-border space-y-1">
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted px-2 py-1 m-0">
+            Download Documents
+          </p>
+
+          {/* 1. GST Tax Invoice */}
+          <a
+            href={`/api/orders/${orderId}/invoice`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-accent hover:text-accent-hover hover:bg-accent/10 px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group"
+          >
+            <span className="flex items-center gap-2 truncate">
+              <FileText className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+              <span>GST Tax Invoice</span>
+            </span>
+            <span className="text-[10px]">↗</span>
+          </a>
+
+          {/* 2. Shipping Label */}
+          {shiprocketLabelUrl ? (
+            <a
+              href={shiprocketLabelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-accent hover:text-accent-hover hover:bg-accent/10 px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Tag className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                <span>Shipping Label</span>
+              </span>
+              <span className="text-[10px]">↗</span>
+            </a>
+          ) : (
+            <button
+              onClick={() => scrollToSection("compliance-documents")}
+              className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-muted hover:text-primary hover:bg-surface-muted px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group cursor-pointer"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Tag className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                <span>Shipping Label</span>
+              </span>
+              <span className="text-[9px] opacity-60">
+                {awbNumber ? "Fetch" : "Pending"}
+              </span>
+            </button>
+          )}
+
+          {/* 3. Pickup Manifest */}
+          {manifestUrl ? (
+            <a
+              href={manifestUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-accent hover:text-accent-hover hover:bg-accent/10 px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Package className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                <span>Pickup Manifest</span>
+              </span>
+              <span className="text-[10px]">↗</span>
+            </a>
+          ) : (
+            <button
+              onClick={() => scrollToSection("compliance-documents")}
+              className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-muted hover:text-primary hover:bg-surface-muted px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group cursor-pointer"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Package className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                <span>Pickup Manifest</span>
+              </span>
+              <span className="text-[9px] opacity-60">
+                {awbNumber ? "Fetch" : "Pending"}
+              </span>
+            </button>
+          )}
+
+          {/* 4. Courier Invoice */}
+          {shiprocketInvoiceUrl ? (
+            <a
+              href={shiprocketInvoiceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-accent hover:text-accent-hover hover:bg-accent/10 px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <FileCheck className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                <span>Courier Invoice</span>
+              </span>
+              <span className="text-[10px]">↗</span>
+            </a>
+          ) : (
+            <button
+              onClick={() => scrollToSection("compliance-documents")}
+              className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-muted hover:text-primary hover:bg-surface-muted px-3 py-1.5 rounded-xs transition-colors flex items-center justify-between group cursor-pointer"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <FileCheck className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                <span>Courier Invoice</span>
+              </span>
+              <span className="text-[9px] opacity-60">
+                {awbNumber ? "Fetch" : "Pending"}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderProductFormOutline = () => {
     if (!productFormState) return null;
     const {
@@ -820,6 +1024,8 @@ function Sidebar({
         >
           {productFormState ? (
             renderProductFormOutline()
+          ) : orderDetailState ? (
+            renderOrderFormOutline()
           ) : (
             <>
               {renderLink("Dashboard", "/", null, LayoutDashboard)}

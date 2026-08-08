@@ -235,20 +235,20 @@ export default function OrdersTableClient({
     const s = status.toUpperCase();
     if (["PAID", "PROCESSING", "UNSHIPPED", "PENDING"].includes(s)) {
       return (
-        <span className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
+        <span className="px-2.5 py-1 bg-amber-500/5 border border-amber-500/20 text-amber-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
           Ready for Pickup
         </span>
       );
     }
     if (["SHIPPED", "DELIVERED"].includes(s)) {
       return (
-        <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
+        <span className="px-2.5 py-1 bg-emerald-500/5 border border-emerald-500/20 text-emerald-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
           Shipped
         </span>
       );
     }
     return (
-      <span className="px-2.5 py-1 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
+      <span className="px-2.5 py-1 bg-rose-500/5 border border-rose-500/20 text-rose-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
         Cancelled
       </span>
     );
@@ -375,7 +375,7 @@ export default function OrdersTableClient({
                 onClick={() => setChannelFilter(c.id)}
                 className={`px-3 py-1.5 font-mono text-[9px] uppercase tracking-wider rounded-xs transition-all ${
                   channelFilter === c.id
-                    ? "bg-[#C97E6A] text-white font-bold"
+                    ? "bg-accent text-obsidian font-semibold"
                     : "text-muted hover:text-primary"
                 }`}
               >
@@ -473,15 +473,15 @@ export default function OrdersTableClient({
                   </td>
                   <td className="py-4 px-6">
                     {r.channel === "AMAZON" ? (
-                      <span className="px-2 py-0.5 bg-orange-500/10 border border-orange-500/30 text-orange-400 font-mono text-[9px] uppercase tracking-wider rounded-xs">
+                      <span className="px-2 py-0.5 bg-amber-500/5 border border-amber-500/20 text-amber-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
                         ▲ Amazon.in
                       </span>
                     ) : r.channel === "B2B" ? (
-                      <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/30 text-purple-400 font-mono text-[9px] uppercase tracking-wider rounded-xs">
+                      <span className="px-2 py-0.5 bg-purple-500/5 border border-purple-500/20 text-purple-300/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
                         🏢 B2B
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[9px] uppercase tracking-wider rounded-xs">
+                      <span className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/20 text-sky-300/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
                         🛍️ D2C
                       </span>
                     )}

@@ -52,6 +52,8 @@ interface AmazonOrder {
   NumberOfItemsShipped: number;
   NumberOfItemsUnshipped: number;
   FulfillmentChannel: string; // MFN (merchant) or AFN (Amazon)
+  // Easy Ship orders have this field; absent = Self-Ship MFN
+  EasyShipShipmentStatus?: string; // PendingPickUp | PickedUp | OutForDelivery | Delivered | ...
 }
 
 // ---------------------------------------------------------------------------
@@ -197,15 +199,24 @@ export async function ingestAmazonOrder(
   });
 
   if (existing) {
+    // Also update fulfillment type if it was previously null (order re-synced after initial ingestion)
+    const updatedFulfillmentType =
+      amazonOrder.EasyShipShipmentStatus != null
+        ? "EASY_SHIP"
+        : existing.amazonFulfillmentType || "SELF_SHIP";
+
     if (
       existing.status !== mappedStatus ||
-      existing.amazonOrderStatus !== amzStatus
+      existing.amazonOrderStatus !== amzStatus ||
+      existing.easyShipStatus !== (amazonOrder.EasyShipShipmentStatus || null)
     ) {
       await prisma.order.update({
         where: { id: existing.id },
         data: {
           status: mappedStatus as any,
           amazonOrderStatus: amzStatus,
+          amazonFulfillmentType: updatedFulfillmentType,
+          easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
         },
       });
 
@@ -374,6 +385,12 @@ export async function ingestAmazonOrder(
     return null;
   }
 
+  // Determine fulfillment type from SP-API EasyShipShipmentStatus
+  // If EasyShipShipmentStatus exists → order is Amazon Easy Ship (ATS pickup)
+  // If absent → MFN Self-Ship (we book Shiprocket + push AWB)
+  const fulfillmentType =
+    amazonOrder.EasyShipShipmentStatus != null ? "EASY_SHIP" : "SELF_SHIP";
+
   // Create the JNS order
   const jnsOrder = await prisma.order.create({
     data: {
@@ -383,6 +400,8 @@ export async function ingestAmazonOrder(
       channel: "AMAZON",
       amazonOrderId: AmazonOrderId,
       amazonOrderStatus: amazonOrder.OrderStatus,
+      amazonFulfillmentType: fulfillmentType,
+      easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
 
       totalAmount,
       taxAmount,

@@ -392,14 +392,25 @@ export async function retryLogisticsSync(orderId: string) {
         order_id: order.orderNumber,
         order_date: order.createdAt.toISOString().split("T")[0],
         pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Primary",
-        billing_customer_name: order.user.firstName,
-        billing_last_name: order.user.lastName,
+        // Use order-level recipientName first (safe for Amazon placeholder users),
+        // fall back to actual user name for D2C orders
+        billing_customer_name: (
+          order.recipientName ||
+          order.user.firstName ||
+          "Customer"
+        ).split(" ")[0],
+        billing_last_name: order.recipientName
+          ? order.recipientName.split(" ").slice(1).join(" ")
+          : order.user.lastName || "",
         billing_address: addrStr,
         billing_city: cityStr,
         billing_pincode: pincodeStr,
         billing_state: stateStr,
         billing_country: "India",
-        billing_email: order.user.email.trim().toLowerCase(),
+        // Use order-level recipientEmail first to avoid sending placeholder emails to Shiprocket
+        billing_email: (order.recipientEmail || order.user.email)
+          .trim()
+          .toLowerCase(),
         billing_phone:
           (order.shippingPhone || order.user.phone || "9999999999")
             .replace(/\D/g, "")
@@ -606,20 +617,43 @@ export async function updateOrderCustomerAddressAction(
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { user: true },
+      select: { id: true, userId: true, channel: true },
     });
     if (!order) return { success: false, error: "Order not found" };
 
+    // ─── CRITICAL: Write EVERYTHING to the Order row only ────────────────────
+    // Never mutate the shared User row for Amazon/offline orders.
+    // All Amazon orders share the same placeholder User account
+    // (amazon-marketplace@jamesandsons.in). Writing to that User row
+    // would overwrite the customer name on ALL Amazon orders simultaneously —
+    // a legal and financial liability (wrong names on GST invoices, labels).
+    //
+    // recipientName / recipientEmail are per-order fields that isolate each
+    // order's customer identity. D2C Storefront orders also benefit from this
+    // since edits stay local to the order being edited.
+    // ─────────────────────────────────────────────────────────────────────────
     await prisma.order.update({
       where: { id: orderId },
       data: {
-        ...(data.shippingAddress
+        ...(data.customerName !== undefined
+          ? { recipientName: data.customerName.trim() || null }
+          : {}),
+        ...(data.customerEmail !== undefined
+          ? { recipientEmail: data.customerEmail.trim() || null }
+          : {}),
+        ...(data.customerPhone !== undefined
+          ? { shippingPhone: data.customerPhone.trim() || null }
+          : {}),
+        ...(data.shippingAddress !== undefined
           ? { shippingAddress: data.shippingAddress }
           : {}),
-        ...(data.customerPhone ? { shippingPhone: data.customerPhone } : {}),
-        ...(data.shippingCity ? { shippingCity: data.shippingCity } : {}),
-        ...(data.shippingState ? { shippingState: data.shippingState } : {}),
-        ...(data.shippingPincode
+        ...(data.shippingCity !== undefined
+          ? { shippingCity: data.shippingCity }
+          : {}),
+        ...(data.shippingState !== undefined
+          ? { shippingState: data.shippingState }
+          : {}),
+        ...(data.shippingPincode !== undefined
           ? { shippingPincode: data.shippingPincode }
           : {}),
         ...(data.gstin !== undefined ? { gstin: data.gstin } : {}),
@@ -628,21 +662,6 @@ export async function updateOrderCustomerAddressAction(
           : {}),
       },
     });
-
-    if (data.customerName || data.customerEmail || data.customerPhone) {
-      const parts = (data.customerName || "").trim().split(" ");
-      const firstName = parts[0] || order.user.firstName || "Customer";
-      const lastName = parts.slice(1).join(" ") || order.user.lastName || "";
-
-      await prisma.user.update({
-        where: { id: order.userId },
-        data: {
-          ...(data.customerName ? { firstName, lastName } : {}),
-          ...(data.customerEmail ? { email: data.customerEmail } : {}),
-          ...(data.customerPhone ? { phone: data.customerPhone } : {}),
-        },
-      });
-    }
 
     revalidatePath(`/orders/${orderId}`);
     return { success: true };
@@ -707,5 +726,63 @@ export async function estimateShiprocketFreightAction(
   } catch (err: any) {
     console.error("estimateShiprocketFreightAction error:", err);
     return { success: false, error: err.message };
+  }
+}
+
+/**
+ * AI-powered customer address parser.
+ * Uses Gemini Flash with a tiny prompt — only called when deterministic regex fails.
+ * Token usage: ~80 input + ~50 output = negligible cost.
+ */
+export async function aiParseCustomerAddressAction(rawText: string): Promise<{
+  success: boolean;
+  name?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  error?: string;
+}> {
+  if (!rawText?.trim()) {
+    return { success: false, error: "No text provided" };
+  }
+
+  try {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) return { success: false, error: "AI API key not configured" };
+
+    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+    const genAI = new GoogleGenerativeAI(apiKey);
+    // Use Flash (cheapest model) — tiny structured extraction task
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+
+    const prompt = `Extract from this Indian shipping address text. Return ONLY valid JSON, nothing else:
+{"name":"","phone":"","address":"","city":"","state":"","pincode":""}
+
+Text:
+${rawText.slice(0, 500)}`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+
+    // Parse JSON from response — handle markdown code blocks
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch)
+      return { success: false, error: "AI returned unexpected format" };
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      success: true,
+      name: parsed.name || "",
+      phone: parsed.phone || "",
+      address: parsed.address || "",
+      city: parsed.city || "",
+      state: parsed.state || "",
+      pincode: parsed.pincode || "",
+    };
+  } catch (err: any) {
+    console.error("aiParseCustomerAddressAction error:", err);
+    return { success: false, error: err.message || "AI parsing failed" };
   }
 }

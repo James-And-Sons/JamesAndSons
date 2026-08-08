@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -67,6 +65,9 @@ export function calculateTaxBreakdown(totalTax: number, customerState: string) {
 
 function loadLogoBase64(): string | null {
   try {
+    if (typeof window !== "undefined") return null;
+    const fs = eval("require")("fs");
+    const path = eval("require")("path");
     const cwd = process.cwd();
     const possiblePaths = [
       path.join(cwd, "public/images/logo-dark.png"),
@@ -167,15 +168,21 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
   doc.setFontSize(8);
   doc.setTextColor(50, 50, 50);
 
+  // Resolve customer name: per-order recipientName always takes precedence.
+  // This is critical for Amazon orders where all orders share a placeholder User.
+  // recipientName is isolated per order and never cross-contaminates other orders.
   let customerName = "Amazon Buyer";
-  if (user) {
+  if (order.recipientName && order.recipientName.trim()) {
+    customerName = order.recipientName.trim();
+  } else if (user) {
     const fn = (user.firstName || "").trim();
     const ln = (user.lastName || "").trim();
     const fullName = `${fn} ${ln}`.trim();
     if (
       fullName &&
       !fullName.includes("Not Authorized") &&
-      !fullName.includes("Amazon Marketplace")
+      !fullName.includes("Amazon Marketplace") &&
+      !fullName.includes("amazon-marketplace")
     ) {
       customerName = fullName;
     }

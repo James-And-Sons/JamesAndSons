@@ -12,10 +12,15 @@ export default async function OrdersPage() {
     select: {
       id: true,
       orderNumber: true,
+      amazonOrderId: true,
       createdAt: true,
       totalAmount: true,
       status: true,
       channel: true,
+      recipientName: true,
+      recipientEmail: true,
+      shippingCity: true,
+      shippingState: true,
       user: {
         select: {
           firstName: true,
@@ -28,17 +33,50 @@ export default async function OrdersPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const formattedOrders = orders.map((o: any) => ({
-    id: o.id,
-    displayId: o.orderNumber,
-    date: o.createdAt,
-    customerName: o.user.firstName + " " + o.user.lastName,
-    company: o.user.company?.name || null,
-    email: o.user.email,
-    totalValue: o.totalAmount,
-    status: o.status,
-    channel: o.channel,
-  }));
+  function isPlaceholderName(n?: string | null) {
+    if (!n) return true;
+    return (
+      n.includes("Amazon") ||
+      n.includes("Marketplace") ||
+      n.includes("Not Authorized") ||
+      n.trim() === ""
+    );
+  }
+
+  function isPlaceholderEmail(e?: string | null) {
+    if (!e) return true;
+    return e.startsWith("amazon-") || e.includes("amazon-marketplace");
+  }
+
+  const formattedOrders = orders.map((o: any) => {
+    const isAmazon = o.channel === "AMAZON" || Boolean(o.amazonOrderId);
+    const userFullName =
+      `${o.user?.firstName || ""} ${o.user?.lastName || ""}`.trim();
+
+    const displayName =
+      o.recipientName ||
+      (!isPlaceholderName(userFullName) ? userFullName : null) ||
+      (isAmazon ? "Import customer details ↑" : "Guest Customer");
+
+    const displayEmail =
+      o.recipientEmail ||
+      (!isPlaceholderEmail(o.user?.email) ? o.user?.email : null) ||
+      (o.shippingCity && o.shippingState
+        ? `${o.shippingCity}, ${o.shippingState}`
+        : null);
+
+    return {
+      id: o.id,
+      displayId: o.orderNumber,
+      date: o.createdAt,
+      customerName: displayName,
+      company: o.user?.company?.name || null,
+      email: displayEmail,
+      totalValue: o.totalAmount,
+      status: o.status,
+      channel: o.channel,
+    };
+  });
 
   return <OrdersTableClient records={formattedOrders} />;
 }

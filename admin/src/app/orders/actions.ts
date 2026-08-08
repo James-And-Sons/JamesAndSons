@@ -312,3 +312,26 @@ export async function resetAmazonOrderShipmentAction(orderId: string) {
     };
   }
 }
+
+export async function updateOrderFulfillmentTypeAction(
+  orderId: string,
+  fulfillmentType: "EASY_SHIP" | "SELF_SHIP",
+) {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { amazonFulfillmentType: fulfillmentType },
+    });
+    revalidatePath(`/orders/${orderId}`);
+    return {
+      success: true,
+      message: `Updated fulfillment mode to ${fulfillmentType === "EASY_SHIP" ? "Easy Ship" : "Self-Ship"}.`,
+    };
+  } catch (err: any) {
+    console.error("updateOrderFulfillmentTypeAction error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to update fulfillment type",
+    };
+  }
+}

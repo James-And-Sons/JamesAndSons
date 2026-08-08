@@ -1,7 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { updateOrderCustomerAddressAction } from "./logistics-actions";
+import {
+  updateOrderCustomerAddressAction,
+  aiParseCustomerAddressAction,
+} from "./logistics-actions";
+import {
+  User,
+  Zap,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  Clipboard,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 export default function CustomerAddressEditor({
   orderId,
@@ -15,6 +28,7 @@ export default function CustomerAddressEditor({
   initialCompanyName,
   initialGstin,
   isAmazon,
+  hasNoRecipient,
 }: {
   orderId: string;
   initialName: string;
@@ -27,19 +41,26 @@ export default function CustomerAddressEditor({
   initialCompanyName?: string | null;
   initialGstin?: string | null;
   isAmazon?: boolean;
+  /** Auto-opens the editor when true (new Amazon order with no saved recipient yet) */
+  hasNoRecipient?: boolean;
 }) {
-  const [isEditing, setIsEditing] = useState(false);
+  // Auto-open if no recipient saved yet (brand new Amazon order)
+  const [isEditing, setIsEditing] = useState(hasNoRecipient ?? false);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const cleanInitialName =
-    initialName && !initialName.includes("Amazon Marketplace")
-      ? initialName
-      : "Amazon Buyer";
+  // page.tsx passes initialName already resolved from recipientName (never a placeholder)
+  const [customerName, setCustomerName] = useState(initialName || "");
 
-  const [customerName, setCustomerName] = useState(cleanInitialName);
-  const [customerEmail, setCustomerEmail] = useState(initialEmail);
+  // Strip placeholder emails — never pre-fill amazon-marketplace@ in the form
+  const cleanInitialEmail =
+    initialEmail &&
+    !initialEmail.includes("amazon-marketplace") &&
+    !initialEmail.startsWith("amazon-")
+      ? initialEmail
+      : "";
+  const [customerEmail, setCustomerEmail] = useState(cleanInitialEmail);
   const [customerPhone, setCustomerPhone] = useState(initialPhone || "");
   const [address, setAddress] = useState(initialAddress);
   const [city, setCity] = useState(initialCity || "");
@@ -48,6 +69,8 @@ export default function CustomerAddressEditor({
   const [companyName, setCompanyName] = useState(initialCompanyName || "");
   const [gstin, setGstin] = useState(initialGstin || "");
   const [rawPasteText, setRawPasteText] = useState("");
+  const [aiParsing, setAiParsing] = useState(false);
+  const [aiUsed, setAiUsed] = useState(false); // track if AI was used (for UI badge)
 
   const handleParseAndSaveAmazonAddress = async () => {
     if (!rawPasteText.trim()) return;
@@ -89,32 +112,20 @@ export default function CustomerAddressEditor({
       addressLines.push(line);
     }
 
-    if (!parsedName && addressLines.length > 0) {
-      if (addressLines.length >= 2) {
-        parsedName = `${addressLines[0]} ${addressLines[1]}`;
-        addressLines = addressLines.slice(2);
-      } else {
-        parsedName = addressLines[0];
-        addressLines = [];
-      }
-    }
-
-    const finalName = parsedName || customerName;
-    const finalPhone = parsedPhone || customerPhone;
-    const finalAddress =
-      addressLines.length > 0 ? addressLines.join(", ") : address;
+    const finalAddress = addressLines.join(", ").trim();
     const finalCity = parsedCity || city;
     const finalState = parsedState || state;
     const finalPincode = parsedPincode || pincode;
+    const finalName = parsedName || customerName;
+    const finalPhone = parsedPhone || customerPhone;
 
-    setCustomerName(finalName);
-    setCustomerPhone(finalPhone);
-    setAddress(finalAddress);
-    setCity(finalCity);
-    setState(finalState);
-    setPincode(finalPincode);
+    if (finalName) setCustomerName(finalName);
+    if (finalPhone) setCustomerPhone(finalPhone);
+    if (finalAddress) setAddress(finalAddress);
+    if (finalCity) setCity(finalCity);
+    if (finalState) setState(finalState);
+    if (finalPincode) setPincode(finalPincode);
 
-    // Save directly to DB in 1 click!
     const res = await updateOrderCustomerAddressAction(orderId, {
       customerName: finalName,
       customerEmail,
@@ -130,11 +141,36 @@ export default function CustomerAddressEditor({
     setSaving(false);
     if (res.success) {
       setSuccessMsg(
-        "Amazon details imported and saved to database successfully!",
+        aiUsed
+          ? "Details extracted with AI assistance and saved!"
+          : "Customer details imported and saved to database!",
       );
       setIsEditing(false);
     } else {
       setErrorMsg(res.error || "Failed to save imported details.");
+    }
+  };
+
+  // Explicit AI parse (user clicked ✨ AI Parse)
+  const handleAiParseOnly = async () => {
+    if (!rawPasteText.trim()) return;
+    setAiParsing(true);
+    setErrorMsg("");
+    const aiResult = await aiParseCustomerAddressAction(rawPasteText);
+    setAiParsing(false);
+    if (aiResult.success) {
+      if (aiResult.name) setCustomerName(aiResult.name);
+      if (aiResult.phone) setCustomerPhone(aiResult.phone);
+      if (aiResult.address) setAddress(aiResult.address);
+      if (aiResult.city) setCity(aiResult.city);
+      if (aiResult.state) setState(aiResult.state);
+      if (aiResult.pincode) setPincode(aiResult.pincode);
+      setAiUsed(true);
+      setSuccessMsg(
+        "✨ AI extracted the details — please review below and save.",
+      );
+    } else {
+      setErrorMsg("AI parse failed: " + aiResult.error);
     }
   };
 
@@ -166,48 +202,24 @@ export default function CustomerAddressEditor({
   };
 
   return (
-    <div
-      style={{
-        background: "var(--surface, #111)",
-        border: "1px solid rgba(196,160,90,0.25)",
-        borderRadius: "2px",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "14px",
-          borderBottom: "1px solid rgba(196,160,90,0.15)",
-          paddingBottom: "10px",
-        }}
-      >
+    <div className="bg-surface border border-border rounded-sm p-5 space-y-4">
+      <div className="flex flex-wrap justify-between items-center pb-3 border-b border-border gap-2">
         <div>
-          <h3
-            style={{
-              fontFamily: "monospace",
-              fontSize: "11px",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "#c4a05a",
-              margin: 0,
-            }}
-          >
-            👤 Customer &amp; Shipping Information Studio
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent m-0 flex items-center gap-2">
+            <User className="w-4 h-4 text-accent" />
+            <span>Customer &amp; Shipping Information</span>
           </h3>
           {isAmazon && (
-            <p
-              style={{
-                fontFamily: "sans-serif",
-                fontSize: "11px",
-                color: "rgba(245,158,11,0.9)",
-                margin: "4px 0 0",
-              }}
-            >
-              ⚡ Amazon Order: Click <strong>"Import Amazon Details"</strong>{" "}
-              below to paste and auto-fill customer info &amp; address!
+            <p className="font-sans text-[12px] text-accent/90 mt-1 m-0 flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+              <span>
+                Amazon Order:{" "}
+                <strong>
+                  {hasNoRecipient
+                    ? 'No customer details saved yet. Click "Import Customer Details" to add them.'
+                    : 'Click "Import Customer Details" to update.'}
+                </strong>
+              </span>
             </p>
           )}
         </div>
@@ -215,269 +227,157 @@ export default function CustomerAddressEditor({
         <button
           type="button"
           onClick={() => setIsEditing(!isEditing)}
-          style={{
-            background: isEditing
-              ? "rgba(248,113,113,0.12)"
-              : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-            border: isEditing ? "1px solid rgba(248,113,113,0.4)" : "none",
-            color: isEditing ? "#f87171" : "#000",
-            fontFamily: "monospace",
-            fontSize: "10px",
-            fontWeight: "bold",
-            padding: "8px 16px",
-            borderRadius: "2px",
-            cursor: "pointer",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            boxShadow: isEditing ? "none" : "0 2px 10px rgba(245,158,11,0.25)",
-          }}
+          className={`font-mono text-[10px] uppercase tracking-wider px-4 py-2 rounded-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+            isEditing
+              ? "bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20"
+              : "bg-accent text-[#0a0a0b] hover:bg-[#d4af37]"
+          }`}
         >
-          {isEditing ? "✕ Close Studio" : "📥 Import Amazon Details"}
+          {isEditing ? (
+            <>
+              <X className="w-3.5 h-3.5" />
+              <span>Close</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-3.5 h-3.5" />
+              <span>Import Customer Details</span>
+            </>
+          )}
         </button>
       </div>
 
       {successMsg && (
-        <div
-          style={{
-            background: "rgba(74,222,128,0.08)",
-            border: "1px solid rgba(74,222,128,0.3)",
-            color: "#4ade80",
-            padding: "10px 14px",
-            borderRadius: "2px",
-            fontFamily: "monospace",
-            fontSize: "11px",
-            marginBottom: "12px",
-          }}
-        >
-          ✅ {successMsg}
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[11px] rounded-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <span>{successMsg}</span>
         </div>
       )}
 
       {errorMsg && (
-        <div
-          style={{
-            background: "rgba(248,113,113,0.08)",
-            border: "1px solid rgba(248,113,113,0.3)",
-            color: "#f87171",
-            padding: "10px 14px",
-            borderRadius: "2px",
-            fontFamily: "monospace",
-            fontSize: "11px",
-            marginBottom: "12px",
-          }}
-        >
-          ⚠ {errorMsg}
+        <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono text-[11px] rounded-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{errorMsg}</span>
         </div>
       )}
 
       {/* ── 1-Click Amazon Raw Paste & Auto-Parse Box ── */}
       {isEditing && (
-        <div
-          style={{
-            background: "rgba(245,158,11,0.06)",
-            border: "1px solid rgba(245,158,11,0.3)",
-            borderRadius: "2px",
-            padding: "16px",
-            marginBottom: "16px",
-          }}
-        >
-          <label
-            style={{
-              display: "block",
-              fontFamily: "monospace",
-              fontSize: "9px",
-              color: "#f59e0b",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              marginBottom: "6px",
-              fontWeight: "bold",
-            }}
-          >
-            📋 Paste Raw Amazon Seller Central Order Details Here
+        <div className="p-4 bg-background/50 border border-accent/25 rounded-xs space-y-3 mb-4">
+          <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-accent font-bold">
+            <Clipboard className="w-3.5 h-3.5 text-accent" />
+            <span>Paste Raw Amazon Seller Central Order Details Here</span>
           </label>
           <textarea
             rows={5}
             value={rawPasteText}
             onChange={(e) => setRawPasteText(e.target.value)}
-            placeholder={`Paste raw Amazon text here:\n\nHymavathiamma\nHymavath\nSanatanapuram P O, Kalarcode, Alleppey\nPUNNAPARA, KERALA 688003\nContact Buyer:\tSajeeve\nPhone:\t9567931371`}
-            style={{
-              width: "100%",
-              padding: "10px",
-              background: "#000",
-              border: "1px solid rgba(245,158,11,0.4)",
-              borderRadius: "2px",
-              color: "#fff",
-              fontFamily: "monospace",
-              fontSize: "11px",
-              marginBottom: "10px",
-            }}
+            placeholder="Paste Raw Amazon Seller Central Order Details Here..."
+            className="w-full bg-background border border-border text-primary font-mono text-[12px] p-3 focus:outline-none focus:border-accent rounded-xs mb-2"
           />
-          <button
-            type="button"
-            onClick={handleParseAndSaveAmazonAddress}
-            disabled={saving || !rawPasteText.trim()}
-            style={{
-              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-              border: "none",
-              color: "#000",
-              fontFamily: "monospace",
-              fontSize: "10px",
-              fontWeight: "bold",
-              padding: "8px 18px",
-              borderRadius: "2px",
-              cursor:
-                saving || !rawPasteText.trim() ? "not-allowed" : "pointer",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              opacity: saving || !rawPasteText.trim() ? 0.6 : 1,
-            }}
-          >
-            {saving
-              ? "Saving to Database…"
-              : "⚡ Auto-Extract & Save to Database (1-Click)"}
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleParseAndSaveAmazonAddress}
+              disabled={saving || !rawPasteText.trim()}
+              className="flex-1 font-mono text-[10px] uppercase tracking-wider py-2.5 px-4 bg-accent text-[#0a0a0b] hover:bg-[#d4af37] font-bold rounded-xs transition-colors disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-1.5 min-w-[160px]"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>{saving ? "Saving…" : "Extract & Save (1-Click)"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleAiParseOnly}
+              disabled={aiParsing || !rawPasteText.trim()}
+              title="Uses AI to parse complex address formats (Gemini Flash, minimal tokens)"
+              className={`font-mono text-[10px] uppercase tracking-wider py-2.5 px-3 border rounded-xs transition-colors disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap ${
+                aiUsed
+                  ? "bg-purple-500/15 border-purple-500/40 text-purple-300 font-bold"
+                  : "bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>
+                {aiParsing
+                  ? "AI Parsing…"
+                  : aiUsed
+                    ? "Re-parse with AI"
+                    : "AI Parse"}
+              </span>
+            </button>
+          </div>
+          {aiUsed && (
+            <p className="font-mono text-[10px] text-purple-300/80 mt-1.5 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              <span>Fields pre-filled by AI — review below before saving</span>
+            </p>
+          )}
         </div>
       )}
 
       {!isEditing ? (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "14px",
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: "8px",
-                color: "var(--muted, #888)",
-                textTransform: "uppercase",
-                margin: "0 0 2px",
-              }}
-            >
+            <p className="font-mono text-[11px] uppercase tracking-wider text-muted mb-1">
               Full Name
             </p>
-            <p
-              style={{
-                fontFamily: "sans-serif",
-                fontSize: "14px",
-                color: "#fff",
-                fontWeight: "600",
-                margin: 0,
-              }}
-            >
-              {customerName}
+            <p className="font-serif text-[15px] text-primary font-semibold m-0">
+              {customerName || (
+                <span className="font-mono text-[11px] text-muted italic">
+                  Not specified
+                </span>
+              )}
             </p>
           </div>
 
           <div>
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: "8px",
-                color: "var(--muted, #888)",
-                textTransform: "uppercase",
-                margin: "0 0 2px",
-              }}
-            >
+            <p className="font-mono text-[11px] uppercase tracking-wider text-muted mb-1">
               Contact Email &amp; Phone
             </p>
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: "11px",
-                color: "#ccc",
-                margin: 0,
-              }}
-            >
-              ✉ {customerEmail}
-            </p>
+            {customerEmail ? (
+              <p className="font-mono text-[11px] text-primary m-0">
+                ✉ {customerEmail}
+              </p>
+            ) : (
+              <p className="font-mono text-[10px] text-muted italic m-0">
+                No email on record
+              </p>
+            )}
             {customerPhone && (
-              <p
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: "11px",
-                  color: "#ccc",
-                  margin: "2px 0 0",
-                }}
-              >
+              <p className="font-mono text-[11px] text-accent mt-0.5 m-0 font-semibold">
                 📞 {customerPhone}
               </p>
             )}
           </div>
 
           <div>
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: "8px",
-                color: "var(--muted, #888)",
-                textTransform: "uppercase",
-                margin: "0 0 2px",
-              }}
-            >
+            <p className="font-mono text-[11px] uppercase tracking-wider text-muted mb-1">
               Delivery Address &amp; State Code
             </p>
-            <p
-              style={{
-                fontFamily: "sans-serif",
-                fontSize: "11px",
-                color: "#ddd",
-                whiteSpace: "pre-line",
-                margin: 0,
-              }}
-            >
-              {address}
+            <p className="font-sans text-[13px] text-primary whitespace-pre-line m-0 leading-relaxed font-medium">
+              {address || (
+                <span className="font-mono text-[11px] text-muted italic">
+                  No address on record
+                </span>
+              )}
             </p>
             {(city || state || pincode) && (
-              <p
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: "10px",
-                  color: "#c4a05a",
-                  marginTop: "4px",
-                  margin: "4px 0 0",
-                }}
-              >
-                {city} {state} {pincode}
+              <p className="font-mono text-[11px] text-accent mt-1 m-0 font-bold">
+                {[city, state].filter(Boolean).join(", ")} {pincode}
               </p>
             )}
           </div>
 
           {(gstin || companyName) && (
-            <div>
-              <p
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "var(--muted, #888)",
-                  textTransform: "uppercase",
-                  margin: "0 0 2px",
-                }}
-              >
+            <div className="col-span-full pt-2 border-t border-border/60">
+              <p className="font-mono text-[9px] uppercase tracking-wider text-muted mb-0.5">
                 Trade Account GST Details
               </p>
-              <p
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: "11px",
-                  color: "#4ade80",
-                  margin: 0,
-                }}
-              >
+              <p className="font-mono text-[11px] text-emerald-400/90 font-semibold m-0">
                 🏢 {companyName || "B2B Trade Account"}
               </p>
               {gstin && (
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "11px",
-                    color: "#4ade80",
-                    margin: "2px 0 0",
-                  }}
-                >
+                <p className="font-mono text-[11px] text-emerald-400/90 m-0">
                   GSTIN: {gstin}
                 </p>
               )}
@@ -485,38 +385,14 @@ export default function CustomerAddressEditor({
           )}
         </div>
       ) : (
-        <form onSubmit={handleSave} style={{ display: "grid", gap: "12px" }}>
-          <p
-            style={{
-              fontFamily: "monospace",
-              fontSize: "9px",
-              color: "#c4a05a",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              margin: "0 0 4px",
-            }}
-          >
+        <form onSubmit={handleSave} className="grid grid-cols-1 gap-3 pt-2">
+          <p className="font-mono text-[9px] uppercase tracking-wider text-accent font-bold m-0">
             Manual Field Editing
           </p>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: "10px",
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
+              <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
                 Customer Full Name
               </label>
               <input
@@ -524,306 +400,98 @@ export default function CustomerAddressEditor({
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 required
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "sans-serif",
-                  fontSize: "12px",
-                }}
+                className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
               />
             </div>
 
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
+              <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
                 Email Address
               </label>
               <input
                 type="email"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "monospace",
-                  fontSize: "12px",
-                }}
+                className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
               />
             </div>
 
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
+              <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
                 Phone Number
               </label>
               <input
                 type="text"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "monospace",
-                  fontSize: "12px",
-                }}
+                className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
               />
             </div>
           </div>
 
           <div>
-            <label
-              style={{
-                display: "block",
-                fontFamily: "monospace",
-                fontSize: "8px",
-                color: "#c4a05a",
-                textTransform: "uppercase",
-                marginBottom: "4px",
-              }}
-            >
-              Shipping / Delivery Address
+            <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
+              Shipping Street Address
             </label>
             <textarea
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "8px 10px",
-                background: "#000",
-                border: "1px solid rgba(196,160,90,0.3)",
-                borderRadius: "2px",
-                color: "#fff",
-                fontFamily: "sans-serif",
-                fontSize: "12px",
-              }}
+              className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
             />
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: "10px",
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
+              <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
                 City
               </label>
               <input
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "sans-serif",
-                  fontSize: "12px",
-                }}
+                className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
               />
             </div>
-
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
-                State (e.g. KERALA, UTTAR PRADESH)
+              <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
+                State
               </label>
               <input
                 type="text"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "sans-serif",
-                  fontSize: "12px",
-                }}
+                className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
               />
             </div>
-
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
-                Pincode (6 digits)
+              <label className="block font-mono text-[8px] uppercase tracking-wider text-muted mb-1">
+                Pincode
               </label>
               <input
                 type="text"
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "monospace",
-                  fontSize: "12px",
-                }}
+                className="w-full bg-background border border-border text-primary font-sans text-[12px] px-3 py-2 focus:outline-none focus:border-accent rounded-xs"
               />
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "10px",
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
-                Trade Account / Company Name
-              </label>
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "sans-serif",
-                  fontSize: "12px",
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontFamily: "monospace",
-                  fontSize: "8px",
-                  color: "#c4a05a",
-                  textTransform: "uppercase",
-                  marginBottom: "4px",
-                }}
-              >
-                Recipient GSTIN (15 characters)
-              </label>
-              <input
-                type="text"
-                value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  background: "#000",
-                  border: "1px solid rgba(196,160,90,0.3)",
-                  borderRadius: "2px",
-                  color: "#fff",
-                  fontFamily: "monospace",
-                  fontSize: "12px",
-                }}
-              />
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: "4px",
-            }}
-          >
+          <div className="flex gap-2 justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="font-mono text-[10px] uppercase tracking-wider px-4 py-2 border border-border text-muted hover:text-primary rounded-xs transition-colors"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={saving}
-              style={{
-                background: "linear-gradient(135deg, #c4a05a 0%, #d4af37 100%)",
-                border: "none",
-                color: "#000",
-                fontFamily: "monospace",
-                fontSize: "10px",
-                fontWeight: "bold",
-                padding: "8px 18px",
-                borderRadius: "2px",
-                cursor: saving ? "not-allowed" : "pointer",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                opacity: saving ? 0.6 : 1,
-              }}
+              className="font-mono text-[10px] uppercase tracking-wider px-6 py-2 bg-accent text-[#0a0a0b] hover:bg-[#d4af37] font-bold rounded-xs transition-colors disabled:opacity-50"
             >
-              {saving
-                ? "Saving Overrides…"
-                : "Save Customer & Address Overrides"}
+              {saving ? "Saving…" : "Save Details"}
             </button>
           </div>
         </form>

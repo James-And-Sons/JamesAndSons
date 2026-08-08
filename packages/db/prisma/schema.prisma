@@ -286,6 +286,12 @@ model Order {
   billingAddress  String
   gstin           String?
   companyName     String?
+
+  // Per-order recipient details — isolated from the shared User row.
+  // Critical for Amazon/offline orders where multiple orders share a placeholder User.
+  // These fields always take precedence over user.firstName/email for display & invoicing.
+  recipientName   String?  // Full customer name for THIS order only (e.g. "Sajeeve")
+  recipientEmail  String?  // Actual customer email for THIS order only
   
   trackingNumber String?
   awbNumber      String?     // For logistics (Shiprocket/Delhivery)
@@ -304,6 +310,11 @@ model Order {
   amazonShipmentFeedId String?                               // Feed submission ID after confirm-shipment
   amazonReviewSolicited   Boolean   @default(false)
   amazonReviewSolicitedAt DateTime?
+  // Fulfillment type: EASY_SHIP = Amazon ATS picks up (easyship/v2 API)
+  //                   SELF_SHIP = We book Shiprocket + push AWB to Amazon SP-API
+  // Determined from SP-API EasyShipShipmentStatus field (null = Easy Ship present, missing = Self-Ship)
+  amazonFulfillmentType String?  // EASY_SHIP | SELF_SHIP | null (null = not yet determined)
+  easyShipStatus        String?  // SP-API EasyShipShipmentStatus: PendingPickUp | PickedUp | OutForDelivery | Delivered | RejectedByBuyer | Undeliverable | ReturningToSeller | ReturnedToSeller | Lost | LabelCanceled | ReadyForPickup
 
   
   b2bFlag             Boolean   @default(false)

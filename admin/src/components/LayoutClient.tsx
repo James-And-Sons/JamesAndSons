@@ -29,6 +29,11 @@ function HeaderTitle() {
       ];
     }
 
+    if (sidebar?.orderDetailState) {
+      const { orderNumber } = sidebar.orderDetailState;
+      return [{ label: "Orders", href: "/orders" }, { label: orderNumber }];
+    }
+
     if (pathname === "/") return [{ label: "Dashboard", href: "/" }];
     if (pathname === "/orders") return [{ label: "Orders", href: "/orders" }];
     if (pathname === "/inquiries")
@@ -146,9 +151,17 @@ function UnsavedChangesListener() {
 function ServiceWorkerRegistrar() {
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-        /* silent */
-      });
+      if (process.env.NODE_ENV === "development") {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const reg of registrations) {
+            reg.unregister();
+          }
+        });
+      } else {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+          /* silent */
+        });
+      }
     }
   }, []);
   return null;

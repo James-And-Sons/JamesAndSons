@@ -1,18 +1,43 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import {
+  User,
+  MapPin,
+  CreditCard,
+  Package,
+  Phone,
+  Mail,
+  ExternalLink,
+  Clock,
+  CheckCircle2,
+  Truck,
+  XCircle,
+  RotateCcw,
+  RefreshCw,
+  ArrowLeft,
+} from "lucide-react";
 import OrderStatusControls from "./OrderStatusControls";
 import EditableShippingAddress from "./EditableShippingAddress";
-
 import { requireAdmin } from "@/lib/auth";
-
 import CustomerAddressEditor from "./CustomerAddressEditor";
+import OrderSidebarSync from "./OrderSidebarSync";
 
 function formatPrice(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
 const STATUS_STEPS = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED"];
+
+const STATUS_ICONS: Record<string, any> = {
+  PENDING: Clock,
+  PAID: CreditCard,
+  PROCESSING: RefreshCw,
+  SHIPPED: Truck,
+  DELIVERED: CheckCircle2,
+  CANCELLED: XCircle,
+  RETURNED: RotateCcw,
+};
 
 export default async function OrderDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -24,17 +49,21 @@ export default async function OrderDetailPage(props: {
     select: {
       id: true,
       orderNumber: true,
+      invoiceNumber: true,
       status: true,
       channel: true,
       createdAt: true,
       totalAmount: true,
       taxAmount: true,
       shippingAmount: true,
+      discountAmount: true,
       trackingNumber: true,
       awbNumber: true,
       razorpayPaymentId: true,
       razorpayOrderId: true,
       amazonOrderId: true,
+      amazonOrderStatus: true,
+      amazonFulfillmentType: true,
       shippingAddress: true,
       shippingCity: true,
       shippingState: true,
@@ -42,6 +71,10 @@ export default async function OrderDetailPage(props: {
       shippingPhone: true,
       companyName: true,
       gstin: true,
+      fulfillmentError: true,
+      // Per-order recipient fields — never shared across orders (critical for Amazon)
+      recipientName: true,
+      recipientEmail: true,
       user: {
         select: {
           firstName: true,
@@ -82,201 +115,385 @@ export default async function OrderDetailPage(props: {
   if (!order) return notFound();
 
   const currentStatusIdx = STATUS_STEPS.indexOf(order.status);
+  const isAmazonOrder =
+    order.channel === "AMAZON" || Boolean(order.amazonOrderId);
+
+  // Amazon order type detection:
+  // Easy Ship = Amazon ATS handles pickup & delivery (needs Easy Ship booking)
+  // MFN / Self-Ship = We ship ourselves via Shiprocket and push AWB to Amazon SP-API
+  // amazonOrderStatus "Unshipped" with no awbNumber = unshipped, could be either type
+  // Heuristic: if the order was marked via Easy Ship API or has amazon-specific slot data → Easy Ship
+  // For now we use a field or env toggle; when SP-API gives us fulfillmentChannel we'll use that.
+  // "AFN" = Amazon fulfilled (FBA), "MFN" = Merchant fulfilled (self-ship or easy-ship)
+  // Easy Ship is always MFN but with ATS pickup. We can't distinguish without SP-API data yet.
+  // Safe default: show both sections; user picks the right one.
+  // When SP-API gives us fulfillmentChannel we pass it in:
+  const isEasyShipOrder = isAmazonOrder; // Will be refined when SP-API provides fulfillmentChannel
+  const isMFNOrder = isAmazonOrder; // Amazon MFN (Self-Ship) includes both Easy Ship and manual ship
+
+  // ── Display name/email resolution (per-order fields take precedence) ──────
+  // recipientName is written per-order (never shared). Use it first.
+  // Fall back to real user name for D2C orders. Never show placeholder strings.
+  function isPlaceholderName(n?: string | null) {
+    if (!n) return true;
+    return (
+      n.includes("Amazon") ||
+      n.includes("Marketplace") ||
+      n.includes("Not Authorized") ||
+      n.trim() === ""
+    );
+  }
+  function isPlaceholderEmail(e?: string | null) {
+    if (!e) return true;
+    return e.startsWith("amazon-") || e.includes("amazon-marketplace");
+  }
+
+  const userFullName =
+    `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim();
+  const displayName =
+    order.recipientName ||
+    (!isPlaceholderName(userFullName) ? userFullName : null) ||
+    null;
+
+  const displayEmail =
+    order.recipientEmail ||
+    (!isPlaceholderEmail(order.user.email) ? order.user.email : null) ||
+    null;
+
+  const displayPhone =
+    order.shippingPhone ||
+    (!isPlaceholderEmail(order.user.email) ? order.user.phone : null) ||
+    null;
+
+  const hasRecipient = Boolean(order.recipientName);
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const channelBadge = isAmazonOrder
+    ? {
+        label: "▲ Amazon",
+        color: "text-amber-400/90 bg-amber-500/5 border-amber-500/20",
+      }
+    : order.channel === "B2B"
+      ? {
+          label: "🏢 B2B",
+          color: "text-purple-300/90 bg-purple-500/5 border-purple-500/20",
+        }
+      : {
+          label: "🛍️ D2C Store",
+          color: "text-sky-300/90 bg-sky-500/5 border-sky-500/20",
+        };
+
+  const statusColor =
+    order.status === "DELIVERED"
+      ? "text-emerald-400/90 bg-emerald-500/5 border-emerald-500/20"
+      : order.status === "SHIPPED"
+        ? "text-cyan-400/90 bg-cyan-500/5 border-cyan-500/20"
+        : order.status === "CANCELLED"
+          ? "text-rose-400/90 bg-rose-500/5 border-rose-500/20"
+          : order.status === "PAID" || order.status === "PROCESSING"
+            ? "text-amber-400/90 bg-amber-500/5 border-amber-500/20"
+            : "text-muted bg-surface border-border";
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* ── Navigation ────────────────────────────────────────────────────── */}
-      <div className="flex justify-between items-center">
+    <div className="max-w-5xl mx-auto pb-16 px-4 sm:px-6 space-y-4">
+      {/* ── Navigation ── */}
+      <div className="flex justify-between items-center pt-2">
         <Link
           href="/orders"
-          className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-accent hover:underline transition-colors"
+          className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted hover:text-accent transition-colors"
         >
-          ← Back to All Orders
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>All Orders</span>
         </Link>
-        <span className="font-mono text-[10px] text-muted uppercase tracking-wider">
-          Created {new Date(order.createdAt).toLocaleString("en-IN")}
+        <span className="font-mono text-[11px] text-muted">
+          {new Date(order.createdAt).toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </span>
       </div>
 
-      {/* ── Order Header Banner ───────────────────────────────────────────── */}
-      <div className="bg-surface border border-border p-6 rounded-sm shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="font-serif text-[26px] font-light text-primary tracking-wide m-0">
-              {order.orderNumber}
-            </h1>
-            {order.channel === "AMAZON" ? (
-              <span className="px-2.5 py-1 bg-orange-500/10 border border-orange-500/30 text-orange-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
-                ▲ Amazon Order
+      {/* ── Hero Order Header ── */}
+      <div className="bg-surface border border-border rounded-sm overflow-hidden">
+        {/* Top accent bar */}
+        <div className="h-0.5 w-full bg-accent/30" />
+        <div className="p-5 sm:p-6 flex flex-col sm:flex-row justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="font-mono text-[24px] sm:text-[28px] font-bold text-primary tracking-tight m-0">
+                {order.orderNumber}
+              </h1>
+              <span
+                className={`font-mono text-[10px] sm:text-[11px] uppercase tracking-wider px-2.5 py-1 border rounded-xs font-semibold ${channelBadge.color}`}
+              >
+                {channelBadge.label}
               </span>
-            ) : order.channel === "B2B" ? (
-              <span className="px-2.5 py-1 bg-purple-500/10 border border-purple-500/30 text-purple-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
-                🏢 B2B Order
+              <span
+                className={`font-mono text-[10px] sm:text-[11px] uppercase tracking-wider px-2.5 py-1 border rounded-xs font-semibold flex items-center gap-1.5 ${statusColor}`}
+              >
+                {STATUS_ICONS[order.status] &&
+                  (() => {
+                    const Icon = STATUS_ICONS[order.status];
+                    return <Icon className="w-3.5 h-3.5" />;
+                  })()}
+                <span>{order.status.replace("_", " ")}</span>
               </span>
-            ) : (
-              <span className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
-                🛍️ D2C Storefront
-              </span>
+            </div>
+            {order.amazonOrderId && (
+              <p className="font-mono text-[11px] sm:text-[12px] text-muted m-0">
+                AMZ Order ID:{" "}
+                <strong className="text-amber-400/90">
+                  {order.amazonOrderId}
+                </strong>
+              </p>
+            )}
+            {order.invoiceNumber && (
+              <p className="font-mono text-[11px] sm:text-[12px] text-muted m-0">
+                Invoice Number:{" "}
+                <strong className="text-primary">{order.invoiceNumber}</strong>
+              </p>
             )}
           </div>
-          <p className="font-mono text-[11px] text-muted mt-1.5 m-0">
-            Internal DB ID: {order.id}
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <span
-            className={`font-mono text-[10px] uppercase tracking-[0.15em] px-4 py-2 border rounded-xs font-bold ${
-              order.status === "DELIVERED"
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                : order.status === "SHIPPED"
-                  ? "bg-blue-500/10 text-blue-400 border-blue-500/30"
-                  : order.status === "PAID" || order.status === "PROCESSING"
-                    ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                    : "bg-surface text-muted border-border"
-            }`}
-          >
-            ● {order.status.replace("_", " ")}
-          </span>
-        </div>
-      </div>
-
-      {/* ── Visual Status Progress Tracker ────────────────────────────────── */}
-      <div className="bg-surface border border-border p-6 rounded-sm">
-        <h3 className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted mb-6">
-          Order Lifecycle Status
-        </h3>
-        <div className="overflow-x-auto pb-2">
-          <div className="flex items-center gap-0 min-w-[500px]">
-            {STATUS_STEPS.map((status, idx) => (
-              <div key={status} className="flex items-center flex-1">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-mono transition-all ${
-                      idx <= currentStatusIdx
-                        ? "border-accent bg-accent/20 text-accent font-bold shadow-md"
-                        : "border-border bg-background text-muted"
-                    }`}
-                  >
-                    {idx < currentStatusIdx ? "✓" : idx + 1}
-                  </div>
-                  <span className="font-mono text-[8px] uppercase tracking-widest text-muted mt-2 text-center font-medium">
-                    {status.replace("_", " ")}
-                  </span>
-                </div>
-                {idx < STATUS_STEPS.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-2 mb-5 transition-colors ${idx < currentStatusIdx ? "bg-accent" : "bg-border"}`}
-                  />
-                )}
+          {/* Quick summary */}
+          <div className="flex items-start gap-6 text-right">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-wider text-muted m-0">
+                Order Value
+              </p>
+              <p className="font-serif text-[24px] text-accent font-light m-0">
+                {formatPrice(order.totalAmount)}
+              </p>
+            </div>
+            {(order.trackingNumber || order.awbNumber) && (
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted m-0">
+                  AWB / Tracking
+                </p>
+                <p className="font-mono text-[13px] text-accent font-semibold m-0 break-all">
+                  {order.awbNumber || order.trackingNumber}
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Status Controls & Pickup Dispatch ──────────────────────────────── */}
-      <OrderStatusControls
+      {/* ── Order Lifecycle Progress ── */}
+      <div className="bg-surface border border-border p-4 sm:p-5 rounded-sm">
+        <div className="overflow-x-auto">
+          <div className="flex items-center min-w-[360px]">
+            {STATUS_STEPS.map((status, idx) => {
+              const StepIcon = STATUS_ICONS[status] || Package;
+              return (
+                <div key={status} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                        idx < currentStatusIdx
+                          ? "border-accent bg-accent/30 text-accent font-bold"
+                          : idx === currentStatusIdx
+                            ? "border-accent bg-accent text-obsidian font-bold shadow-md shadow-accent/20"
+                            : "border-border bg-background text-muted opacity-50"
+                      }`}
+                    >
+                      {idx < currentStatusIdx ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <StepIcon className="w-4 h-4" />
+                      )}
+                    </div>
+                    <span
+                      className={`font-mono text-[9px] sm:text-[10px] uppercase tracking-widest text-center whitespace-nowrap ${idx <= currentStatusIdx ? "text-accent font-semibold" : "text-muted/50"}`}
+                    >
+                      {status.replace("_", " ")}
+                    </span>
+                  </div>
+                  {idx < STATUS_STEPS.length - 1 && (
+                    <div
+                      className={`flex-1 h-0.5 mx-1.5 mb-5 transition-all duration-500 ${idx < currentStatusIdx ? "bg-accent" : "bg-border"}`}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sidebar Sync ── */}
+      <OrderSidebarSync
         orderId={order.id}
-        currentStatus={order.status}
-        trackingNumber={order.trackingNumber}
-        awbNumber={order.awbNumber}
-        razorpayPaymentId={order.razorpayPaymentId}
-        razorpayOrderId={order.razorpayOrderId}
-        amazonOrderId={order.amazonOrderId}
+        orderNumber={order.orderNumber}
         channel={order.channel}
-        shippingAddress={order.shippingAddress}
-        shippingCity={order.shippingCity}
-        shippingState={order.shippingState}
-        shippingPincode={order.shippingPincode}
-        orderItems={order.items.map((i) => ({
-          id: i.id,
-          quantity: i.quantity,
-          product: {
-            name: i.product.name,
-            sku: i.product.sku,
-            weight: i.product.weight,
-            length: i.product.length,
-            breadth: i.product.breadth,
-            height: i.product.height,
-          },
-        }))}
+        status={order.status}
+        totalAmount={order.totalAmount}
+        customerName={displayName || undefined}
+        itemCount={order.items.length}
+        awbNumber={order.awbNumber || order.trackingNumber}
+        amazonOrderId={order.amazonOrderId}
+        amazonFulfillmentType={order.amazonFulfillmentType}
       />
 
-      {/* ── Interactive Customer & Shipping Address Studio ─────────────────── */}
-      <CustomerAddressEditor
-        orderId={order.id}
-        initialName={
-          `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim() ||
-          "Customer"
-        }
-        initialEmail={order.user.email}
-        initialPhone={order.user.phone || order.shippingPhone}
-        initialAddress={order.shippingAddress}
-        initialCity={order.shippingCity}
-        initialState={order.shippingState}
-        initialPincode={order.shippingPincode}
-        initialCompanyName={order.companyName || order.user.company?.name}
-        initialGstin={order.gstin || order.user.company?.gstin}
-        isAmazon={order.channel === "AMAZON" || Boolean(order.amazonOrderId)}
-      />
+      {/* ── STEP 1 (for non-website orders): Customer Details ── */}
+      {isAmazonOrder && (
+        <div id="customer-info">
+          <CustomerAddressEditor
+            orderId={order.id}
+            initialName={displayName || ""}
+            initialEmail={displayEmail || ""}
+            initialPhone={displayPhone || ""}
+            initialAddress={order.shippingAddress}
+            initialCity={order.shippingCity}
+            initialState={order.shippingState}
+            initialPincode={order.shippingPincode}
+            initialCompanyName={order.companyName || order.user.company?.name}
+            initialGstin={order.gstin || order.user.company?.gstin}
+            isAmazon={true}
+            hasNoRecipient={!hasRecipient}
+          />
+        </div>
+      )}
 
-      {/* ── Customer & Logistics Details Grid ─────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Customer Info */}
-        <div className="bg-surface border border-border p-6 rounded-sm">
-          <h3 className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted mb-4 border-b border-border pb-2">
-            👤 Customer Information
+      {/* ── Fulfillment & Status Controls ── */}
+      <div id="fulfillment-studio">
+        <OrderStatusControls
+          orderId={order.id}
+          currentStatus={order.status}
+          trackingNumber={order.trackingNumber}
+          awbNumber={order.awbNumber}
+          fulfillmentError={order.fulfillmentError}
+          razorpayPaymentId={order.razorpayPaymentId}
+          razorpayOrderId={order.razorpayOrderId}
+          amazonOrderId={order.amazonOrderId}
+          amazonOrderStatus={order.amazonOrderStatus}
+          amazonFulfillmentType={order.amazonFulfillmentType}
+          channel={order.channel}
+          shippingAddress={order.shippingAddress}
+          shippingCity={order.shippingCity}
+          shippingState={order.shippingState}
+          shippingPincode={order.shippingPincode}
+          orderItems={order.items.map((i) => ({
+            id: i.id,
+            quantity: i.quantity,
+            product: {
+              name: i.product.name,
+              sku: i.product.sku,
+              weight: i.product.weight,
+              length: i.product.length,
+              breadth: i.product.breadth,
+              height: i.product.height,
+            },
+          }))}
+        />
+      </div>
+
+      {/* ── Customer & Logistics Details Grid ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Customer Info Card */}
+        <div
+          id="customer-info"
+          className="bg-surface border border-border p-5 rounded-sm"
+        >
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-4 border-b border-border pb-2 m-0 flex items-center gap-2">
+            <User className="w-4 h-4 text-accent" />
+            <span>Customer Details</span>
           </h3>
-          <p className="font-serif text-[18px] text-primary font-medium m-0">
-            {order.user.firstName &&
-            !order.user.firstName.includes("Amazon Marketplace") &&
-            !order.user.firstName.includes("Not Authorized")
-              ? `${order.user.firstName} ${order.user.lastName || ""}`.trim()
-              : "Amazon Buyer"}
-          </p>
-          <p className="font-mono text-[11px] text-muted mt-1 break-all">
-            {order.user.email}
-          </p>
-          {order.user.phone && (
-            <p className="font-mono text-[11px] text-muted mt-0.5">
-              📞 {order.user.phone}
+          {displayName ? (
+            <p className="font-serif text-[18px] text-primary font-medium m-0 leading-tight">
+              {displayName}
+            </p>
+          ) : (
+            <p className="font-serif text-[14px] text-muted font-medium m-0 italic">
+              {isAmazonOrder
+                ? "Import customer details above ↑"
+                : "No name on record"}
             </p>
           )}
-          {order.user.company && (
+          {displayEmail && (
+            <p className="font-mono text-[11px] text-muted mt-2 break-all m-0 flex items-center gap-1.5">
+              <Mail className="w-3.5 h-3.5 text-muted/70 flex-shrink-0" />
+              <span>{displayEmail}</span>
+            </p>
+          )}
+          {displayPhone && (
+            <p className="font-mono text-[12px] text-accent mt-1.5 m-0 font-semibold flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+              <span>{displayPhone}</span>
+            </p>
+          )}
+          {(order.companyName || order.user.company) && (
             <div className="mt-3 pt-3 border-t border-border">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-accent block mb-1">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted block mb-0.5">
                 Company
               </span>
-              <p className="font-serif text-[15px] text-primary m-0">
-                {order.user.company.name}
+              <p className="font-sans text-[13px] text-secondary m-0 font-medium">
+                {order.companyName || order.user.company?.name}
               </p>
-              {order.user.company.gstin && (
-                <p className="font-mono text-[10px] text-muted mt-0.5">
-                  GSTIN: {order.user.company.gstin}
+              {(order.gstin || order.user.company?.gstin) && (
+                <p className="font-mono text-[10px] text-muted mt-0.5 m-0">
+                  GSTIN: {order.gstin || order.user.company?.gstin}
                 </p>
               )}
             </div>
           )}
         </div>
 
-        {/* Shipping Address */}
-        <EditableShippingAddress
-          orderId={order.id}
-          initialAddress={order.shippingAddress}
-          initialCity={order.shippingCity}
-          initialState={order.shippingState}
-          initialPincode={order.shippingPincode}
-          initialPhone={order.shippingPhone}
-          status={order.status}
-        />
+        {/* Delivery Address */}
+        {!isAmazonOrder ? (
+          <EditableShippingAddress
+            orderId={order.id}
+            initialAddress={order.shippingAddress}
+            initialCity={order.shippingCity}
+            initialState={order.shippingState}
+            initialPincode={order.shippingPincode}
+            initialPhone={order.shippingPhone}
+            status={order.status}
+          />
+        ) : (
+          <div className="bg-surface border border-border p-5 rounded-sm">
+            <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-4 border-b border-border pb-2 m-0 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-accent" />
+              <span>Delivery Address</span>
+            </h3>
+            {order.shippingAddress &&
+            !order.shippingAddress.includes("Amazon Marketplace") ? (
+              <div className="space-y-1">
+                <p className="font-sans text-[13px] text-secondary leading-relaxed font-medium m-0">
+                  {order.shippingAddress}
+                </p>
+                {(order.shippingCity ||
+                  order.shippingState ||
+                  order.shippingPincode) && (
+                  <p className="font-mono text-[11px] text-muted m-0">
+                    {[order.shippingCity, order.shippingState]
+                      .filter(Boolean)
+                      .join(", ")}
+                    {order.shippingPincode ? ` - ${order.shippingPincode}` : ""}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="font-mono text-[11px] text-muted m-0 italic">
+                Import customer details above to populate address
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Financial Summary */}
-        <div className="bg-surface border border-border p-6 rounded-sm">
-          <h3 className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted mb-4 border-b border-border pb-2">
-            💰 Financial Summary
+        <div
+          id="payment-summary"
+          className="bg-surface border border-border p-5 rounded-sm"
+        >
+          <h3 className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-4 border-b border-border pb-2 m-0 flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-accent" />
+            <span>Payment Summary</span>
           </h3>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {[
               [
                 "Subtotal",
@@ -286,60 +503,83 @@ export default async function OrderDetailPage(props: {
               ],
               ["GST Tax", formatPrice(order.taxAmount)],
               [
-                "Shipping Fee",
+                "Shipping",
                 order.shippingAmount === 0
                   ? "FREE"
                   : formatPrice(order.shippingAmount),
               ],
+              ...(order.discountAmount > 0
+                ? [["Discount", `- ${formatPrice(order.discountAmount)}`]]
+                : []),
             ].map(([l, v]) => (
               <div
                 key={l}
                 className="flex justify-between font-mono text-[11px] text-muted"
               >
                 <span>{l}</span>
-                <span>{v}</span>
+                <span className={l === "Discount" ? "text-emerald-400" : ""}>
+                  {v}
+                </span>
               </div>
             ))}
-            <div className="flex justify-between font-serif text-[22px] text-accent pt-3 border-t border-border font-light">
-              <span>Total Value</span>
+            <div className="flex justify-between font-serif text-[20px] text-accent pt-2.5 border-t border-border font-light">
+              <span>Total</span>
               <span>{formatPrice(order.totalAmount)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Line Items Table ──────────────────────────────────────────────── */}
-      <div className="bg-surface border border-border rounded-sm overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-border flex justify-between items-center">
-          <h3 className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted m-0">
-            Order Items ({order.items.length})
+      {/* ── D2C Customer Details Studio ── */}
+      {!isAmazonOrder && (
+        <div id="customer-info">
+          <CustomerAddressEditor
+            orderId={order.id}
+            initialName={displayName || ""}
+            initialEmail={displayEmail || ""}
+            initialPhone={displayPhone || ""}
+            initialAddress={order.shippingAddress}
+            initialCity={order.shippingCity}
+            initialState={order.shippingState}
+            initialPincode={order.shippingPincode}
+            initialCompanyName={order.companyName || order.user.company?.name}
+            initialGstin={order.gstin || order.user.company?.gstin}
+            isAmazon={false}
+            hasNoRecipient={false}
+          />
+        </div>
+      )}
+
+      {/* ── Order Line Items (Reworked with Large Image & Prominent SKU) ── */}
+      <div
+        id="order-items"
+        className="bg-surface border border-border rounded-sm overflow-hidden"
+      >
+        <div className="px-5 py-4 border-b border-border flex justify-between items-center bg-gradient-to-r from-surface via-surface to-background">
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted m-0 flex items-center gap-2">
+            <Package className="w-4 h-4 text-accent" />
+            <span>Order Items ({order.items.length})</span>
           </h3>
-          <span className="font-mono text-[8px] uppercase tracking-widest text-muted hidden sm:inline-block">
-            Click product to view on storefront ↗
-          </span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[550px]">
-            <thead className="border-b border-border text-muted bg-background/50">
+          <table className="w-full text-left min-w-[540px]">
+            <thead className="border-b border-border text-muted bg-background/60">
               <tr>
                 <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
-                  Product
+                  Product &amp; SKU
                 </th>
-                <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
-                  SKU
-                </th>
-                <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
+                <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal text-center">
                   Qty
                 </th>
                 <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal">
                   Unit Price
                 </th>
                 <th className="py-3.5 px-6 font-mono text-[9px] uppercase tracking-[0.15em] font-normal text-right">
-                  Total
+                  Line Total
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/60">
               {order.items.map((item) => {
                 const imageUrl = item.product.images?.[0];
                 const storefrontProductUrl = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/products/${item.product.slug}`;
@@ -349,48 +589,60 @@ export default async function OrderDetailPage(props: {
                     className="hover:bg-white/[0.02] transition-colors"
                   >
                     <td className="py-4 px-6">
-                      <a
-                        href={storefrontProductUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3.5 group/prod text-left"
-                      >
-                        <div className="w-12 h-12 rounded border border-border/80 bg-background overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      <div className="flex items-start gap-4">
+                        {/* Large Crisp Image Thumbnail (w-16 h-16 sm:w-20 sm:h-20) */}
+                        <a
+                          href={storefrontProductUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-sm border border-border/80 bg-black overflow-hidden flex-shrink-0 flex items-center justify-center group/img relative"
+                        >
                           {imageUrl ? (
                             <img
                               src={imageUrl}
                               alt={item.product.name}
-                              className="w-full h-full object-cover group-hover/prod:scale-105 transition-transform duration-200"
+                              className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200"
                             />
                           ) : (
-                            <span className="text-[18px]">💡</span>
+                            <Package className="w-8 h-8 text-muted/40" />
                           )}
-                        </div>
-                        <div>
-                          <p className="font-serif text-[15px] text-primary group-hover/prod:text-accent transition-colors m-0 flex items-center gap-1.5 font-medium">
-                            {item.product.name}
-                            <span className="font-mono text-[10px] text-accent opacity-0 group-hover/prod:opacity-100 transition-opacity">
-                              ↗
+                        </a>
+
+                        {/* Product Title & Prominent SKU Badge */}
+                        <div className="space-y-1.5 flex-1">
+                          <a
+                            href={storefrontProductUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-serif text-[15px] sm:text-[16px] text-primary hover:text-accent font-medium leading-snug group/link flex items-center gap-1.5 inline-flex"
+                          >
+                            <span>{item.product.name}</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-accent opacity-70 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
+                          </a>
+
+                          {/* Prominent SKU Badge */}
+                          <div>
+                            <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 bg-accent/10 border border-accent/30 text-accent rounded-xs tracking-wider">
+                              SKU: {item.product.sku}
                             </span>
-                          </p>
+                          </div>
+
                           {item.product.dimensions && (
-                            <p className="font-mono text-[10px] text-muted m-0 mt-0.5">
-                              {item.product.dimensions}
+                            <p className="font-mono text-[10px] text-muted m-0">
+                              Dims: {item.product.dimensions}
                             </p>
                           )}
                         </div>
-                      </a>
+                      </div>
                     </td>
-                    <td className="py-4 px-6 font-mono text-[11px] text-muted">
-                      {item.product.sku}
-                    </td>
-                    <td className="py-4 px-6 font-mono text-[13px] text-primary font-semibold">
+
+                    <td className="py-4 px-6 text-center font-mono text-[15px] text-primary font-bold">
                       {item.quantity}
                     </td>
                     <td className="py-4 px-6 font-mono text-[13px] text-muted">
                       ₹{item.unitPrice.toLocaleString("en-IN")}
                     </td>
-                    <td className="py-4 px-6 font-mono text-[14px] text-primary font-bold text-right">
+                    <td className="py-4 px-6 font-mono text-[16px] text-primary font-bold text-right">
                       ₹
                       {(item.quantity * item.unitPrice).toLocaleString("en-IN")}
                     </td>
