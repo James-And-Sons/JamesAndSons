@@ -329,11 +329,24 @@ export default function OrderStatusControls({
     });
   };
 
+  const [boxCount, setBoxCount] = useState(1);
+  const [pickupDate, setPickupDate] = useState(() => {
+    const d = new Date();
+    if (d.getHours() >= 14) d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
+
   const handleBookShiprocketPickup = async () => {
     setIsBookingPickup(true);
     setShiprocketError("");
     try {
-      const result = await bookShiprocketPickupAction(orderId);
+      const result = await bookShiprocketPickupAction(orderId, pickupDate, {
+        length: pkgLength,
+        width: pkgWidth,
+        height: pkgHeight,
+        weight: pkgWeight,
+        boxCount,
+      });
       if (result.success) {
         setShiprocketResult(result);
         if (result.labelUrl) {

@@ -128,7 +128,17 @@ function parseCourierName(rawName?: string): string {
  * Book Shiprocket pickup + fetch official label URL in one click.
  * orderId → look up numeric shipment ID from DB → requestPickup → generateLabel.
  */
-export async function bookShiprocketPickupAction(orderId: string) {
+export async function bookShiprocketPickupAction(
+  orderId: string,
+  customPickupDate?: string,
+  customPackageSpecs?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    weight?: number;
+    boxCount?: number;
+  },
+) {
   try {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order?.awbNumber) {
@@ -147,11 +157,11 @@ export async function bookShiprocketPickupAction(orderId: string) {
       };
     }
 
-    // Step 1: Book earliest pickup (Today / Tomorrow Morning)
-    const earliestDate = getEarliestPickupDate();
-    const pickupResult = await requestPickup([shipmentId], earliestDate);
+    // Step 1: Book selected pickup date
+    const pickupDate = customPickupDate || getEarliestPickupDate();
+    const pickupResult = await requestPickup([shipmentId], pickupDate);
     console.log(
-      `[bookShiprocketPickup] requestPickup for date ${earliestDate} result:`,
+      `[bookShiprocketPickup] requestPickup for date ${pickupDate} result:`,
       JSON.stringify(pickupResult),
     );
 
@@ -173,7 +183,8 @@ export async function bookShiprocketPickupAction(orderId: string) {
       pickupScheduled,
       pickupResult,
       labelUrl,
-      scheduledDate: earliestDate,
+      scheduledDate: pickupDate,
+      packageSpecs: customPackageSpecs,
     };
   } catch (err: any) {
     console.error("bookShiprocketPickupAction error:", err);
