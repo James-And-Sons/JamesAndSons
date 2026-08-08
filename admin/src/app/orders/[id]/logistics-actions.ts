@@ -202,6 +202,46 @@ export async function bookShiprocketPickupAction(
     const labelUrl = await generateLabel([shipmentId]);
     console.log("[bookShiprocketPickup] generateLabel URL:", labelUrl);
 
+    // Step 3: If this is an Amazon order, automatically push AWB & Carrier details to Amazon SP-API!
+    let amazonSynced = false;
+    if (order.amazonOrderId || order.channel === "AMAZON") {
+      try {
+        const awbCodeToPush =
+          order.trackingNumber || order.awbNumber || String(shipmentId);
+        console.log(
+          `[bookShiprocketPickup] Amazon order detected (${order.amazonOrderId}). Auto-syncing AWB ${awbCodeToPush} to Amazon SP-API...`,
+        );
+
+        const host =
+          process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3000";
+        const spRes = await fetch(
+          `${host}/api/orders/${orderId}/amazon-confirm-shipment`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              carrierCode: "Shiprocket",
+              carrierName: "Shiprocket",
+              trackingNumber: awbCodeToPush,
+            }),
+            cache: "no-store",
+          },
+        );
+        const spData = await spRes.json().catch(() => ({}));
+        if (spData.success || spData.warning) {
+          amazonSynced = true;
+          console.log(
+            `[bookShiprocketPickup] Amazon SP-API sync successful for order ${order.amazonOrderId}`,
+          );
+        }
+      } catch (amzErr) {
+        console.warn(
+          "[bookShiprocketPickup] Auto Amazon SP-API sync warning:",
+          amzErr,
+        );
+      }
+    }
+
     revalidatePath(`/orders/${orderId}`);
 
     return {
@@ -211,6 +251,7 @@ export async function bookShiprocketPickupAction(
       labelUrl,
       scheduledDate: pickupDate,
       packageSpecs: customPackageSpecs,
+      amazonSynced,
     };
   } catch (err: any) {
     console.error("bookShiprocketPickupAction error:", err);

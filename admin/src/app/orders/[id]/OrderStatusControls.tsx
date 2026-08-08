@@ -495,6 +495,11 @@ export default function OrderStatusControls({
       );
       if (result.success) {
         setShiprocketResult(result);
+        if (result.amazonSynced) {
+          setAmzConfirmResult(
+            "⚡ Shipment booked & AWB auto-synced to Amazon SP-API!",
+          );
+        }
         if (result.labelUrl) {
           setShiprocketLabelUrl(result.labelUrl);
           window.open(result.labelUrl, "_blank");
