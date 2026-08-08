@@ -1392,6 +1392,7 @@ export default function OrderStatusControls({
                   </div>
 
                   <button
+                    suppressHydrationWarning
                     onClick={() => {
                       if (awbNumber || trackingNumber) {
                         startTransition(async () => {

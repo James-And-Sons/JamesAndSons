@@ -216,6 +216,8 @@ export async function retryLogisticsSync(orderId: string) {
       };
     }
 
+    let needNewShipment = !order.awbNumber || !order.trackingNumber;
+
     // Case 1: Order already created in Shiprocket (we have shipment ID in awbNumber), but AWB assignment failed.
     if (
       order.awbNumber &&
@@ -232,6 +234,7 @@ export async function retryLogisticsSync(orderId: string) {
         courierName = parseCourierName(awbRes.courier_name);
         fulfillmentError = null;
         finalStatus = "PROCESSING";
+        needNewShipment = false;
 
         // Schedule earliest pickup immediately
         await requestPickup(
@@ -239,23 +242,15 @@ export async function retryLogisticsSync(orderId: string) {
           getEarliestPickupDate(),
         );
       } else {
-        const errorMsg = String(awbRes.message || "");
-        if (
-          errorMsg.includes("CANCELLED") ||
-          errorMsg.includes("already assigned")
-        ) {
-          console.log(
-            `[RetryLogistics] Stored shipment ID ${order.awbNumber} has cancelled AWB. Creating fresh shipment order on Shiprocket...`,
-          );
-          awbNumber = null;
-        } else {
-          fulfillmentError = `Order created, but AWB failed: ${awbRes.message}`;
-          throw new Error(awbRes.message || "AWB Assignment failed");
-        }
+        console.log(
+          `[RetryLogistics] Stored shipment ID ${order.awbNumber} AWB assignment failed (${awbRes.message}). Falling back to fresh shipment creation on Shiprocket...`,
+        );
+        awbNumber = null;
+        needNewShipment = true;
       }
     }
 
-    if (!awbNumber || !trackingNumber) {
+    if (needNewShipment) {
       // Case 2: Order was never created in Shiprocket. Create order + assign AWB + request pickup.
       console.log(`[RetryLogistics] Creating new Shiprocket order...`);
       const parts = order.shippingAddress.split(", ");
