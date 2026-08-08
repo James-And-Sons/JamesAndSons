@@ -12,6 +12,7 @@ import { prisma } from "../prisma";
 import { sendNotificationToAllAdmins } from "../push";
 import {
   getLwaAccessToken,
+  getRestrictedDataToken,
   getAmazonConfig,
   signedSpApiFetch,
 } from "../amazon-sp-api";
@@ -61,7 +62,10 @@ export async function fetchNewAmazonOrders(
   minutesBack = 1440,
 ): Promise<AmazonOrder[]> {
   const config = getAmazonConfig();
-  const accessToken = await getLwaAccessToken();
+  const accessToken = await getRestrictedDataToken([
+    "buyerInfo",
+    "shippingAddress",
+  ]);
 
   const lastUpdatedAfter = new Date(
     Date.now() - minutesBack * 60 * 1000,
@@ -72,7 +76,7 @@ export async function fetchNewAmazonOrders(
   const path = `/orders/v0/orders?MarketplaceIds=${config.marketplaceId}&LastUpdatedAfter=${encodeURIComponent(lastUpdatedAfter)}&OrderStatuses=${statuses}`;
 
   console.log(
-    `[Amazon Orders] Fetching Amazon orders updated after ${lastUpdatedAfter}...`,
+    `[Amazon Orders] Fetching Amazon orders updated after ${lastUpdatedAfter} with RDT...`,
   );
   const res = await signedSpApiFetch(path, accessToken, config);
 
@@ -98,7 +102,10 @@ export async function syncSingleAmazonOrder(
 ): Promise<{ success: boolean; status?: string; message?: string }> {
   try {
     const config = getAmazonConfig();
-    const accessToken = await getLwaAccessToken();
+    const accessToken = await getRestrictedDataToken([
+      "buyerInfo",
+      "shippingAddress",
+    ]);
     const path = `/orders/v0/orders/${amazonOrderId}`;
 
     console.log(
