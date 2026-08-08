@@ -49,8 +49,12 @@ export default function CustomerAddressEditor({
   const [gstin, setGstin] = useState(initialGstin || "");
   const [rawPasteText, setRawPasteText] = useState("");
 
-  const handleParseRawAmazonAddress = () => {
+  const handleParseAndSaveAmazonAddress = async () => {
     if (!rawPasteText.trim()) return;
+    setSaving(true);
+    setSuccessMsg("");
+    setErrorMsg("");
+
     const lines = rawPasteText
       .split("\n")
       .map((l) => l.trim())
@@ -85,7 +89,6 @@ export default function CustomerAddressEditor({
       addressLines.push(line);
     }
 
-    // If no explicit Contact Buyer line, pick top 2 lines as Recipient Name
     if (!parsedName && addressLines.length > 0) {
       if (addressLines.length >= 2) {
         parsedName = `${addressLines[0]} ${addressLines[1]}`;
@@ -96,14 +99,43 @@ export default function CustomerAddressEditor({
       }
     }
 
-    if (parsedName) setCustomerName(parsedName);
-    if (parsedPhone) setCustomerPhone(parsedPhone);
-    if (addressLines.length > 0) setAddress(addressLines.join(", "));
-    if (parsedCity) setCity(parsedCity);
-    if (parsedState) setState(parsedState);
-    if (parsedPincode) setPincode(parsedPincode);
+    const finalName = parsedName || customerName;
+    const finalPhone = parsedPhone || customerPhone;
+    const finalAddress =
+      addressLines.length > 0 ? addressLines.join(", ") : address;
+    const finalCity = parsedCity || city;
+    const finalState = parsedState || state;
+    const finalPincode = parsedPincode || pincode;
 
-    setSuccessMsg("Auto-parsed Amazon order details successfully!");
+    setCustomerName(finalName);
+    setCustomerPhone(finalPhone);
+    setAddress(finalAddress);
+    setCity(finalCity);
+    setState(finalState);
+    setPincode(finalPincode);
+
+    // Save directly to DB in 1 click!
+    const res = await updateOrderCustomerAddressAction(orderId, {
+      customerName: finalName,
+      customerEmail,
+      customerPhone: finalPhone,
+      shippingAddress: finalAddress,
+      shippingCity: finalCity,
+      shippingState: finalState,
+      shippingPincode: finalPincode,
+      companyName,
+      gstin,
+    });
+
+    setSaving(false);
+    if (res.success) {
+      setSuccessMsg(
+        "Amazon details imported and saved to database successfully!",
+      );
+      setIsEditing(false);
+    } else {
+      setErrorMsg(res.error || "Failed to save imported details.");
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -137,7 +169,7 @@ export default function CustomerAddressEditor({
     <div
       style={{
         background: "var(--surface, #111)",
-        border: "1px solid rgba(196,160,90,0.2)",
+        border: "1px solid rgba(196,160,90,0.25)",
         borderRadius: "2px",
         padding: "20px",
       }}
@@ -148,7 +180,7 @@ export default function CustomerAddressEditor({
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: "14px",
-          borderBottom: "1px solid rgba(196,160,90,0.1)",
+          borderBottom: "1px solid rgba(196,160,90,0.15)",
           paddingBottom: "10px",
         }}
       >
@@ -156,7 +188,7 @@ export default function CustomerAddressEditor({
           <h3
             style={{
               fontFamily: "monospace",
-              fontSize: "10px",
+              fontSize: "11px",
               letterSpacing: "0.18em",
               textTransform: "uppercase",
               color: "#c4a05a",
@@ -174,8 +206,8 @@ export default function CustomerAddressEditor({
                 margin: "4px 0 0",
               }}
             >
-              ⚡ Amazon Address Parser: Paste raw Seller Central details below
-              to auto-extract name, phone, address, state &amp; pincode!
+              ⚡ Amazon Order: Click <strong>"Import Amazon Details"</strong>{" "}
+              below to paste and auto-fill customer info &amp; address!
             </p>
           )}
         </div>
@@ -185,21 +217,22 @@ export default function CustomerAddressEditor({
           onClick={() => setIsEditing(!isEditing)}
           style={{
             background: isEditing
-              ? "rgba(248,113,113,0.1)"
-              : "rgba(196,160,90,0.15)",
-            border: `1px solid ${isEditing ? "rgba(248,113,113,0.3)" : "rgba(196,160,90,0.3)"}`,
-            color: isEditing ? "#f87171" : "#c4a05a",
+              ? "rgba(248,113,113,0.12)"
+              : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+            border: isEditing ? "1px solid rgba(248,113,113,0.4)" : "none",
+            color: isEditing ? "#f87171" : "#000",
             fontFamily: "monospace",
-            fontSize: "9px",
+            fontSize: "10px",
             fontWeight: "bold",
-            padding: "6px 12px",
+            padding: "8px 16px",
             borderRadius: "2px",
             cursor: "pointer",
-            letterSpacing: "0.1em",
+            letterSpacing: "0.12em",
             textTransform: "uppercase",
+            boxShadow: isEditing ? "none" : "0 2px 10px rgba(245,158,11,0.25)",
           }}
         >
-          {isEditing ? "✕ Cancel" : "📋 Auto-Import / Edit Address"}
+          {isEditing ? "✕ Close Studio" : "📥 Import Amazon Details"}
         </button>
       </div>
 
@@ -209,10 +242,10 @@ export default function CustomerAddressEditor({
             background: "rgba(74,222,128,0.08)",
             border: "1px solid rgba(74,222,128,0.3)",
             color: "#4ade80",
-            padding: "8px 12px",
+            padding: "10px 14px",
             borderRadius: "2px",
             fontFamily: "monospace",
-            fontSize: "10px",
+            fontSize: "11px",
             marginBottom: "12px",
           }}
         >
@@ -226,10 +259,10 @@ export default function CustomerAddressEditor({
             background: "rgba(248,113,113,0.08)",
             border: "1px solid rgba(248,113,113,0.3)",
             color: "#f87171",
-            padding: "8px 12px",
+            padding: "10px 14px",
             borderRadius: "2px",
             fontFamily: "monospace",
-            fontSize: "10px",
+            fontSize: "11px",
             marginBottom: "12px",
           }}
         >
@@ -241,62 +274,67 @@ export default function CustomerAddressEditor({
       {isEditing && (
         <div
           style={{
-            background: "rgba(245,158,11,0.05)",
-            border: "1px solid rgba(245,158,11,0.25)",
+            background: "rgba(245,158,11,0.06)",
+            border: "1px solid rgba(245,158,11,0.3)",
             borderRadius: "2px",
-            padding: "12px",
-            marginBottom: "14px",
+            padding: "16px",
+            marginBottom: "16px",
           }}
         >
           <label
             style={{
               display: "block",
               fontFamily: "monospace",
-              fontSize: "8.5px",
+              fontSize: "9px",
               color: "#f59e0b",
               textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              marginBottom: "4px",
+              letterSpacing: "0.12em",
+              marginBottom: "6px",
               fontWeight: "bold",
             }}
           >
             📋 Paste Raw Amazon Seller Central Order Details Here
           </label>
           <textarea
-            rows={4}
+            rows={5}
             value={rawPasteText}
             onChange={(e) => setRawPasteText(e.target.value)}
-            placeholder={`Paste here:\nHymavathiamma\nHymavath\nSanatanapuram P O, Kalarcode, Alleppey\nPUNNAPARA, KERALA 688003\nContact Buyer:\tSajeeve\nPhone:\t9567931371`}
+            placeholder={`Paste raw Amazon text here:\n\nHymavathiamma\nHymavath\nSanatanapuram P O, Kalarcode, Alleppey\nPUNNAPARA, KERALA 688003\nContact Buyer:\tSajeeve\nPhone:\t9567931371`}
             style={{
               width: "100%",
-              padding: "8px",
+              padding: "10px",
               background: "#000",
-              border: "1px solid rgba(245,158,11,0.3)",
+              border: "1px solid rgba(245,158,11,0.4)",
               borderRadius: "2px",
               color: "#fff",
               fontFamily: "monospace",
               fontSize: "11px",
-              marginBottom: "8px",
+              marginBottom: "10px",
             }}
           />
           <button
             type="button"
-            onClick={handleParseRawAmazonAddress}
+            onClick={handleParseAndSaveAmazonAddress}
+            disabled={saving || !rawPasteText.trim()}
             style={{
               background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
               border: "none",
               color: "#000",
               fontFamily: "monospace",
-              fontSize: "9px",
+              fontSize: "10px",
               fontWeight: "bold",
-              padding: "6px 14px",
+              padding: "8px 18px",
               borderRadius: "2px",
-              cursor: "pointer",
-              letterSpacing: "0.1em",
+              cursor:
+                saving || !rawPasteText.trim() ? "not-allowed" : "pointer",
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
+              opacity: saving || !rawPasteText.trim() ? 0.6 : 1,
             }}
           >
-            ⚡ Auto-Extract &amp; Fill Fields Below
+            {saving
+              ? "Saving to Database…"
+              : "⚡ Auto-Extract & Save to Database (1-Click)"}
           </button>
         </div>
       )}
@@ -448,6 +486,19 @@ export default function CustomerAddressEditor({
         </div>
       ) : (
         <form onSubmit={handleSave} style={{ display: "grid", gap: "12px" }}>
+          <p
+            style={{
+              fontFamily: "monospace",
+              fontSize: "9px",
+              color: "#c4a05a",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              margin: "0 0 4px",
+            }}
+          >
+            Manual Field Editing
+          </p>
+
           <div
             style={{
               display: "grid",
