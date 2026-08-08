@@ -206,8 +206,16 @@ export async function bookShiprocketPickupAction(
     let amazonSynced = false;
     if (order.amazonOrderId || order.channel === "AMAZON") {
       try {
+        // Re-fetch order to ensure latest trackingNumber and courier/carrierName are loaded
+        const currentOrder = await prisma.order.findUnique({
+          where: { id: orderId },
+        });
+
         const awbCodeToPush =
-          order.trackingNumber || order.awbNumber || String(shipmentId);
+          currentOrder?.trackingNumber ||
+          currentOrder?.awbNumber ||
+          String(shipmentId);
+
         console.log(
           `[bookShiprocketPickup] Amazon order detected (${order.amazonOrderId}). Auto-syncing AWB ${awbCodeToPush} to Amazon SP-API...`,
         );
@@ -220,8 +228,6 @@ export async function bookShiprocketPickupAction(
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              carrierCode: "Shiprocket",
-              carrierName: "Shiprocket",
               trackingNumber: awbCodeToPush,
             }),
             cache: "no-store",
@@ -233,6 +239,26 @@ export async function bookShiprocketPickupAction(
           console.log(
             `[bookShiprocketPickup] Amazon SP-API sync successful for order ${order.amazonOrderId}`,
           );
+
+          // Auto-resync Amazon status with Amazon Seller Central after 1 second
+          setTimeout(async () => {
+            try {
+              const { syncSingleAmazonOrderAction } =
+                await import("../../orders/actions");
+              await syncSingleAmazonOrderAction(
+                order.amazonOrderId || orderId,
+                orderId,
+              );
+              console.log(
+                `[bookShiprocketPickup] Auto 1-sec Amazon re-sync executed for order ${order.amazonOrderId}`,
+              );
+            } catch (syncErr) {
+              console.warn(
+                "[bookShiprocketPickup] Auto 1-sec Amazon re-sync warning:",
+                syncErr,
+              );
+            }
+          }, 1000);
         }
       } catch (amzErr) {
         console.warn(

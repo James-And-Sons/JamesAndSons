@@ -73,21 +73,65 @@ export async function POST(
       );
     }
 
-    // Build list of valid Indian Amazon carrier candidates
+    // Fetch exact real courier name from Shiprocket for this AWB if available
+    let fetchedCourierName = carrierName;
+    if (!fetchedCourierName || fetchedCourierName === "Shiprocket") {
+      try {
+        const { getShiprocketToken } =
+          await import("@james-andsons/shiprocket");
+        const token = await getShiprocketToken();
+        if (token && awbToUse) {
+          const trackRes = await fetch(
+            `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${encodeURIComponent(awbToUse)}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              cache: "no-store",
+            },
+          );
+          if (trackRes.ok) {
+            const trackData = await trackRes.json();
+            const realCourier =
+              trackData?.tracking_data?.shipment_track?.[0]?.courier_name ||
+              trackData?.courier_name;
+            if (realCourier) {
+              fetchedCourierName = realCourier;
+              console.log(
+                `[Amazon Confirm Shipment] Fetched real courier from Shiprocket for AWB ${awbToUse}: "${realCourier}"`,
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(
+          "[Amazon Confirm Shipment] Could not fetch real courier from Shiprocket:",
+          err,
+        );
+      }
+    }
+
+    // Parse exact carrier for Amazon SP-API
+    const parseCarrierForAmazon = (rawName?: string | null): string => {
+      if (!rawName) return "Delhivery";
+      const lower = rawName.toLowerCase();
+      if (lower.includes("bluedart") || lower.includes("blue dart"))
+        return "BlueDart";
+      if (lower.includes("delhivery")) return "Delhivery";
+      if (lower.includes("dtdc")) return "DTDC";
+      if (lower.includes("india") || lower.includes("post"))
+        return "India Post";
+      if (lower.includes("ecom")) return "Ecom Express";
+      if (lower.includes("xpress")) return "Xpressbees";
+      if (lower.includes("fedex")) return "FedEx";
+      if (lower.includes("dhl")) return "DHL";
+      return "Other";
+    };
+
+    const primaryCarrier = parseCarrierForAmazon(fetchedCourierName);
+    const displayCarrierName = fetchedCourierName || "Delhivery";
+
+    // Strictly attempt primary carrier first, then "Other" with explicit name (NO cross-carrier mismatches)
     const carrierCandidates = Array.from(
-      new Set(
-        [
-          carrierName?.trim(),
-          "Delhivery",
-          "BlueDart",
-          "DTDC",
-          "India Post",
-          "Ecom Express",
-          "FedEx",
-          "DHL",
-          "Other",
-        ].filter(Boolean),
-      ),
+      new Set([primaryCarrier, "Other"].filter(Boolean)),
     ) as string[];
 
     const spPath = `/orders/v0/orders/${order.amazonOrderId}/shipmentConfirmation`;
@@ -97,7 +141,7 @@ export async function POST(
 
     for (const carrier of carrierCandidates) {
       console.log(
-        `[Amazon SP-API] Attempting shipment confirmation for ${order.amazonOrderId} (AWB: ${awbToUse}) with carrierCode: "${carrier}"...`,
+        `[Amazon SP-API] Attempting shipment confirmation for ${order.amazonOrderId} (AWB: ${awbToUse}) with carrierCode: "${carrier}" (Actual: ${displayCarrierName})...`,
       );
 
       const shipmentPayload = {
@@ -105,7 +149,7 @@ export async function POST(
         packageDetail: {
           packageReferenceId: "1",
           carrierCode: carrier,
-          carrierName: carrier === "Other" ? "Other" : carrier,
+          carrierName: carrier === "Other" ? displayCarrierName : carrier,
           shippingService: shippingService || "Standard",
           trackingNumber: awbToUse,
           shipDate: new Date().toISOString(),
