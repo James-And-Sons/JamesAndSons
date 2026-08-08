@@ -104,35 +104,61 @@ export async function POST(
       `[Amazon SP-API] Confirming shipment for order ${order.amazonOrderId} with AWB ${awbToUse}...`,
     );
 
-    const res = await signedSpApiFetch(spPath, accessToken, config, {
+    let res = await signedSpApiFetch(spPath, accessToken, config, {
       method: "POST",
       body: JSON.stringify(shipmentPayload),
     });
 
+    // If Amazon SP-API returns InvalidCarrier, automatically fallback to carrierCode: "Other", carrierName: "Other"
     if (!res.ok) {
       const errorText = await res.text();
-      console.error(
-        `[Amazon SP-API] Shipment confirmation error: ${res.status} — ${errorText}`,
+      console.warn(
+        `[Amazon SP-API] First attempt error: ${res.status} — ${errorText}`,
       );
 
-      // Update local DB status & tracking even if Amazon SP-API requires manual fallback
-      await prisma.order.update({
-        where: { id },
-        data: {
-          awbNumber: awbToUse,
-          trackingNumber: awbToUse,
-          status: "SHIPPED",
-          amazonOrderStatus: "Shipped",
-          fulfillmentError: `SP-API Warning: ${errorText}`,
-        },
-      });
+      if (errorText.includes("InvalidCarrier")) {
+        console.log(
+          "[Amazon SP-API] Retrying shipment confirmation with fallback carrierCode: 'Other', carrierName: 'Other'...",
+        );
+        const fallbackPayload = {
+          marketplaceId: config.marketplaceId,
+          packageDetail: {
+            ...shipmentPayload.packageDetail,
+            carrierCode: "Other",
+            carrierName: "Other",
+          },
+        };
+        res = await signedSpApiFetch(spPath, accessToken, config, {
+          method: "POST",
+          body: JSON.stringify(fallbackPayload),
+        });
+      }
 
-      return NextResponse.json({
-        success: false,
-        warning: true,
-        awbNumber: awbToUse,
-        message: `AWB ${awbToUse} saved in JNS. Amazon API response: ${errorText}`,
-      });
+      if (!res.ok) {
+        const finalErrorText = await res.text();
+        console.error(
+          `[Amazon SP-API] Final shipment confirmation error: ${res.status} — ${finalErrorText}`,
+        );
+
+        // Update local DB status & tracking even if Amazon SP-API requires manual fallback
+        await prisma.order.update({
+          where: { id },
+          data: {
+            awbNumber: awbToUse,
+            trackingNumber: awbToUse,
+            status: "SHIPPED",
+            amazonOrderStatus: "Shipped",
+            fulfillmentError: `SP-API Warning: ${finalErrorText}`,
+          },
+        });
+
+        return NextResponse.json({
+          success: false,
+          warning: true,
+          awbNumber: awbToUse,
+          message: `AWB ${awbToUse} saved in JNS. Amazon API response: ${finalErrorText}`,
+        });
+      }
     }
 
     // Success — update Prisma order
