@@ -8,6 +8,7 @@ import PwaInstallHelper from "@/components/PwaInstallHelper";
 import PasskeyManagerCard from "@/components/PasskeyManagerCard";
 import CaEmailSettingsForm from "./CaEmailSettingsForm";
 import BrandSettingsForm from "./BrandSettingsForm";
+import DocumentDownloadSettingsForm from "./DocumentDownloadSettingsForm";
 import { adminTogglePagePublishStatus } from "./config-actions";
 import CataloguesClient from "../catalogues/CataloguesClient";
 import { ThemeToggle } from "@james-andsons/ui";
@@ -151,6 +152,9 @@ export default function SettingsTabsContainer({
               <ThemeToggle variant="admin" />
             </div>
           </div>
+
+          {/* Order Document Download Preferences (Checkboxes) */}
+          <DocumentDownloadSettingsForm />
 
           {/* PWA App Installation Section with Platform Detection */}
           <PwaInstallHelper />

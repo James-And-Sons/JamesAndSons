@@ -442,42 +442,69 @@ export default function OrderStatusControls({
   const handleDownloadAllDocs = async () => {
     setIsDownloadingAll(true);
     try {
-      const docs = [
-        {
+      const { getDocDownloadPrefs } =
+        await import("../../account/DocumentDownloadSettingsForm");
+      const prefs = getDocDownloadPrefs();
+      const docs: { name: string; url: string }[] = [];
+
+      if (prefs.gstInvoice) {
+        docs.push({
           name: `GST_Invoice_${orderId}.pdf`,
           url: `/api/orders/${orderId}/invoice`,
-        },
-        shiprocketLabelUrl
-          ? {
-              name: `Shipping_Label_${orderId}.pdf`,
-              url: shiprocketLabelUrl,
-            }
-          : null,
-        manifestUrl
-          ? {
-              name: `Pickup_Manifest_${orderId}.pdf`,
-              url: manifestUrl,
-            }
-          : null,
-        shiprocketInvoiceUrl
-          ? {
-              name: `Courier_Invoice_${orderId}.pdf`,
-              url: shiprocketInvoiceUrl,
-            }
-          : null,
-      ].filter(Boolean) as { name: string; url: string }[];
+        });
+      }
+      if (prefs.shippingLabel && shiprocketLabelUrl) {
+        docs.push({
+          name: `Shipping_Label_${orderId}.pdf`,
+          url: shiprocketLabelUrl,
+        });
+      }
+      if (prefs.pickupManifest && manifestUrl) {
+        docs.push({
+          name: `Pickup_Manifest_${orderId}.pdf`,
+          url: manifestUrl,
+        });
+      }
+      if (prefs.courierInvoice && shiprocketInvoiceUrl) {
+        docs.push({
+          name: `Courier_Invoice_${orderId}.pdf`,
+          url: shiprocketInvoiceUrl,
+        });
+      }
+
+      if (docs.length === 0) {
+        alert(
+          "No document types selected in Settings > Order Document Download Preferences.",
+        );
+        return;
+      }
 
       for (let i = 0; i < docs.length; i++) {
         const doc = docs[i];
-        const link = document.createElement("a");
-        link.href = doc.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.download = doc.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        await new Promise((res) => setTimeout(res, 350));
+        try {
+          // Fetch blob to enforce direct standalone file save to disk
+          const response = await fetch(doc.url);
+          const blob = await response.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = doc.name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+          // Fallback to direct download
+          const link = document.createElement("a");
+          link.href = doc.url;
+          link.target = "_blank";
+          link.download = doc.name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        await new Promise((res) => setTimeout(res, 400));
       }
     } catch (err) {
       console.error("Error downloading all documents:", err);
@@ -485,6 +512,22 @@ export default function OrderStatusControls({
       setIsDownloadingAll(false);
     }
   };
+
+  // ── Listen for custom download-all event from side panel / nav ──
+  useEffect(() => {
+    const handleDownloadEvent = () => {
+      handleDownloadAllDocs();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("jns:download-all-docs", handleDownloadEvent);
+      return () => {
+        window.removeEventListener(
+          "jns:download-all-docs",
+          handleDownloadEvent,
+        );
+      };
+    }
+  }, [shiprocketLabelUrl, manifestUrl, shiprocketInvoiceUrl, orderId]);
 
   const handleBookEasyShip = async () => {
     if (!selectedSlot) {

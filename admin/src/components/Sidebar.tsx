@@ -31,6 +31,7 @@ import {
   Radio,
   CreditCard,
   FileCheck,
+  Download,
 } from "lucide-react";
 
 // Persistent module-level cache to prevent flickering / unmounting resets
@@ -617,6 +618,24 @@ function Sidebar({
           <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted px-2 py-1 m-0">
             Download Documents
           </p>
+
+          {/* Download All Button (triggers exact same PDF bundle download) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("jns:download-all-docs"));
+              }
+            }}
+            className="w-full text-left font-mono text-[9px] uppercase tracking-wider px-3 py-2 bg-accent text-black hover:bg-accent-hover font-bold rounded-xs transition-colors flex items-center justify-between mb-2 cursor-pointer shadow-sm"
+            title="Download all selected documents as separate PDF files"
+          >
+            <span className="flex items-center gap-1.5">
+              <Download className="w-3.5 h-3.5 text-black" />
+              <span>Download All Documents</span>
+            </span>
+            <span>📥</span>
+          </button>
 
           {/* 1. GST Tax Invoice */}
           <a
