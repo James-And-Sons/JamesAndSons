@@ -6,6 +6,7 @@ import {
   updateOrderStatus,
   updateTrackingNumber,
   syncSingleAmazonOrderAction,
+  resetAmazonOrderShipmentAction,
 } from "../actions";
 import {
   syncRazorpayPayment,
@@ -1438,6 +1439,51 @@ export default function OrderStatusControls({
                           ? `⚡ Re-sync Amazon SP-API (AWB #${trackingNumber || awbNumber})`
                           : "🚀 Book Shiprocket & Confirm on Amazon"}
                   </button>
+
+                  {(awbNumber || trackingNumber) && (
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Are you sure you want to cancel this Shiprocket shipment and request a wallet refund?",
+                          )
+                        ) {
+                          startTransition(async () => {
+                            const res =
+                              await resetAmazonOrderShipmentAction(orderId);
+                            if (res.success) {
+                              setAmzConfirmResult(
+                                res.message ||
+                                  "Shipment reset! Wallet refund requested on Shiprocket.",
+                              );
+                              router.refresh();
+                            } else {
+                              setAmzConfirmError(
+                                res.error || "Failed to reset shipment.",
+                              );
+                            }
+                          });
+                        }
+                      }}
+                      disabled={isPending}
+                      style={{
+                        marginTop: "8px",
+                        width: "100%",
+                        padding: "8px 12px",
+                        background: "rgba(248,113,113,0.1)",
+                        border: "1px solid rgba(248,113,113,0.3)",
+                        color: "#f87171",
+                        fontFamily: "monospace",
+                        fontSize: "9px",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        borderRadius: "2px",
+                        cursor: isPending ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      ↺ Cancel &amp; Reset Shipment (Refund Wallet)
+                    </button>
+                  )}
                 </div>
 
                 {/* Option B: Manual Amazon SP-API Shipment Confirmation */}

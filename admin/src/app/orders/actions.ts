@@ -260,10 +260,8 @@ export async function updateOrderAddressAction(
         shippingCity: data.shippingCity,
         shippingState: data.shippingState,
         shippingPincode: data.shippingPincode,
-        shippingPhone: data.shippingPhone,
       },
     });
-
     revalidatePath(`/orders/${orderId}`);
     return { success: true };
   } catch (error: any) {
@@ -271,6 +269,46 @@ export async function updateOrderAddressAction(
     return {
       success: false,
       error: error.message || "Failed to update shipping address",
+    };
+  }
+}
+
+export async function resetAmazonOrderShipmentAction(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new Error("Order not found");
+
+    if (order.orderNumber) {
+      console.log(
+        `[ResetAmazonOrder] Cancelling Shiprocket shipment for order ${order.orderNumber}...`,
+      );
+      await cancelShiprocketOrder(order.orderNumber).catch((err) =>
+        console.warn("[ResetAmazonOrder] Shiprocket cancel warning:", err),
+      );
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        awbNumber: null,
+        trackingNumber: null,
+        fulfillmentError: null,
+        status: "PAID",
+        amazonOrderStatus: "Unshipped",
+      },
+    });
+
+    revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/orders");
+    return {
+      success: true,
+      message: `Shipment reset for order #${order.orderNumber}. Wallet refund requested on Shiprocket.`,
+    };
+  } catch (err: any) {
+    console.error("resetAmazonOrderShipmentAction error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to reset order shipment",
     };
   }
 }
