@@ -29,6 +29,8 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  Info,
+  Download,
 } from "lucide-react";
 import {
   updateOrderStatus,
@@ -433,6 +435,55 @@ export default function OrderStatusControls({
       }
     }
     setDocLoading(false);
+  };
+
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+
+  const handleDownloadAllDocs = async () => {
+    setIsDownloadingAll(true);
+    try {
+      const docs = [
+        {
+          name: `GST_Invoice_${orderId}.pdf`,
+          url: `/api/orders/${orderId}/invoice`,
+        },
+        shiprocketLabelUrl
+          ? {
+              name: `Shipping_Label_${orderId}.pdf`,
+              url: shiprocketLabelUrl,
+            }
+          : null,
+        manifestUrl
+          ? {
+              name: `Pickup_Manifest_${orderId}.pdf`,
+              url: manifestUrl,
+            }
+          : null,
+        shiprocketInvoiceUrl
+          ? {
+              name: `Courier_Invoice_${orderId}.pdf`,
+              url: shiprocketInvoiceUrl,
+            }
+          : null,
+      ].filter(Boolean) as { name: string; url: string }[];
+
+      for (let i = 0; i < docs.length; i++) {
+        const doc = docs[i];
+        const link = document.createElement("a");
+        link.href = doc.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.download = doc.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        await new Promise((res) => setTimeout(res, 350));
+      }
+    } catch (err) {
+      console.error("Error downloading all documents:", err);
+    } finally {
+      setIsDownloadingAll(false);
+    }
   };
 
   const handleBookEasyShip = async () => {
@@ -1240,21 +1291,41 @@ export default function OrderStatusControls({
 
         {/* ── DOCUMENTS PANEL ── */}
         <div id="compliance-documents" className="px-5 py-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted m-0 flex items-center gap-2">
               <FileText className="w-4 h-4 text-accent" />
               <span>Compliance &amp; Shipping Documents</span>
             </p>
-            <button
-              onClick={fetchDocUrls}
-              disabled={docLoading}
-              className="font-mono text-[10px] uppercase tracking-wider px-2.5 py-1 border border-border text-muted hover:text-accent hover:border-accent/40 rounded-xs transition-colors disabled:opacity-50 flex items-center gap-1.5"
-            >
-              <RefreshCw
-                className={`w-3 h-3 ${docLoading ? "animate-spin" : ""}`}
-              />
-              <span>{docLoading ? "Loading…" : "Refresh PDFs"}</span>
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadAllDocs}
+                disabled={isDownloadingAll}
+                className="font-mono text-[10px] uppercase tracking-wider px-3 py-1 bg-accent/10 border border-accent/40 text-accent hover:bg-accent/20 rounded-xs transition-colors disabled:opacity-50 flex items-center gap-1.5 font-bold cursor-pointer"
+                title="Download all available compliance & logistics PDFs in 1 click"
+              >
+                <Download
+                  className={`w-3.5 h-3.5 ${isDownloadingAll ? "animate-bounce" : ""}`}
+                />
+                <span>
+                  {isDownloadingAll
+                    ? "Downloading All…"
+                    : "Download All PDFs 📥"}
+                </span>
+              </button>
+
+              <button
+                onClick={fetchDocUrls}
+                disabled={docLoading}
+                className="font-mono text-[10px] uppercase tracking-wider px-2.5 py-1 border border-border text-muted hover:text-accent hover:border-accent/40 rounded-xs transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <RefreshCw
+                  className={`w-3 h-3 ${docLoading ? "animate-spin" : ""}`}
+                />
+                <span>{docLoading ? "Loading…" : "Refresh PDFs"}</span>
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <DocCard
