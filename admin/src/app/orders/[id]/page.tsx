@@ -127,13 +127,6 @@ export default async function OrderDetailPage(props: {
   // "AFN" = Amazon fulfilled (FBA), "MFN" = Merchant fulfilled (self-ship or easy-ship)
   // Easy Ship is always MFN but with ATS pickup. We can't distinguish without SP-API data yet.
   // Safe default: show both sections; user picks the right one.
-  // When SP-API gives us fulfillmentChannel we pass it in:
-  const isEasyShipOrder = isAmazonOrder; // Will be refined when SP-API provides fulfillmentChannel
-  const isMFNOrder = isAmazonOrder; // Amazon MFN (Self-Ship) includes both Easy Ship and manual ship
-
-  // ── Display name/email resolution (per-order fields take precedence) ──────
-  // recipientName is written per-order (never shared). Use it first.
-  // Fall back to real user name for D2C orders. Never show placeholder strings.
   function isPlaceholderName(n?: string | null) {
     if (!n) return true;
     return (
@@ -149,7 +142,7 @@ export default async function OrderDetailPage(props: {
   }
 
   const userFullName =
-    `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim();
+    `${order.user?.firstName || ""} ${order.user?.lastName || ""}`.trim();
   const displayName =
     order.recipientName ||
     (!isPlaceholderName(userFullName) ? userFullName : null) ||
@@ -157,12 +150,12 @@ export default async function OrderDetailPage(props: {
 
   const displayEmail =
     order.recipientEmail ||
-    (!isPlaceholderEmail(order.user.email) ? order.user.email : null) ||
+    (!isPlaceholderEmail(order.user?.email) ? order.user?.email : null) ||
     null;
 
   const displayPhone =
     order.shippingPhone ||
-    (!isPlaceholderEmail(order.user.email) ? order.user.phone : null) ||
+    (!isPlaceholderEmail(order.user?.email) ? order.user?.phone : null) ||
     null;
 
   const hasRecipient = Boolean(order.recipientName);
@@ -345,7 +338,7 @@ export default async function OrderDetailPage(props: {
 
       {/* ── STEP 1 (for non-website orders): Customer Details ── */}
       {isAmazonOrder && (
-        <div id="customer-info">
+        <div id="customer-address-editor">
           <CustomerAddressEditor
             orderId={order.id}
             initialName={displayName || ""}
@@ -385,12 +378,12 @@ export default async function OrderDetailPage(props: {
             id: i.id,
             quantity: i.quantity,
             product: {
-              name: i.product.name,
-              sku: i.product.sku,
-              weight: i.product.weight,
-              length: i.product.length,
-              breadth: i.product.breadth,
-              height: i.product.height,
+              name: i.product?.name || "Product Item",
+              sku: i.product?.sku || "N/A",
+              weight: i.product?.weight,
+              length: i.product?.length,
+              breadth: i.product?.breadth,
+              height: i.product?.height,
             },
           }))}
         />
@@ -537,7 +530,7 @@ export default async function OrderDetailPage(props: {
 
       {/* ── D2C Customer Details Studio ── */}
       {!isAmazonOrder && (
-        <div id="customer-info">
+        <div id="customer-d2c-editor">
           <CustomerAddressEditor
             orderId={order.id}
             initialName={displayName || ""}
@@ -586,8 +579,11 @@ export default async function OrderDetailPage(props: {
             </thead>
             <tbody className="divide-y divide-border/60">
               {order.items.map((item) => {
-                const imageUrl = item.product.images?.[0];
-                const storefrontProductUrl = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/products/${item.product.slug}`;
+                const imageUrl = item.product?.images?.[0];
+                const productSlug = item.product?.slug || "";
+                const storefrontProductUrl = `${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/products/${productSlug}`;
+                const productName = item.product?.name || "Product Item";
+                const productSku = item.product?.sku || "N/A";
                 return (
                   <tr
                     key={item.id}
@@ -605,7 +601,7 @@ export default async function OrderDetailPage(props: {
                           {imageUrl ? (
                             <img
                               src={imageUrl}
-                              alt={item.product.name}
+                              alt={productName}
                               className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200"
                             />
                           ) : (
@@ -621,18 +617,18 @@ export default async function OrderDetailPage(props: {
                             rel="noopener noreferrer"
                             className="font-serif text-[15px] sm:text-[16px] text-primary hover:text-accent font-medium leading-snug group/link flex items-center gap-1.5 inline-flex"
                           >
-                            <span>{item.product.name}</span>
+                            <span>{productName}</span>
                             <ExternalLink className="w-3.5 h-3.5 text-accent opacity-70 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
                           </a>
 
                           {/* Prominent SKU Badge */}
                           <div>
                             <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 bg-accent/10 border border-accent/30 text-accent rounded-xs tracking-wider">
-                              SKU: {item.product.sku}
+                              SKU: {productSku}
                             </span>
                           </div>
 
-                          {item.product.dimensions && (
+                          {item.product?.dimensions && (
                             <p className="font-mono text-[10px] text-muted m-0">
                               Dims: {item.product.dimensions}
                             </p>
