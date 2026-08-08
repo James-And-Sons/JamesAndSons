@@ -684,7 +684,7 @@ export default function OrderStatusControls({
 
           {/* 4. GST Tax Invoice */}
           <a
-            href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/api/orders/${orderId}/invoice`}
+            href={`/api/orders/${orderId}/invoice`}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -925,7 +925,7 @@ export default function OrderStatusControls({
 
                 {/* Download GST Tax Invoice — Always available for valid orders */}
                 <a
-                  href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/api/orders/${orderId}/invoice`}
+                  href={`/api/orders/${orderId}/invoice`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -1104,7 +1104,7 @@ export default function OrderStatusControls({
 
                       {/* 4. Store GST Tax Invoice */}
                       <a
-                        href={`${process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in"}/api/orders/${orderId}/invoice`}
+                        href={`/api/orders/${orderId}/invoice`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{

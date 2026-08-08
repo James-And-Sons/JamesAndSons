@@ -31,7 +31,7 @@ export async function GET(
     if (!order.invoiceNumber) {
       try {
         const { generateSequentialInvoiceNumber } =
-          await import("@/lib/invoice");
+          await import("../../../../../../../storefront/src/lib/invoice");
         const newInvNum = await generateSequentialInvoiceNumber();
         await prisma.order.update({
           where: { id: order.id },
@@ -56,12 +56,12 @@ export async function GET(
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "private, max-age=3600",
+        "Content-Disposition": `inline; filename="${filename}"`,
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error: any) {
-    console.error("Error generating PDF invoice download:", error);
+    console.error("Error generating PDF invoice download in admin:", error);
     return NextResponse.json(
       { error: "Failed to generate PDF invoice" },
       { status: 500 },
