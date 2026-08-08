@@ -600,7 +600,7 @@ export default function OrderStatusControls({
     });
   };
 
-  const trackCode = awbNumber || trackingNumber;
+  const trackCode = trackingNumber || awbNumber;
   const isShipped =
     currentStatus === "SHIPPED" || currentStatus === "DELIVERED";
 

@@ -271,11 +271,16 @@ export default async function OrderDetailPage(props: {
             {(order.trackingNumber || order.awbNumber) && (
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-wider text-muted m-0">
-                  AWB / Tracking
+                  Tracking ID / AWB
                 </p>
                 <p className="font-mono text-[13px] text-accent font-semibold m-0 break-all">
-                  {order.awbNumber || order.trackingNumber}
+                  {order.trackingNumber || order.awbNumber}
                 </p>
+                {order.trackingNumber && order.awbNumber && (
+                  <p className="font-mono text-[9px] text-muted m-0 opacity-70">
+                    Shipment ID: {order.awbNumber}
+                  </p>
+                )}
               </div>
             )}
           </div>

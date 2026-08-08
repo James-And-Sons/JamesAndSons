@@ -9,6 +9,8 @@ import {
   AlertCircle,
   ChevronUp,
   ChevronDown,
+  Share2,
+  Check,
 } from "lucide-react";
 
 interface TrackingActivity {
@@ -26,6 +28,7 @@ interface TrackingData {
   etd?: string;
   awb_code?: string;
   courier_name?: string;
+  track_url?: string;
   shipment_track_activities?: TrackingActivity[];
 }
 
@@ -76,8 +79,10 @@ export default function TrackingTimeline({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const trackCode = awbNumber || trackingNumber;
+  // Prioritize actual Courier AWB number (e.g. 4867629284812) over internal Shipment ID (1500763728)
+  const trackCode = trackingNumber || awbNumber;
   if (!trackCode) return null;
 
   const handleFetch = async () => {
@@ -106,41 +111,85 @@ export default function TrackingTimeline({
     trackingData?.shipment_status || trackingData?.current_status;
   const courierName = trackingData?.courier_name;
 
-  const carrierTrackUrl = courierName?.toLowerCase().includes("delhivery")
-    ? `https://www.delhivery.com/track/package/${trackCode}`
-    : courierName?.toLowerCase().includes("bluedart")
-      ? `https://www.bluedart.com/tracking`
-      : courierName?.toLowerCase().includes("dtdc")
-        ? `https://www.dtdc.in/trace.asp`
-        : `https://shiprocket.in/tracking/${trackCode}`;
+  const carrierTrackUrl =
+    trackingData?.track_url ||
+    (courierName?.toLowerCase().includes("delhivery")
+      ? `https://www.delhivery.com/track/package/${trackCode}`
+      : courierName?.toLowerCase().includes("bluedart")
+        ? `https://www.bluedart.com/tracking`
+        : courierName?.toLowerCase().includes("dtdc")
+          ? `https://www.dtdc.in/trace.asp`
+          : `https://shiprocket.co/tracking/${trackCode}`);
+
+  const handleShareLink = async () => {
+    const shareData = {
+      title: `Shipment Tracking - ${trackCode}`,
+      text: `Track shipment #${trackCode}:`,
+      url: carrierTrackUrl,
+    };
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (e) {
+        // User cancelled or fallback to copy
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(carrierTrackUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
 
   return (
     <div className="bg-surface border border-border rounded-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border bg-surface">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted flex items-center gap-1.5">
             <Radio className="w-4 h-4 text-accent" />
             <span>Live Tracking</span>
           </span>
           {trackCode && (
-            <span className="font-mono text-[11px] text-accent font-semibold">
+            <span className="font-mono text-[12px] text-accent font-bold">
               {trackCode}
             </span>
           )}
           {currentStatus && (
-            <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 bg-emerald-500/5 border border-emerald-500/20 text-emerald-400/90 rounded-xs font-semibold">
+            <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold rounded-xs">
               {currentStatus}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Share Tracking Link Button */}
+          <button
+            type="button"
+            onClick={handleShareLink}
+            className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-1.5 bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 rounded-xs transition-colors flex items-center gap-1.5 cursor-pointer font-bold"
+            title="Share or copy direct tracking link"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3 h-3 text-emerald-400" />
+                <span className="text-emerald-400">Link Copied! 📋</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3 h-3 text-accent" />
+                <span>Share Tracking Link</span>
+              </>
+            )}
+          </button>
           {courierName && (
             <a
               href={carrierTrackUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-1 bg-surface border border-border text-muted hover:text-accent hover:border-accent/40 rounded-xs transition-colors flex items-center gap-1"
+              className="font-mono text-[9px] uppercase tracking-wider px-2.5 py-1.5 bg-surface border border-border text-muted hover:text-accent hover:border-accent/40 rounded-xs transition-colors flex items-center gap-1"
             >
               <span>Track on {courierName}</span>
               <ExternalLink className="w-3 h-3" />
