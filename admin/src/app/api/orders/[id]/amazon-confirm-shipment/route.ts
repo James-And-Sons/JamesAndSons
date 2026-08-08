@@ -50,19 +50,6 @@ export async function POST(
     const config = getAmazonConfig();
     const accessToken = await getLwaAccessToken();
 
-    const knownCarriers = [
-      "BlueDart",
-      "Delhivery",
-      "DTDC",
-      "India Post",
-      "FedEx",
-      "DHL",
-    ];
-    const isKnown = knownCarriers.some(
-      (c) => c.toLowerCase() === carrierName.trim().toLowerCase(),
-    );
-    const finalCarrierCode = isKnown ? carrierName.trim() : "Other";
-
     // Fetch Amazon OrderItems from SP-API to satisfy OrderItemList requirement
     let orderItemsPayload: { orderItemId: string; quantity: number }[] = [];
     try {
@@ -86,79 +73,94 @@ export async function POST(
       );
     }
 
-    const shipmentPayload = {
-      marketplaceId: config.marketplaceId,
-      packageDetail: {
-        packageReferenceId: "1",
-        carrierCode: finalCarrierCode,
-        carrierName: carrierName || "Shiprocket",
-        shippingService: shippingService || "Standard",
-        trackingNumber: awbToUse,
-        shipDate: new Date().toISOString(),
-        orderItems: orderItemsPayload,
-      },
-    };
+    // Build list of valid Indian Amazon carrier candidates
+    const carrierCandidates = Array.from(
+      new Set(
+        [
+          carrierName?.trim(),
+          "Delhivery",
+          "BlueDart",
+          "DTDC",
+          "India Post",
+          "Ecom Express",
+          "FedEx",
+          "DHL",
+          "Other",
+        ].filter(Boolean),
+      ),
+    ) as string[];
 
     const spPath = `/orders/v0/orders/${order.amazonOrderId}/shipmentConfirmation`;
-    console.log(
-      `[Amazon SP-API] Confirming shipment for order ${order.amazonOrderId} with AWB ${awbToUse}...`,
-    );
+    let isSuccess = false;
+    let lastErrorText = "";
+    let acceptedCarrier = "";
 
-    let res = await signedSpApiFetch(spPath, accessToken, config, {
-      method: "POST",
-      body: JSON.stringify(shipmentPayload),
-    });
-
-    // If Amazon SP-API returns InvalidCarrier, automatically fallback to carrierCode: "Other", carrierName: "Other"
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.warn(
-        `[Amazon SP-API] First attempt error: ${res.status} — ${errorText}`,
+    for (const carrier of carrierCandidates) {
+      console.log(
+        `[Amazon SP-API] Attempting shipment confirmation for ${order.amazonOrderId} (AWB: ${awbToUse}) with carrierCode: "${carrier}"...`,
       );
 
-      if (errorText.includes("InvalidCarrier")) {
+      const shipmentPayload = {
+        marketplaceId: config.marketplaceId,
+        packageDetail: {
+          packageReferenceId: "1",
+          carrierCode: carrier,
+          carrierName: carrier === "Other" ? "Other" : carrier,
+          shippingService: shippingService || "Standard",
+          trackingNumber: awbToUse,
+          shipDate: new Date().toISOString(),
+          orderItems: orderItemsPayload,
+        },
+      };
+
+      const res = await signedSpApiFetch(spPath, accessToken, config, {
+        method: "POST",
+        body: JSON.stringify(shipmentPayload),
+      });
+
+      if (res.ok) {
+        isSuccess = true;
+        acceptedCarrier = carrier;
         console.log(
-          "[Amazon SP-API] Retrying shipment confirmation with fallback carrierCode: 'Other', carrierName: 'Other'...",
+          `[Amazon SP-API] ✅ Shipment confirmed successfully on Amazon using carrierCode: "${carrier}"!`,
         );
-        const fallbackPayload = {
-          marketplaceId: config.marketplaceId,
-          packageDetail: {
-            ...shipmentPayload.packageDetail,
-            carrierCode: "Other",
-            carrierName: "Other",
-          },
-        };
-        res = await signedSpApiFetch(spPath, accessToken, config, {
-          method: "POST",
-          body: JSON.stringify(fallbackPayload),
-        });
+        break;
+      } else {
+        lastErrorText = await res.text();
+        console.warn(
+          `[Amazon SP-API] Carrier "${carrier}" rejected: ${res.status} — ${lastErrorText}`,
+        );
+
+        // If error is not InvalidCarrier (e.g. order state invalid or orderItems error), stop looping
+        if (!lastErrorText.includes("InvalidCarrier")) {
+          break;
+        }
       }
+    }
 
-      if (!res.ok) {
-        const finalErrorText = await res.text();
-        console.error(
-          `[Amazon SP-API] Final shipment confirmation error: ${res.status} — ${finalErrorText}`,
-        );
+    if (!isSuccess) {
+      console.error(
+        `[Amazon SP-API] Final shipment confirmation failed: ${lastErrorText}`,
+      );
 
-        // Update local DB status & tracking even if Amazon SP-API requires manual fallback
-        await prisma.order.update({
-          where: { id },
-          data: {
-            awbNumber: awbToUse,
-            trackingNumber: awbToUse,
-            status: "SHIPPED",
-            amazonOrderStatus: "Shipped",
-            fulfillmentError: `SP-API Warning: ${finalErrorText}`,
-          },
-        });
-
-        return NextResponse.json({
-          success: false,
-          warning: true,
+      // Update local DB status & tracking so JNS keeps records updated
+      await prisma.order.update({
+        where: { id },
+        data: {
           awbNumber: awbToUse,
-          message: `AWB ${awbToUse} saved in JNS. Amazon API response: ${finalErrorText}`,
-        });
-      }
+          trackingNumber: awbToUse,
+          status: "SHIPPED",
+          amazonOrderStatus: "Shipped",
+          fulfillmentError: `SP-API Warning: ${lastErrorText}`,
+        },
+      });
+
+      return NextResponse.json({
+        success: false,
+        warning: true,
+        awbNumber: awbToUse,
+        message: `AWB ${awbToUse} saved in JNS. Amazon API response: ${lastErrorText}`,
+      });
     }
 
     // Success — update Prisma order
@@ -176,7 +178,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       awbNumber: awbToUse,
-      message: `✅ Shipment confirmed on Amazon with Tracking ID ${awbToUse}!`,
+      message: `✅ Shipment confirmed on Amazon with Carrier "${acceptedCarrier}" & Tracking ID ${awbToUse}!`,
     });
   } catch (error: any) {
     console.error("[Amazon Confirm Shipment Error]:", error);
