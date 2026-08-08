@@ -120,41 +120,39 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
           </div>
         </div>
 
-        {/* Desktop Table (md+) */}
-        <div className="hidden md:block table-responsive flex-1">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
-            <caption className="sr-only">
-              Quotations and trade inquiry requests
-            </caption>
-            <thead className="border-b border-border bg-surface-muted/20">
+            <caption className="sr-only">B2B Quotation Requests List</caption>
+            <thead className="border-b border-border bg-surface-muted/30">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
-                  RFQ ID / Origin
+                  RFQ # &amp; Date
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
-                  Customer & Project
+                  Customer &amp; Project
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
                   Units Req.
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
                   Status
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold text-right"
                 >
                   Action
                 </th>
@@ -178,6 +176,10 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                   (acc, curr) => acc + curr.quantity,
                   0,
                 );
+                const userFullName =
+                  `${rfq.user.firstName || ""} ${rfq.user.lastName || ""}`.trim() ||
+                  "B2B Customer";
+
                 return (
                   <ClickableRow
                     key={rfq.id}
@@ -186,13 +188,10 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 mb-1">
-                        <Link
-                          href={`/rfqs/${rfq.id}`}
-                          className="font-mono text-[12px] text-accent font-semibold hover:underline"
-                        >
+                        <span className="font-mono text-[13px] text-accent font-bold">
                           {rfq.rfqNumber}
-                        </Link>
-                        <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5">
+                        </span>
+                        <span className="font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent/30 text-accent bg-accent/5 font-semibold">
                           {rfq.channel
                             ? rfq.channel.replace(/_/g, " ")
                             : "STOREFRONT"}
@@ -207,24 +206,20 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Link
-                        href={`/rfqs/${rfq.id}`}
-                        className="font-serif text-[15px] text-primary hover:text-accent font-medium block"
-                      >
-                        {rfq.user.company?.name ||
-                          `${rfq.user.firstName} ${rfq.user.lastName}`}
-                      </Link>
-                      <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">
+                      <span className="font-sans text-[14px] text-primary font-medium block">
+                        {userFullName}
+                      </span>
+                      {rfq.user.company?.name && (
+                        <span className="font-mono text-[10px] text-accent block mt-0.5 font-semibold">
+                          🏢 {rfq.user.company.name}
+                        </span>
+                      )}
+                      <div className="font-mono text-[10px] text-muted mt-0.5">
                         {rfq.user.email}{" "}
                         {rfq.user.phone ? `· ${rfq.user.phone}` : ""}
                       </div>
-                      {rfq.projectName && (
-                        <div className="font-mono text-[9px] text-accent/80 uppercase tracking-wider mt-1">
-                          Project: {rfq.projectName}
-                        </div>
-                      )}
                     </td>
-                    <td className="px-6 py-4 font-mono text-[13px] text-primary">
+                    <td className="px-6 py-4 font-mono text-[13px] text-primary font-bold">
                       {totalUnits} {totalUnits === 1 ? "unit" : "units"}
                     </td>
                     <td className="px-6 py-4">
@@ -236,7 +231,7 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/rfqs/${rfq.id}`}
-                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors"
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white font-bold transition-colors"
                       >
                         Review Request →
                       </Link>
@@ -248,7 +243,7 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest"
+                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-wider"
                   >
                     No quotation requests found.
                   </td>
@@ -258,7 +253,7 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
           </table>
         </div>
 
-        {/* Mobile Card View (< md) */}
+        {/* Mobile Cards Grid */}
         <div className="block md:hidden p-4 space-y-3">
           {filteredRfqs.map((rfq) => {
             const s = (rfq.status || "").toUpperCase();
@@ -308,7 +303,7 @@ export default function RfqsTableClient({ rfqs }: { rfqs: RFQItem[] }) {
                 <div className="px-4 py-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="font-serif text-[15px] text-primary leading-snug truncate">
+                      <div className="font-sans text-[14px] text-primary font-medium leading-snug truncate">
                         {customerName}
                       </div>
                       <div className="font-mono text-[10px] text-muted mt-0.5 tracking-wide">

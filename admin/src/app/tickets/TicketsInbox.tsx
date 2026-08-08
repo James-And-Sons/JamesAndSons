@@ -308,7 +308,7 @@ export default function TicketsInbox({
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-serif text-[15px] text-primary">
+                  <div className="font-sans text-[14px] text-primary font-medium">
                     {ticket.user?.firstName || "Customer"}{" "}
                     {ticket.user?.lastName || ""}
                   </div>

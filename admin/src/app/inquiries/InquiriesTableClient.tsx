@@ -159,39 +159,39 @@ export default function InquiriesTableClient({
           </div>
         </div>
 
-        {/* Table View */}
-        <div className="table-responsive flex-1">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse">
             <caption className="sr-only">Contact form inquiries list</caption>
-            <thead className="border-b border-border bg-surface-muted/20">
+            <thead className="border-b border-border bg-surface-muted/30">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
                   Sender
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
-                  Subject & Inbox
+                  Subject &amp; Inbox
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
                   Received
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                 >
                   Status
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3.5 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                  className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold text-right"
                 >
                   Actions
                 </th>
@@ -217,25 +217,25 @@ export default function InquiriesTableClient({
                     onClick={() => setSelectedInquiry(inq)}
                   >
                     <td className="px-6 py-4">
-                      <div className="font-serif text-[15px] text-primary">
+                      <div className="font-sans text-[14px] text-primary font-medium">
                         {inq.name || "Anonymous Sender"}
                       </div>
-                      <div className="font-mono text-[11px] text-accent/90 mt-0.5">
+                      <div className="font-mono text-[11px] text-accent font-semibold mt-0.5">
                         {inq.email}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-serif text-[14px] text-primary font-medium">
+                      <div className="font-sans text-[14px] text-primary font-medium">
                         {inq.subject}
                       </div>
                       <div className="font-mono text-[10px] text-muted mt-0.5">
                         To: {inq.recipient}
                       </div>
-                      <div className="font-body text-[12px] text-muted/80 line-clamp-1 mt-1">
+                      <div className="font-body text-[12px] text-muted line-clamp-1 mt-1">
                         {inq.message}
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-mono text-[11px] text-muted">
+                    <td className="px-6 py-4 font-mono text-[11px] text-muted whitespace-nowrap">
                       {dateStr}
                     </td>
                     <td className="px-6 py-4">
@@ -251,7 +251,7 @@ export default function InquiriesTableClient({
                     >
                       <button
                         onClick={() => setSelectedInquiry(inq)}
-                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors"
+                        className="font-mono text-[10px] uppercase tracking-[0.12em] text-accent hover:text-white transition-colors cursor-pointer font-bold"
                       >
                         View Details →
                       </button>
@@ -264,7 +264,7 @@ export default function InquiriesTableClient({
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-widest"
+                    className="px-6 py-12 text-center text-muted font-mono text-[11px] uppercase tracking-wider"
                   >
                     No contact inquiries found.
                   </td>
@@ -272,6 +272,68 @@ export default function InquiriesTableClient({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards Grid */}
+        <div className="block md:hidden p-4 space-y-3">
+          {filteredInquiries.map((inq) => {
+            const dateStr = new Date(inq.createdAt).toLocaleDateString(
+              "en-IN",
+              {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              },
+            );
+
+            return (
+              <div
+                key={inq.id}
+                onClick={() => setSelectedInquiry(inq)}
+                className="p-4 bg-background border border-border rounded-sm space-y-2.5 hover:border-accent/40 transition-all cursor-pointer"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-sans text-[14px] text-primary font-medium m-0">
+                      {inq.name || "Anonymous Sender"}
+                    </p>
+                    <p className="font-mono text-[11px] text-accent font-semibold m-0 mt-0.5">
+                      {inq.email}
+                    </p>
+                  </div>
+                  <span
+                    className={`font-mono text-[9px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-full border ${getStatusPill(inq.status)}`}
+                  >
+                    {inq.status}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="font-sans text-[13px] text-primary font-medium m-0">
+                    {inq.subject}
+                  </p>
+                  <p className="font-body text-[12px] text-muted line-clamp-2 m-0 mt-0.5">
+                    {inq.message}
+                  </p>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-border/60">
+                  <span className="font-mono text-[10px] text-muted">
+                    {dateStr}
+                  </span>
+                  <span className="font-mono text-[10px] uppercase text-accent font-bold">
+                    View Details →
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredInquiries.length === 0 && (
+            <div className="p-8 text-center text-muted font-mono text-[11px] uppercase tracking-wider">
+              No contact inquiries found.
+            </div>
+          )}
         </div>
       </div>
 

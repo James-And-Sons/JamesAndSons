@@ -54,16 +54,23 @@ export default async function OrdersPage() {
       `${o.user?.firstName || ""} ${o.user?.lastName || ""}`.trim();
 
     const displayName =
-      o.recipientName ||
+      (o.recipientName && !isPlaceholderName(o.recipientName)
+        ? o.recipientName
+        : null) ||
       (!isPlaceholderName(userFullName) ? userFullName : null) ||
-      (isAmazon ? "Import customer details ↑" : "Guest Customer");
+      o.recipientName ||
+      (isAmazon ? "Amazon Customer" : "Guest Customer");
 
     const displayEmail =
-      o.recipientEmail ||
+      (o.recipientEmail && !isPlaceholderEmail(o.recipientEmail)
+        ? o.recipientEmail
+        : null) ||
       (!isPlaceholderEmail(o.user?.email) ? o.user?.email : null) ||
       (o.shippingCity && o.shippingState
         ? `${o.shippingCity}, ${o.shippingState}`
-        : null);
+        : isAmazon
+          ? "Amazon.in Order"
+          : "Direct Purchase");
 
     return {
       id: o.id,

@@ -26,6 +26,11 @@ export default async function Dashboard() {
       select: {
         id: true,
         orderNumber: true,
+        amazonOrderId: true,
+        recipientName: true,
+        recipientEmail: true,
+        shippingCity: true,
+        shippingState: true,
         totalAmount: true,
         status: true,
         channel: true,
@@ -338,34 +343,32 @@ export default async function Dashboard() {
             </Link>
           </div>
 
-          <div className="table-responsive flex-1">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto flex-1">
             <table className="w-full text-left border-collapse">
-              <caption className="sr-only">
-                Recent orders with customer, amount and status
-              </caption>
-              <thead className="border-b border-border bg-surface-muted/20">
+              <thead className="border-b border-border bg-surface-muted/30">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                    className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                   >
-                    Order
+                    Order #
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                    className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                   >
                     Customer
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal text-right"
+                    className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold text-right"
                   >
                     Amount
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 font-mono text-[9px] uppercase tracking-[0.15em] text-muted font-normal"
+                    className="px-6 py-3.5 font-mono text-[11px] uppercase tracking-wider text-secondary font-semibold"
                   >
                     Status
                   </th>
@@ -381,12 +384,43 @@ export default async function Dashboard() {
                     "SHIPPED",
                   ].includes(s);
                   const isProcessing = ["PROCESSING", "SUBMITTED"].includes(s);
-
                   const pillClass = isPaid
                     ? "status-paid"
                     : isProcessing
                       ? "status-processing"
                       : "status-pending";
+
+                  const isAmazon =
+                    o.channel === "AMAZON" || Boolean(o.amazonOrderId);
+                  const userFullName =
+                    `${o.user?.firstName || ""} ${o.user?.lastName || ""}`.trim();
+                  const isPlaceholderUser =
+                    !userFullName ||
+                    userFullName.includes("Amazon") ||
+                    userFullName.includes("Marketplace");
+
+                  const customerName =
+                    o.recipientName &&
+                    !o.recipientName.includes("Amazon") &&
+                    !o.recipientName.includes("Marketplace")
+                      ? o.recipientName
+                      : !isPlaceholderUser
+                        ? userFullName
+                        : o.recipientName ||
+                          (isAmazon ? "Amazon Customer" : "Guest Customer");
+
+                  const customerSub =
+                    o.recipientEmail &&
+                    !o.recipientEmail.includes("amazon-marketplace")
+                      ? o.recipientEmail
+                      : o.user?.email &&
+                          !o.user.email.includes("amazon-marketplace")
+                        ? o.user.email
+                        : o.shippingCity && o.shippingState
+                          ? `${o.shippingCity}, ${o.shippingState}`
+                          : isAmazon
+                            ? "Amazon.in Order"
+                            : "Direct Order";
 
                   return (
                     <ClickableRow
@@ -394,15 +428,18 @@ export default async function Dashboard() {
                       href={`/orders/${o.id}`}
                       className="hover:bg-surface-muted/40 transition-colors"
                     >
+                      <td className="px-6 py-4 font-mono text-[13px] text-accent font-bold">
+                        {o.orderNumber}
+                      </td>
                       <td className="px-6 py-4">
-                        <span className="font-mono text-[12px] text-accent hover:underline font-semibold">
-                          {o.orderNumber}
+                        <span className="font-sans text-[14px] text-primary font-medium block">
+                          {customerName}
+                        </span>
+                        <span className="font-mono text-[10px] text-muted block mt-0.5">
+                          {customerSub}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-serif text-[15px] text-primary">
-                        {o.user.firstName} {o.user.lastName}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-[13px] text-primary text-right tabular-nums">
+                      <td className="px-6 py-4 font-mono text-[13px] text-primary text-right font-bold tabular-nums">
                         ₹{Math.round(o.totalAmount).toLocaleString("en-IN")}
                       </td>
                       <td className="px-6 py-4">
@@ -418,7 +455,7 @@ export default async function Dashboard() {
                   <tr>
                     <td
                       colSpan={4}
-                      className="px-6 py-8 text-center text-muted font-mono text-[10px] uppercase tracking-widest"
+                      className="px-6 py-8 text-center text-muted font-mono text-[11px] uppercase tracking-wider"
                     >
                       No recent orders.
                     </td>
@@ -426,6 +463,91 @@ export default async function Dashboard() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Cards Grid */}
+          <div className="block md:hidden p-4 space-y-3">
+            {orders.map((o: any) => {
+              const s = (o.status || "").toUpperCase();
+              const isPaid = [
+                "DELIVERED",
+                "PAID",
+                "SUCCESS",
+                "SHIPPED",
+              ].includes(s);
+              const isProcessing = ["PROCESSING", "SUBMITTED"].includes(s);
+              const pillClass = isPaid
+                ? "status-paid"
+                : isProcessing
+                  ? "status-processing"
+                  : "status-pending";
+
+              const isAmazon =
+                o.channel === "AMAZON" || Boolean(o.amazonOrderId);
+              const userFullName =
+                `${o.user?.firstName || ""} ${o.user?.lastName || ""}`.trim();
+              const isPlaceholderUser =
+                !userFullName ||
+                userFullName.includes("Amazon") ||
+                userFullName.includes("Marketplace");
+
+              const customerName =
+                o.recipientName &&
+                !o.recipientName.includes("Amazon") &&
+                !o.recipientName.includes("Marketplace")
+                  ? o.recipientName
+                  : !isPlaceholderUser
+                    ? userFullName
+                    : o.recipientName ||
+                      (isAmazon ? "Amazon Customer" : "Guest Customer");
+
+              const customerSub =
+                o.recipientEmail &&
+                !o.recipientEmail.includes("amazon-marketplace")
+                  ? o.recipientEmail
+                  : o.user?.email &&
+                      !o.user.email.includes("amazon-marketplace")
+                    ? o.user.email
+                    : o.shippingCity && o.shippingState
+                      ? `${o.shippingCity}, ${o.shippingState}`
+                      : isAmazon
+                        ? "Amazon.in Order"
+                        : "Direct Order";
+
+              return (
+                <Link
+                  key={o.id}
+                  href={`/orders/${o.id}`}
+                  className="p-4 bg-background border border-border rounded-sm block space-y-2.5 hover:border-accent/40 transition-all no-underline"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-mono text-[13px] font-bold text-accent m-0">
+                        {o.orderNumber}
+                      </p>
+                      <p className="font-sans text-[14px] text-primary font-medium m-0 mt-0.5">
+                        {customerName}
+                      </p>
+                      <p className="font-mono text-[10px] text-muted m-0">
+                        {customerSub}
+                      </p>
+                    </div>
+                    <span className={`status-pill ${pillClass}`}>
+                      <span className="dot" aria-hidden="true" />
+                      <span>{s.replace("_", " ")}</span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-border/60">
+                    <span className="font-mono text-[10px] text-muted uppercase">
+                      Total Value
+                    </span>
+                    <span className="font-mono text-[13px] font-bold text-accent">
+                      ₹{Math.round(o.totalAmount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
