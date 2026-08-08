@@ -6,7 +6,7 @@
  *   - API routes (/api/): Network-Only
  */
 
-const CACHE_NAME = "jas-admin-1786211872289";
+const CACHE_NAME = "jas-admin-1786212632365";
 const STATIC_CACHE = "jas-admin-static-v1";
 const OFFLINE_URL = "/login";
 

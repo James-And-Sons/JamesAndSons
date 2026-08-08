@@ -191,6 +191,22 @@ function Sidebar({
     setIsMounted(true);
   }, []);
 
+  const [isDownloadingSidebar, setIsDownloadingSidebar] = useState(false);
+
+  useEffect(() => {
+    const handleStatus = (e: any) => {
+      if (e.detail && typeof e.detail.downloading === "boolean") {
+        setIsDownloadingSidebar(e.detail.downloading);
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("jns:download-status", handleStatus);
+      return () => {
+        window.removeEventListener("jns:download-status", handleStatus);
+      };
+    }
+  }, []);
+
   const renderLink = (
     name: string,
     href: string,
@@ -540,22 +556,6 @@ function Sidebar({
       manifestUrl,
       shiprocketInvoiceUrl,
     } = orderDetailState;
-
-    const [isDownloadingSidebar, setIsDownloadingSidebar] = useState(false);
-
-    useEffect(() => {
-      const handleStatus = (e: any) => {
-        if (e.detail && typeof e.detail.downloading === "boolean") {
-          setIsDownloadingSidebar(e.detail.downloading);
-        }
-      };
-      if (typeof window !== "undefined") {
-        window.addEventListener("jns:download-status", handleStatus);
-        return () => {
-          window.removeEventListener("jns:download-status", handleStatus);
-        };
-      }
-    }, []);
 
     const navSections = [
       { id: "customer-info", label: "Customer Details", icon: User },
