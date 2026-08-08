@@ -15,6 +15,7 @@ import {
   Plus,
   Minus,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
 
 interface PackageDims {
@@ -80,6 +81,9 @@ export default function LogisticsPreviewModal({
   const [scheduleSlot, setScheduleSlot] = useState<
     "EARLIEST" | "TOMORROW" | "CUSTOM"
   >("EARLIEST");
+  const [timeWindow, setTimeWindow] = useState<
+    "MORNING" | "AFTERNOON" | "EVENING"
+  >("MORNING");
 
   const [selectedCourier, setSelectedCourier] = useState<CourierOption | null>(
     null,
@@ -295,6 +299,66 @@ export default function LogisticsPreviewModal({
                   />
                 </div>
               )}
+
+              {/* Pickup Time Window Selection */}
+              <div className="pt-2 space-y-1.5">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-muted block flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-accent" />
+                  <span>Pickup Time Window</span>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTimeWindow("MORNING")}
+                    className={`p-2.5 border rounded-xs font-mono text-[9px] text-center transition-all cursor-pointer ${
+                      timeWindow === "MORNING"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold ring-1 ring-emerald-500/40"
+                        : "border-border bg-surface text-muted hover:border-accent/30 hover:text-primary"
+                    }`}
+                  >
+                    <span className="block font-bold text-[10px]">
+                      10:00 AM - 1:00 PM
+                    </span>
+                    <span className="text-[8px] opacity-75">
+                      Morning Window
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTimeWindow("AFTERNOON")}
+                    className={`p-2.5 border rounded-xs font-mono text-[9px] text-center transition-all cursor-pointer ${
+                      timeWindow === "AFTERNOON"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold ring-1 ring-emerald-500/40"
+                        : "border-border bg-surface text-muted hover:border-accent/30 hover:text-primary"
+                    }`}
+                  >
+                    <span className="block font-bold text-[10px]">
+                      1:00 PM - 4:00 PM
+                    </span>
+                    <span className="text-[8px] opacity-75">
+                      Afternoon Window
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTimeWindow("EVENING")}
+                    className={`p-2.5 border rounded-xs font-mono text-[9px] text-center transition-all cursor-pointer ${
+                      timeWindow === "EVENING"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold ring-1 ring-emerald-500/40"
+                        : "border-border bg-surface text-muted hover:border-accent/30 hover:text-primary"
+                    }`}
+                  >
+                    <span className="block font-bold text-[10px]">
+                      4:00 PM - 7:00 PM
+                    </span>
+                    <span className="text-[8px] opacity-75">
+                      Evening Window
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* 3. Package Specs & Dimensions */}
