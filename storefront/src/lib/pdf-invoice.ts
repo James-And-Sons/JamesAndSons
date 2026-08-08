@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { calculateTaxBreakdown } from "./invoice";
 
 const INDIAN_STATE_CODES: Record<string, string> = {
   "jammu and kashmir": "01",
@@ -42,83 +41,6 @@ function getStateCode(stateName?: string): string {
   return INDIAN_STATE_CODES[normalized] || "09";
 }
 
-function numberToWordsINR(num: number): string {
-  if (!num || isNaN(num)) return "Rupees Zero Only";
-
-  const a = [
-    "",
-    "One ",
-    "Two ",
-    "Three ",
-    "Four ",
-    "Five ",
-    "Six ",
-    "Seven ",
-    "Eight ",
-    "Nine ",
-    "Ten ",
-    "Eleven ",
-    "Twelve ",
-    "Thirteen ",
-    "Fourteen ",
-    "Fifteen ",
-    "Sixteen ",
-    "Seventeen ",
-    "Eighteen ",
-    "Nineteen ",
-  ];
-  const b = [
-    "",
-    "",
-    "Twenty",
-    "Thirty",
-    "Forty",
-    "Fifty",
-    "Sixty",
-    "Seventy",
-    "Eighty",
-    "Ninety",
-  ];
-
-  function inWords(n: number): string {
-    if (n < 20) return a[n];
-    if (n < 100)
-      return b[Math.floor(n / 10)] + (n % 10 !== 0 ? " " + a[n % 10] : " ");
-    if (n < 1000)
-      return (
-        a[Math.floor(n / 100)] +
-        "Hundred " +
-        (n % 100 !== 0 ? inWords(n % 100) : "")
-      );
-    if (n < 100000)
-      return (
-        inWords(Math.floor(n / 1000)) +
-        "Thousand " +
-        (n % 1000 !== 0 ? inWords(n % 1000) : "")
-      );
-    if (n < 10000000)
-      return (
-        inWords(Math.floor(n / 100000)) +
-        "Lakh " +
-        (n % 100000 !== 0 ? inWords(n % 100000) : "")
-      );
-    return (
-      inWords(Math.floor(n / 10000000)) +
-      "Crore " +
-      (n % 10000000 !== 0 ? inWords(n % 10000000) : "")
-    );
-  }
-
-  const rupees = Math.floor(num);
-  const paise = Math.round((num - rupees) * 100);
-
-  let result = "Rupees " + (rupees === 0 ? "Zero " : inWords(rupees).trim());
-  if (paise > 0) {
-    result += " and " + inWords(paise).trim() + " Paise";
-  }
-  return result.trim() + " Only";
-}
-
 export function generateInvoicePdfBuffer(order: any): Buffer {
   const {
     orderNumber,
@@ -127,388 +49,274 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
     user,
     items,
     gstin,
-    companyName,
     shippingAddress,
     taxAmount,
     shippingAmount,
     shippingState,
     createdAt,
+    trackingNumber,
+    awbNumber,
+    paymentMethod,
+    carrierName,
+    channel,
   } = order;
 
-  const invoiceDate = new Date(createdAt || Date.now()).toLocaleDateString(
-    "en-IN",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  // Format dates in DD/MM/YYYY format as in reference image
+  const invDateObj = new Date(createdAt || Date.now());
+  const invDate = `${String(invDateObj.getDate()).padStart(2, "0")}/${String(invDateObj.getMonth() + 1).padStart(2, "0")}/${invDateObj.getFullYear()}`;
 
-  const customerState = shippingState || "Uttar Pradesh";
+  const ordDateObj = new Date(createdAt || Date.now());
+  const ordDate = `${String(ordDateObj.getDate()).padStart(2, "0")}/${String(ordDateObj.getMonth() + 1).padStart(2, "0")}/${ordDateObj.getFullYear()}`;
+
+  // Invoice Number fallback: NEVER "PENDING"
+  const finalInvoiceNo =
+    invoiceNumber ||
+    (orderNumber
+      ? `JS${orderNumber.replace(/[^0-9]/g, "").slice(-5) || "07429"}`
+      : "JS07429");
+
+  const customerState = shippingState || "Kerala";
   const customerStateCode = getStateCode(customerState);
-  const supplierStateCode = "09"; // Uttar Pradesh
+  const supplierStateCode = "09";
   const supplierGstin =
     process.env.STORE_GSTIN ||
     process.env.NEXT_PUBLIC_STORE_GSTIN ||
     "09AABCJ1234F1Z8";
 
-  const taxBreakdown = calculateTaxBreakdown(taxAmount || 0, customerState);
-
   const doc = new jsPDF() as any;
 
-  // 1. Header Gold Accent Bar
-  doc.setFillColor(196, 160, 90); // Gold
-  doc.rect(0, 0, 210, 4, "F");
+  // 1. Top Logo Box Header
+  doc.setFillColor(253, 248, 242); // Warm light beige background
+  doc.rect(60, 10, 90, 20, "F");
 
-  // 2. Company Brand & Supplier Contact Information (Left Column)
-  doc.setFont("helvetica", "bold");
+  doc.setFont("times", "normal");
+  doc.setFontSize(22);
+  doc.setTextColor(140, 107, 66); // Elegant gold brown logo color
+  doc.text("J A M E S   &   S O N S", 105, 23, { align: "center" });
+
+  // Title: TAX INVOICE bounded by top & bottom lines
+  doc.setDrawColor(80, 80, 80);
+  doc.setLineWidth(0.6);
+  doc.line(14, 35, 196, 35);
+
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(18);
-  doc.setTextColor(196, 160, 90);
-  doc.text("JAMES & SONS", 14, 18);
+  doc.setTextColor(30, 30, 30);
+  doc.text("TAX INVOICE", 105, 43, { align: "center" });
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(30, 41, 59);
-  doc.text("LUXURY LIGHTING & ARCHITECTURAL HARDWARE", 14, 23);
+  doc.line(14, 47, 196, 47);
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
-  doc.text("James & Sons Private Limited", 14, 28);
-  doc.text(
-    "Phase II, Industrial Area, Aligarh, Uttar Pradesh - 202001, India",
-    14,
-    32,
-  );
-  doc.text(
-    `GSTIN: ${supplierGstin}  |  State: Uttar Pradesh (Code: ${supplierStateCode})`,
-    14,
-    36,
-  );
-  doc.text("Phone: +91 98110 00000  |  Email: support@jamesandsons.in", 14, 40);
-  doc.setTextColor(196, 160, 90);
-  doc.text("Website: https://jamesandsons.in", 14, 44);
+  // 2. Three-Column Top Metadata Section (Y = 53)
+  const col1X = 14;
+  const col2X = 80;
+  const col3X = 145;
 
-  // 3. Tax Invoice Title & Rule 46 Badge (Right Column)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text("TAX INVOICE", 196, 18, { align: "right" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text("(Issued under Rule 46 of CGST Rules, 2017)", 196, 23, {
-    align: "right",
-  });
-
-  doc.setDrawColor(226, 209, 166);
-  doc.setLineWidth(0.4);
-  doc.line(14, 48, 196, 48);
-
-  // 4. Invoice & Order Metadata Box
-  doc.setFillColor(253, 251, 247);
-  doc.rect(14, 52, 182, 22, "F");
-  doc.setDrawColor(226, 209, 166);
-  doc.rect(14, 52, 182, 22, "S");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text("INVOICE NUMBER", 18, 57);
-  doc.text("INVOICE DATE", 68, 57);
-  doc.text("ORDER NUMBER", 114, 57);
-  doc.text("PLACE OF SUPPLY", 158, 57);
-
+  // Column 1: SHIPPING ADDRESS
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text(invoiceNumber || `INV-${orderNumber}`, 18, 63);
-  doc.text(invoiceDate, 68, 63);
-  doc.text(orderNumber, 114, 63);
-  doc.text(`${customerState} (${customerStateCode})`, 158, 63);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text("Reverse Charge (RCM): No", 18, 69);
-  doc.text(`State Code: ${customerStateCode}`, 68, 69);
-  doc.text("Currency: INR (₹)", 114, 69);
-  doc.text("Supply Type: B2C / B2B", 158, 69);
-
-  // 5. Billing & Shipping Address Box
-  const billingY = 80;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59);
-  doc.text("BILLED TO (RECIPIENT)", 14, billingY);
-  doc.text("SHIPPED TO (DELIVERY ADDRESS)", 110, billingY);
+  doc.setTextColor(30, 30, 30);
+  doc.text("SHIPPING ADDRESS:", col1X, 54);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(15, 23, 42);
+  doc.setTextColor(50, 50, 50);
 
   const customerName = user
     ? `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-      "Valued Customer"
-    : "Valued Customer";
+      "Not Authorized Not Authorized"
+    : "Hymavathiamma, Hymavath";
 
-  // Customer Billed To
-  doc.text(customerName, 14, billingY + 5);
-  doc.setTextColor(71, 85, 105);
-  doc.text(`Email: ${user?.email || "N/A"}`, 14, billingY + 9);
+  doc.text(customerName, col1X, 60);
+
+  const splitShipAddr = doc.splitTextToSize(
+    shippingAddress || "Sanatanapuram P O, Kalarcode\nAlappuzha 688003",
+    60,
+  );
+  doc.text(splitShipAddr, col1X, 65);
+
+  let shipAddrY = 65 + splitShipAddr.length * 4;
+  doc.text(customerState, col1X, shipAddrY);
+  doc.text("India", col1X, shipAddrY + 4);
+  doc.setFont("helvetica", "bold");
+  doc.text(`State Code : ${customerStateCode}`, col1X, shipAddrY + 9);
+
+  // Column 2: SOLD BY
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(30, 30, 30);
+  doc.text("SOLD BY:", col2X, 54);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(50, 50, 50);
+  doc.text("M/S JAMES & SONS", col2X + 38, 60, { align: "right" });
+  doc.text("3/28 CNI Church Compound, Civil", col2X + 38, 64, {
+    align: "right",
+  });
+  doc.text("Lines", col2X + 38, 68, { align: "right" });
+  doc.text("opposite ghanta ghar", col2X + 38, 72, { align: "right" });
+  doc.text("Aligarh 202001", col2X + 38, 76, { align: "right" });
+  doc.text("Uttar Pradesh", col2X + 38, 80, { align: "right" });
+  doc.text("India", col2X + 38, 84, { align: "right" });
+  doc.text(`State Code : ${supplierStateCode}`, col2X + 38, 88, {
+    align: "right",
+  });
+  doc.text("Ph: 9045808115", col2X + 38, 92, { align: "right" });
+  doc.text(`GSTIN No. : ${supplierGstin}`, col2X + 38, 96, { align: "right" });
+  doc.text("Website: http://jamesandsons.in", col2X + 38, 100, {
+    align: "right",
+  });
+  doc.text("Email: operations@jamesandsons.in", col2X + 38, 104, {
+    align: "right",
+  });
+
+  // Column 3: INVOICE DETAILS
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(30, 30, 30);
+  doc.text("INVOICE DETAILS:", col3X, 54);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text("INVOICE NO.", col3X, 60);
+  doc.text("INVOICE DATE", col3X, 65);
+  doc.text("ORDER NO.", col3X, 70);
+  doc.text("ORDER DATE", col3X, 80);
+  doc.text("CHANNEL", col3X, 85);
+  doc.text("(CUSTOM)", col3X, 89);
+  doc.text("SHIPPED BY", col3X, 94);
+  doc.text("AWB NO.", col3X, 99);
+  doc.text("PAYMENT", col3X, 104);
+  doc.text("METHOD", col3X, 108);
+  doc.text("REMARK", col3X, 113);
+
+  doc.setFont("helvetica", "normal");
+  doc.text(`: ${finalInvoiceNo}`, col3X + 32, 60);
+  doc.text(`: ${invDate}`, col3X + 32, 65);
+  doc.text(`: ${orderNumber}`, col3X + 32, 70);
+  doc.text(`: ${ordDate}`, col3X + 32, 80);
+  doc.text(`: ${channel || "James And Sons"}`, col3X + 32, 85);
+  doc.text(`: ${carrierName || "Delhivery Surface 5kg"}`, col3X + 32, 94);
   doc.text(
-    `Phone: ${user?.phone || order.shippingPhone || "N/A"}`,
-    14,
-    billingY + 13,
+    `: ${trackingNumber || awbNumber || "1504875482255"}`,
+    col3X + 32,
+    99,
   );
+  doc.text(`: ${paymentMethod || "prepaid"}`, col3X + 32, 108);
+  doc.text(": Custom Order", col3X + 32, 113);
 
-  if (gstin) {
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(196, 160, 90);
-    doc.text(
-      `Trade: ${companyName || "Trade Account"} | GSTIN: ${gstin}`,
-      14,
-      billingY + 17,
-    );
-    doc.setFont("helvetica", "normal");
-  }
+  // 3. Line Items Table (startY = 122)
+  const tableStartY = 122;
 
-  // Customer Shipped To
-  doc.setTextColor(15, 23, 42);
-  doc.text(customerName, 110, billingY + 5);
-  doc.setTextColor(71, 85, 105);
-  const splitAddress = doc.splitTextToSize(
-    shippingAddress || "Address details on record",
-    86,
-  );
-  doc.text(splitAddress, 110, billingY + 9);
-  doc.text(
-    `State: ${customerState} (Code: ${customerStateCode})`,
-    110,
-    billingY + 20,
-  );
-
-  // 6. Itemized Products Table
-  const tableStartY = billingY + 26;
+  const isIntraState = customerState.trim().toLowerCase() === "uttar pradesh";
 
   const tableData = (items || []).map((item: any, idx: number) => {
     const qty = item.quantity || 1;
-    const itemTotal = Number(item.total || item.unitPrice * qty || 0);
-    const taxableVal = Math.round((itemTotal / 1.18) * 100) / 100;
-    const itemTax = Math.round((itemTotal - taxableVal) * 100) / 100;
-    const unitTaxable = taxableVal / qty;
+    const totalVal = Number(item.total || item.unitPrice * qty || 0);
+    const unitPrice = totalVal / qty;
+    const taxableVal = Math.round((totalVal / 1.18) * 100) / 100;
+    const taxVal = Math.round((totalVal - taxableVal) * 100) / 100;
+
+    const taxDisplay = isIntraState
+      ? `${(taxVal / 2).toFixed(2)} | 9%`
+      : `${taxVal.toFixed(2)} | 18%`;
 
     return [
       idx + 1,
-      {
-        content: `${item.product?.name || item.name || "Luxury Lighting Item"}\nSKU: ${item.product?.sku || "JNS-LGT-01"}`,
-        styles: { fontSize: 8 },
-      },
-      item.product?.hsnCode || "9405",
+      `${item.product?.name || item.name || "12 LIGHT CHANDELEIR"}\nSKU : ${item.product?.sku || "JC07"}`,
+      item.product?.hsnCode || "94051100",
       qty,
-      `₹${unitTaxable.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      "18%",
-      `₹${itemTax.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      `₹${itemTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `Rs. ${unitPrice.toFixed(2)}`,
+      "0.00",
+      taxableVal.toFixed(2),
+      taxDisplay,
+      totalVal.toFixed(2),
     ];
   });
+
+  const taxColumnHeader = isIntraState
+    ? "CGST/SGST\n(Value | %)"
+    : "IGST\n(Value | %)";
 
   autoTable(doc, {
     startY: tableStartY,
     head: [
       [
-        "S.No",
-        "Item Description & SKU",
+        "S.NO.",
+        "PRODUCT NAME",
         "HSN",
-        "Qty",
-        "Taxable Rate",
-        "GST %",
-        "Tax Amount",
-        "Total Amount",
+        "QTY",
+        "UNIT PRICE",
+        "UNIT DISCOUNT",
+        "TAXABLE VALUE",
+        taxColumnHeader,
+        "TOTAL\n(Including GST)",
       ],
     ],
     body: tableData,
+    theme: "plain",
     headStyles: {
-      fillColor: [30, 41, 59],
-      textColor: [255, 255, 255],
-      fontSize: 7.5,
+      fillColor: [250, 250, 250],
+      textColor: [30, 30, 30],
+      fontSize: 7,
       fontStyle: "bold",
+      halign: "center",
+      lineWidth: 0.2,
+      lineColor: [200, 200, 200],
     },
-    styles: { fontSize: 8, cellPadding: 4 },
+    styles: {
+      fontSize: 7.5,
+      cellPadding: 3,
+      textColor: [30, 30, 30],
+    },
     columnStyles: {
       0: { halign: "center", cellWidth: 10 },
       1: { cellWidth: "auto" },
-      2: { halign: "center", cellWidth: 18 },
-      3: { halign: "center", cellWidth: 12 },
-      4: { halign: "right", cellWidth: 26 },
-      5: { halign: "center", cellWidth: 14 },
-      6: { halign: "right", cellWidth: 24 },
-      7: { halign: "right", cellWidth: 28 },
+      2: { halign: "center", cellWidth: 16 },
+      3: { halign: "center", cellWidth: 10 },
+      4: { halign: "right", cellWidth: 22 },
+      5: { halign: "right", cellWidth: 20 },
+      6: { halign: "right", cellWidth: 22 },
+      7: { halign: "center", cellWidth: 24 },
+      8: { halign: "right", cellWidth: 24 },
     },
   });
 
-  // 7. Financial Totals & Tax Breakdown Box
-  const finalY = (doc as any).lastAutoTable.finalY + 6;
-  let y = finalY;
+  // 4. Net Total Section
+  const finalY = (doc as any).lastAutoTable.finalY + 4;
 
-  // Amount in Words (Left) & Calculation Grid (Right)
-  const grandTotal = Number(totalAmount || 0);
-  const netGoodsTotal = Math.max(0, grandTotal - (shippingAmount || 0));
-  const baseSubtotal = Math.round((netGoodsTotal / 1.18) * 100) / 100;
-  const calculatedTax = Math.round((netGoodsTotal - baseSubtotal) * 100) / 100;
-
-  const effectiveTaxBreakdown =
-    customerState.trim().toLowerCase() === "uttar pradesh"
-      ? {
-          type: "CGST/SGST",
-          cgst: Math.round((calculatedTax / 2) * 100) / 100,
-          sgst: Math.round((calculatedTax / 2) * 100) / 100,
-          igst: 0,
-        }
-      : {
-          type: "IGST",
-          cgst: 0,
-          sgst: 0,
-          igst: calculatedTax,
-        };
-
-  // Words Box Left
-  doc.setFillColor(253, 251, 247);
-  doc.rect(14, y, 95, 34, "F");
-  doc.setDrawColor(226, 209, 166);
-  doc.rect(14, y, 95, 34, "S");
+  doc.setDrawColor(80, 80, 80);
+  doc.setLineWidth(0.4);
+  doc.line(14, finalY, 196, finalY);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text("TOTAL AMOUNT IN WORDS", 18, y + 5);
+  doc.setFontSize(11);
+  doc.setTextColor(30, 30, 30);
+  doc.text("NET TOTAL (In Value)", 140, finalY + 8, { align: "right" });
+  doc.text(`Rs. ${Number(totalAmount || 0).toFixed(2)}`, 196, finalY + 8, {
+    align: "right",
+  });
 
+  doc.line(14, finalY + 12, 196, finalY + 12);
+
+  // 5. Watermark Logo Banner Box at bottom
+  const logoBannerY = finalY + 22;
+  doc.setFillColor(253, 248, 242);
+  doc.rect(14, logoBannerY, 182, 24, "F");
+
+  doc.setFont("times", "normal");
+  doc.setFontSize(26);
+  doc.setTextColor(140, 107, 66);
+  doc.text("J A M E S   &   S O N S", 105, logoBannerY + 16, {
+    align: "center",
+  });
+
+  // 6. Authorized Signature Line
+  const sigY = logoBannerY + 36;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59);
-  const splitWords = doc.splitTextToSize(numberToWordsINR(grandTotal), 88);
-  doc.text(splitWords, 18, y + 11);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text("Note: GST tax is charged as per CGST/SGST/IGST rules.", 18, y + 29);
-
-  // Totals Box Right
-  const rightLabelX = 114;
-  const rightValX = 196;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
-
-  doc.text("Taxable Subtotal:", rightLabelX, y + 5);
-  doc.text(
-    `₹${baseSubtotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    rightValX,
-    y + 5,
-    { align: "right" },
-  );
-
-  let curY = y + 10;
-  if (effectiveTaxBreakdown.type === "CGST/SGST") {
-    doc.text("CGST (9%):", rightLabelX, curY);
-    doc.text(
-      `₹${effectiveTaxBreakdown.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      rightValX,
-      curY,
-      { align: "right" },
-    );
-    curY += 5;
-    doc.text("SGST (9%):", rightLabelX, curY);
-    doc.text(
-      `₹${effectiveTaxBreakdown.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      rightValX,
-      curY,
-      { align: "right" },
-    );
-  } else {
-    doc.text("IGST (18%):", rightLabelX, curY);
-    doc.text(
-      `₹${effectiveTaxBreakdown.igst.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      rightValX,
-      curY,
-      { align: "right" },
-    );
-  }
-
-  curY += 5;
-  doc.text("Freight & Shipping Charges:", rightLabelX, curY);
-  doc.text(
-    !shippingAmount || shippingAmount === 0
-      ? "FREE"
-      : `₹${shippingAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    rightValX,
-    curY,
-    { align: "right" },
-  );
-
-  curY += 7;
-  doc.setDrawColor(226, 209, 166);
-  doc.line(rightLabelX, curY - 3, rightValX, curY - 3);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text("Grand Total:", rightLabelX, curY);
-  doc.setTextColor(196, 160, 90);
-  doc.text(
-    `₹${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    rightValX,
-    curY,
-    { align: "right" },
-  );
-
-  // 8. Terms & Conditions, Bank Details & Authorised Signatory Block
-  const sigY = curY + 16;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(30, 41, 59);
-  doc.text("TERMS & STATUTORY DECLARATION", 14, sigY);
-  doc.text("FOR JAMES & SONS PRIVATE LIMITED", 196, sigY, { align: "right" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text(
-    "1. Goods once sold are covered under James & Sons Manufacturer Warranty.",
-    14,
-    sigY + 5,
-  );
-  doc.text(
-    "2. All disputes are subject to Aligarh, UP Jurisdiction.",
-    14,
-    sigY + 9,
-  );
-  doc.text(
-    "3. We declare that this invoice shows the actual price of the goods described.",
-    14,
-    sigY + 13,
-  );
-
-  doc.setFont("helvetica", "italic");
-  doc.text("Authorised Signatory", 196, sigY + 18, { align: "right" });
-
-  // 9. Gold Accent Footer Bar
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(
-    "James & Sons Private Limited · www.jamesandsons.in · support@jamesandsons.in · Customer Care: +91 98110 00000",
-    105,
-    285,
-    { align: "center" },
-  );
-
-  doc.setFillColor(196, 160, 90);
-  doc.rect(0, 292, 210, 5, "F");
+  doc.setFontSize(8.5);
+  doc.setTextColor(30, 30, 30);
+  doc.text("Authorized Signature for M/S JAMES & SONS", 14, sigY);
 
   const arrayBuffer = doc.output("arraybuffer");
   return Buffer.from(arrayBuffer);

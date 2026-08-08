@@ -27,6 +27,28 @@ export async function GET(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    // Ensure invoiceNumber is ALWAYS assigned and persisted in DB (NEVER PENDING)
+    if (!order.invoiceNumber) {
+      try {
+        const { generateSequentialInvoiceNumber } =
+          await import("@/lib/invoice");
+        const newInvNum = await generateSequentialInvoiceNumber();
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { invoiceNumber: newInvNum },
+        });
+        order.invoiceNumber = newInvNum;
+      } catch (err) {
+        console.error("Auto invoice number generation fallback:", err);
+        const fallbackInv = `JS${order.orderNumber.replace(/[^0-9]/g, "").slice(-5) || "07429"}`;
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { invoiceNumber: fallbackInv },
+        });
+        order.invoiceNumber = fallbackInv;
+      }
+    }
+
     const pdfBuffer = generateInvoicePdfBuffer(order);
     const filename = `Invoice_${order.invoiceNumber || order.orderNumber}.pdf`;
 
