@@ -36,7 +36,6 @@ interface BlogMarkdownRendererProps {
  * so react-markdown can handle the rest as standard GFM.
  */
 function preprocessContent(content: string): string {
-  // Normalise Windows line endings
   return content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 }
 
@@ -72,9 +71,8 @@ export function BlogMarkdownRenderer({
     h5: ({ children }: any) => <h5 className="blog-md-h5">{children}</h5>,
     h6: ({ children }: any) => <h6 className="blog-md-h6">{children}</h6>,
 
-    // ── Paragraph ────────────────────────────────────────────────────────────
+    // ── Paragraph (Render as div if containing block tags to fix HTML hydration)
     p: ({ children, node }: any) => {
-      // Check if this paragraph is a product shortcode: [product:slug]
       const raw = (node as any)?.children?.[0]?.value as string | undefined;
 
       if (raw) {
@@ -123,6 +121,17 @@ export function BlogMarkdownRenderer({
             );
           }
         }
+      }
+
+      const hasBlockChild = node?.children?.some(
+        (child: any) =>
+          child.tagName === "img" ||
+          child.tagName === "figure" ||
+          child.tagName === "div",
+      );
+
+      if (hasBlockChild) {
+        return <div className="blog-md-p mb-4">{children}</div>;
       }
 
       return <p className="blog-md-p">{children}</p>;
@@ -202,10 +211,8 @@ export function BlogMarkdownRenderer({
     // ── Images ────────────────────────────────────────────────────────────────
     img: ({ src, alt }: any) => {
       if (!src || typeof src !== "string") return null;
-      // Skip if this is the featured image (already shown at top)
       if (featuredImg && src === featuredImg) return null;
 
-      // Extract linked product slug from URL fragment: ![alt](url#product:slug)
       const urlParts = src.split("#");
       const imgUrl = urlParts[0];
       const fragment = urlParts[1] || "";

@@ -1,29 +1,27 @@
 "use client";
 
 import { useCartStore } from "@/store/cart";
-import { formatPrice, renderPrice } from "@/lib/utils";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useWishlistStore } from "@/store/wishlist";
-import CouponInput from "@/components/CouponInput";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import CartDrawerItem from "./cart/CartDrawerItem";
+import CartDrawerFooter from "./cart/CartDrawerFooter";
+import { X, ShoppingBag, Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { renderPrice } from "@/lib/utils";
+
+const FREE_SHIPPING_THRESHOLD = 5000;
 
 export default function CartDrawer() {
-  const router = useRouter();
   const {
     items,
     isOpen,
     closeCart,
     removeItem,
     updateQty,
-    total,
     itemCount,
-    appliedCoupon,
     discountedTotal,
   } = useCartStore();
-  const { toggleItem } = useWishlistStore();
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
@@ -31,7 +29,7 @@ export default function CartDrawer() {
     setMounted(true);
   }, []);
 
-  // Close cart when navigating to another page
+  // Close cart on pathname change
   useEffect(() => {
     closeCart();
   }, [pathname, closeCart]);
@@ -48,13 +46,10 @@ export default function CartDrawer() {
   // Close cart on mobile back navigation
   useEffect(() => {
     if (!isOpen) return;
-
     const handlePopState = () => {
       closeCart();
     };
-
     window.addEventListener("popstate", handlePopState);
-
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
@@ -77,12 +72,20 @@ export default function CartDrawer() {
 
   if (!mounted) return null;
 
-  const currentItems = items;
-  const currentCount = itemCount();
-  const cartTotal = total();
-  const grandTotal = discountedTotal(); // Prices are inclusive of GST
-  const gst = grandTotal - grandTotal / 1.18;
-  const finalSubtotal = grandTotal - gst;
+  const currentCount =
+    typeof itemCount === "function" ? itemCount() : items.length;
+  const grandTotal =
+    typeof discountedTotal === "function"
+      ? discountedTotal()
+      : discountedTotal || 0;
+  const amountNeededForFreeShipping = Math.max(
+    0,
+    FREE_SHIPPING_THRESHOLD - grandTotal,
+  );
+  const freeShippingProgress = Math.min(
+    100,
+    (grandTotal / FREE_SHIPPING_THRESHOLD) * 100,
+  );
 
   return createPortal(
     <>
@@ -111,7 +114,7 @@ export default function CartDrawer() {
           top: 0,
           right: 0,
           bottom: 0,
-          width: "400px",
+          width: "420px",
           maxWidth: "100vw",
           background: "var(--obsidian)",
           borderLeft: "1px solid var(--border)",
@@ -128,454 +131,96 @@ export default function CartDrawer() {
         }}
       >
         {/* Header */}
-        <div
-          style={{
-            padding: "32px 32px 16px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "var(--font-serif)",
-              fontSize: "24px",
-              fontWeight: 300,
-              color: "var(--cream)",
-              margin: 0,
-            }}
-          >
-            Bag{" "}
-            <span
-              style={{
-                fontSize: "14px",
-                color: "var(--gold)",
-                marginLeft: "8px",
-                opacity: 0.8,
-              }}
-            >
-              ({currentCount})
-            </span>
-          </h2>
+        <div className="p-6 pb-4 flex justify-between items-center shrink-0 border-b border-border/80 bg-surface/40">
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag size={20} className="text-gold" />
+            <h2 className="font-serif text-2xl font-light text-cream m-0 flex items-center gap-2">
+              <span>Shopping Bag</span>
+              <span className="text-xs font-mono text-gold bg-gold/15 px-2 py-0.5 rounded border border-gold/30">
+                {currentCount}
+              </span>
+            </h2>
+          </div>
           <button
             onClick={closeCart}
             aria-label="Close cart"
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--gold)",
-              cursor: "pointer",
-              padding: "8px",
-              transition: "color 0.2s ease, transform 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--gold-pale)";
-              e.currentTarget.style.transform = "scale(1.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--gold)";
-              e.currentTarget.style.transform = "scale(1)";
-            }}
+            className="p-1.5 text-gold/80 hover:text-gold hover:scale-110 transition-all cursor-pointer rounded-full hover:bg-gold/10"
           >
-            <i
-              className="ti ti-x"
-              style={{ fontSize: "20px", fontWeight: "bold" }}
-            ></i>
+            <X size={20} />
           </button>
         </div>
 
+        {/* Free Shipping Progress Bar */}
+        {items.length > 0 && (
+          <div className="px-6 py-3 bg-surface/70 border-b border-border/40 space-y-1.5 shrink-0">
+            <div className="flex justify-between items-center text-[11px] font-mono">
+              {amountNeededForFreeShipping > 0 ? (
+                <span className="text-textMuted">
+                  Add{" "}
+                  <span className="text-gold font-bold">
+                    {renderPrice(amountNeededForFreeShipping)}
+                  </span>{" "}
+                  more for a <span className="text-gold">Special discount</span>
+                </span>
+              ) : (
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <Sparkles size={12} />
+                  <span>Unlocked Special discount!</span>
+                </span>
+              )}
+              <span className="text-textMuted text-[10px]">
+                {Math.round(freeShippingProgress)}%
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-background rounded-full overflow-hidden border border-border/50">
+              <div
+                className="h-full bg-gradient-to-r from-gold/70 via-gold to-amber-300 transition-all duration-500 rounded-full"
+                style={{ width: `${freeShippingProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
         {/* Scrollable Items Area */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "0 32px",
-            background: "var(--obsidian)",
-          }}
-        >
-          {currentItems.length === 0 ? (
-            <div style={{ textAlign: "center", paddingTop: "100px" }}>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "var(--text-dim)",
-                  marginBottom: "24px",
-                }}
-              >
-                Your bag is currently empty.
-              </p>
-              <button
+        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-obsidian custom-scrollbar">
+          {items.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center py-16 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-surface border border-border/80 flex items-center justify-center text-gold shadow-lg shadow-gold/5">
+                <ShoppingBag size={32} className="stroke-1" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-cream font-medium font-serif text-lg">
+                  Your shopping bag is empty
+                </h3>
+                <p className="text-xs text-textMuted max-w-[260px] mx-auto">
+                  Discover our heritage illumination craftsmanship &
+                  architectural collections.
+                </p>
+              </div>
+              <Link
+                href="/collections"
                 onClick={closeCart}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--gold)",
-                  fontSize: "11px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.15em",
-                  cursor: "pointer",
-                  borderBottom: "1px solid var(--gold)",
-                }}
+                className="mt-2 px-6 py-2.5 bg-gold text-obsidian font-mono text-xs uppercase tracking-widest font-bold rounded hover:brightness-110 transition-all flex items-center gap-2 cursor-pointer shadow-md shadow-gold/15"
               >
-                Continue Curating
-              </button>
+                <span>Explore Catalog</span>
+                <ArrowRight size={14} />
+              </Link>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {currentItems.map((item) => (
-                <div
-                  key={`${item.product.id}-${item.warranty?.planSku || "none"}`}
-                  style={{
-                    borderBottom: "1px solid var(--border)",
-                    padding: "24px 0",
-                    display: "flex",
-                    gap: "16px",
-                    position: "relative",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <Link
-                    href={`/products/${item.product.slug}`}
-                    onClick={() => closeCart()}
-                    style={{
-                      display: "flex",
-                      gap: "16px",
-                      flex: 1,
-                      minWidth: 0,
-                      textDecoration: "none",
-                      color: "inherit",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "70px",
-                        height: "90px",
-                        background: "var(--void)",
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                        flexShrink: 0,
-                        position: "relative",
-                      }}
-                    >
-                      <Image
-                        src={
-                          item.product.images?.[0] ||
-                          "/images/brand-placeholder.png"
-                        }
-                        alt={item.product.name}
-                        width={70}
-                        height={90}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "4px",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          fontFamily: "var(--font-serif)",
-                          fontSize: "15px",
-                          color: "var(--cream)",
-                          margin: 0,
-                          fontWeight: 400,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {item.product.name}
-                      </h3>
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "var(--gold-light)",
-                          opacity: 0.9,
-                        }}
-                      >
-                        {renderPrice(item.product.d2cPrice)}
-                      </div>
-                      {item.warranty && (
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "var(--gold)",
-                            marginTop: "2px",
-                            display: "flex",
-                            gap: "6px",
-                            alignItems: "center",
-                          }}
-                        >
-                          <i
-                            className="ti ti-shield-check"
-                            style={{ fontSize: "13px" }}
-                          />
-                          <span>
-                            {item.warranty.planName} (+
-                            {renderPrice(item.warranty.price)})
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* Quantity & Wishlist Action Controls */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-end",
-                      justifyContent: "space-between",
-                      height: "90px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        background: "var(--surface2)",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          updateQty(
-                            item.product.id,
-                            item.quantity - 1,
-                            item.warranty?.planSku,
-                          );
-                        }}
-                        style={{
-                          padding: "2px 8px",
-                          background: "none",
-                          border: "none",
-                          color: "var(--text-dim)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        −
-                      </button>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--cream)",
-                          width: "16px",
-                          textAlign: "center",
-                        }}
-                      >
-                        {item.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          updateQty(
-                            item.product.id,
-                            item.quantity + 1,
-                            item.warranty?.planSku,
-                          );
-                        }}
-                        style={{
-                          padding: "2px 8px",
-                          background: "none",
-                          border: "none",
-                          color: "var(--text-dim)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleItem(item.product);
-                        removeItem(item.product.id, item.warranty?.planSku);
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        fontSize: "10px",
-                        color: "var(--gold)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <i className="ti ti-heart" /> Move to wishlist
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            items.map((item: any, idx: number) => (
+              <CartDrawerItem
+                key={item.product?.id || idx}
+                item={item}
+                onUpdateQty={updateQty}
+                onRemove={removeItem}
+                onCloseCart={closeCart}
+              />
+            ))
           )}
         </div>
 
         {/* Footer */}
-        {currentItems.length > 0 && (
-          <div
-            style={{ borderTop: "1px solid var(--border)", padding: "32px" }}
-          >
-            <div style={{ marginBottom: "24px" }}>
-              <CouponInput />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                marginBottom: "24px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "12px",
-                  color: "var(--text-dim)",
-                }}
-              >
-                <span>Subtotal (excl. GST)</span>
-                <span style={{ color: "var(--cream)" }}>
-                  {renderPrice(finalSubtotal)}
-                </span>
-              </div>
-              {appliedCoupon && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: "12px",
-                    color: "var(--gold)",
-                  }}
-                >
-                  <span>Promo: {appliedCoupon.code}</span>
-                  <span>
-                    {appliedCoupon.freeShipping ? (
-                      "Free"
-                    ) : (
-                      <>- {renderPrice(appliedCoupon.discountAmount)}</>
-                    )}
-                  </span>
-                </div>
-              )}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "12px",
-                  color: "var(--text-dim)",
-                }}
-              >
-                <span>GST (18% Included)</span>
-                <span style={{ color: "var(--cream)" }}>
-                  {renderPrice(gst)}
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "14px",
-                  color: "var(--cream)",
-                  marginTop: "8px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid var(--border)",
-                }}
-              >
-                <span>Total (incl. GST)</span>
-                <span style={{ color: "var(--gold)", fontWeight: 500 }}>
-                  {renderPrice(grandTotal)}
-                </span>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <Link
-                href="/cart"
-                className="cart-drawer-view-cart-btn"
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "1px solid var(--gold)",
-                  color: "var(--gold)",
-                  borderRadius: "8px",
-                  height: "52px",
-                  textDecoration: "none",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  transition: "all 0.2s",
-                }}
-              >
-                VIEW CART
-              </Link>
-
-              <Link
-                href="/checkout"
-                onClick={() => {
-                  if (
-                    typeof window !== "undefined" &&
-                    typeof window.trackMetaEvent === "function"
-                  ) {
-                    window.trackMetaEvent("InitiateCheckout", {
-                      value: discountedTotal() || total(),
-                      currency: "INR",
-                      content_ids: items.map((item) => item.product.sku),
-                      content_type: "product",
-                      contents: items.map((item) => ({
-                        id: item.product.sku,
-                        quantity: item.quantity,
-                        item_price: item.product.d2cPrice,
-                      })),
-                    });
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "var(--gold)",
-                  color: "#0A0905",
-                  borderRadius: "8px",
-                  height: "52px",
-                  textDecoration: "none",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  transition: "all 0.2s",
-                }}
-              >
-                CHECKOUT
-              </Link>
-            </div>
-          </div>
-        )}
+        {items.length > 0 && <CartDrawerFooter onCloseCart={closeCart} />}
       </div>
     </>,
     document.body,

@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { WEBSITE_QR_BASE64 } from "./qr-asset";
+import { BRAND_CONFIG } from "@james-andsons/config";
 
 const INDIAN_STATE_CODES: Record<string, string> = {
   "jammu and kashmir": "01",
@@ -137,10 +138,11 @@ export function generateInvoicePdfBuffer(order: any): Buffer {
   doc.setFillColor(253, 248, 242); // Warm light beige background
   doc.rect(60, 10, 90, 20, "F");
 
+  const brandWordmark = BRAND_CONFIG.name.toUpperCase().split("").join(" ");
   doc.setFont("times", "normal");
   doc.setFontSize(22);
   doc.setTextColor(140, 107, 66); // Elegant gold brown logo color
-  doc.text("J A M E S   &   S O N S", 105, 23, { align: "center" });
+  doc.text(brandWordmark, 105, 23, { align: "center" });
 
   // Title: TAX INVOICE bounded by top & bottom lines
   doc.setDrawColor(80, 80, 80);

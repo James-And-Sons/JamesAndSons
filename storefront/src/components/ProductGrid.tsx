@@ -147,7 +147,7 @@ export default function ProductGrid({
     let results = initialProducts;
     // Category / attribute filters
     if (activeFilters.length > 0) {
-      results = results.filter((p) =>
+      results = results.filter((p: any) =>
         activeFilters.some((filter) => {
           const lowerFilter = filter.toLowerCase();
           const slugify = (text: string) =>
@@ -156,25 +156,48 @@ export default function ProductGrid({
               .replace(/[^\w ]+/g, "")
               .replace(/ +/g, "-");
           const filterSlug = slugify(filter);
+
+          const categoryName =
+            typeof p.category === "object"
+              ? p.category?.name
+              : p.category || p.collection;
+          const collectionName = p.collection || categoryName;
+
+          const styles = Array.isArray(p.style)
+            ? p.style
+            : p.style
+              ? [p.style]
+              : [];
+          const materials = Array.isArray(p.materialAndFinish)
+            ? p.materialAndFinish
+            : p.materialAndFinish
+              ? [p.materialAndFinish]
+              : [];
+          const spaces = Array.isArray(p.spaces)
+            ? p.spaces
+            : p.spaces
+              ? [p.spaces]
+              : [];
+
           return (
-            (p.collection &&
-              (p.collection.toLowerCase() === lowerFilter ||
-                slugify(p.collection) === filterSlug)) ||
-            (p.spaces &&
-              p.spaces.some(
-                (s) =>
-                  s.toLowerCase() === lowerFilter || slugify(s) === filterSlug,
-              )) ||
-            (p.style &&
-              p.style.some(
-                (s) =>
-                  s.toLowerCase() === lowerFilter || slugify(s) === filterSlug,
-              )) ||
-            (p.materialAndFinish &&
-              p.materialAndFinish.some(
-                (m) =>
-                  m.toLowerCase() === lowerFilter || slugify(m) === filterSlug,
-              )) ||
+            (categoryName &&
+              (categoryName.toLowerCase() === lowerFilter ||
+                slugify(categoryName) === filterSlug)) ||
+            (collectionName &&
+              (collectionName.toLowerCase() === lowerFilter ||
+                slugify(collectionName) === filterSlug)) ||
+            spaces.some(
+              (s: string) =>
+                s.toLowerCase() === lowerFilter || slugify(s) === filterSlug,
+            ) ||
+            styles.some(
+              (s: string) =>
+                s.toLowerCase() === lowerFilter || slugify(s) === filterSlug,
+            ) ||
+            materials.some(
+              (m: string) =>
+                m.toLowerCase() === lowerFilter || slugify(m) === filterSlug,
+            ) ||
             (lowerFilter === "led certified" && p.isLed)
           );
         }),

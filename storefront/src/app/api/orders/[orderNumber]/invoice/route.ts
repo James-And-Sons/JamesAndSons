@@ -4,10 +4,11 @@ import { generateInvoicePdfBuffer } from "@james-andsons/pdf-generator";
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ orderNumber: string }> },
 ) {
   try {
-    const { id } = await params;
+    const { orderNumber } = await params;
+    const id = orderNumber;
 
     const order = await prisma.order.findFirst({
       where: {

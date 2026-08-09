@@ -168,6 +168,7 @@ model Product {
   style             String[] // Style
   
   specs            Json?    // Dynamic key-value technical specs for filtering
+  customAttributes Json?    // Configurable dynamic attributes for any vertical (Option A)
   
   // Media
   images           String[]
@@ -912,5 +913,54 @@ model InventoryQuarantine {
 
   @@map("inventory_quarantine")
 }
+
+model AttributeDefinition {
+  id           String   @id @default(uuid())
+  name         String
+  key          String   @unique
+  type         String   // STRING, NUMBER, BOOLEAN, SELECT
+  options      String[] @default([])
+  isFilterable Boolean  @default(true)
+  isRequired   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("attribute_definitions")
+}
+
+model TenantCredential {
+  id          String   @id @default(uuid())
+  service     String   @unique // RAZORPAY, SHIPROCKET, ZOHO, CLOUDINARY, RESEND
+  credentials Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tenant_credentials")
+}
+
+model TenantDictionary {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  group     String   @default("common")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tenant_dictionary")
+}
+
+model CmsSection {
+  id         String   @id @default(uuid())
+  page       String
+  sectionKey String   @unique
+  title      String?
+  content    Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("cms_sections")
+}
+
 
 

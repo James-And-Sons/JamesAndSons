@@ -21,6 +21,20 @@ export interface IBrandConfig {
   defaultGstRate: number;
 }
 
+export interface IColorPalette {
+  primary: string;
+  primaryLight: string;
+  primaryPale: string;
+  background: string;
+  surface: string;
+  surface2: string;
+  text: string;
+  textMuted: string;
+  textDim: string;
+  border: string;
+  borderAccent: string;
+}
+
 export interface ITenantThemeConfig {
   preset: string;
   colors: {
@@ -35,6 +49,8 @@ export interface ITenantThemeConfig {
     textDim: string;
     border: string;
     borderAccent: string;
+    light?: Partial<IColorPalette>;
+    dark?: Partial<IColorPalette>;
   };
   typography: {
     headingFont: string;
@@ -62,6 +78,8 @@ export interface ITenantAssets {
   logoLight?: string;
   logoDark?: string;
   favicon?: string;
+  appleTouchIcon?: string;
+  qrWebsiteLogo?: string;
   placeholderImage?: string;
 }
 
@@ -83,6 +101,8 @@ export const DEFAULT_DICTIONARY: Record<string, string> = {
   "common.cta.enquire_whatsapp": "Enquire on WhatsApp",
   "common.cta.add_to_cart": "Add to Cart",
   "common.cta.raise_ticket": "Raise a Ticket",
+  "common.cta.checkout": "Proceed to Checkout",
+  "common.cta.submit": "Submit Request",
   "hero.eyebrow": "The 2026 Collection",
   "hero.title_line1": "Illuminate",
   "hero.title_line2": "with Purpose",
@@ -95,8 +115,13 @@ export const DEFAULT_DICTIONARY: Record<string, string> = {
   "footer.company_desc":
     "Curators of luxury illumination. Elevating spaces with heritage craftsmanship.",
   "footer.copyright": "© {year} {brandName}. All rights reserved.",
+  "footer.support": "Customer Support & Concierge",
   "cart.title": "Your Cart",
   "cart.empty": "Your cart is empty",
+  "cart.free_shipping_qualify": "You qualify for Free Express Shipping!",
+  "pdp.inquire_price": "Request Custom B2B Quote",
+  "pdp.specs_title": "Technical Specifications & Compliance",
+  "pdp.warranty_badge": "Official Warranty & BIS Certified",
 };
 
 export const BRAND_CONFIG: IBrandConfig = {
@@ -152,6 +177,32 @@ export const DEFAULT_TENANT_CONFIG: ITenantConfig = {
       textDim: "#3a3a42",
       border: "rgba(255,255,255,0.07)",
       borderAccent: "rgba(196,160,90,0.3)",
+      light: {
+        primary: "#a88338",
+        primaryLight: "#c4a05a",
+        primaryPale: "#f7f1e3",
+        background: "#faf8f5",
+        surface: "#ffffff",
+        surface2: "#f3f0e8",
+        text: "#1a1a1e",
+        textMuted: "#66635b",
+        textDim: "#8c887e",
+        border: "rgba(0,0,0,0.08)",
+        borderAccent: "rgba(168,131,56,0.3)",
+      },
+      dark: {
+        primary: "#c4a05a",
+        primaryLight: "#e2c882",
+        primaryPale: "#f5e9c8",
+        background: "#0a0a0b",
+        surface: "#16161a",
+        surface2: "#1e1e24",
+        text: "#d4cfc4",
+        textMuted: "#6b6860",
+        textDim: "#3a3a42",
+        border: "rgba(255,255,255,0.07)",
+        borderAccent: "rgba(196,160,90,0.3)",
+      },
     },
     typography: {
       headingFont: "Cormorant Garamond",
@@ -176,6 +227,8 @@ export const DEFAULT_TENANT_CONFIG: ITenantConfig = {
     logoLight: "/images/logo-light.png",
     logoDark: "/images/logo-dark.png",
     favicon: "/favicon.ico",
+    appleTouchIcon: "/icons/icon-192x192.png",
+    qrWebsiteLogo: "/images/logo-dark.png",
   },
   dictionary: DEFAULT_DICTIONARY,
 };
@@ -183,3 +236,5 @@ export const DEFAULT_TENANT_CONFIG: ITenantConfig = {
 export function getTenantConfig(): ITenantConfig {
   return DEFAULT_TENANT_CONFIG;
 }
+
+export * from "./cms.config";

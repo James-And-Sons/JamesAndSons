@@ -29,41 +29,64 @@ export function TenantProvider({
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
-    const { colors, typography, borderRadius } = config.theme;
 
-    root.style.setProperty("--gold", colors.primary);
-    root.style.setProperty("--gold-light", colors.primaryLight);
-    root.style.setProperty("--gold-pale", colors.primaryPale);
-    root.style.setProperty("--obsidian", colors.background);
-    root.style.setProperty("--surface", colors.surface);
-    root.style.setProperty("--surface2", colors.surface2);
-    root.style.setProperty("--text", colors.text);
-    root.style.setProperty("--text-muted", colors.textMuted);
-    root.style.setProperty("--text-dim", colors.textDim);
-    root.style.setProperty("--border", colors.border);
-    root.style.setProperty("--border-gold", colors.borderAccent);
-    root.style.setProperty("--radius-btn", borderRadius.button);
-    root.style.setProperty("--radius-card", borderRadius.card);
-    root.style.setProperty("--radius-input", borderRadius.input);
+    const applyThemeTokens = () => {
+      const isLight =
+        root.getAttribute("data-theme") === "light" ||
+        root.classList.contains("light");
 
-    if (typography.headingFont) {
-      root.style.setProperty(
-        "--font-serif",
-        `'${typography.headingFont}', Georgia, serif`,
-      );
-    }
-    if (typography.bodyFont) {
-      root.style.setProperty(
-        "--font-body",
-        `'${typography.bodyFont}', sans-serif`,
-      );
-    }
-    if (typography.monoFont) {
-      root.style.setProperty(
-        "--font-mono",
-        `'${typography.monoFont}', monospace`,
-      );
-    }
+      const { colors, typography, borderRadius } = config.theme;
+      const palette =
+        isLight && colors.light
+          ? { ...colors, ...colors.light }
+          : colors.dark
+            ? { ...colors, ...colors.dark }
+            : colors;
+
+      root.style.setProperty("--gold", palette.primary);
+      root.style.setProperty("--gold-light", palette.primaryLight);
+      root.style.setProperty("--gold-pale", palette.primaryPale);
+      root.style.setProperty("--obsidian", palette.background);
+      root.style.setProperty("--surface", palette.surface);
+      root.style.setProperty("--surface2", palette.surface2);
+      root.style.setProperty("--text", palette.text);
+      root.style.setProperty("--text-muted", palette.textMuted);
+      root.style.setProperty("--text-dim", palette.textDim);
+      root.style.setProperty("--border", palette.border);
+      root.style.setProperty("--border-gold", palette.borderAccent);
+      root.style.setProperty("--radius-btn", borderRadius.button);
+      root.style.setProperty("--radius-card", borderRadius.card);
+      root.style.setProperty("--radius-input", borderRadius.input);
+
+      if (typography.headingFont) {
+        root.style.setProperty(
+          "--font-serif",
+          `'${typography.headingFont}', Georgia, serif`,
+        );
+      }
+      if (typography.bodyFont) {
+        root.style.setProperty(
+          "--font-body",
+          `'${typography.bodyFont}', sans-serif`,
+        );
+      }
+      if (typography.monoFont) {
+        root.style.setProperty(
+          "--font-mono",
+          `'${typography.monoFont}', monospace`,
+        );
+      }
+    };
+
+    applyThemeTokens();
+
+    const observer = new MutationObserver(applyThemeTokens);
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["data-theme", "class"],
+    });
+
+    return () => observer.disconnect();
   }, [config]);
 
   const t = useMemo(() => {
