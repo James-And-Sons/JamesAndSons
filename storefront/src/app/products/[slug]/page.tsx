@@ -225,6 +225,7 @@ export default async function ProductPage(props: {
                         src={p.images[0]}
                         alt={p.name}
                         fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
                         style={{ objectFit: "cover" }}
                       />
                     ) : (

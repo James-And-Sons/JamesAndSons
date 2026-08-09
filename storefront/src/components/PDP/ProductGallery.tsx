@@ -36,6 +36,7 @@ export default function ProductGallery({
           alt={productName}
           fill
           priority
+          sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
@@ -80,13 +81,13 @@ export default function ProductGallery({
 
       {/* Thumbnails Row */}
       {images.length > 1 && (
-        <div className="flex gap-2.5 overflow-x-auto pb-1 custom-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {images.map((img, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => setSelectedIndex(idx)}
-              className={`w-16 h-16 relative rounded-lg border overflow-hidden shrink-0 transition-all cursor-pointer ${
+              className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border transition-all duration-200 ${
                 selectedIndex === idx
                   ? "border-gold ring-2 ring-gold/20 scale-105"
                   : "border-border/60 hover:border-gold/50 opacity-70 hover:opacity-100"
@@ -96,6 +97,7 @@ export default function ProductGallery({
                 src={img}
                 alt={`${productName} thumbnail ${idx + 1}`}
                 fill
+                sizes="80px"
                 className="object-cover"
               />
             </button>

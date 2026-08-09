@@ -48,6 +48,7 @@ export default function CartDrawerItem({
             src={product.images[0]}
             alt={product.name || "Product"}
             fill
+            sizes="64px"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
