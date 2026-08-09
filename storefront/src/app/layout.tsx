@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Mono, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
@@ -6,9 +6,13 @@ import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 import ScrollToTop from "@/components/ScrollToTop";
+import { PWAInstallPrompt } from "@james-andsons/ui";
 import MetaPixel from "@/components/MetaPixel";
 import ThemeColorSync from "@/components/ThemeColorSync";
 import Navigation from "@/components/Navigation";
+import PwaInstallHelper from "@/components/PwaInstallHelper";
+import StorefrontPushManager from "@/components/StorefrontPushManager";
+import { BRAND_CONFIG } from "@james-andsons/config";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -16,18 +20,21 @@ const cormorant = Cormorant_Garamond({
   weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
+  display: "swap",
 });
 
 const dmMono = DM_Mono({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
   variable: "--font-dm-mono",
+  display: "swap",
 });
 
 const outfit = Outfit({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-outfit",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -64,7 +71,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "James & Sons",
+    title: BRAND_CONFIG.name,
   },
   formatDetection: {
     telephone: false,
@@ -81,8 +88,11 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
-  themeColor: "#0a0a0b",
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -96,7 +106,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <link
           rel="stylesheet"
@@ -107,10 +121,7 @@ export default function RootLayout({
           content="05e17f9bd7917ad9a8dd38bdc291baf3"
         />
       </head>
-      <body
-        className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <ThemeColorSync />
           <Suspense fallback={null}>
@@ -216,6 +227,8 @@ export default function RootLayout({
             `,
           }}
         />
+        <PwaInstallHelper />
+        <StorefrontPushManager />
       </body>
     </html>
   );

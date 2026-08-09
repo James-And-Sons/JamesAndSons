@@ -1,4 +1,4 @@
-'use server';
+"use server";
 
 // ─────────────────────────────────────────────────────────────
 // Admin-facing server actions for the Promotions portal
@@ -8,12 +8,12 @@
 // NOTE: The admin portal shares the same Prisma DB.
 // ─────────────────────────────────────────────────────────────
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 
 export async function adminCreateCoupon(data: {
   code: string;
   description?: string;
-  type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+  type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
   value: number;
   minOrderAmount?: number;
   maxDiscountCap?: number;
@@ -32,13 +32,19 @@ export async function adminCreateCoupon(data: {
   });
 }
 
-export async function adminUpdateCouponStatus(couponId: string, status: 'ACTIVE' | 'PAUSED') {
-  return (prisma as any).coupon.update({ where: { id: couponId }, data: { status } });
+export async function adminUpdateCouponStatus(
+  couponId: string,
+  status: "ACTIVE" | "PAUSED",
+) {
+  return (prisma as any).coupon.update({
+    where: { id: couponId },
+    data: { status },
+  });
 }
 
 export async function adminBulkGenerateCoupons(data: {
   count: number;
-  type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+  type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
   value: number;
   expiresAt?: Date;
   source?: string;
@@ -46,7 +52,10 @@ export async function adminBulkGenerateCoupons(data: {
   minOrderAmount?: number;
   prefix?: string;
 }) {
-  const pfx = (data.prefix ?? 'JNS').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  const pfx = (data.prefix ?? "JNS")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
   const codes: string[] = [];
   const created: string[] = [];
 
@@ -67,7 +76,9 @@ export async function adminBulkGenerateCoupons(data: {
           expiresAt: data.expiresAt,
           source: data.source,
           affiliateId: data.affiliateId || undefined,
-          minOrderAmount: data.minOrderAmount ? Number(data.minOrderAmount) : undefined,
+          minOrderAmount: data.minOrderAmount
+            ? Number(data.minOrderAmount)
+            : undefined,
         },
       });
       created.push(code);
@@ -92,8 +103,14 @@ export async function adminCreateAffiliate(data: {
   });
 }
 
-export async function adminUpdateAffiliateStatus(affiliateId: string, status: 'ACTIVE' | 'SUSPENDED') {
-  return (prisma as any).affiliate.update({ where: { id: affiliateId }, data: { status } });
+export async function adminUpdateAffiliateStatus(
+  affiliateId: string,
+  status: "ACTIVE" | "SUSPENDED",
+) {
+  return (prisma as any).affiliate.update({
+    where: { id: affiliateId },
+    data: { status },
+  });
 }
 
 export async function adminUpdateAffiliate(
@@ -105,8 +122,8 @@ export async function adminUpdateAffiliate(
     affiliateCode: string;
     commissionRate?: number;
     notes?: string;
-    status?: 'ACTIVE' | 'SUSPENDED';
-  }
+    status?: "ACTIVE" | "SUSPENDED";
+  },
 ) {
   return (prisma as any).affiliate.update({
     where: { id: affiliateId },
@@ -116,7 +133,7 @@ export async function adminUpdateAffiliate(
 
 export async function adminDeleteAffiliate(affiliateId: string) {
   return (prisma as any).affiliate.delete({
-    where: { id: affiliateId }
+    where: { id: affiliateId },
   });
 }
 
@@ -129,8 +146,11 @@ export async function adminMarkConversionsPaid(conversionIds: string[]) {
 
 export async function adminListCoupons() {
   return (prisma as any).coupon.findMany({
-    include: { _count: { select: { usages: true } }, affiliate: { select: { name: true } } },
-    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: { select: { usages: true } },
+      affiliate: { select: { name: true } },
+    },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -139,8 +159,12 @@ export async function adminGetCouponDetail(id: string) {
     where: { id },
     include: {
       usages: {
-        include: { order: { select: { orderNumber: true, createdAt: true, totalAmount: true } } },
-        orderBy: { createdAt: 'desc' },
+        include: {
+          order: {
+            select: { orderNumber: true, createdAt: true, totalAmount: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
         take: 50,
       },
       affiliate: true,
@@ -154,7 +178,7 @@ export async function adminListAffiliates() {
       _count: { select: { conversions: true } },
       coupons: { select: { code: true, status: true } },
     },
-    orderBy: { totalRevenue: 'desc' },
+    orderBy: { totalRevenue: "desc" },
   });
 }
 
@@ -163,8 +187,12 @@ export async function adminGetAffiliateDetail(id: string) {
     where: { id },
     include: {
       conversions: {
-        include: { order: { select: { orderNumber: true, createdAt: true, totalAmount: true } } },
-        orderBy: { createdAt: 'desc' },
+        include: {
+          order: {
+            select: { orderNumber: true, createdAt: true, totalAmount: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
       },
       coupons: true,
     },
@@ -173,16 +201,16 @@ export async function adminGetAffiliateDetail(id: string) {
 
 export async function adminDeleteCoupon(couponId: string) {
   return (prisma as any).coupon.delete({
-    where: { id: couponId }
+    where: { id: couponId },
   });
 }
 
 export async function adminUpdateCoupon(
   couponId: string,
-  data: {
+  data: Partial<{
     code: string;
     description?: string;
-    type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+    type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
     value: number;
     minOrderAmount?: number;
     maxDiscountCap?: number;
@@ -191,16 +219,15 @@ export async function adminUpdateCoupon(
     startsAt?: Date;
     expiresAt?: Date;
     source?: string;
-    status?: 'ACTIVE' | 'PAUSED' | 'EXPIRED' | 'EXHAUSTED';
-  }
+    affiliateId?: string;
+    status?: "ACTIVE" | "PAUSED" | "EXPIRED" | "EXHAUSTED";
+  }>,
 ) {
   return (prisma as any).coupon.update({
     where: { id: couponId },
     data: {
       ...data,
-      code: data.code.trim().toUpperCase(),
-    }
+      code: data.code ? data.code.trim().toUpperCase() : undefined,
+    },
   });
 }
-
-

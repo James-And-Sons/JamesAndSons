@@ -5,6 +5,7 @@ import HapticLink from "@/components/HapticLink";
 import ThemeToggle from "@/components/ThemeToggle";
 import { prisma } from "@/lib/prisma";
 import AccountWishlistClient from "./AccountWishlistClient";
+import PasskeyManagerCard from "@/components/PasskeyManagerCard";
 
 export const dynamic = "force-dynamic";
 
@@ -438,6 +439,11 @@ export default async function AccountPage() {
                 </HapticLink>
               </div>
             )}
+          </div>
+
+          {/* Passkey Security Section */}
+          <div style={{ padding: "24px 16px 0" }}>
+            <PasskeyManagerCard />
           </div>
 
           {/* Support Section */}

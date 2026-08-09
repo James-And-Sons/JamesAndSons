@@ -8,85 +8,161 @@
  *   GET /orders/v0/orders
  *   GET /orders/v0/orders/{orderId}/orderItems
  */
-import { prisma } from '../prisma';
-import { getLwaAccessToken, getAmazonConfig, signedSpApiFetch } from '../amazon-sp-api';
+import { prisma } from "../prisma";
+import { sendNotificationToAllAdmins } from "../push";
+import {
+  getLwaAccessToken,
+  getRestrictedDataToken,
+  getAmazonConfig,
+  signedSpApiFetch,
+} from "../amazon-sp-api";
 
 // ---------------------------------------------------------------------------
 // Types (minimal subset of SP-API Order response)
 // ---------------------------------------------------------------------------
 
 interface AmazonAddress {
-  Name:         string;
+  Name: string;
   AddressLine1: string;
   AddressLine2?: string;
-  City:         string;
+  City: string;
   StateOrRegion: string;
-  PostalCode:   string;
-  CountryCode:  string;
-  Phone?:       string;
+  PostalCode: string;
+  CountryCode: string;
+  Phone?: string;
 }
 
 interface AmazonOrderItem {
-  ASIN:               string;
-  SellerSKU:          string;
-  OrderItemId:        string;
-  Title:              string;
-  QuantityOrdered:    number;
-  ItemPrice?:         { Amount: string; CurrencyCode: string };
-  ItemTax?:           { Amount: string; CurrencyCode: string };
+  ASIN: string;
+  SellerSKU: string;
+  OrderItemId: string;
+  Title: string;
+  QuantityOrdered: number;
+  ItemPrice?: { Amount: string; CurrencyCode: string };
+  ItemTax?: { Amount: string; CurrencyCode: string };
 }
 
 interface AmazonOrder {
-  AmazonOrderId:    string;
-  OrderStatus:      string;
-  PurchaseDate:     string;
+  AmazonOrderId: string;
+  OrderStatus: string;
+  PurchaseDate: string;
   ShippingAddress?: AmazonAddress;
-  BuyerInfo?:       { BuyerEmail?: string; BuyerName?: string };
-  OrderTotal?:      { Amount: string; CurrencyCode: string };
-  NumberOfItemsShipped:   number;
+  BuyerInfo?: { BuyerEmail?: string; BuyerName?: string };
+  OrderTotal?: { Amount: string; CurrencyCode: string };
+  NumberOfItemsShipped: number;
   NumberOfItemsUnshipped: number;
-  FulfillmentChannel: string;  // MFN (merchant) or AFN (Amazon)
+  FulfillmentChannel: string; // MFN (merchant) or AFN (Amazon)
+  // Easy Ship orders have this field; absent = Self-Ship MFN
+  EasyShipShipmentStatus?: string; // PendingPickUp | PickedUp | OutForDelivery | Delivered | ...
 }
 
 // ---------------------------------------------------------------------------
 // Fetch new unshipped orders from SP-API
 // ---------------------------------------------------------------------------
 
-export async function fetchNewAmazonOrders(minutesBack = 30): Promise<AmazonOrder[]> {
-  const config      = getAmazonConfig();
-  const accessToken = await getLwaAccessToken();
+export async function fetchNewAmazonOrders(
+  minutesBack = 1440,
+): Promise<AmazonOrder[]> {
+  const config = getAmazonConfig();
+  const accessToken = await getRestrictedDataToken([
+    "buyerInfo",
+    "shippingAddress",
+  ]);
 
-  const createdAfter = new Date(Date.now() - minutesBack * 60 * 1000).toISOString();
-  const path = `/orders/v0/orders?MarketplaceIds=${config.marketplaceId}&CreatedAfter=${encodeURIComponent(createdAfter)}&OrderStatuses=Unshipped&FulfillmentChannels=MFN`;
+  const lastUpdatedAfter = new Date(
+    Date.now() - minutesBack * 60 * 1000,
+  ).toISOString();
 
-  console.log(`[Amazon Orders] Fetching MFN orders created after ${createdAfter}...`);
+  // Query unshipped, partially shipped, shipped, and canceled orders across MFN & AFN channels
+  const statuses = "Unshipped,PartiallyShipped,Shipped,Canceled";
+  const path = `/orders/v0/orders?MarketplaceIds=${config.marketplaceId}&LastUpdatedAfter=${encodeURIComponent(lastUpdatedAfter)}&OrderStatuses=${statuses}`;
+
+  console.log(
+    `[Amazon Orders] Fetching Amazon orders updated after ${lastUpdatedAfter} with RDT...`,
+  );
   const res = await signedSpApiFetch(path, accessToken, config);
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`[Amazon Orders] GET /orders/v0/orders failed: ${res.status} — ${text}`);
+    throw new Error(
+      `[Amazon Orders] GET /orders/v0/orders failed: ${res.status} — ${text}`,
+    );
   }
 
   const data = await res.json();
   const orders: AmazonOrder[] = data?.payload?.Orders || [];
-  console.log(`[Amazon Orders] Found ${orders.length} unshipped orders.`);
+  console.log(`[Amazon Orders] Found ${orders.length} updated Amazon orders.`);
   return orders;
+}
+
+// ---------------------------------------------------------------------------
+// Sync single Amazon order by Amazon Order ID
+// ---------------------------------------------------------------------------
+
+export async function syncSingleAmazonOrder(
+  amazonOrderId: string,
+): Promise<{ success: boolean; status?: string; message?: string }> {
+  try {
+    const config = getAmazonConfig();
+    const accessToken = await getRestrictedDataToken([
+      "buyerInfo",
+      "shippingAddress",
+    ]);
+    const path = `/orders/v0/orders/${amazonOrderId}`;
+
+    console.log(
+      `[Amazon Sync] Fetching SP-API details for Amazon order: ${amazonOrderId}`,
+    );
+    const res = await signedSpApiFetch(path, accessToken, config);
+    if (!res.ok) {
+      const text = await res.text();
+      return { success: false, message: `SP-API error ${res.status}: ${text}` };
+    }
+
+    const data = await res.json();
+    const amazonOrder: AmazonOrder = data?.payload;
+    if (!amazonOrder) {
+      return {
+        success: false,
+        message: "No order payload returned from Amazon SP-API",
+      };
+    }
+
+    const items = await getAmazonOrderItems(amazonOrderId);
+    const jnsId = await ingestAmazonOrder(amazonOrder, items);
+
+    return {
+      success: true,
+      status: amazonOrder.OrderStatus,
+      message: `Synced Amazon order ${amazonOrderId} successfully.`,
+    };
+  } catch (err: any) {
+    console.error(
+      `[Amazon Sync] Failed to sync single Amazon order ${amazonOrderId}:`,
+      err,
+    );
+    return { success: false, message: err?.message || "Internal sync error" };
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Fetch order items for a specific Amazon order
 // ---------------------------------------------------------------------------
 
-export async function getAmazonOrderItems(amazonOrderId: string): Promise<AmazonOrderItem[]> {
-  const config      = getAmazonConfig();
+export async function getAmazonOrderItems(
+  amazonOrderId: string,
+): Promise<AmazonOrderItem[]> {
+  const config = getAmazonConfig();
   const accessToken = await getLwaAccessToken();
 
   const path = `/orders/v0/orders/${amazonOrderId}/orderItems`;
-  const res  = await signedSpApiFetch(path, accessToken, config);
+  const res = await signedSpApiFetch(path, accessToken, config);
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`[Amazon Orders] GET order items failed for ${amazonOrderId}: ${res.status} — ${text}`);
+    throw new Error(
+      `[Amazon Orders] GET order items failed for ${amazonOrderId}: ${res.status} — ${text}`,
+    );
   }
 
   const data = await res.json();
@@ -94,36 +170,106 @@ export async function getAmazonOrderItems(amazonOrderId: string): Promise<Amazon
 }
 
 // ---------------------------------------------------------------------------
-// Ingest a single Amazon order into JNS database (idempotent)
+// Ingest or update a single Amazon order in JNS database
 // ---------------------------------------------------------------------------
 
 export async function ingestAmazonOrder(
   amazonOrder: AmazonOrder,
-  items: AmazonOrderItem[]
+  items: AmazonOrderItem[],
 ): Promise<string | null> {
   const { AmazonOrderId } = amazonOrder;
 
-  // Idempotency — skip if already in DB
+  // Map Amazon OrderStatus to Prisma enum OrderStatus
+  let mappedStatus:
+    "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" =
+    "PAID";
+  const amzStatus = amazonOrder.OrderStatus;
+  if (amzStatus === "Shipped" || amzStatus === "PartiallyShipped") {
+    mappedStatus = "SHIPPED";
+  } else if (amzStatus === "Delivered") {
+    mappedStatus = "DELIVERED";
+  } else if (amzStatus === "Canceled") {
+    mappedStatus = "CANCELLED";
+  }
+
+  // If order already exists in DB, update status and tracking info
   const existing = await prisma.order.findUnique({
     where: { amazonOrderId: AmazonOrderId },
+    include: { items: true },
   });
+
   if (existing) {
-    console.log(`[Amazon Orders] Order ${AmazonOrderId} already ingested (JNS: ${existing.orderNumber}). Skipping.`);
-    return null;
+    // Also update fulfillment type if it was previously null (order re-synced after initial ingestion)
+    const updatedFulfillmentType =
+      amazonOrder.EasyShipShipmentStatus != null
+        ? "EASY_SHIP"
+        : existing.amazonFulfillmentType || "SELF_SHIP";
+
+    if (
+      existing.status !== mappedStatus ||
+      existing.amazonOrderStatus !== amzStatus ||
+      existing.easyShipStatus !== (amazonOrder.EasyShipShipmentStatus || null)
+    ) {
+      await prisma.order.update({
+        where: { id: existing.id },
+        data: {
+          status: mappedStatus as any,
+          amazonOrderStatus: amzStatus,
+          amazonFulfillmentType: updatedFulfillmentType,
+          easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
+        },
+      });
+
+      // If status changed to CANCELLED, restore inventory and send push notification
+      if (mappedStatus === "CANCELLED" && existing.status !== "CANCELLED") {
+        sendNotificationToAllAdmins({
+          title: `⚠️ Amazon Order Cancelled #${AmazonOrderId}`,
+          body: `Amazon Order #${AmazonOrderId} status changed to Cancelled.`,
+          url: "/orders",
+          type: "ORDER",
+        }).catch((err) =>
+          console.error("[Amazon Push] Cancellation notification error:", err),
+        );
+
+        for (const item of existing.items) {
+          if (item.variantId) {
+            await prisma.productVariant
+              .update({
+                where: { id: item.variantId },
+                data: { stockQuantity: { increment: item.quantity } },
+              })
+              .catch(() => {});
+          }
+          await prisma.product
+            .update({
+              where: { id: item.productId },
+              data: { stockQuantity: { increment: item.quantity } },
+            })
+            .catch(() => {});
+        }
+      }
+
+      console.log(
+        `[Amazon Orders] Updated existing Amazon order ${AmazonOrderId} status from ${existing.status} to ${mappedStatus} (Amazon Status: ${amzStatus}).`,
+      );
+    }
+    return existing.id;
   }
 
   // Find or create the system "Amazon Marketplace" user
-  const AMAZON_SYSTEM_EMAIL = 'amazon-marketplace@jamesandsons.in';
-  let systemUser = await prisma.user.findUnique({ where: { email: AMAZON_SYSTEM_EMAIL } });
+  const AMAZON_SYSTEM_EMAIL = "amazon-marketplace@jamesandsons.in";
+  let systemUser = await prisma.user.findUnique({
+    where: { email: AMAZON_SYSTEM_EMAIL },
+  });
   if (!systemUser) {
-    console.log('[Amazon Orders] Creating system Amazon marketplace user...');
+    console.log("[Amazon Orders] Creating system Amazon marketplace user...");
     systemUser = await prisma.user.create({
       data: {
-        email:     AMAZON_SYSTEM_EMAIL,
-        password:  'SYSTEM_ACCOUNT_NO_LOGIN',
-        firstName: 'Amazon',
-        lastName:  'Marketplace',
-        role:      'CUSTOMER',
+        email: AMAZON_SYSTEM_EMAIL,
+        password: "SYSTEM_ACCOUNT_NO_LOGIN",
+        firstName: "Amazon",
+        lastName: "Marketplace",
+        role: "CUSTOMER",
       },
     });
   }
@@ -132,21 +278,21 @@ export async function ingestAmazonOrder(
   const orderNumber = `AMZ-${Date.now()}`;
 
   // Parse shipping address
-  const addr   = amazonOrder.ShippingAddress;
+  const addr = amazonOrder.ShippingAddress;
   const addrLine =
-    [addr?.AddressLine1, addr?.AddressLine2].filter(Boolean).join(', ') ||
-    'Amazon Marketplace';
-  const city    = addr?.City         || '';
-  const state   = addr?.StateOrRegion || '';
-  const pincode = addr?.PostalCode   || '';
-  const phone   = addr?.Phone        || '';
+    [addr?.AddressLine1, addr?.AddressLine2].filter(Boolean).join(", ") ||
+    "Amazon Marketplace";
+  const city = addr?.City || "";
+  const state = addr?.StateOrRegion || "";
+  const pincode = addr?.PostalCode || "";
+  const phone = addr?.Phone || "";
   const fullAddress = `${addrLine}, ${city}, ${state} - ${pincode}`;
 
   // Compute financials
-  const totalAmount = parseFloat(amazonOrder.OrderTotal?.Amount || '0');
+  const totalAmount = parseFloat(amazonOrder.OrderTotal?.Amount || "0");
 
   // Estimate tax at 18% GST (Amazon doesn't break out tax separately in basic order response)
-  const taxAmount      = parseFloat((totalAmount * 0.18 / 1.18).toFixed(2));
+  const taxAmount = parseFloat(((totalAmount * 0.18) / 1.18).toFixed(2));
   const shippingAmount = 0; // Amazon usually handles shipping for MFN listings at 0
 
   // Map items → JNS OrderItems (link by SKU)
@@ -158,10 +304,11 @@ export async function ingestAmazonOrder(
     total: number;
   }[] = [];
 
-  let unmappedSkusWarning = '';
+  let unmappedSkusWarning = "";
 
   for (const item of items) {
-    const unitPrice = parseFloat(item.ItemPrice?.Amount || '0') / item.QuantityOrdered;
+    const unitPrice =
+      parseFloat(item.ItemPrice?.Amount || "0") / item.QuantityOrdered;
 
     // Find the product/variant by SKU
     const product = await prisma.product.findFirst({
@@ -178,16 +325,18 @@ export async function ingestAmazonOrder(
         orderItemsData.push({
           productId: variant.productId,
           variantId: variant.id,
-          quantity:  item.QuantityOrdered,
+          quantity: item.QuantityOrdered,
           unitPrice,
           total: unitPrice * item.QuantityOrdered,
         });
       } else {
-        console.warn(`[Amazon Orders] SKU "${item.SellerSKU}" not found in JNS DB. Mapping to fallback product.`);
-        
+        console.warn(
+          `[Amazon Orders] SKU "${item.SellerSKU}" not found in JNS DB. Mapping to fallback product.`,
+        );
+
         // Find or create fallback product
         let fallbackProduct = await prisma.product.findUnique({
-          where: { sku: 'UNMAPPED-SKU' },
+          where: { sku: "UNMAPPED-SKU" },
         });
 
         if (!fallbackProduct) {
@@ -195,10 +344,11 @@ export async function ingestAmazonOrder(
           if (anyCategory) {
             fallbackProduct = await prisma.product.create({
               data: {
-                sku: 'UNMAPPED-SKU',
-                name: 'Unmapped Seller Central SKU',
+                sku: "UNMAPPED-SKU",
+                name: "Unmapped Seller Central SKU",
                 slug: `unmapped-sku-${Date.now()}`,
-                description: 'Placeholder product created dynamically for unmapped marketplace listings.',
+                description:
+                  "Placeholder product created dynamically for unmapped marketplace listings.",
                 mrp: 0,
                 d2cPrice: 0,
                 b2bPrice: 0,
@@ -211,7 +361,7 @@ export async function ingestAmazonOrder(
         if (fallbackProduct) {
           orderItemsData.push({
             productId: fallbackProduct.id,
-            quantity:  item.QuantityOrdered,
+            quantity: item.QuantityOrdered,
             unitPrice,
             total: unitPrice * item.QuantityOrdered,
           });
@@ -221,7 +371,7 @@ export async function ingestAmazonOrder(
     } else {
       orderItemsData.push({
         productId: product.id,
-        quantity:  item.QuantityOrdered,
+        quantity: item.QuantityOrdered,
         unitPrice,
         total: unitPrice * item.QuantityOrdered,
       });
@@ -229,20 +379,29 @@ export async function ingestAmazonOrder(
   }
 
   if (orderItemsData.length === 0) {
-    console.warn(`[Amazon Orders] No products could be mapped for Amazon order ${AmazonOrderId} and no category was available for fallback. Skipping ingestion.`);
+    console.warn(
+      `[Amazon Orders] No products could be mapped for Amazon order ${AmazonOrderId} and no category was available for fallback. Skipping ingestion.`,
+    );
     return null;
   }
 
+  // Determine fulfillment type from SP-API EasyShipShipmentStatus
+  // If EasyShipShipmentStatus exists → order is Amazon Easy Ship (ATS pickup)
+  // If absent → MFN Self-Ship (we book Shiprocket + push AWB)
+  const fulfillmentType =
+    amazonOrder.EasyShipShipmentStatus != null ? "EASY_SHIP" : "SELF_SHIP";
 
   // Create the JNS order
   const jnsOrder = await prisma.order.create({
     data: {
       orderNumber,
-      userId:          systemUser.id,
-      status:          'PAID',           // Amazon only notifies on confirmed/paid orders
-      channel:         'AMAZON',
-      amazonOrderId:   AmazonOrderId,
+      userId: systemUser.id,
+      status: "PAID", // Amazon only notifies on confirmed/paid orders
+      channel: "AMAZON",
+      amazonOrderId: AmazonOrderId,
       amazonOrderStatus: amazonOrder.OrderStatus,
+      amazonFulfillmentType: fulfillmentType,
+      easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
 
       totalAmount,
       taxAmount,
@@ -250,12 +409,14 @@ export async function ingestAmazonOrder(
       discountAmount: 0,
 
       shippingAddress: fullAddress,
-      shippingCity:    city,
-      shippingState:   state,
+      shippingCity: city,
+      shippingState: state,
       shippingPincode: pincode,
-      shippingPhone:   phone.replace(/\D/g, '').slice(-10),
-      billingAddress:  fullAddress,  // Amazon doesn't provide separate billing addr in basic API
-      fulfillmentError: unmappedSkusWarning ? `WARNING: Unmapped SKUs found in Amazon feed. ${unmappedSkusWarning}` : null,
+      shippingPhone: phone.replace(/\D/g, "").slice(-10),
+      billingAddress: fullAddress, // Amazon doesn't provide separate billing addr in basic API
+      fulfillmentError: unmappedSkusWarning
+        ? `WARNING: Unmapped SKUs found in Amazon feed. ${unmappedSkusWarning}`
+        : null,
 
       items: {
         create: orderItemsData,
@@ -263,8 +424,20 @@ export async function ingestAmazonOrder(
     },
   });
 
+  console.log(
+    `[Amazon Orders] ✅ Ingested Amazon order ${AmazonOrderId} → JNS ${orderNumber} (ID: ${jnsOrder.id})`,
+  );
 
-  console.log(`[Amazon Orders] ✅ Ingested Amazon order ${AmazonOrderId} → JNS ${orderNumber} (ID: ${jnsOrder.id})`);
+  // Dispatch real-time PWA Push Notification to all admins
+  sendNotificationToAllAdmins({
+    title: `📦 New Amazon Order #${AmazonOrderId}`,
+    body: `Amazon Order received: ₹${totalAmount.toLocaleString("en-IN")} (${orderItemsData.length} item(s))`,
+    url: `/orders/${jnsOrder.id}`,
+    type: "ORDER",
+  }).catch((err) =>
+    console.error("[Amazon Push] New order notification error:", err),
+  );
+
   return jnsOrder.id;
 }
 
@@ -278,14 +451,14 @@ export async function processNewAmazonOrders(minutesBack = 30): Promise<{
   skipped: number;
   errors: number;
 }> {
-  console.log('[Amazon Orders] Starting order ingestion run...');
+  console.log("[Amazon Orders] Starting order ingestion run...");
   const stats = { fetched: 0, ingested: 0, skipped: 0, errors: 0 };
 
   let orders: AmazonOrder[];
   try {
     orders = await fetchNewAmazonOrders(minutesBack);
   } catch (err) {
-    console.error('[Amazon Orders] Failed to fetch orders from SP-API:', err);
+    console.error("[Amazon Orders] Failed to fetch orders from SP-API:", err);
     stats.errors++;
     return stats;
   }
@@ -294,27 +467,44 @@ export async function processNewAmazonOrders(minutesBack = 30): Promise<{
 
   for (const order of orders) {
     try {
-      const items  = await getAmazonOrderItems(order.AmazonOrderId);
-      const jnsId  = await ingestAmazonOrder(order, items);
+      const items = await getAmazonOrderItems(order.AmazonOrderId);
+      const jnsId = await ingestAmazonOrder(order, items);
 
       if (jnsId) {
         stats.ingested++;
 
-        // Hand off to fulfillment pipeline (Shiprocket + email + Zoho)
-        const { fulfillAmazonOrder } = await import('./amazon-fulfillment');
-        // Fire-and-forget — don't block the poll loop
-        fulfillAmazonOrder(jnsId).catch((err) => {
-          console.error(`[Amazon Orders] fulfillAmazonOrder failed for JNS ID ${jnsId}:`, err);
+        // Process Amazon order ingestion: Send invoice email & sync Zoho (Shiprocket is completely bypassed for Amazon orders)
+        console.log(
+          `[Amazon Orders] Ingested order ${order.AmazonOrderId} (JNS ID: ${jnsId}). Shiprocket is bypassed for Amazon orders.`,
+        );
+        const { sendInvoiceEmail } = await import("../email");
+        const { prisma } = await import("../prisma");
+        const ingestedOrder = await prisma.order.findUnique({
+          where: { id: jnsId },
+          include: { items: { include: { product: true } }, user: true },
         });
+        if (ingestedOrder) {
+          sendInvoiceEmail(ingestedOrder).catch((err) => {
+            console.error(
+              `[Amazon Orders] Invoice email failed for JNS ID ${jnsId}:`,
+              err,
+            );
+          });
+        }
       } else {
         stats.skipped++;
       }
     } catch (err) {
-      console.error(`[Amazon Orders] Error processing order ${order.AmazonOrderId}:`, err);
+      console.error(
+        `[Amazon Orders] Error processing order ${order.AmazonOrderId}:`,
+        err,
+      );
       stats.errors++;
     }
   }
 
-  console.log(`[Amazon Orders] Run complete. Fetched: ${stats.fetched}, Ingested: ${stats.ingested}, Skipped: ${stats.skipped}, Errors: ${stats.errors}`);
+  console.log(
+    `[Amazon Orders] Run complete. Fetched: ${stats.fetched}, Ingested: ${stats.ingested}, Skipped: ${stats.skipped}, Errors: ${stats.errors}`,
+  );
   return stats;
 }

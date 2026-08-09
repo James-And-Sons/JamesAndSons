@@ -44,18 +44,24 @@ export async function getShiprocketToken(config: IShiprocketConfig = {}) {
     );
 
     if (!res.ok) {
-      throw new Error(`Shiprocket auth failed: ${res.statusText}`);
+      const errText = await res.text().catch(() => res.statusText);
+      throw new Error(`HTTP ${res.status}: ${errText}`);
     }
 
     const data = await res.json();
+    if (!data?.token) {
+      throw new Error("Invalid response format: missing token property");
+    }
+
     cachedToken = data.token;
-
-    // Simplistic expiry: assume token is good for 9 days (Shiprocket tokens usually last 10)
     tokenExpiryTime = now + 9 * 24 * 60 * 60 * 1000;
-
     return cachedToken;
   } catch (err) {
-    console.error("getShiprocketToken Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[Shiprocket Authentication Exception]:", {
+      error: message,
+      timestamp: new Date().toISOString(),
+    });
     return null;
   }
 }
@@ -327,9 +333,9 @@ export async function generateLabel(
 }
 
 /**
- * Request Pickup for shipments
+ * Generate Shipping Manifest PDF (Courier Pickup Handover)
  */
-export async function requestPickup(
+export async function generateManifest(
   shipmentIds: number[],
   config: IShiprocketConfig = {},
 ) {
@@ -338,7 +344,7 @@ export async function requestPickup(
 
   try {
     const res = await fetch(
-      "https://apiv2.shiprocket.in/v1/external/courier/generate/pickup",
+      "https://apiv2.shiprocket.in/v1/external/manifests/generate",
       {
         method: "POST",
         headers: {
@@ -346,6 +352,76 @@ export async function requestPickup(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ shipment_id: shipmentIds }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json();
+    return data.manifest_url || data.url || null;
+  } catch (err) {
+    console.error("generateManifest Error:", err);
+    return null;
+  }
+}
+
+/**
+ * Generate Shiprocket Invoice PDF
+ */
+export async function generateInvoice(
+  orderIds: number[],
+  config: IShiprocketConfig = {},
+) {
+  const token = await getShiprocketToken(config);
+  if (!token) return null;
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/orders/print/invoice",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: orderIds }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json();
+    return data.invoice_url || data.url || null;
+  } catch (err) {
+    console.error("generateInvoice Error:", err);
+    return null;
+  }
+}
+
+/**
+ * Request Pickup for shipments
+ */
+export async function requestPickup(
+  shipmentIds: number[],
+  pickupDate?: string,
+  config: IShiprocketConfig = {},
+) {
+  const token = await getShiprocketToken(config);
+  if (!token) return null;
+
+  try {
+    const payload: any = { shipment_id: shipmentIds };
+    if (pickupDate) {
+      payload.pickup_date = [pickupDate];
+    }
+
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/courier/generate/pickup",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
         cache: "no-store",
       },
     );
@@ -362,6 +438,7 @@ export async function requestPickup(
  */
 export async function assignAWB(
   shipmentId: number,
+  courierId?: number | null,
   config: IShiprocketConfig = {},
 ) {
   const token = await getShiprocketToken(config);
@@ -369,6 +446,11 @@ export async function assignAWB(
     return { success: false, message: "Logistics service unavailable" };
 
   try {
+    const payload: any = { shipment_id: shipmentId };
+    if (courierId) {
+      payload.courier_id = courierId;
+    }
+
     const res = await fetch(
       "https://apiv2.shiprocket.in/v1/external/courier/assign/awb",
       {
@@ -377,7 +459,7 @@ export async function assignAWB(
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ shipment_id: shipmentId }),
+        body: JSON.stringify(payload),
         cache: "no-store",
       },
     );
@@ -391,9 +473,20 @@ export async function assignAWB(
       };
     } else {
       console.error("AWB Assignment Failed:", data);
+      let errMsg =
+        data.response?.data?.awb_assign_error ||
+        data.message ||
+        "AWB Assignment failed";
+      if (typeof errMsg === "object") {
+        errMsg = JSON.stringify(errMsg);
+      }
+      if (errMsg.includes("Insufficient amount")) {
+        errMsg =
+          "Insufficient Shiprocket Wallet Balance. Please recharge your Shiprocket wallet balance to generate AWB label.";
+      }
       return {
         success: false,
-        message: data.message || "AWB Assignment failed",
+        message: errMsg,
       };
     }
   } catch (err) {
@@ -438,8 +531,12 @@ export async function cancelShiprocketOrder(
     }
 
     const getData = await getRes.json();
-    const orderData = getData.data?.find(
-      (o: any) => o.order_id === channelOrderId,
+    const ordersList: any[] = getData.data || [];
+    const orderData = ordersList.find(
+      (o: any) =>
+        o.channel_order_id === channelOrderId ||
+        o.order_id === channelOrderId ||
+        String(o.id) === channelOrderId,
     );
     if (!orderData || !orderData.id) {
       console.warn(
@@ -451,6 +548,43 @@ export async function cancelShiprocketOrder(
       };
     }
 
+    // Step 1: Trigger courier shipment cancellation if shipment AWB or ID exists
+    const shipmentId = orderData.shipment_id || orderData.shipments?.[0]?.id;
+    const awbCode = orderData.awb_code || orderData.shipments?.[0]?.awb_code;
+
+    if (awbCode || shipmentId) {
+      console.log(
+        `[Shiprocket] Sending courier partner cancellation for AWB/Shipment ${awbCode || shipmentId}...`,
+      );
+      try {
+        const shipCancelRes = await fetch(
+          "https://apiv2.shiprocket.in/v1/external/orders/cancel/shipment",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(
+              awbCode ? { awbs: [awbCode] } : { shipment_id: [shipmentId] },
+            ),
+            cache: "no-store",
+          },
+        );
+        const shipCancelData = await shipCancelRes.json().catch(() => ({}));
+        console.log(
+          `[Shiprocket] Shipment cancel response for ${awbCode || shipmentId}:`,
+          shipCancelData,
+        );
+      } catch (shipErr) {
+        console.warn(
+          "[Shiprocket] Courier shipment cancellation warning:",
+          shipErr,
+        );
+      }
+    }
+
+    // Step 2: Cancel Shiprocket Order entry
     console.log(
       `[Shiprocket] Sending cancel request for Shiprocket Order ID ${orderData.id}...`,
     );
@@ -487,6 +621,61 @@ export async function cancelShiprocketOrder(
     }
   } catch (err: any) {
     console.error("cancelShiprocketOrder Error:", err);
+    return { success: false, message: err.message || "API Call Failed" };
+  }
+}
+
+/**
+ * Explicitly cancels an active Shiprocket Shipment/AWB with the courier partner
+ */
+export async function cancelShiprocketShipment(
+  awbOrShipmentId: string | number,
+  config: IShiprocketConfig = {},
+) {
+  const token = await getShiprocketToken(config);
+  if (!token)
+    return { success: false, message: "Logistics service unavailable" };
+
+  try {
+    const isNumeric = !isNaN(Number(awbOrShipmentId));
+    const payload = isNumeric
+      ? { shipment_id: [Number(awbOrShipmentId)] }
+      : { awbs: [String(awbOrShipmentId)] };
+
+    console.log(
+      `[Shiprocket] Triggering shipment cancellation for AWB/Shipment ${awbOrShipmentId}...`,
+    );
+
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/orders/cancel/shipment",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json().catch(() => ({}));
+    if (
+      res.ok &&
+      (data.status === 200 || data.status_code === 200 || data.success)
+    ) {
+      return {
+        success: true,
+        message: data.message || "Shipment cancelled & wallet refund requested",
+      };
+    }
+
+    return {
+      success: false,
+      message: data.message || "Shipment cancellation request sent",
+    };
+  } catch (err: any) {
+    console.error("cancelShiprocketShipment Error:", err);
     return { success: false, message: err.message || "API Call Failed" };
   }
 }

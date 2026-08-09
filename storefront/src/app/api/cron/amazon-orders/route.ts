@@ -19,25 +19,40 @@
  *
  * Security: protected by the same CRON_SECRET used for flipkart-sync.
  */
-import { NextResponse } from 'next/server';
-import { processNewAmazonOrders } from '@/lib/integrations/amazon-orders';
+import { NextResponse } from "next/server";
+import { processNewAmazonOrders } from "@/lib/integrations/amazon-orders";
 
 export const maxDuration = 60; // Vercel Serverless function timeout (seconds)
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   // Auth
-  const authHeader = request.headers.get('authorization');
+  const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.warn('[Amazon Cron] Unauthorized request -- invalid or missing CRON_SECRET.');
-    return new Response('Unauthorized', { status: 401 });
+    console.warn(
+      "[Amazon Cron] Unauthorized request -- invalid or missing CRON_SECRET.",
+    );
+    return new Response("Unauthorized", { status: 401 });
   }
 
   // Parse options
   const url = new URL(request.url);
-  const minutesBack = parseInt(url.searchParams.get('minutes') || '30', 10);
+  const amazonOrderId = url.searchParams.get("amazonOrderId");
+  const minutesBack = parseInt(url.searchParams.get("minutes") || "1440", 10);
 
-  console.log(`[Amazon Cron] Triggered. Looking back ${minutesBack} minutes for new orders.`);
+  if (amazonOrderId) {
+    console.log(
+      `[Amazon Cron] Targeted single order sync for: ${amazonOrderId}`,
+    );
+    const { syncSingleAmazonOrder } =
+      await import("@/lib/integrations/amazon-orders");
+    const result = await syncSingleAmazonOrder(amazonOrderId);
+    return NextResponse.json(result);
+  }
+
+  console.log(
+    `[Amazon Cron] Triggered. Looking back ${minutesBack} minutes for new orders.`,
+  );
   const startedAt = Date.now();
 
   // Run ingestion
@@ -58,11 +73,11 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[Amazon Cron] Fatal error:', err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[Amazon Cron] Fatal error:", err);
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

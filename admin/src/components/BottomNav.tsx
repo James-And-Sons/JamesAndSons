@@ -1,7 +1,7 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -21,34 +21,34 @@ import {
   Building2,
   Image,
   LogOut,
-} from 'lucide-react';
-import { useSidebar } from '@/lib/context/SidebarContext';
-import { logoutAction } from '@/app/actions';
+} from "lucide-react";
+import { useSidebar } from "@/lib/context/SidebarContext";
+import { logoutAction } from "@/app/actions";
 
 const PRIMARY_TABS = [
-  { label: 'Dashboard', href: '/', icon: LayoutDashboard, exact: true },
-  { label: 'Orders', href: '/orders', icon: Package },
-  { label: 'Products', href: '/products', icon: Grid3x3 },
-  { label: 'Tickets', href: '/tickets', icon: TicketCheck },
+  { label: "Dashboard", href: "/", icon: LayoutDashboard, exact: true },
+  { label: "Orders", href: "/orders", icon: Package },
+  { label: "Products", href: "/products", icon: Grid3x3 },
+  { label: "Tickets", href: "/tickets", icon: TicketCheck },
 ];
 
 const MORE_LINKS = [
-  { label: 'Inquiries', href: '/rfqs', icon: MessageSquare },
-  { label: 'B2B Workspace', href: '/b2b', icon: Building2 },
-  { label: 'Collections', href: '/collections', icon: BookMarked },
-  { label: 'Spaces', href: '/spaces', icon: Image },
-  { label: 'Blog', href: '/blog', icon: BookOpen },
-  { label: 'Marketing', href: '/campaigns', icon: Megaphone },
-  { label: 'Coupons', href: '/promotions', icon: Tag },
-  { label: 'Customers', href: '/customers', icon: Users },
-  { label: 'Settings', href: '/account', icon: Settings },
+  { label: "Inquiries", href: "/rfqs", icon: MessageSquare },
+  { label: "B2B Workspace", href: "/b2b", icon: Building2 },
+  { label: "Collections", href: "/collections", icon: BookMarked },
+  { label: "Spaces", href: "/spaces", icon: Image },
+  { label: "Blog", href: "/blog", icon: BookOpen },
+  { label: "Marketing", href: "/campaigns", icon: Megaphone },
+  { label: "Coupons", href: "/promotions", icon: Tag },
+  { label: "Customers", href: "/customers", icon: Users },
+  { label: "Settings", href: "/account", icon: Settings },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { isMobileNavOpen, setIsMobileNavOpen } = useSidebar();
 
-  if (pathname?.startsWith('/login')) return null;
+  if (pathname?.startsWith("/login")) return null;
 
   const isTabActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
@@ -59,8 +59,13 @@ export default function BottomNav() {
 
   useEffect(() => {
     const fetchBadges = async () => {
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState !== "visible"
+      )
+        return;
       try {
-        const response = await fetch('/api/notifications/summary');
+        const response = await fetch("/api/notifications/summary");
         if (response.ok) {
           const data = await response.json();
           setBadges({
@@ -70,23 +75,35 @@ export default function BottomNav() {
           });
         }
       } catch (err) {
-        console.error('Error fetching badges for bottom nav:', err);
+        console.error("Error fetching badges for bottom nav:", err);
       }
     };
 
     fetchBadges();
-    const interval = setInterval(fetchBadges, 30000); // refresh every 30s
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchBadges();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    const interval = setInterval(fetchBadges, 300_000); // refresh every 5 minutes when visible
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearInterval(interval);
+    };
   }, []);
 
   const getBadgeCountForTab = (label: string) => {
-    if (label === 'Orders') return badges.orders;
-    if (label === 'Tickets') return badges.tickets;
+    if (label === "Orders") return badges.orders;
+    if (label === "Tickets") return badges.tickets;
     return 0;
   };
 
   const getBadgeCountForMoreLink = (label: string) => {
-    if (label === 'Inquiries') return badges.rfqs;
+    if (label === "Inquiries") return badges.rfqs;
     return 0;
   };
 
@@ -103,7 +120,9 @@ export default function BottomNav() {
       {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-50 lg:hidden transition-opacity duration-300 ${
-          isMobileNavOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          isMobileNavOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsMobileNavOpen(false)}
         aria-hidden="true"
@@ -112,7 +131,7 @@ export default function BottomNav() {
       {/* Drawer panel — slides up from below the nav bar */}
       <div
         className={`fixed bottom-0 inset-x-0 z-50 lg:hidden bg-surface border-t border-border rounded-t-2xl shadow-2xl shadow-black/60 transition-transform duration-400 ease-out bottom-nav-bar ${
-          isMobileNavOpen ? 'translate-y-0' : 'translate-y-full'
+          isMobileNavOpen ? "translate-y-0" : "translate-y-full"
         }`}
         role="dialog"
         aria-label="More navigation options"
@@ -120,7 +139,10 @@ export default function BottomNav() {
       >
         {/* Drag handle indicator */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-border/60" aria-hidden="true" />
+          <div
+            className="w-10 h-1 rounded-full bg-border/60"
+            aria-hidden="true"
+          />
         </div>
 
         {/* Drawer header */}
@@ -129,7 +151,9 @@ export default function BottomNav() {
             <p className="font-serif text-[18px] text-primary font-light tracking-wide leading-none">
               James <span className="text-accent italic">&</span> Sons
             </p>
-            <p className="font-mono text-[9px] text-muted mt-0.5 uppercase tracking-[0.18em]">Admin Portal</p>
+            <p className="font-mono text-[9px] text-muted mt-0.5 uppercase tracking-[0.18em]">
+              Admin Portal
+            </p>
           </div>
           <button
             onClick={() => setIsMobileNavOpen(false)}
@@ -141,7 +165,10 @@ export default function BottomNav() {
         </div>
 
         {/* Links grid */}
-        <nav className="p-4 grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto" aria-label="More navigation links">
+        <nav
+          className="p-4 grid grid-cols-3 gap-2 max-h-[60vh] overflow-y-auto"
+          aria-label="More navigation links"
+        >
           {MORE_LINKS.map((link) => {
             const Icon = link.icon;
             const active = isTabActive(link.href);
@@ -153,10 +180,10 @@ export default function BottomNav() {
                 onClick={() => setIsMobileNavOpen(false)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all duration-200 touch-target ${
                   active
-                    ? 'bg-accent/10 border-accent/40 text-accent'
-                    : 'bg-surface-muted/40 border-border/30 text-muted hover:text-primary hover:border-border'
+                    ? "bg-accent/10 border-accent/40 text-accent"
+                    : "bg-surface-muted/40 border-border/30 text-muted hover:text-primary hover:border-border"
                 }`}
-                aria-current={active ? 'page' : undefined}
+                aria-current={active ? "page" : undefined}
               >
                 <div className="relative">
                   <Icon size={18} strokeWidth={1.5} />
@@ -204,15 +231,15 @@ export default function BottomNav() {
                 key={tab.href}
                 href={tab.href}
                 className={`flex-1 flex flex-col items-center justify-center gap-1 relative transition-colors duration-200 ${
-                  active ? 'text-accent' : 'text-muted hover:text-primary'
+                  active ? "text-accent" : "text-muted hover:text-primary"
                 }`}
-                aria-current={active ? 'page' : undefined}
+                aria-current={active ? "page" : undefined}
                 aria-label={tab.label}
               >
                 {/* Active indicator: gold line on top */}
                 <span
                   className={`absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-b-full bg-accent transition-all duration-300 ${
-                    active ? 'w-8' : 'w-0'
+                    active ? "w-8" : "w-0"
                   }`}
                   aria-hidden="true"
                 />
@@ -224,7 +251,9 @@ export default function BottomNav() {
                     </span>
                   )}
                 </div>
-                <span className="font-mono text-[9px] uppercase tracking-wider">{tab.label}</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider">
+                  {tab.label}
+                </span>
               </Link>
             );
           })}
@@ -233,7 +262,7 @@ export default function BottomNav() {
           <button
             onClick={() => setIsMobileNavOpen(true)}
             className={`flex-1 flex flex-col items-center justify-center gap-1 relative transition-colors duration-200 cursor-pointer ${
-              isMobileNavOpen ? 'text-accent' : 'text-muted hover:text-primary'
+              isMobileNavOpen ? "text-accent" : "text-muted hover:text-primary"
             }`}
             aria-label="More navigation options"
             aria-expanded={isMobileNavOpen}
@@ -241,7 +270,7 @@ export default function BottomNav() {
           >
             <span
               className={`absolute top-0 left-1/2 -translate-x-1/2 h-[2px] rounded-b-full bg-accent transition-all duration-300 ${
-                isMobileNavOpen ? 'w-8' : 'w-0'
+                isMobileNavOpen ? "w-8" : "w-0"
               }`}
               aria-hidden="true"
             />
@@ -253,7 +282,9 @@ export default function BottomNav() {
                 </span>
               )}
             </div>
-            <span className="font-mono text-[9px] uppercase tracking-wider">More</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider">
+              More
+            </span>
           </button>
         </div>
       </nav>

@@ -1,44 +1,57 @@
-'use client';
-import { useEffect } from 'react';
+"use client";
+import { useEffect } from "react";
 
 export default function ThemeColorSync() {
   useEffect(() => {
     const updateThemeColor = () => {
-      // Find the active mobile header or desktop navbar
-      const header = document.querySelector('.mobile-page-header') || document.querySelector('.main-nav');
-      if (header) {
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.documentElement.classList.contains('light');
-        const fallbackColor = isLight ? '#ffffff' : '#0a0905';
-        const style = window.getComputedStyle(header);
-        let bgColor = style.backgroundColor;
-        
-        // Convert rgba(r, g, b, a) to opaque rgb(r, g, b) since theme-color requires opaque color
-        if (bgColor.includes('rgba')) {
-          const match = bgColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+)/);
-          if (match) {
-            bgColor = `rgb(${match[1]}, ${match[2]}, ${match[3]})`;
-          } else {
-            bgColor = fallbackColor;
-          }
-        }
+      const isLight =
+        document.documentElement.getAttribute("data-theme") === "light" ||
+        document.documentElement.classList.contains("light");
 
-        let meta = document.querySelector('meta[name="theme-color"]');
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('name', 'theme-color');
-          document.head.appendChild(meta);
-        }
-        
-        meta.setAttribute('content', bgColor || fallbackColor);
+      const themeColorHex = isLight ? "#faf7f2" : "#0a0a0b";
+      const appleStatusStyle = isLight ? "default" : "black-translucent";
+
+      // 1. Update ALL theme-color meta tags (including those with media attributes)
+      const metaThemes = document.querySelectorAll('meta[name="theme-color"]');
+      if (metaThemes.length > 0) {
+        metaThemes.forEach((meta) => {
+          meta.setAttribute("content", themeColorHex);
+          meta.removeAttribute("media"); // Remove static OS media filter so app theme takes full precedence
+        });
+      } else {
+        const metaTheme = document.createElement("meta");
+        metaTheme.setAttribute("name", "theme-color");
+        metaTheme.setAttribute("content", themeColorHex);
+        document.head.appendChild(metaTheme);
+      }
+
+      // 2. Update apple-mobile-web-app-status-bar-style meta tag
+      let metaApple = document.querySelector(
+        'meta[name="apple-mobile-web-app-status-bar-style"]',
+      );
+      if (!metaApple) {
+        metaApple = document.createElement("meta");
+        metaApple.setAttribute("name", "apple-mobile-web-app-status-bar-style");
+        document.head.appendChild(metaApple);
+      }
+      metaApple.setAttribute("content", appleStatusStyle);
+
+      // 3. Sync bottom home indicator container
+      const bottomNav = document.querySelector(".mobile-bottom-nav-container");
+      if (bottomNav) {
+        (bottomNav as HTMLElement).style.backgroundColor = isLight
+          ? "#faf7f2"
+          : "#0a0a0b";
       }
     };
 
-    // Run after DOM has completed rendering
-    const timer = setTimeout(updateThemeColor, 200);
+    const timer = setTimeout(updateThemeColor, 100);
 
-    // Watch for theme/data-theme changes
     const observer = new MutationObserver(updateThemeColor);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "class"],
+    });
 
     return () => {
       clearTimeout(timer);

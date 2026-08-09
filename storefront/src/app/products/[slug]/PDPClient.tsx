@@ -2,7 +2,7 @@
 import { useCartStore } from "@/store/cart";
 import type { Product } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { useWishlistStore } from "@/store/wishlist";
@@ -10,6 +10,7 @@ import { checkPincode, getSavedPincode } from "../actions";
 import Image from "next/image";
 import {
   AdaptiveImageFrame,
+  PinchZoomContainer,
   getOptimizedCloudinaryUrl,
 } from "@james-andsons/media";
 import InquiryModal from "@/components/InquiryModal";
@@ -75,6 +76,28 @@ export default function PDPClient({
   const [isMagnifierEnabled, setIsMagnifierEnabled] = useState(false);
   const [hoverPos, setHoverPos] = useState({ x: 50, y: 50 });
   const [shareToast, setShareToast] = useState(false);
+
+  const [showNavArrows, setShowNavArrows] = useState(true);
+  const navArrowTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetNavArrowTimer = useCallback(() => {
+    setShowNavArrows(true);
+    if (navArrowTimerRef.current) {
+      clearTimeout(navArrowTimerRef.current);
+    }
+    navArrowTimerRef.current = setTimeout(() => {
+      setShowNavArrows(false);
+    }, 120000); // 120s auto-hide after load or touch
+  }, []);
+
+  useEffect(() => {
+    resetNavArrowTimer();
+    return () => {
+      if (navArrowTimerRef.current) {
+        clearTimeout(navArrowTimerRef.current);
+      }
+    };
+  }, [resetNavArrowTimer]);
 
   const handleShareProduct = async () => {
     triggerHaptic(18);
@@ -1017,8 +1040,14 @@ export default function PDPClient({
           {/* Product Image Gallery */}
           <div
             onClick={() => activeImages.length > 0 && setLightboxOpen(true)}
-            onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
-            onTouchEnd={(e) => handleSwipe(e.changedTouches[0].clientX)}
+            onTouchStart={(e) => {
+              resetNavArrowTimer();
+              setTouchStartX(e.touches[0].clientX);
+            }}
+            onTouchEnd={(e) => {
+              resetNavArrowTimer();
+              handleSwipe(e.changedTouches[0].clientX);
+            }}
             style={{
               margin: "0 auto",
               position: "relative",
@@ -1029,18 +1058,15 @@ export default function PDPClient({
               cursor: activeImages.length > 0 ? "zoom-in" : "default",
             }}
           >
-            {/* Top-Right Subtle Zoom Helper Icon */}
-            <div className="absolute top-2.5 right-2.5 bg-black/30 backdrop-blur-sm text-white/60 p-1.5 rounded-full border border-white/10 shadow-sm pointer-events-none z-10">
-              <i className="ti ti-zoom-in text-xs text-[var(--gold)]/80" />
-            </div>
-
             {activeImages.length > 0 && activeImages[activeImg] ? (
-              <AdaptiveImageFrame
-                src={activeImages[activeImg]}
-                alt={`${product.name} - view ${activeImg + 1}`}
-                objectFit="cover"
-                priority={activeImg === 0}
-              />
+              <PinchZoomContainer>
+                <AdaptiveImageFrame
+                  src={activeImages[activeImg]}
+                  alt={`${product.name} - view ${activeImg + 1}`}
+                  objectFit="cover"
+                  priority={activeImg === 0}
+                />
+              </PinchZoomContainer>
             ) : (
               <div
                 style={{
@@ -1061,12 +1087,19 @@ export default function PDPClient({
               </div>
             )}
 
-            {/* Mobile Image Helper Navigation Arrows (Subtle) */}
+            {/* Mobile Image Helper Navigation Arrows (Auto-hides after 120s of load or touch) */}
             {activeImages.length > 1 && (
-              <>
+              <div
+                className={`transition-opacity duration-500 ${
+                  showNavArrows
+                    ? "opacity-100"
+                    : "opacity-0 pointer-events-none"
+                }`}
+              >
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    resetNavArrowTimer();
                     setActiveImg(
                       (i) =>
                         (i - 1 + activeImages.length) % activeImages.length,
@@ -1080,6 +1113,7 @@ export default function PDPClient({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    resetNavArrowTimer();
                     setActiveImg((i) => (i + 1) % activeImages.length);
                   }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/25 hover:bg-black/60 backdrop-blur-sm border border-white/10 text-white/70 hover:text-white flex items-center justify-center cursor-pointer transition-all z-10"
@@ -1087,41 +1121,43 @@ export default function PDPClient({
                 >
                   <i className="ti ti-chevron-right text-sm" />
                 </button>
+              </div>
+            )}
 
-                {/* Mobile Dots Indicator */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "12px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    display: "flex",
-                    gap: "6px",
-                    zIndex: 10,
-                  }}
-                >
-                  {activeImages.map((_: any, i: number) => (
-                    <div
-                      key={i}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveImg(i);
-                      }}
-                      style={{
-                        width: i === activeImg ? "18px" : "6px",
-                        height: "6px",
-                        borderRadius: i === activeImg ? "3px" : "50%",
-                        background:
-                          i === activeImg
-                            ? "var(--gold)"
-                            : "rgba(255,255,255,0.6)",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer",
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
+            {/* Mobile Dots Indicator */}
+            {activeImages.length > 1 && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "12px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  display: "flex",
+                  gap: "6px",
+                  zIndex: 10,
+                }}
+              >
+                {activeImages.map((_: any, i: number) => (
+                  <div
+                    key={i}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImg(i);
+                    }}
+                    style={{
+                      width: i === activeImg ? "18px" : "6px",
+                      height: "6px",
+                      borderRadius: i === activeImg ? "3px" : "50%",
+                      background:
+                        i === activeImg
+                          ? "var(--gold)"
+                          : "rgba(255,255,255,0.6)",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                    }}
+                  />
+                ))}
+              </div>
             )}
           </div>
 

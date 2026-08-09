@@ -3,12 +3,15 @@ import { useState, Suspense, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
+import dynamic from "next/dynamic";
 import BottomNav from "@/components/BottomNav";
+
+const Sidebar = dynamic(() => import("@/components/Sidebar"), { ssr: false });
 import ThemeToggle from "@/components/ThemeToggle";
 import GlobalSearch from "@/components/GlobalSearch";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SidebarProvider, useSidebar } from "@/lib/context/SidebarContext";
+import { PWAInstallPrompt } from "@james-andsons/ui";
 
 function HeaderTitle() {
   const pathname = usePathname();
@@ -26,9 +29,16 @@ function HeaderTitle() {
       ];
     }
 
+    if (sidebar?.orderDetailState) {
+      const { orderNumber } = sidebar.orderDetailState;
+      return [{ label: "Orders", href: "/orders" }, { label: orderNumber }];
+    }
+
     if (pathname === "/") return [{ label: "Dashboard", href: "/" }];
     if (pathname === "/orders") return [{ label: "Orders", href: "/orders" }];
-    if (pathname === "/rfqs") return [{ label: "Inquiries", href: "/rfqs" }];
+    if (pathname === "/inquiries")
+      return [{ label: "Contact Inquiries", href: "/inquiries" }];
+    if (pathname === "/rfqs") return [{ label: "Trade RFQs", href: "/rfqs" }];
     if (pathname === "/products")
       return [{ label: "Catalog & Pricing", href: "/products" }];
     if (pathname === "/products/add") {
@@ -140,26 +150,16 @@ function UnsavedChangesListener() {
 /** Registers the service worker once on mount */
 function ServiceWorkerRegistrar() {
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      if (
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1"
-      ) {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      if (process.env.NODE_ENV === "development") {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (const reg of registrations) {
             reg.unregister();
           }
         });
-        if ("caches" in window) {
-          caches.keys().then((keys) => {
-            for (const key of keys) {
-              caches.delete(key);
-            }
-          });
-        }
       } else {
         navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-          /* silent — dev environments may block SW */
+          /* silent */
         });
       }
     }
@@ -213,13 +213,10 @@ export default function LayoutClient({
           <PushNotificationManager />
           <AppBadgeManager />
           <UnsavedChangesListener />
+          <PWAInstallPrompt appName="Admin J&S" />
 
           {!isLoginPage && (
-            <Suspense
-              fallback={
-                <div className="w-[260px] fixed inset-y-0 left-0 bg-surface border-r border-border" />
-              }
-            >
+            <Suspense fallback={null}>
               <Sidebar
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}

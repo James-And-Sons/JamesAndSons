@@ -34,9 +34,7 @@ function getEffectiveDimensions(natW: number, natH: number, rotation: number) {
   };
 }
 
-async function runAutoEnhance(
-  imgElement: HTMLImageElement,
-): Promise<{
+async function runAutoEnhance(imgElement: HTMLImageElement): Promise<{
   brightness: number;
   contrast: number;
   saturation: number;
@@ -518,7 +516,8 @@ export function ProductImageEditor({
       const { dataUrl } = await processCanvasImage(sourceToProcess, options);
       const text = await onGenerateAltText(dataUrl);
       setAltText(text);
-    } catch {
+    } catch (err) {
+      console.error("[Alt Text Generation Failed]:", err);
       setAltText("⚠️ Failed to generate alt text.");
     } finally {
       setAltTextLoading(false);
@@ -536,7 +535,8 @@ export function ProductImageEditor({
       setContrast(res.contrast);
       setSaturation(res.saturation);
       setEnhanceMsg(res.message);
-    } catch {
+    } catch (err) {
+      console.error("[Auto Enhance Failed]:", err);
       setEnhanceMsg("⚠ Enhancer unavailable.");
     } finally {
       setEnhancing(false);

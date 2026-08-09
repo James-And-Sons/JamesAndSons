@@ -10,9 +10,9 @@ export default function Loading() {
 
       {/* Hero / Header Skeleton Shimmer */}
       <div className="space-y-4">
-        <div className="h-4 w-32 bg-white/5 rounded-full animate-pulse" />
-        <div className="h-10 w-3/4 max-w-md bg-white/10 rounded-lg animate-pulse" />
-        <div className="h-4 w-1/2 max-w-sm bg-white/5 rounded-md animate-pulse" />
+        <div className="h-4 w-32 bg-[var(--surface2)] rounded-full animate-pulse border border-[var(--border)]" />
+        <div className="h-10 w-3/4 max-w-md bg-[var(--surface2)] rounded-lg animate-pulse border border-[var(--border)]" />
+        <div className="h-4 w-1/2 max-w-sm bg-[var(--surface2)] rounded-md animate-pulse border border-[var(--border)]" />
       </div>
 
       {/* Grid Skeleton Cards Shimmer */}
@@ -20,13 +20,13 @@ export default function Loading() {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-4 overflow-hidden relative"
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-4 overflow-hidden relative shadow-sm"
           >
-            <div className="aspect-[4/5] rounded-xl bg-white/5 animate-pulse" />
+            <div className="aspect-[4/5] rounded-xl bg-[var(--surface2)] animate-pulse" />
             <div className="space-y-2">
-              <div className="h-3 w-20 bg-white/5 rounded" />
-              <div className="h-5 w-full bg-white/10 rounded" />
-              <div className="h-4 w-24 bg-white/10 rounded" />
+              <div className="h-3 w-20 bg-[var(--surface2)] rounded animate-pulse" />
+              <div className="h-5 w-full bg-[var(--surface2)] rounded animate-pulse" />
+              <div className="h-4 w-24 bg-[var(--surface2)] rounded animate-pulse" />
             </div>
           </div>
         ))}

@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useTransition, useMemo } from 'react';
-import Link from 'next/link';
-import PWAInstallButton from '@/components/PWAInstallButton';
-import BrandSettingsForm from './BrandSettingsForm';
-import { adminTogglePagePublishStatus } from './config-actions';
-import CataloguesClient from '../catalogues/CataloguesClient';
+import { useState, useTransition, useMemo } from "react";
+import Link from "next/link";
+import { Settings, Store, FileText, BookOpen, Search } from "lucide-react";
+import PWAInstallButton from "@/components/PWAInstallButton";
+import PwaInstallHelper from "@/components/PwaInstallHelper";
+import PasskeyManagerCard from "@/components/PasskeyManagerCard";
+import CaEmailSettingsForm from "./CaEmailSettingsForm";
+import BrandSettingsForm from "./BrandSettingsForm";
+import DocumentDownloadSettingsForm from "./DocumentDownloadSettingsForm";
+import { adminTogglePagePublishStatus } from "./config-actions";
+import CataloguesClient from "../catalogues/CataloguesClient";
+import { ThemeToggle } from "@james-andsons/ui";
 
 interface PageItem {
   id: string;
@@ -32,13 +38,17 @@ export default function SettingsTabsContainer({
   brandConfig,
   initialPages,
 }: SettingsTabsContainerProps) {
-  const [activeTab, setActiveTab] = useState<'general' | 'brand' | 'pages' | 'catalogues'>('general');
+  const [activeTab, setActiveTab] = useState<
+    "general" | "brand" | "pages" | "catalogues"
+  >("general");
   const [pages, setPages] = useState<PageItem[]>(initialPages);
   const [isPending, startTransition] = useTransition();
 
   // Search & Filter state for CMS pages
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'DRAFT'>('ALL');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "ALL" | "PUBLISHED" | "DRAFT"
+  >("ALL");
 
   // Sync pages state if server revalidates
   useMemo(() => {
@@ -49,26 +59,28 @@ export default function SettingsTabsContainer({
     startTransition(async () => {
       try {
         await adminTogglePagePublishStatus(pageId, currentStatus);
-        setPages(prev =>
-          prev.map(p => (p.id === pageId ? { ...p, isPublished: !currentStatus } : p))
+        setPages((prev) =>
+          prev.map((p) =>
+            p.id === pageId ? { ...p, isPublished: !currentStatus } : p,
+          ),
         );
       } catch (err) {
-        console.error('Failed to toggle publish status:', err);
+        console.error("Failed to toggle publish status:", err);
       }
     });
   };
 
   // Filter & Search Logic
   const filteredPages = useMemo(() => {
-    return pages.filter(p => {
+    return pages.filter((p) => {
       const matchesSearch =
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.slug.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus =
-        statusFilter === 'ALL' ||
-        (statusFilter === 'PUBLISHED' && p.isPublished) ||
-        (statusFilter === 'DRAFT' && !p.isPublished);
+        statusFilter === "ALL" ||
+        (statusFilter === "PUBLISHED" && p.isPublished) ||
+        (statusFilter === "DRAFT" && !p.isPublished);
 
       return matchesSearch && matchesStatus;
     });
@@ -79,67 +91,90 @@ export default function SettingsTabsContainer({
       {/* Tabs Selector Bar */}
       <div className="flex border-b border-border gap-4 shrink-0 overflow-x-auto scrollbar-none">
         <button
-          onClick={() => setActiveTab('general')}
-          className={`font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
-            activeTab === 'general'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-muted hover:text-primary'
+          onClick={() => setActiveTab("general")}
+          className={`flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
+            activeTab === "general"
+              ? "border-accent text-accent font-semibold"
+              : "border-transparent text-muted hover:text-primary"
           }`}
         >
-          ⚙️ General Settings
+          <Settings className="w-3.5 h-3.5" />
+          General Settings
         </button>
         <button
-          onClick={() => setActiveTab('brand')}
-          className={`font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
-            activeTab === 'brand'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-muted hover:text-primary'
+          onClick={() => setActiveTab("brand")}
+          className={`flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
+            activeTab === "brand"
+              ? "border-accent text-accent font-semibold"
+              : "border-transparent text-muted hover:text-primary"
           }`}
         >
-          🏬 Brand &amp; Storefront
+          <Store className="w-3.5 h-3.5" />
+          Brand &amp; Storefront
         </button>
         <button
-          onClick={() => setActiveTab('pages')}
-          className={`font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
-            activeTab === 'pages'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-muted hover:text-primary'
+          onClick={() => setActiveTab("pages")}
+          className={`flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
+            activeTab === "pages"
+              ? "border-accent text-accent font-semibold"
+              : "border-transparent text-muted hover:text-primary"
           }`}
         >
-          📄 Pages / CMS
+          <FileText className="w-3.5 h-3.5" />
+          Pages / CMS
         </button>
         <button
-          onClick={() => setActiveTab('catalogues')}
-          className={`font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
-            activeTab === 'catalogues'
-              ? 'border-accent text-accent font-semibold'
-              : 'border-transparent text-muted hover:text-primary'
+          onClick={() => setActiveTab("catalogues")}
+          className={`flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider pb-3 border-b-2 transition-all cursor-pointer min-h-[40px] px-2 whitespace-nowrap font-medium ${
+            activeTab === "catalogues"
+              ? "border-accent text-accent font-semibold"
+              : "border-transparent text-muted hover:text-primary"
           }`}
         >
-          📖 Catalogues
+          <BookOpen className="w-3.5 h-3.5" />
+          Catalogues
         </button>
       </div>
 
       {/* General Settings Tab Content */}
-      {activeTab === 'general' && (
+      {activeTab === "general" && (
         <div className="space-y-6">
-          {/* PWA App Installation Section */}
+          {/* Theme Preference Section */}
           <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
-            <h2 className="font-serif text-[20px] text-primary mb-2">Install App</h2>
+            <h2 className="font-serif text-[20px] text-primary mb-2">
+              Appearance & Theme
+            </h2>
             <p className="font-body text-[13px] text-muted mb-6">
-              Install the James & Sons Admin portal on your device for quick access, offline mode, and push notifications.
+              Select your preferred workspace theme (System, Light, or Dark
+              mode).
             </p>
-            <div className="max-w-sm">
-              <PWAInstallButton />
+            <div className="max-w-xs">
+              <ThemeToggle variant="admin" />
             </div>
           </div>
 
+          {/* Order Document Download Preferences (Checkboxes) */}
+          <DocumentDownloadSettingsForm />
+
+          {/* PWA App Installation Section with Platform Detection */}
+          <PwaInstallHelper />
+
+          {/* Admin Passkey & Biometric Security Settings */}
+          <PasskeyManagerCard />
+
+          {/* CA Email Settings for GST Quarterly Reports */}
+          <CaEmailSettingsForm />
+
           {/* Profile info */}
           <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
-            <h2 className="font-serif text-[20px] text-primary mb-6">Profile Information</h2>
+            <h2 className="font-serif text-[20px] text-primary mb-6">
+              Profile Information
+            </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-2xl">
               <div className="space-y-2">
-                <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">Full Name</label>
+                <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   defaultValue={userFullName}
@@ -148,7 +183,9 @@ export default function SettingsTabsContainer({
                 />
               </div>
               <div className="space-y-2">
-                <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">Email Address</label>
+                <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   defaultValue={userEmail}
@@ -157,7 +194,9 @@ export default function SettingsTabsContainer({
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">Role</label>
+                <label className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted block">
+                  Role
+                </label>
                 <input
                   type="text"
                   defaultValue="System Administrator"
@@ -171,10 +210,13 @@ export default function SettingsTabsContainer({
           {/* System Admin */}
           <div className="bg-surface border border-border shadow-sm p-8 rounded-sm">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="font-serif text-[20px] text-primary">System Administration</h2>
+              <h2 className="font-serif text-[20px] text-primary">
+                System Administration
+              </h2>
             </div>
             <p className="font-body text-[13px] text-muted mb-6">
-              Invite new staff members, assign roles, and revoke access for internal users.
+              Invite new staff members, assign roles, and revoke access for
+              internal users.
             </p>
             <a
               href="/account/manage-admins"
@@ -187,12 +229,12 @@ export default function SettingsTabsContainer({
       )}
 
       {/* Brand Config Tab Content */}
-      {activeTab === 'brand' && (
+      {activeTab === "brand" && (
         <BrandSettingsForm initialConfig={brandConfig} />
       )}
 
       {/* Pages / CMS Tab Content */}
-      {activeTab === 'pages' && (
+      {activeTab === "pages" && (
         <div className="space-y-6">
           {/* Header Banner */}
           <div className="flex flex-wrap items-center justify-between gap-4 bg-surface p-6 border border-border rounded-sm">
@@ -201,7 +243,8 @@ export default function SettingsTabsContainer({
                 CMS Pages Management
               </h2>
               <p className="font-body text-muted text-[13px] mt-1 m-0">
-                Create static informational pages like terms, about, or return policies for the storefront.
+                Create static informational pages like terms, about, or return
+                policies for the storefront.
               </p>
             </div>
             <div>
@@ -217,17 +260,17 @@ export default function SettingsTabsContainer({
           {/* Search & Filter Bar */}
           <div className="premium-card p-4 rounded-sm flex flex-wrap gap-4 items-center justify-between">
             <div className="flex-1 flex items-center gap-2 border border-border bg-background px-3 py-2.5 rounded-sm focus-within:border-accent min-w-[280px]">
-              <span className="text-muted text-xs">🔍</span>
+              <Search className="w-3.5 h-3.5 text-muted shrink-0" />
               <input
                 type="text"
                 value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search pages by title or slug mapping..."
                 className="bg-transparent text-primary font-mono text-[12px] focus:outline-none w-full placeholder:text-muted/60"
               />
               {searchTerm && (
                 <button
-                  onClick={() => setSearchTerm('')}
+                  onClick={() => setSearchTerm("")}
                   className="text-muted hover:text-primary font-mono text-[10px] uppercase"
                 >
                   Clear
@@ -236,10 +279,12 @@ export default function SettingsTabsContainer({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-muted">Status</span>
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+                Status
+              </span>
               <select
                 value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
                 className="px-3 py-2.5 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-wider focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
               >
                 <option value="ALL">All States</option>
@@ -253,10 +298,13 @@ export default function SettingsTabsContainer({
           <div className="premium-card flex flex-col overflow-hidden rounded-sm">
             {filteredPages.length === 0 ? (
               <div className="py-16 text-center">
-                <div className="text-[32px] mb-3 opacity-60">📄</div>
-                <h3 className="font-serif text-[16px] text-primary mb-1">No Pages Found</h3>
+                <FileText className="w-8 h-8 mx-auto mb-3 opacity-40 text-muted" />
+                <h3 className="font-serif text-[16px] text-primary mb-1">
+                  No Pages Found
+                </h3>
                 <p className="font-body text-muted text-[13px] max-w-sm mx-auto">
-                  No pages matching the query rules are currently configured in this store.
+                  No pages matching the query rules are currently configured in
+                  this store.
                 </p>
               </div>
             ) : (
@@ -272,13 +320,16 @@ export default function SettingsTabsContainer({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">
-                    {filteredPages.map(page => {
+                    {filteredPages.map((page) => {
                       const storefrontUrl = `${
-                        brandConfig.storefrontUrl || 'https://jamesandsons.in'
+                        brandConfig.storefrontUrl || "https://jamesandsons.in"
                       }/${page.slug}`;
 
                       return (
-                        <tr key={page.id} className="hover:bg-surface-muted/15 transition-colors">
+                        <tr
+                          key={page.id}
+                          className="hover:bg-surface-muted/15 transition-colors"
+                        >
                           <td className="px-8 py-5">
                             <Link href={`/pages/${page.id}`}>
                               <span className="font-serif text-[16px] text-primary hover:text-accent cursor-pointer transition-colors">
@@ -292,23 +343,28 @@ export default function SettingsTabsContainer({
                           <td className="px-8 py-5">
                             <button
                               type="button"
-                              onClick={() => handleTogglePublish(page.id, page.isPublished)}
+                              onClick={() =>
+                                handleTogglePublish(page.id, page.isPublished)
+                              }
                               disabled={isPending}
                               className={`font-mono text-[9px] uppercase tracking-wider border px-3 py-1 rounded-full cursor-pointer transition-colors ${
                                 page.isPublished
-                                  ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-950/20'
-                                  : 'text-amber-500 border-amber-500/30 bg-amber-500/10 hover:bg-amber-950/20'
+                                  ? "text-emerald-400 border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-950/20"
+                                  : "text-amber-500 border-amber-500/30 bg-amber-500/10 hover:bg-amber-950/20"
                               }`}
                             >
-                              {page.isPublished ? 'Published' : 'Draft'}
+                              {page.isPublished ? "Published" : "Draft"}
                             </button>
                           </td>
                           <td className="px-8 py-5 font-mono text-[12px] text-secondary">
-                            {new Date(page.updatedAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                            {new Date(page.updatedAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
                           </td>
                           <td className="px-8 py-5 text-right">
                             <div className="flex justify-end items-center gap-4">
@@ -339,9 +395,7 @@ export default function SettingsTabsContainer({
         </div>
       )}
       {/* Catalogues Tab Content */}
-      {activeTab === 'catalogues' && (
-        <CataloguesClient />
-      )}
+      {activeTab === "catalogues" && <CataloguesClient />}
     </div>
   );
 }

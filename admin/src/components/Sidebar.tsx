@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { logoutAction } from "@/app/actions";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, memo } from "react";
 import { useSidebar } from "@/lib/context/SidebarContext";
 import SyncButton from "@/components/SyncButton";
 import { BrandLogo, useTenantConfig } from "@james-andsons/ui";
@@ -22,11 +22,36 @@ import {
   TicketCheck,
   Settings,
   Image,
-  LogOut,
   Truck,
+  FileSpreadsheet,
+  Mail,
+  Bell,
+  User,
+  ArrowLeft,
+  Radio,
+  CreditCard,
+  FileCheck,
+  Download,
+  RefreshCw,
 } from "lucide-react";
 
-export default function Sidebar({
+// Persistent module-level cache to prevent flickering / unmounting resets
+let cachedTickets: number | null = null;
+let cachedRfqs: number | null = null;
+let cachedInquiries: number | null = null;
+let cachedCategories: {
+  id: string;
+  name: string;
+  _count?: { products: number };
+}[] = [];
+let cachedSpaces: {
+  id: string;
+  name: string;
+  _count?: { products: number };
+}[] = [];
+let cachedNavScrollTop = 0;
+
+function Sidebar({
   isOpen,
   onClose,
 }: {
@@ -35,9 +60,8 @@ export default function Sidebar({
 }) {
   const config = useTenantConfig();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { productFormState, isPageDirty } = useSidebar();
+  const { productFormState, orderDetailState, isPageDirty } = useSidebar();
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const isDirty = productFormState?.isDirty || isPageDirty;
@@ -52,34 +76,53 @@ export default function Sidebar({
   };
   const [openTickets, setOpenTickets] = useState<number | null>(null);
   const [openRfqs, setOpenRfqs] = useState<number | null>(null);
+  const [openInquiries, setOpenInquiries] = useState<number | null>(null);
   const [categories, setCategories] = useState<
     { id: string; name: string; _count?: { products: number } }[]
   >([]);
   const [spaces, setSpaces] = useState<
     { id: string; name: string; _count?: { products: number } }[]
   >([]);
-  const [searchVal, setSearchVal] = useState(searchParams.get("q") || "");
+  const [searchVal, setSearchVal] = useState("");
+  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
+    null,
+  );
+  const [currentEditCategoryId, setCurrentEditCategoryId] = useState<
+    string | null
+  >(null);
+  const [currentManageId, setCurrentManageId] = useState<string | null>(null);
+
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
     collections: false,
     spaces: false,
     catalog: false,
   });
 
-  const currentCategoryId = searchParams.get("categoryId");
-  const currentEditCategoryId = searchParams.get("edit");
-  const currentManageId = searchParams.get("manage");
-
   if (pathname === "/login") return null;
 
   useEffect(() => {
     fetch("/api/tickets/count")
       .then((r) => r.json())
-      .then((d) => setOpenTickets(d.count))
+      .then((d) => {
+        cachedTickets = d.count;
+        setOpenTickets(d.count);
+      })
       .catch(() => {});
 
     fetch("/api/rfqs/count")
       .then((r) => r.json())
-      .then((d) => setOpenRfqs(d.count))
+      .then((d) => {
+        cachedRfqs = d.count;
+        setOpenRfqs(d.count);
+      })
+      .catch(() => {});
+
+    fetch("/api/inquiries/count")
+      .then((r) => r.json())
+      .then((d) => {
+        cachedInquiries = d.count;
+        setOpenInquiries(d.count);
+      })
       .catch(() => {});
 
     // Fetch collections (categories)
@@ -87,7 +130,9 @@ export default function Sidebar({
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
+          const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+          cachedCategories = sorted;
+          setCategories(sorted);
         }
       })
       .catch(() => {});
@@ -97,36 +142,70 @@ export default function Sidebar({
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setSpaces(data.sort((a, b) => a.name.localeCompare(b.name)));
+          const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+          cachedSpaces = sorted;
+          setSpaces(sorted);
         }
       })
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    setSearchVal(searchParams.get("q") || "");
-  }, [searchParams]);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q") || "";
+      const catId = params.get("categoryId");
+      const editId = params.get("edit");
+      const manageId = params.get("manage");
+
+      setSearchVal(q);
+      setCurrentCategoryId(catId);
+      setCurrentEditCategoryId(editId);
+      setCurrentManageId(manageId);
+
+      if (catId || editId) {
+        setOpenDropdowns((prev) => ({ ...prev, collections: true }));
+      }
+      const isSpaceEditPage =
+        pathname.startsWith("/spaces/") && pathname.endsWith("/edit");
+      if (manageId || isSpaceEditPage) {
+        setOpenDropdowns((prev) => ({ ...prev, spaces: true }));
+      }
+      if (pathname === "/products/add" || q) {
+        setOpenDropdowns((prev) => ({ ...prev, catalog: true }));
+      }
+    }
+  }, [pathname]);
+
+  const navRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    // Auto-expand active groups ONLY if a sub-item query parameter or edit path is active, NOT on root pages
-    if (currentCategoryId || currentEditCategoryId) {
-      setOpenDropdowns((prev) => ({ ...prev, collections: true }));
+    if (navRef.current && cachedNavScrollTop > 0) {
+      navRef.current.scrollTop = cachedNavScrollTop;
     }
-    const isSpaceEditPage =
-      pathname.startsWith("/spaces/") && pathname.endsWith("/edit");
-    if (currentManageId || isSpaceEditPage) {
-      setOpenDropdowns((prev) => ({ ...prev, spaces: true }));
+  }, []);
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const [isDownloadingSidebar, setIsDownloadingSidebar] = useState(false);
+
+  useEffect(() => {
+    const handleStatus = (e: any) => {
+      if (e.detail && typeof e.detail.downloading === "boolean") {
+        setIsDownloadingSidebar(e.detail.downloading);
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("jns:download-status", handleStatus);
+      return () => {
+        window.removeEventListener("jns:download-status", handleStatus);
+      };
     }
-    if (pathname === "/products/add" || searchParams.get("q")) {
-      setOpenDropdowns((prev) => ({ ...prev, catalog: true }));
-    }
-  }, [
-    currentCategoryId,
-    currentEditCategoryId,
-    currentManageId,
-    pathname,
-    searchParams,
-  ]);
+  }, []);
 
   const renderLink = (
     name: string,
@@ -141,13 +220,20 @@ export default function Sidebar({
     const isActive =
       href === "/"
         ? pathname === "/"
-        : pathname.startsWith(href) &&
-          !(href === "/products" && currentCategoryId) &&
-          !(href === "/spaces" && currentManageId) &&
-          !(href === "/collections" && currentCategoryId);
+        : href === "/promotions"
+          ? pathname === "/promotions" ||
+            (pathname.startsWith("/promotions/") &&
+              !pathname.startsWith("/promotions/push"))
+          : (pathname === href || pathname.startsWith(href + "/")) &&
+            !(href === "/products" && currentCategoryId) &&
+            !(href === "/spaces" && currentManageId) &&
+            !(href === "/collections" && currentCategoryId);
+
+    const activeBadge = isMounted ? badge : null;
 
     return (
       <Link
+        suppressHydrationWarning
         href={href}
         aria-current={isActive ? "page" : undefined}
         onClick={(e) => {
@@ -183,11 +269,13 @@ export default function Sidebar({
           ) : null}
           <span>{name}</span>
         </span>
-        {badge !== null && badge !== undefined && badge > 0 && (
-          <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
-            {badge}
-          </span>
-        )}
+        {activeBadge !== null &&
+          activeBadge !== undefined &&
+          activeBadge > 0 && (
+            <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center rounded-sm">
+              {activeBadge}
+            </span>
+          )}
       </Link>
     );
   };
@@ -205,7 +293,9 @@ export default function Sidebar({
         [dropdownKey]: !prev[dropdownKey],
       }));
     const isGroupActive =
-      pathname.startsWith(manageHref) || subItems.some((item) => item.active);
+      pathname === manageHref ||
+      pathname.startsWith(manageHref + "/") ||
+      subItems.some((item) => item.active);
 
     return (
       <div className="space-y-1">
@@ -417,7 +507,7 @@ export default function Sidebar({
             className={`
               group flex items-center pl-4 py-2.5 font-mono text-[9px] tracking-[0.15em] uppercase transition-all duration-200 border-l hover:border-accent/40 relative rounded-sm
               ${
-                pathname === "/products" && !searchParams.get("q")
+                pathname === "/products" && !searchVal
                   ? "text-accent border-l-accent bg-surface-muted/20 font-semibold font-medium"
                   : "text-muted border-l-transparent hover:text-accent hover:bg-surface-muted"
               }
@@ -447,6 +537,130 @@ export default function Sidebar({
               Add Product
             </span>
           </Link>
+        </div>
+      </div>
+    );
+  };
+
+  const renderOrderFormOutline = () => {
+    if (!orderDetailState) return null;
+    const {
+      orderId,
+      orderNumber,
+      status,
+      totalAmount,
+      customerName,
+      itemCount,
+      awbNumber,
+      shiprocketLabelUrl,
+      manifestUrl,
+      shiprocketInvoiceUrl,
+    } = orderDetailState;
+
+    const navSections = [
+      { id: "customer-info", label: "Customer Details", icon: User },
+      { id: "fulfillment-studio", label: "Fulfillment Studio", icon: Truck },
+      { id: "order-items", label: `Order Items (${itemCount})`, icon: Package },
+      { id: "payment-summary", label: "Financial Summary", icon: CreditCard },
+      { id: "compliance-documents", label: "Documents Studio", icon: FileText },
+      { id: "live-tracking", label: "Live Tracking", icon: Radio },
+    ];
+
+    const scrollToSection = (id: string) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Back Link */}
+        <Link
+          href="/orders"
+          onClick={handleNavClick}
+          className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted hover:text-accent transition-colors px-1"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>All Orders</span>
+        </Link>
+
+        {/* Order Header Summary Card */}
+        <div className="bg-surface border border-border p-3.5 rounded-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[13px] font-bold text-primary">
+              {orderNumber}
+            </span>
+            <span className="font-mono text-[9px] uppercase px-2 py-0.5 bg-amber-500/5 border border-amber-500/20 text-amber-400/90 font-bold rounded-xs">
+              {status}
+            </span>
+          </div>
+          {customerName && (
+            <p className="font-serif text-[12px] text-muted truncate m-0">
+              {customerName}
+            </p>
+          )}
+          <div className="flex justify-between items-center pt-1.5 border-t border-border/60">
+            <span className="font-mono text-[9px] text-muted uppercase">
+              Total Value
+            </span>
+            <span className="font-mono text-[12px] font-bold text-accent">
+              ₹{totalAmount.toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+
+        {/* Section Jump Nav */}
+        <div className="space-y-1">
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted px-2 py-1 m-0">
+            Quick Jump Nav
+          </p>
+          {navSections.map((sec) => {
+            const Icon = sec.icon;
+            return (
+              <button
+                key={sec.id}
+                onClick={() => scrollToSection(sec.id)}
+                className="w-full text-left font-mono text-[11px] text-muted hover:text-accent hover:bg-accent/10 px-3 py-2 rounded-xs transition-colors flex items-center gap-2 cursor-pointer group"
+              >
+                <Icon className="w-3.5 h-3.5 text-muted group-hover:text-accent flex-shrink-0" />
+                <span className="truncate">{sec.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Downloadable Documents List */}
+        <div className="pt-2 border-t border-border space-y-1">
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted px-2 py-1 m-0">
+            Download Documents
+          </p>
+
+          {/* Download All Button (triggers exact same PDF bundle download) */}
+          <button
+            type="button"
+            disabled={isDownloadingSidebar}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("jns:download-all-docs"));
+              }
+            }}
+            className="w-full text-left font-mono text-[9px] uppercase tracking-wider px-3 py-2 bg-accent text-black hover:bg-accent-hover font-bold rounded-xs transition-colors flex items-center justify-between mb-2 cursor-pointer shadow-sm disabled:opacity-60"
+            title="Download all selected documents as a bundled package"
+          >
+            <span className="flex items-center gap-1.5">
+              {isDownloadingSidebar ? (
+                <RefreshCw className="w-3.5 h-3.5 text-black animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 text-black" />
+              )}
+              <span>
+                {isDownloadingSidebar
+                  ? "Preparing Package..."
+                  : "Download All Documents"}
+              </span>
+            </span>
+          </button>
         </div>
       </div>
     );
@@ -697,6 +911,7 @@ export default function Sidebar({
       )}
 
       <aside
+        suppressHydrationWarning={true}
         className={`
         w-[260px] fixed inset-y-0 left-0 z-50 h-screen bg-surface flex flex-col border-r border-border shrink-0 transition-transform duration-300 lg:translate-x-0
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -743,14 +958,28 @@ export default function Sidebar({
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav
+          ref={navRef}
+          onScroll={(e) => {
+            cachedNavScrollTop = e.currentTarget.scrollTop;
+          }}
+          className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto"
+        >
           {productFormState ? (
             renderProductFormOutline()
+          ) : orderDetailState ? (
+            renderOrderFormOutline()
           ) : (
             <>
               {renderLink("Dashboard", "/", null, LayoutDashboard)}
               {renderLink("Orders", "/orders", null, Package)}
-              {renderLink("Inquiries", "/rfqs", openRfqs, MessageSquare)}
+              {renderLink(
+                "Contact Inquiries",
+                "/inquiries",
+                openInquiries,
+                Mail,
+              )}
+              {renderLink("Trade RFQs", "/rfqs", openRfqs, FileText)}
 
               <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">
                 Catalog
@@ -783,8 +1012,15 @@ export default function Sidebar({
                 Business
               </p>
               {renderLink("B2B Workspace", "/b2b", null, Building2)}
+              {renderLink(
+                "Accounting & GST",
+                "/accounting",
+                null,
+                FileSpreadsheet,
+              )}
               {renderLink("Blog", "/blog", null, BookOpen)}
               {renderLink("Marketing", "/campaigns", null, Megaphone)}
+              {renderLink("Push Campaigns", "/promotions/push", null, Bell)}
               {renderLink("Coupons", "/promotions", null, Tag)}
               {renderLink("Affiliates", "/affiliates", null, Users)}
               {renderLink("Tickets", "/tickets", openTickets, TicketCheck)}
@@ -812,3 +1048,5 @@ export default function Sidebar({
     </>
   );
 }
+
+export default memo(Sidebar);

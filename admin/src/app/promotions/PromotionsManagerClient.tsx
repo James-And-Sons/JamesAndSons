@@ -1,13 +1,28 @@
-'use client';
+"use client";
 
-import { useState, useTransition, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Ticket,
+  CheckCircle2,
+  RefreshCw,
+  AlertTriangle,
+  Search,
+  Tag,
+  Plane,
+  Edit,
+  Trash2,
+  Users,
+  Pause,
+  Play,
+  Zap,
+} from "lucide-react";
 import {
   adminCreateCoupon,
   adminUpdateCoupon,
   adminDeleteCoupon,
   adminBulkGenerateCoupons,
-} from './server-actions';
+} from "./server-actions";
 
 interface Affiliate {
   id: string;
@@ -19,9 +34,9 @@ interface Coupon {
   id: string;
   code: string;
   description: string | null;
-  type: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+  type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
   value: number;
-  status: 'ACTIVE' | 'PAUSED' | 'EXPIRED' | 'EXHAUSTED';
+  status: "ACTIVE" | "PAUSED" | "EXPIRED" | "EXHAUSTED";
   minOrderAmount: number | null;
   maxDiscountCap: number | null;
   usageLimit: number | null;
@@ -34,21 +49,41 @@ interface Coupon {
   affiliate?: { name: string } | null;
 }
 
+interface OrderStats {
+  totalDiscountSaved: number;
+  totalRevenueGenerated: number;
+  orderCount: number;
+}
+
+const getEffectiveStatus = (
+  c: Coupon,
+): "ACTIVE" | "PAUSED" | "EXPIRED" | "EXHAUSTED" => {
+  if (c.status === "PAUSED") return "PAUSED";
+  const now = new Date();
+  if (c.expiresAt && new Date(c.expiresAt) < now) return "EXPIRED";
+  if (c.startsAt && new Date(c.startsAt) > now) return "PAUSED";
+  if (c.usageLimit && c.usageLimit > 0 && c.usedCount >= c.usageLimit)
+    return "EXHAUSTED";
+  return c.status || "ACTIVE";
+};
+
 export default function PromotionsManagerClient({
   initialCoupons,
   affiliates,
+  orderStats,
 }: {
   initialCoupons: Coupon[];
   affiliates: Affiliate[];
+  orderStats?: OrderStats;
 }) {
   const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [isPending, startTransition] = useTransition();
 
   // Search & Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -56,33 +91,40 @@ export default function PromotionsManagerClient({
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
 
   // Form states
-  const [formCode, setFormCode] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formType, setFormType] = useState<'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING'>('PERCENTAGE');
-  const [formValue, setFormValue] = useState('');
-  const [formMinOrderAmount, setFormMinOrderAmount] = useState('');
-  const [formMaxDiscountCap, setFormMaxDiscountCap] = useState('');
-  const [formUsageLimit, setFormUsageLimit] = useState('');
-  const [formUsageLimitPerUser, setFormUsageLimitPerUser] = useState('1');
-  const [formStartsAt, setFormStartsAt] = useState('');
-  const [formExpiresAt, setFormExpiresAt] = useState('');
-  const [formSource, setFormSource] = useState('internal');
-  const [formAffiliateId, setFormAffiliateId] = useState('');
+  const [formCode, setFormCode] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formType, setFormType] = useState<
+    "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING"
+  >("PERCENTAGE");
+  const [formValue, setFormValue] = useState("");
+  const [formMinOrderAmount, setFormMinOrderAmount] = useState("");
+  const [formMaxDiscountCap, setFormMaxDiscountCap] = useState("");
+  const [formUsageLimit, setFormUsageLimit] = useState("");
+  const [formUsageLimitPerUser, setFormUsageLimitPerUser] = useState("1");
+  const [formStartsAt, setFormStartsAt] = useState("");
+  const [formExpiresAt, setFormExpiresAt] = useState("");
+  const [formSource, setFormSource] = useState("internal");
+  const [formAffiliateId, setFormAffiliateId] = useState("");
 
   // Bulk form states
-  const [bulkCount, setBulkCount] = useState('10');
-  const [bulkPrefix, setBulkPrefix] = useState('JNS');
-  const [bulkType, setBulkType] = useState<'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING'>('PERCENTAGE');
-  const [bulkValue, setBulkValue] = useState('10');
-  const [bulkMinOrderAmount, setBulkMinOrderAmount] = useState('');
-  const [bulkExpiresAt, setBulkExpiresAt] = useState('');
-  const [bulkSource, setBulkSource] = useState('internal');
-  const [bulkAffiliateId, setBulkAffiliateId] = useState('');
+  const [bulkCount, setBulkCount] = useState("10");
+  const [bulkPrefix, setBulkPrefix] = useState("JNS");
+  const [bulkType, setBulkType] = useState<
+    "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING"
+  >("PERCENTAGE");
+  const [bulkValue, setBulkValue] = useState("10");
+  const [bulkMinOrderAmount, setBulkMinOrderAmount] = useState("");
+  const [bulkExpiresAt, setBulkExpiresAt] = useState("");
+  const [bulkSource, setBulkSource] = useState("internal");
+  const [bulkAffiliateId, setBulkAffiliateId] = useState("");
 
   // Toast
-  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "ok" | "err";
+  } | null>(null);
 
-  const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
+  const showToast = (msg: string, type: "ok" | "err" = "ok") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
   };
@@ -98,31 +140,45 @@ export default function PromotionsManagerClient({
     if (coupon) {
       setEditingCoupon(coupon);
       setFormCode(coupon.code);
-      setFormDescription(coupon.description || '');
+      setFormDescription(coupon.description || "");
       setFormType(coupon.type);
       setFormValue(String(coupon.value));
-      setFormMinOrderAmount(coupon.minOrderAmount ? String(coupon.minOrderAmount) : '');
-      setFormMaxDiscountCap(coupon.maxDiscountCap ? String(coupon.maxDiscountCap) : '');
-      setFormUsageLimit(coupon.usageLimit ? String(coupon.usageLimit) : '');
-      setFormUsageLimitPerUser(coupon.usageLimitPerUser ? String(coupon.usageLimitPerUser) : '1');
-      setFormStartsAt(coupon.startsAt ? new Date(coupon.startsAt).toISOString().slice(0, 16) : '');
-      setFormExpiresAt(coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0, 16) : '');
-      setFormSource(coupon.source || 'internal');
-      setFormAffiliateId(coupon.affiliateId || '');
+      setFormMinOrderAmount(
+        coupon.minOrderAmount ? String(coupon.minOrderAmount) : "",
+      );
+      setFormMaxDiscountCap(
+        coupon.maxDiscountCap ? String(coupon.maxDiscountCap) : "",
+      );
+      setFormUsageLimit(coupon.usageLimit ? String(coupon.usageLimit) : "");
+      setFormUsageLimitPerUser(
+        coupon.usageLimitPerUser ? String(coupon.usageLimitPerUser) : "1",
+      );
+      setFormStartsAt(
+        coupon.startsAt
+          ? new Date(coupon.startsAt).toISOString().slice(0, 16)
+          : "",
+      );
+      setFormExpiresAt(
+        coupon.expiresAt
+          ? new Date(coupon.expiresAt).toISOString().slice(0, 16)
+          : "",
+      );
+      setFormSource(coupon.source || "internal");
+      setFormAffiliateId(coupon.affiliateId || "");
     } else {
       setEditingCoupon(null);
-      setFormCode('');
-      setFormDescription('');
-      setFormType('PERCENTAGE');
-      setFormValue('');
-      setFormMinOrderAmount('');
-      setFormMaxDiscountCap('');
-      setFormUsageLimit('');
-      setFormUsageLimitPerUser('1');
-      setFormStartsAt('');
-      setFormExpiresAt('');
-      setFormSource('internal');
-      setFormAffiliateId('');
+      setFormCode("");
+      setFormDescription("");
+      setFormType("PERCENTAGE");
+      setFormValue("");
+      setFormMinOrderAmount("");
+      setFormMaxDiscountCap("");
+      setFormUsageLimit("");
+      setFormUsageLimitPerUser("1");
+      setFormStartsAt("");
+      setFormExpiresAt("");
+      setFormSource("internal");
+      setFormAffiliateId("");
     }
     setIsCreateModalOpen(true);
   };
@@ -131,11 +187,11 @@ export default function PromotionsManagerClient({
   const handleSaveCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formCode.trim()) {
-      showToast('Coupon code is required', 'err');
+      showToast("Coupon code is required", "err");
       return;
     }
-    if (formType !== 'FREE_SHIPPING' && !formValue) {
-      showToast('Discount value is required', 'err');
+    if (formType !== "FREE_SHIPPING" && !formValue) {
+      showToast("Discount value is required", "err");
       return;
     }
 
@@ -144,10 +200,16 @@ export default function PromotionsManagerClient({
       description: formDescription || undefined,
       type: formType,
       value: Number(formValue) || 0,
-      minOrderAmount: formMinOrderAmount ? Number(formMinOrderAmount) : undefined,
-      maxDiscountCap: formMaxDiscountCap ? Number(formMaxDiscountCap) : undefined,
+      minOrderAmount: formMinOrderAmount
+        ? Number(formMinOrderAmount)
+        : undefined,
+      maxDiscountCap: formMaxDiscountCap
+        ? Number(formMaxDiscountCap)
+        : undefined,
       usageLimit: formUsageLimit ? Number(formUsageLimit) : undefined,
-      usageLimitPerUser: formUsageLimitPerUser ? Number(formUsageLimitPerUser) : 1,
+      usageLimitPerUser: formUsageLimitPerUser
+        ? Number(formUsageLimitPerUser)
+        : 1,
       startsAt: formStartsAt ? new Date(formStartsAt) : undefined,
       expiresAt: formExpiresAt ? new Date(formExpiresAt) : undefined,
       source: formSource,
@@ -166,41 +228,36 @@ export default function PromotionsManagerClient({
         setIsCreateModalOpen(false);
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || 'Failed to save coupon', 'err');
+        showToast(err.message || "An error occurred", "err");
       }
     });
   };
 
   // Toggle Status
-  const handleToggleStatus = async (coupon: Coupon) => {
-    const newStatus = coupon.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+  const handleToggleStatus = (coupon: Coupon) => {
+    const newStatus = coupon.status === "ACTIVE" ? "PAUSED" : "ACTIVE";
     startTransition(async () => {
       try {
-        await adminUpdateCoupon(coupon.id, {
-          code: coupon.code,
-          type: coupon.type,
-          value: coupon.value,
-          status: newStatus,
-        });
+        await adminUpdateCoupon(coupon.id, { status: newStatus });
         showToast(`Coupon ${coupon.code} is now ${newStatus.toLowerCase()}`);
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || 'Failed to update status', 'err');
+        showToast(err.message || "Failed to update status", "err");
       }
     });
   };
 
   // Delete Coupon
-  const handleDelete = async (coupon: Coupon) => {
-    if (!confirm(`Are you sure you want to delete coupon ${coupon.code}?`)) return;
-
+  const handleDeleteCoupon = (coupon: Coupon) => {
+    if (!confirm(`Are you sure you want to delete coupon ${coupon.code}?`))
+      return;
     startTransition(async () => {
       try {
         await adminDeleteCoupon(coupon.id);
-        showToast(`Coupon ${coupon.code} deleted successfully`);
+        showToast(`Coupon ${coupon.code} deleted`);
         router.refresh();
       } catch (err: any) {
-        showToast(err.message || 'Failed to delete coupon', 'err');
+        showToast(err.message || "Failed to delete coupon", "err");
       }
     });
   };
@@ -208,43 +265,49 @@ export default function PromotionsManagerClient({
   // Submit Bulk Generate
   const handleBulkGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const count = Number(bulkCount);
-    if (isNaN(count) || count < 1 || count > 500) {
-      showToast('Bulk count must be between 1 and 500', 'err');
-      return;
-    }
+    const payload = {
+      count: Number(bulkCount) || 10,
+      prefix: bulkPrefix.trim().toUpperCase() || "JNS",
+      type: bulkType,
+      value: Number(bulkValue) || 0,
+      minOrderAmount: bulkMinOrderAmount
+        ? Number(bulkMinOrderAmount)
+        : undefined,
+      expiresAt: bulkExpiresAt ? new Date(bulkExpiresAt) : undefined,
+      source: bulkSource,
+      affiliateId: bulkAffiliateId || undefined,
+    };
 
     startTransition(async () => {
       try {
-        const createdCodes = await adminBulkGenerateCoupons({
-          count,
-          type: bulkType,
-          value: Number(bulkValue) || 0,
-          expiresAt: bulkExpiresAt ? new Date(bulkExpiresAt) : undefined,
-          source: bulkSource,
-          affiliateId: bulkAffiliateId || undefined,
-          minOrderAmount: bulkMinOrderAmount ? Number(bulkMinOrderAmount) : undefined,
-          prefix: bulkPrefix || 'JNS',
-        });
-        showToast(`Successfully generated ${createdCodes.length} coupons`);
-        setIsBulkModalOpen(false);
-        router.refresh();
+        const createdCodes = await adminBulkGenerateCoupons(payload);
+        if (Array.isArray(createdCodes) && createdCodes.length > 0) {
+          showToast(`Generated ${createdCodes.length} coupons!`);
+          setIsBulkModalOpen(false);
+          router.refresh();
+        } else {
+          showToast("Failed to generate coupons", "err");
+        }
       } catch (err: any) {
-        showToast(err.message || 'Failed to bulk generate coupons', 'err');
+        showToast(err.message || "An error occurred", "err");
       }
     });
   };
 
   // Filters & Search logic
   const filteredCoupons = useMemo(() => {
-    return coupons.filter(c => {
+    return coupons.filter((c) => {
       const matchesSearch =
         c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.source || '').toLowerCase().includes(searchTerm.toLowerCase());
+        (c.description || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (c.source || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus = statusFilter === 'ALL' || c.status === statusFilter;
-      const matchesType = typeFilter === 'ALL' || c.type === typeFilter;
+      const effectiveStatus = getEffectiveStatus(c);
+      const matchesStatus =
+        statusFilter === "ALL" || effectiveStatus === statusFilter;
+      const matchesType = typeFilter === "ALL" || c.type === typeFilter;
 
       return matchesSearch && matchesStatus && matchesType;
     });
@@ -255,11 +318,19 @@ export default function PromotionsManagerClient({
     setCoupons(initialCoupons);
   }, [initialCoupons]);
 
-  // Statistics
+  // Statistics Calculation
   const totalCouponsCount = coupons.length;
-  const activeCount = coupons.filter(c => c.status === 'ACTIVE').length;
-  const totalRedemptions = coupons.reduce((sum, c) => sum + c.usedCount, 0);
-  const exhaustedCount = coupons.filter(c => c.status === 'EXHAUSTED').length;
+  const activeCount = coupons.filter(
+    (c) => getEffectiveStatus(c) === "ACTIVE",
+  ).length;
+  const expiredCount = coupons.filter(
+    (c) => getEffectiveStatus(c) === "EXPIRED",
+  ).length;
+  const exhaustedCount = coupons.filter(
+    (c) => getEffectiveStatus(c) === "EXHAUSTED",
+  ).length;
+  const totalRedemptions =
+    orderStats?.orderCount ?? coupons.reduce((sum, c) => sum + c.usedCount, 0);
 
   return (
     <div className="space-y-6">
@@ -290,38 +361,83 @@ export default function PromotionsManagerClient({
       </div>
 
       {/* Analytics Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Total Coupons', value: totalCouponsCount, indicator: '🎟️' },
-          { label: 'Active', value: activeCount, colorClass: 'text-emerald-400', indicator: '🟢' },
-          { label: 'Total Redemptions', value: totalRedemptions, indicator: '🔄' },
-          { label: 'Exhausted', value: exhaustedCount, colorClass: 'text-red-400', indicator: '⚠️' },
-        ].map((stat, idx) => (
-          <div key={idx} className="premium-card p-5 rounded-lg flex items-center justify-between">
-            <div>
-              <div className="font-mono text-[10px] text-muted uppercase tracking-wider">{stat.label}</div>
-              <div className={`font-serif text-[26px] mt-1.5 font-light ${stat.colorClass || 'text-primary'}`}>
+          {
+            label: "Total Coupons",
+            value: totalCouponsCount.toLocaleString("en-IN"),
+            Icon: Ticket,
+            colorClass: "text-primary",
+          },
+          {
+            label: "Active & Valid",
+            value: activeCount.toLocaleString("en-IN"),
+            Icon: CheckCircle2,
+            colorClass: "text-emerald-400",
+          },
+          {
+            label: "Total Redemptions",
+            value: totalRedemptions.toLocaleString("en-IN"),
+            Icon: RefreshCw,
+            colorClass: "text-accent",
+          },
+          {
+            label: "Revenue Generated",
+            value: `₹${(orderStats?.totalRevenueGenerated || 0).toLocaleString("en-IN")}`,
+            Icon: Zap,
+            colorClass: "text-amber-400",
+          },
+          {
+            label: "Customer Savings",
+            value: `₹${(orderStats?.totalDiscountSaved || 0).toLocaleString("en-IN")}`,
+            Icon: Tag,
+            colorClass: "text-blue-400",
+          },
+          {
+            label: "Expired / Exhausted",
+            value: (expiredCount + exhaustedCount).toLocaleString("en-IN"),
+            Icon: AlertTriangle,
+            colorClass: "text-red-400",
+          },
+        ].map((stat, idx) => {
+          const StatIcon = stat.Icon;
+          return (
+            <div
+              key={idx}
+              className="premium-card p-4 rounded-lg flex flex-col justify-between space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[9px] text-muted uppercase tracking-wider">
+                  {stat.label}
+                </span>
+                <StatIcon className={`w-4 h-4 opacity-75 ${stat.colorClass}`} />
+              </div>
+              <div
+                className={`font-serif text-[22px] font-light ${stat.colorClass}`}
+              >
                 {stat.value}
               </div>
             </div>
-            <span className="text-[24px] opacity-75">{stat.indicator}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Search and Filters */}
       <div className="premium-card p-4 rounded-lg flex flex-wrap gap-4 items-center justify-between">
         <div className="flex-1 flex items-center gap-2 border border-border bg-background px-3 py-2.5 rounded-sm focus-within:border-accent min-w-[280px]">
-          <span className="text-muted text-xs">🔍</span>
+          <Search className="w-3.5 h-3.5 text-muted shrink-0" />
           <input
             type="text"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by code, notes, source..."
             className="bg-transparent text-primary font-mono text-[12px] focus:outline-none w-full placeholder:text-muted/60"
           />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="text-muted hover:text-primary font-mono text-[10px] uppercase">
+            <button
+              onClick={() => setSearchTerm("")}
+              className="text-muted hover:text-primary font-mono text-[10px] uppercase"
+            >
               Clear
             </button>
           )}
@@ -329,10 +445,12 @@ export default function PromotionsManagerClient({
 
         <div className="flex flex-wrap gap-3 items-center">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">Status</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+              Status
+            </span>
             <select
               value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2.5 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-wider focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
             >
               <option value="ALL">All Statuses</option>
@@ -344,10 +462,12 @@ export default function PromotionsManagerClient({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">Type</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
+              Type
+            </span>
             <select
               value={typeFilter}
-              onChange={e => setTypeFilter(e.target.value)}
+              onChange={(e) => setTypeFilter(e.target.value)}
               className="px-3 py-2.5 border border-border bg-background text-secondary font-mono text-[11px] uppercase tracking-wider focus:outline-none focus:border-accent transition-colors cursor-pointer rounded-sm"
             >
               <option value="ALL">All Types</option>
@@ -363,10 +483,13 @@ export default function PromotionsManagerClient({
       <div className="premium-card flex flex-col overflow-hidden rounded-lg">
         {filteredCoupons.length === 0 ? (
           <div className="py-16 text-center">
-            <div className="text-[32px] mb-3 opacity-60">🏷️</div>
-            <h3 className="font-serif text-[16px] text-primary mb-1">No Coupons Found</h3>
+            <Tag className="w-8 h-8 mx-auto mb-3 opacity-40 text-muted" />
+            <h3 className="font-serif text-[16px] text-primary mb-1">
+              No Coupons Found
+            </h3>
             <p className="font-body text-muted text-[13px] max-w-sm mx-auto">
-              No promotions matching the selected criteria. Try adjusting filters or create a new coupon code.
+              No promotions matching the selected criteria. Try adjusting
+              filters or create a new coupon code.
             </p>
           </div>
         ) : (
@@ -375,8 +498,12 @@ export default function PromotionsManagerClient({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border/60 bg-surface-muted/40 font-mono text-[10px] uppercase tracking-wider text-muted">
-                    <th className="px-6 py-4 font-semibold">Code / Description</th>
-                    <th className="px-6 py-4 font-semibold">Discount Details</th>
+                    <th className="px-6 py-4 font-semibold">
+                      Code / Description
+                    </th>
+                    <th className="px-6 py-4 font-semibold">
+                      Discount Details
+                    </th>
                     <th className="px-6 py-4 font-semibold">Status</th>
                     <th className="px-6 py-4 font-semibold">Redemptions</th>
                     <th className="px-6 py-4 font-semibold">Source</th>
@@ -385,114 +512,164 @@ export default function PromotionsManagerClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
-                  {filteredCoupons.map(coupon => {
-                    const expiryDate = coupon.expiresAt ? new Date(coupon.expiresAt) : null;
-                    const isExpired = expiryDate ? expiryDate < new Date() : false;
+                  {filteredCoupons.map((coupon) => {
+                    const expiryDate = coupon.expiresAt
+                      ? new Date(coupon.expiresAt)
+                      : null;
+                    const isExpired = expiryDate
+                      ? expiryDate < new Date()
+                      : false;
 
-                    let statusClass = 'status-pill status-draft';
-                    if (coupon.status === 'ACTIVE' && !isExpired) statusClass = 'status-pill status-active';
-                    else if (coupon.status === 'PAUSED') statusClass = 'status-pill status-processing';
-                    else if (coupon.status === 'EXHAUSTED') statusClass = 'status-pill status-paid';
-                    else if (isExpired || coupon.status === 'EXPIRED') statusClass = 'status-pill status-pending';
+                    let statusClass = "status-pill status-draft";
+                    if (coupon.status === "ACTIVE" && !isExpired)
+                      statusClass = "status-pill status-active";
+                    else if (coupon.status === "PAUSED")
+                      statusClass = "status-pill status-processing";
+                    else if (coupon.status === "EXHAUSTED")
+                      statusClass = "status-pill status-paid";
+                    else if (isExpired || coupon.status === "EXPIRED")
+                      statusClass = "status-pill status-pending";
 
                     return (
-                      <tr key={coupon.id} className="hover:bg-surface-muted/15 transition-colors">
+                      <tr
+                        key={coupon.id}
+                        className="hover:bg-surface-muted/15 transition-colors"
+                      >
                         <td className="px-6 py-4">
                           <div className="font-mono text-[13px] text-primary tracking-wide font-semibold">
                             {coupon.code}
                           </div>
                           {coupon.description && (
-                            <div className="text-[11px] text-muted mt-1 font-body">{coupon.description}</div>
+                            <div className="text-[11px] text-muted mt-1 font-body">
+                              {coupon.description}
+                            </div>
                           )}
                           {coupon.affiliate && (
-                            <div className="text-[10px] text-accent mt-1.5 font-mono">
-                              🤝 Affiliate: {coupon.affiliate.name}
+                            <div className="text-[10px] text-accent mt-1.5 font-mono flex items-center gap-1">
+                              <Users className="w-3 h-3" /> Affiliate:{" "}
+                              {coupon.affiliate.name}
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-serif text-[15px] text-primary">
-                            {coupon.type === 'PERCENTAGE'
-                              ? `${coupon.value}% OFF`
-                              : coupon.type === 'FIXED_AMOUNT'
-                              ? `₹${coupon.value.toLocaleString('en-IN')} OFF`
-                              : '✈️ Free Shipping'}
+                          <div className="font-serif text-[15px] text-primary flex items-center gap-1.5">
+                            {coupon.type === "PERCENTAGE" ? (
+                              `${coupon.value}% OFF`
+                            ) : coupon.type === "FIXED_AMOUNT" ? (
+                              `₹${coupon.value.toLocaleString("en-IN")} OFF`
+                            ) : (
+                              <>
+                                <Plane className="w-3.5 h-3.5 text-accent" />{" "}
+                                Free Shipping
+                              </>
+                            )}
                           </div>
                           {coupon.minOrderAmount && (
                             <div className="text-[10px] text-muted font-mono mt-1">
-                              Min order: ₹{coupon.minOrderAmount.toLocaleString('en-IN')}
+                              Min order: ₹
+                              {coupon.minOrderAmount.toLocaleString("en-IN")}
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4">
                           <span className={statusClass}>
                             <span className="dot" />
-                            {isExpired ? 'EXPIRED' : coupon.status}
+                            {isExpired ? "EXPIRED" : coupon.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 font-mono text-[12px] text-primary">
                           <div className="font-semibold">
-                            {coupon.usedCount} {coupon.usageLimit ? `/ ${coupon.usageLimit}` : '/ ∞'}
+                            {coupon.usedCount}{" "}
+                            {coupon.usageLimit
+                              ? `/ ${coupon.usageLimit}`
+                              : "/ ∞"}
                           </div>
-                          <div className="text-[10px] text-muted mt-0.5">uses</div>
+                          <div className="text-[10px] text-muted mt-0.5">
+                            uses
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="font-mono text-[10px] uppercase tracking-wider bg-surface border border-border px-2 py-0.5 rounded-sm text-secondary">
-                            {coupon.source || 'internal'}
+                            {coupon.source || "internal"}
                           </span>
                         </td>
                         <td className="px-6 py-4 font-mono text-[11px] text-muted">
                           {coupon.startsAt ? (
                             <div>
-                              From: {new Date(coupon.startsAt).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                              })}
+                              From:{" "}
+                              {new Date(coupon.startsAt).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                },
+                              )}
                             </div>
                           ) : null}
                           <div>
-                            Expires:{' '}
+                            Expires:{" "}
                             {coupon.expiresAt ? (
-                              <span className={isExpired ? 'text-red-400 font-semibold' : ''}>
-                                {new Date(coupon.expiresAt).toLocaleDateString('en-IN', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                })}
+                              <span
+                                className={
+                                  isExpired ? "text-red-400 font-semibold" : ""
+                                }
+                              >
+                                {new Date(coupon.expiresAt).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
                               </span>
                             ) : (
-                              'Never'
+                              "Never"
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
+                          <div
+                            className="flex justify-end gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               type="button"
                               onClick={() => handleToggleStatus(coupon)}
-                              className={`font-mono text-[10px] uppercase tracking-[0.1em] border px-2.5 py-1.5 rounded-sm cursor-pointer transition-colors bg-background ${
-                                coupon.status === 'ACTIVE'
-                                  ? 'border-amber-500/30 text-amber-400 hover:bg-amber-900/10'
-                                  : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/10'
+                              className={`font-mono text-[10px] uppercase tracking-[0.1em] border px-2.5 py-1.5 rounded-sm cursor-pointer transition-colors bg-background flex items-center gap-1 ${
+                                coupon.status === "ACTIVE"
+                                  ? "border-amber-500/30 text-amber-400 hover:bg-amber-900/10"
+                                  : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/10"
                               }`}
-                              title={coupon.status === 'ACTIVE' ? 'Pause Coupon' : 'Activate Coupon'}
+                              title={
+                                coupon.status === "ACTIVE"
+                                  ? "Pause Coupon"
+                                  : "Activate Coupon"
+                              }
                             >
-                              {coupon.status === 'ACTIVE' ? '⏸ Pause' : '▶ Activate'}
+                              {coupon.status === "ACTIVE" ? (
+                                <Pause className="w-3 h-3" />
+                              ) : (
+                                <Play className="w-3 h-3" />
+                              )}
+                              {coupon.status === "ACTIVE"
+                                ? "Pause"
+                                : "Activate"}
                             </button>
                             <button
                               type="button"
                               onClick={() => openCreateModal(coupon)}
-                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer font-semibold"
+                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-accent border border-accent/30 px-2.5 py-1.5 hover:border-accent hover:bg-accent/8 transition-colors bg-background rounded-sm cursor-pointer font-semibold flex items-center gap-1"
                             >
-                              ✏️ Edit
+                              <Edit className="w-3 h-3" /> Edit
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDelete(coupon)}
-                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer"
+                              onClick={() => handleDeleteCoupon(coupon)}
+                              className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted border border-border px-2 py-1.5 hover:border-red-500/50 hover:text-red-400 transition-colors bg-background rounded-sm cursor-pointer flex items-center justify-center"
                               title="Delete Coupon"
                             >
-                              🗑
+                              <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
                         </td>
@@ -516,9 +693,13 @@ export default function PromotionsManagerClient({
           <div className="bg-surface border border-border rounded-lg w-full max-w-[560px] flex flex-col overflow-hidden shadow-2xl">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Promotions Engine</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+                  Promotions Engine
+                </div>
                 <h2 className="font-serif text-[18px] text-primary font-normal m-0">
-                  {editingCoupon ? `Edit Coupon: ${editingCoupon.code}` : 'Create New Coupon'}
+                  {editingCoupon
+                    ? `Edit Coupon: ${editingCoupon.code}`
+                    : "Create New Coupon"}
                 </h2>
               </div>
               <button
@@ -530,7 +711,10 @@ export default function PromotionsManagerClient({
               </button>
             </div>
 
-            <form onSubmit={handleSaveCoupon} className="flex-1 overflow-y-auto p-5 space-y-4 max-h-[80vh]">
+            <form
+              onSubmit={handleSaveCoupon}
+              className="flex-1 overflow-y-auto p-5 space-y-4 max-h-[80vh]"
+            >
               {/* Code */}
               <div>
                 <label className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
@@ -540,7 +724,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="text"
                     value={formCode}
-                    onChange={e => setFormCode(e.target.value.toUpperCase())}
+                    onChange={(e) => setFormCode(e.target.value.toUpperCase())}
                     placeholder="e.g. LUXE20"
                     disabled={!!editingCoupon}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm disabled:opacity-50"
@@ -565,7 +749,7 @@ export default function PromotionsManagerClient({
                 <input
                   type="text"
                   value={formDescription}
-                  onChange={e => setFormDescription(e.target.value)}
+                  onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="e.g. Welcome campaign promo"
                   className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                 />
@@ -579,7 +763,7 @@ export default function PromotionsManagerClient({
                   </label>
                   <select
                     value={formType}
-                    onChange={e => setFormType(e.target.value as any)}
+                    onChange={(e) => setFormType(e.target.value as any)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="PERCENTAGE">Percentage (%)</option>
@@ -589,18 +773,18 @@ export default function PromotionsManagerClient({
                 </div>
                 <div>
                   <label className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted block mb-1">
-                    {formType === 'PERCENTAGE'
-                      ? 'Discount Value (%)'
-                      : formType === 'FIXED_AMOUNT'
-                      ? 'Discount Value (₹)'
-                      : 'Value (N/A)'}
+                    {formType === "PERCENTAGE"
+                      ? "Discount Value (%)"
+                      : formType === "FIXED_AMOUNT"
+                        ? "Discount Value (₹)"
+                        : "Value (N/A)"}
                   </label>
                   <input
                     type="number"
                     value={formValue}
-                    onChange={e => setFormValue(e.target.value)}
-                    disabled={formType === 'FREE_SHIPPING'}
-                    placeholder={formType === 'PERCENTAGE' ? '15' : '500'}
+                    onChange={(e) => setFormValue(e.target.value)}
+                    disabled={formType === "FREE_SHIPPING"}
+                    placeholder={formType === "PERCENTAGE" ? "15" : "500"}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm disabled:opacity-40"
                   />
                 </div>
@@ -615,7 +799,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={formMinOrderAmount}
-                    onChange={e => setFormMinOrderAmount(e.target.value)}
+                    onChange={(e) => setFormMinOrderAmount(e.target.value)}
                     placeholder="e.g. 20000"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                   />
@@ -627,8 +811,8 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={formMaxDiscountCap}
-                    onChange={e => setFormMaxDiscountCap(e.target.value)}
-                    disabled={formType !== 'PERCENTAGE'}
+                    onChange={(e) => setFormMaxDiscountCap(e.target.value)}
+                    disabled={formType !== "PERCENTAGE"}
                     placeholder="e.g. 5000"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm disabled:opacity-40"
                   />
@@ -644,7 +828,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={formUsageLimit}
-                    onChange={e => setFormUsageLimit(e.target.value)}
+                    onChange={(e) => setFormUsageLimit(e.target.value)}
                     placeholder="Unlimited (leave empty)"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                   />
@@ -656,7 +840,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={formUsageLimitPerUser}
-                    onChange={e => setFormUsageLimitPerUser(e.target.value)}
+                    onChange={(e) => setFormUsageLimitPerUser(e.target.value)}
                     placeholder="e.g. 1"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                   />
@@ -672,7 +856,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="datetime-local"
                     value={formStartsAt}
-                    onChange={e => setFormStartsAt(e.target.value)}
+                    onChange={(e) => setFormStartsAt(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer text-muted"
                   />
                 </div>
@@ -683,7 +867,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="datetime-local"
                     value={formExpiresAt}
-                    onChange={e => setFormExpiresAt(e.target.value)}
+                    onChange={(e) => setFormExpiresAt(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer text-muted"
                   />
                 </div>
@@ -697,7 +881,7 @@ export default function PromotionsManagerClient({
                   </label>
                   <select
                     value={formSource}
-                    onChange={e => setFormSource(e.target.value)}
+                    onChange={(e) => setFormSource(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="internal">Internal Campaign</option>
@@ -715,11 +899,11 @@ export default function PromotionsManagerClient({
                   </label>
                   <select
                     value={formAffiliateId}
-                    onChange={e => setFormAffiliateId(e.target.value)}
+                    onChange={(e) => setFormAffiliateId(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="">None</option>
-                    {affiliates.map(aff => (
+                    {affiliates.map((aff) => (
                       <option key={aff.id} value={aff.id}>
                         {aff.name} ({aff.affiliateCode})
                       </option>
@@ -741,7 +925,7 @@ export default function PromotionsManagerClient({
                   disabled={isPending}
                   className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-5 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold disabled:opacity-50 min-h-[44px]"
                 >
-                  {isPending ? 'Saving…' : 'Save Coupon'}
+                  {isPending ? "Saving…" : "Save Coupon"}
                 </button>
               </div>
             </form>
@@ -759,8 +943,12 @@ export default function PromotionsManagerClient({
           <div className="bg-surface border border-border rounded-lg w-full max-w-[500px] flex flex-col overflow-hidden shadow-2xl">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">Bulk Engine</div>
-                <h2 className="font-serif text-[18px] text-primary font-normal m-0">Bulk Generate Coupons</h2>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+                  Bulk Engine
+                </div>
+                <h2 className="font-serif text-[18px] text-primary font-normal m-0">
+                  Bulk Generate Coupons
+                </h2>
               </div>
               <button
                 type="button"
@@ -780,7 +968,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={bulkCount}
-                    onChange={e => setBulkCount(e.target.value)}
+                    onChange={(e) => setBulkCount(e.target.value)}
                     min={1}
                     max={500}
                     placeholder="e.g. 50"
@@ -794,7 +982,9 @@ export default function PromotionsManagerClient({
                   <input
                     type="text"
                     value={bulkPrefix}
-                    onChange={e => setBulkPrefix(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setBulkPrefix(e.target.value.toUpperCase())
+                    }
                     maxLength={6}
                     placeholder="e.g. FEST"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
@@ -809,7 +999,7 @@ export default function PromotionsManagerClient({
                   </label>
                   <select
                     value={bulkType}
-                    onChange={e => setBulkType(e.target.value as any)}
+                    onChange={(e) => setBulkType(e.target.value as any)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="PERCENTAGE">Percentage (%)</option>
@@ -824,8 +1014,8 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={bulkValue}
-                    onChange={e => setBulkValue(e.target.value)}
-                    disabled={bulkType === 'FREE_SHIPPING'}
+                    onChange={(e) => setBulkValue(e.target.value)}
+                    disabled={bulkType === "FREE_SHIPPING"}
                     placeholder="e.g. 15"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm disabled:opacity-40"
                   />
@@ -840,7 +1030,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="number"
                     value={bulkMinOrderAmount}
-                    onChange={e => setBulkMinOrderAmount(e.target.value)}
+                    onChange={(e) => setBulkMinOrderAmount(e.target.value)}
                     placeholder="e.g. 15000"
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm"
                   />
@@ -852,7 +1042,7 @@ export default function PromotionsManagerClient({
                   <input
                     type="datetime-local"
                     value={bulkExpiresAt}
-                    onChange={e => setBulkExpiresAt(e.target.value)}
+                    onChange={(e) => setBulkExpiresAt(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer text-muted"
                   />
                 </div>
@@ -865,7 +1055,7 @@ export default function PromotionsManagerClient({
                   </label>
                   <select
                     value={bulkSource}
-                    onChange={e => setBulkSource(e.target.value)}
+                    onChange={(e) => setBulkSource(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="internal">Internal</option>
@@ -881,11 +1071,11 @@ export default function PromotionsManagerClient({
                   </label>
                   <select
                     value={bulkAffiliateId}
-                    onChange={e => setBulkAffiliateId(e.target.value)}
+                    onChange={(e) => setBulkAffiliateId(e.target.value)}
                     className="w-full px-3 py-2 border border-border bg-background text-primary font-mono text-[12px] focus:outline-none focus:border-accent rounded-sm cursor-pointer"
                   >
                     <option value="">None</option>
-                    {affiliates.map(aff => (
+                    {affiliates.map((aff) => (
                       <option key={aff.id} value={aff.id}>
                         {aff.name} ({aff.affiliateCode})
                       </option>
@@ -907,7 +1097,7 @@ export default function PromotionsManagerClient({
                   disabled={isPending}
                   className="font-mono text-[10px] uppercase tracking-[0.12em] bg-accent text-background px-5 py-2 hover:bg-accent-hover transition-colors rounded-sm cursor-pointer font-semibold disabled:opacity-50 min-h-[44px]"
                 >
-                  {isPending ? 'Generating…' : 'Generate'}
+                  {isPending ? "Generating…" : "Generate"}
                 </button>
               </div>
             </form>
@@ -921,9 +1111,9 @@ export default function PromotionsManagerClient({
           role="status"
           aria-live="polite"
           className={`fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-sm border font-mono text-[12px] max-w-sm shadow-xl backdrop-blur-sm ${
-            toast.type === 'err'
-              ? 'bg-red-900/20 border-red-600/40 text-red-300'
-              : 'bg-surface border-border text-primary'
+            toast.type === "err"
+              ? "bg-red-900/20 border-red-600/40 text-red-300"
+              : "bg-surface border-border text-primary"
           }`}
         >
           {toast.msg}

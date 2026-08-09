@@ -1,27 +1,35 @@
 import { MetadataRoute } from "next";
+import { BRAND_CONFIG } from "@james-andsons/config";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "James & Sons",
-    short_name: "J&S",
-    description: "Luxury Illumination Ecosystem",
+    id: "/",
+    name: BRAND_CONFIG.name,
+    short_name: BRAND_CONFIG.name,
+    description: `Bespoke luxury chandeliers & designer lighting by ${BRAND_CONFIG.name}`,
     start_url: "/",
+    scope: "/",
     display: "standalone",
-    background_color: "#0a0905",
-    theme_color: "#C4A05A",
+    background_color: "#0a0a0b",
+    theme_color: "#0a0a0b",
+    orientation: "any",
+    categories: ["shopping", "lifestyle"],
+    prefer_related_applications: false,
     icons: [
       {
-        src: "/icons/icon-192x192.png",
+        src: "/pwa-icon-192.png",
         sizes: "192x192",
         type: "image/png",
+        purpose: "any",
       },
       {
-        src: "/icons/icon-512x512.png",
+        src: "/pwa-icon-512.png",
         sizes: "512x512",
         type: "image/png",
+        purpose: "any",
       },
       {
-        src: "/icons/icon-maskable.png",
+        src: "/pwa-maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

@@ -1,14 +1,14 @@
-'use client';
-import React, { createContext, useContext, useState } from 'react';
+"use client";
+import React, { createContext, useContext, useState } from "react";
 
 export interface ProductFormSidebarState {
-  mode: 'add' | 'edit';
+  mode: "add" | "edit";
   productId?: string;
   productName: string;
   sku: string;
   isDirty: boolean;
-  activeTab: 'parent' | number;
-  setActiveTab: (tab: 'parent' | number) => void;
+  activeTab: "parent" | number;
+  setActiveTab: (tab: "parent" | number) => void;
   variants: { name: string; sku: string }[];
   addVariant: () => void;
   removeVariant: (idx: number) => void;
@@ -41,24 +41,67 @@ export interface ProductFormSidebarState {
   saving?: boolean;
 }
 
+export interface OrderDetailSidebarState {
+  orderId: string;
+  orderNumber: string;
+  channel?: string | null;
+  status: string;
+  totalAmount: number;
+  customerName?: string;
+  itemCount: number;
+  awbNumber?: string | null;
+  amazonOrderId?: string | null;
+  amazonFulfillmentType?: string | null;
+  shiprocketLabelUrl?: string | null;
+  manifestUrl?: string | null;
+  shiprocketInvoiceUrl?: string | null;
+}
+
 interface SidebarContextType {
   productFormState: ProductFormSidebarState | null;
   setProductFormState: (state: ProductFormSidebarState | null) => void;
+  orderDetailState: OrderDetailSidebarState | null;
+  setOrderDetailState: (state: OrderDetailSidebarState | null) => void;
   isPageDirty: boolean;
   setIsPageDirty: (dirty: boolean) => void;
   isMobileNavOpen: boolean;
   setIsMobileNavOpen: (open: boolean) => void;
 }
 
-const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+const defaultContextValue: SidebarContextType = {
+  productFormState: null,
+  setProductFormState: () => {},
+  orderDetailState: null,
+  setOrderDetailState: () => {},
+  isPageDirty: false,
+  setIsPageDirty: () => {},
+  isMobileNavOpen: false,
+  setIsMobileNavOpen: () => {},
+};
+
+const SidebarContext = createContext<SidebarContextType>(defaultContextValue);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [productFormState, setProductFormState] = useState<ProductFormSidebarState | null>(null);
+  const [productFormState, setProductFormState] =
+    useState<ProductFormSidebarState | null>(null);
+  const [orderDetailState, setOrderDetailState] =
+    useState<OrderDetailSidebarState | null>(null);
   const [isPageDirty, setIsPageDirty] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   return (
-    <SidebarContext.Provider value={{ productFormState, setProductFormState, isPageDirty, setIsPageDirty, isMobileNavOpen, setIsMobileNavOpen }}>
+    <SidebarContext.Provider
+      value={{
+        productFormState,
+        setProductFormState,
+        orderDetailState,
+        setOrderDetailState,
+        isPageDirty,
+        setIsPageDirty,
+        isMobileNavOpen,
+        setIsMobileNavOpen,
+      }}
+    >
       {children}
     </SidebarContext.Provider>
   );
@@ -66,8 +109,5 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
 export function useSidebar() {
   const context = useContext(SidebarContext);
-  if (context === undefined) {
-    throw new Error('useSidebar must be used within a SidebarProvider');
-  }
-  return context;
+  return context || defaultContextValue;
 }

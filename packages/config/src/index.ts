@@ -1,5 +1,7 @@
 export interface IBrandConfig {
   name: string;
+  shortName: string;
+  adminPwaName: string;
   legalName: string;
   tagline: string;
   domain: string;
@@ -102,6 +104,14 @@ export const BRAND_CONFIG: IBrandConfig = {
     process.env.NEXT_PUBLIC_BRAND_NAME ||
     process.env.BRAND_NAME ||
     "James & Sons",
+  shortName:
+    process.env.NEXT_PUBLIC_BRAND_SHORT_NAME ||
+    process.env.BRAND_SHORT_NAME ||
+    "James & Sons",
+  adminPwaName:
+    process.env.NEXT_PUBLIC_ADMIN_PWA_NAME ||
+    process.env.ADMIN_PWA_NAME ||
+    "Admin J&S",
   legalName: process.env.BRAND_LEGAL_NAME || "James and Sons Bespoke Interiors",
   tagline:
     process.env.BRAND_TAGLINE || "Luxury Artisanal Lighting & Home Accessories",
@@ -113,7 +123,7 @@ export const BRAND_CONFIG: IBrandConfig = {
   phone: process.env.BRAND_PHONE || "+91 98765 43210",
   address:
     process.env.BRAND_ADDRESS ||
-    "CNI Church Compound, Civil Lines, Aligarh, UP 202001",
+    "CNI Church Compound Civil Lines, Aligarh, Uttar Pradesh India - 202001",
   social: {
     instagram: "https://instagram.com/jamesandsons",
     pinterest: "https://pin.it/1KZxSIww1",

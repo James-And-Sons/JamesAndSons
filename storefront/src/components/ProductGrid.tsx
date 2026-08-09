@@ -399,8 +399,7 @@ export default function ProductGrid({
                     objectFit="cover"
                     className="mobile-product-img"
                     style={{
-                      background:
-                        "linear-gradient(140deg, #181410 0%, #1e1a0f 100%)",
+                      background: "var(--surface2)",
                       borderRadius: "20px 20px 0 0",
                     }}
                   />
@@ -410,8 +409,7 @@ export default function ProductGrid({
                     style={{
                       height: "148px",
                       position: "relative",
-                      background:
-                        "linear-gradient(140deg, #181410 0%, #1e1a0f 100%)",
+                      background: "var(--surface2)",
                       borderRadius: "20px 20px 0 0",
                       overflow: "hidden",
                     }}
