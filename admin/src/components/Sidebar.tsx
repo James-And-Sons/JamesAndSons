@@ -7,6 +7,7 @@ import SidebarHeader from "./sidebar/SidebarHeader";
 import SidebarUserFooter from "./sidebar/SidebarUserFooter";
 import SidebarProductFormOutline from "./sidebar/SidebarProductFormOutline";
 import SidebarOrderFormOutline from "./sidebar/SidebarOrderFormOutline";
+import SidebarPromotionOutline from "./sidebar/SidebarPromotionOutline";
 import SidebarNavItem from "./sidebar/SidebarNavItem";
 import SidebarDropdownGroup from "./sidebar/SidebarDropdownGroup";
 import {
@@ -53,7 +54,12 @@ function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { productFormState, orderDetailState, isPageDirty } = useSidebar();
+  const {
+    productFormState,
+    orderDetailState,
+    promotionFormState,
+    isPageDirty,
+  } = useSidebar();
   const [openTickets, setOpenTickets] = useState<number | null>(cachedTickets);
   const [openRfqs, setOpenRfqs] = useState<number | null>(cachedRfqs);
   const [openInquiries, setOpenInquiries] = useState<number | null>(
@@ -162,13 +168,13 @@ function Sidebar({
   }, []);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const isDirty = productFormState?.isDirty || isPageDirty;
-    if (isDirty) {
+    if (isPageDirty) {
       if (
         !confirm("You have unsaved changes. Are you sure you want to leave?")
       ) {
         e.preventDefault();
         e.stopPropagation();
+        return;
       }
     }
     if (onClose) onClose();
@@ -232,6 +238,11 @@ function Sidebar({
           ) : orderDetailState ? (
             <SidebarOrderFormOutline
               orderDetailState={orderDetailState}
+              onClose={onClose}
+            />
+          ) : promotionFormState ? (
+            <SidebarPromotionOutline
+              promotionState={promotionFormState}
               onClose={onClose}
             />
           ) : (
@@ -363,7 +374,7 @@ function Sidebar({
                 onClick={handleNavClick}
               />
               <SidebarNavItem
-                name="Coupons"
+                name="Promotions & Coupons"
                 href="/promotions"
                 icon={Tag}
                 isActive={

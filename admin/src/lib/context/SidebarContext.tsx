@@ -41,6 +41,31 @@ export interface ProductFormSidebarState {
   saving?: boolean;
 }
 
+export interface PromotionFormSidebarState {
+  mode: "add" | "edit";
+  promoId?: string;
+  code: string;
+  description: string;
+  type: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
+  value: number;
+  status: "ACTIVE" | "PAUSED" | "EXPIRED" | "EXHAUSTED";
+  isDirty: boolean;
+  isBasicComplete: boolean;
+  isRulesComplete: boolean;
+  isScheduleComplete: boolean;
+  isChannelsComplete: boolean;
+  activeSection: string;
+  setActiveSection: (sec: string) => void;
+  targetChannels: {
+    googleMerchant: boolean;
+    metaCommerce: boolean;
+    emailBlast: boolean;
+    webPush: boolean;
+  };
+  submitForm?: () => void;
+  saving?: boolean;
+}
+
 export interface OrderDetailSidebarState {
   orderId: string;
   orderNumber: string;
@@ -62,6 +87,8 @@ interface SidebarContextType {
   setProductFormState: (state: ProductFormSidebarState | null) => void;
   orderDetailState: OrderDetailSidebarState | null;
   setOrderDetailState: (state: OrderDetailSidebarState | null) => void;
+  promotionFormState: PromotionFormSidebarState | null;
+  setPromotionFormState: (state: PromotionFormSidebarState | null) => void;
   isPageDirty: boolean;
   setIsPageDirty: (dirty: boolean) => void;
   isMobileNavOpen: boolean;
@@ -73,6 +100,8 @@ const defaultContextValue: SidebarContextType = {
   setProductFormState: () => {},
   orderDetailState: null,
   setOrderDetailState: () => {},
+  promotionFormState: null,
+  setPromotionFormState: () => {},
   isPageDirty: false,
   setIsPageDirty: () => {},
   isMobileNavOpen: false,
@@ -86,6 +115,8 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     useState<ProductFormSidebarState | null>(null);
   const [orderDetailState, setOrderDetailState] =
     useState<OrderDetailSidebarState | null>(null);
+  const [promotionFormState, setPromotionFormState] =
+    useState<PromotionFormSidebarState | null>(null);
   const [isPageDirty, setIsPageDirty] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
@@ -96,6 +127,8 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
         setProductFormState,
         orderDetailState,
         setOrderDetailState,
+        promotionFormState,
+        setPromotionFormState,
         isPageDirty,
         setIsPageDirty,
         isMobileNavOpen,

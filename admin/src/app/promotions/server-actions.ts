@@ -24,12 +24,23 @@ export async function adminCreateCoupon(data: {
   source?: string;
   affiliateId?: string;
 }) {
-  return (prisma as any).coupon.create({
+  const coupon = await (prisma as any).coupon.create({
     data: {
       ...data,
       code: data.code.trim().toUpperCase(),
     },
   });
+
+  // Autonomously construct and sync Email Marketing Campaign
+  try {
+    const { AICampaignSyncService } =
+      await import("@/lib/services/aiCampaignSyncService");
+    await AICampaignSyncService.syncPromotionToCampaign(coupon);
+  } catch (err) {
+    console.warn("[adminCreateCoupon] Auto campaign sync warning:", err);
+  }
+
+  return coupon;
 }
 
 export async function adminUpdateCouponStatus(
@@ -230,4 +241,255 @@ export async function adminUpdateCoupon(
       code: data.code ? data.code.trim().toUpperCase() : undefined,
     },
   });
+}
+
+export async function adminLaunchPrebuiltPromotion(presetId: string) {
+  const { PREBUILT_PROMOTION_PRESETS } = await import("./prebuilt-promotions");
+  const { MultiChannelPromotionsService } =
+    await import("@/lib/services/multiChannelPromotionsService");
+
+  const preset = PREBUILT_PROMOTION_PRESETS.find((p) => p.id === presetId);
+  if (!preset) throw new Error("Preset promotion not found");
+
+  const code = `${preset.codePrefix}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+  const sourceFlags: string[] = [];
+  if (preset.targetChannels.googleMerchant) sourceFlags.push("google_merchant");
+  if (preset.targetChannels.metaCommerce) sourceFlags.push("meta");
+  if (preset.targetChannels.emailBlast) sourceFlags.push("email");
+  if (preset.targetChannels.webPush) sourceFlags.push("push");
+  if (sourceFlags.length === 0) sourceFlags.push("internal");
+
+  const expiresAt = preset.durationDays
+    ? new Date(Date.now() + preset.durationDays * 24 * 60 * 60 * 1000)
+    : undefined;
+
+  const coupon = await (prisma as any).coupon.create({
+    data: {
+      code,
+      description: preset.description,
+      type: preset.type,
+      value: preset.value,
+      status: "ACTIVE",
+      minOrderAmount: preset.minOrderAmount,
+      maxDiscountCap: preset.maxDiscountCap,
+      usageLimitPerUser: preset.usageLimitPerUser || 1,
+      expiresAt,
+      source: sourceFlags.join(","),
+    },
+  });
+
+  const syncResult =
+    await MultiChannelPromotionsService.syncAllChannels(coupon);
+
+  // Autonomously construct and sync Email Marketing Campaign
+  try {
+    const { AICampaignSyncService } =
+      await import("@/lib/services/aiCampaignSyncService");
+    await AICampaignSyncService.syncPromotionToCampaign(coupon);
+  } catch (err) {
+    console.warn(
+      "[adminLaunchPrebuiltPromotion] Auto campaign sync warning:",
+      err,
+    );
+  }
+
+  return {
+    coupon,
+    syncResult,
+  };
+}
+
+export async function adminScanUpcomingEventsAI() {
+  const { MonthlyEventsAIService } =
+    await import("@/lib/services/monthlyEventsAIService");
+  return MonthlyEventsAIService.scanAndGenerateMonthlyPromotions();
+}
+
+export async function adminSyncPromotionEmailCampaign(couponId: string) {
+  const { AICampaignSyncService } =
+    await import("@/lib/services/aiCampaignSyncService");
+
+  const coupon = await (prisma as any).coupon.findUnique({
+    where: { id: couponId },
+  });
+
+  if (!coupon) throw new Error("Promotion coupon not found");
+
+  return AICampaignSyncService.syncPromotionToCampaign(coupon);
+}
+
+export async function adminSyncGoogleMerchantPromotion(couponId: string) {
+  const { GoogleMerchantPromotionsService } =
+    await import("@/lib/services/googleMerchantPromotionsService");
+
+  const coupon = await (prisma as any).coupon.findUnique({
+    where: { id: couponId },
+  });
+  if (!coupon) throw new Error("Coupon not found");
+
+  const result =
+    await GoogleMerchantPromotionsService.syncPromotionToGoogleMerchant(coupon);
+
+  const updatedSource = Array.from(
+    new Set([...(coupon.source || "internal").split(","), "google_merchant"]),
+  ).join(",");
+
+  await (prisma as any).coupon.update({
+    where: { id: couponId },
+    data: { source: updatedSource },
+  });
+
+  return result;
+}
+
+export async function adminGenerateAIPromotion(
+  prompt: string,
+  answers?: Record<string, string>,
+) {
+  const { AIPromotionService } =
+    await import("@/lib/services/aiPromotionService");
+  return AIPromotionService.generatePromotionFromPrompt(prompt, answers);
+}
+
+export async function adminSanitizeExistingCampaigns() {
+  try {
+    const campaigns = await (prisma as any).campaign.findMany();
+    let count = 0;
+
+    for (const c of campaigns) {
+      let updatedName = c.name.replace(/\[AI Synced\]\s*/g, "");
+      let updatedSubject = c.emailSubject
+        ? c.emailSubject.replace(/\[AI Synced\]\s*/g, "")
+        : c.emailSubject;
+      let updatedHtml = c.emailBodyHtml
+        ? c.emailBodyHtml.replace(/\[AI Synced\]\s*/g, "")
+        : c.emailBodyHtml;
+
+      // Fix misformatted percentage vs fixed rupee discount in HTML/subject
+      if (updatedSubject) {
+        updatedSubject = updatedSubject.replace(
+          /(\d+)\s*%\s*OFF/gi,
+          (match: string, val: string) => {
+            const num = parseInt(val, 10);
+            return num > 100 ? `₹${num} OFF` : match;
+          },
+        );
+      }
+
+      if (updatedHtml) {
+        updatedHtml = updatedHtml.replace(
+          /(\d+)\s*%\s*OFF/gi,
+          (match: string, val: string) => {
+            const num = parseInt(val, 10);
+            return num > 100 ? `₹${num} OFF` : match;
+          },
+        );
+      }
+
+      if (
+        updatedName !== c.name ||
+        updatedSubject !== c.emailSubject ||
+        updatedHtml !== c.emailBodyHtml
+      ) {
+        await (prisma as any).campaign.update({
+          where: { id: c.id },
+          data: {
+            name: updatedName,
+            emailSubject: updatedSubject,
+            emailBodyHtml: updatedHtml,
+          },
+        });
+        count++;
+      }
+    }
+    return { success: true, count };
+  } catch (err: any) {
+    console.warn("[adminSanitizeExistingCampaigns] Sanitation warning:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function adminTestValidateCoupon(
+  code: string,
+  cartSubtotal: number,
+) {
+  const cleanCode = code.trim().toUpperCase();
+  const coupon = await (prisma as any).coupon.findUnique({
+    where: { code: cleanCode },
+  });
+
+  if (!coupon) {
+    return {
+      valid: false,
+      error: "This promo code does not exist in database.",
+    };
+  }
+
+  if (coupon.status === "PAUSED") {
+    return { valid: false, error: "This code is currently PAUSED." };
+  }
+  if (coupon.status === "EXHAUSTED") {
+    return {
+      valid: false,
+      error: "This code has reached its maximum total usage limit.",
+    };
+  }
+  if (coupon.status === "EXPIRED") {
+    return { valid: false, error: "This code has expired." };
+  }
+
+  const now = new Date();
+  if (coupon.startsAt && now < new Date(coupon.startsAt)) {
+    return {
+      valid: false,
+      error: `Code will become active on ${new Date(coupon.startsAt).toLocaleDateString("en-IN")}.`,
+    };
+  }
+  if (coupon.expiresAt && now > new Date(coupon.expiresAt)) {
+    return { valid: false, error: "This code has expired." };
+  }
+
+  if (
+    coupon.usageLimit !== null &&
+    coupon.usageLimit > 0 &&
+    coupon.usedCount >= coupon.usageLimit
+  ) {
+    return { valid: false, error: "Global usage limit reached." };
+  }
+
+  if (coupon.minOrderAmount && cartSubtotal < coupon.minOrderAmount) {
+    return {
+      valid: false,
+      error: `A minimum cart subtotal of ₹${coupon.minOrderAmount.toLocaleString("en-IN")} is required for this code. (Cart subtotal: ₹${cartSubtotal.toLocaleString("en-IN")})`,
+    };
+  }
+
+  let discountAmount = 0;
+  let freeShipping = false;
+
+  if (coupon.type === "PERCENTAGE") {
+    discountAmount = (coupon.value / 100) * cartSubtotal;
+    if (coupon.maxDiscountCap) {
+      discountAmount = Math.min(discountAmount, coupon.maxDiscountCap);
+    }
+  } else if (coupon.type === "FIXED_AMOUNT") {
+    discountAmount = Math.min(coupon.value, cartSubtotal);
+  } else if (coupon.type === "FREE_SHIPPING") {
+    freeShipping = true;
+    discountAmount = 0;
+  }
+
+  discountAmount = Math.round(discountAmount * 100) / 100;
+
+  return {
+    valid: true,
+    discountAmount,
+    freeShipping,
+    couponId: coupon.id,
+    code: coupon.code,
+    description:
+      coupon.description ||
+      `${coupon.value}${coupon.type === "PERCENTAGE" ? "%" : "₹"} off`,
+  };
 }

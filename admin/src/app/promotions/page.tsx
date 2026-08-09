@@ -69,6 +69,16 @@ async function getCouponOrderStats() {
 
 export default async function PromotionsPage() {
   await requireAdmin();
+
+  // Automatic once-a-month run without cron jobs (1ms instant skip if already ran this month!)
+  try {
+    const { MonthlyEventsAIService } =
+      await import("@/lib/services/monthlyEventsAIService");
+    await MonthlyEventsAIService.checkAndRunOnceAMonthGuard();
+  } catch (err) {
+    console.warn("[PromotionsPage] Monthly guard check warning:", err);
+  }
+
   const coupons = await getCoupons();
   const affiliates = await getAffiliates();
   const orderStats = await getCouponOrderStats();

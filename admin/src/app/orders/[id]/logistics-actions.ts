@@ -857,7 +857,7 @@ export async function aiParseCustomerAddressAction(rawText: string): Promise<{
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     const genAI = new GoogleGenerativeAI(apiKey);
     // Use Flash (cheapest model) — tiny structured extraction task
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `Extract from this Indian shipping address text. Return ONLY valid JSON, nothing else:
 {"name":"","phone":"","address":"","city":"","state":"","pincode":""}

@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { Search, Rocket, Mail, MessageSquare, Zap } from "lucide-react";
+import {
+  Search,
+  Rocket,
+  Mail,
+  MessageSquare,
+  Zap,
+  Sparkles,
+} from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Holiday {
@@ -105,12 +112,14 @@ function compileVisualHtml({
   bodyText,
   ctaText,
   discountValue,
+  discountType = "PERCENTAGE",
 }: {
   headline: string;
   greeting: string;
   bodyText: string;
   ctaText: string;
   discountValue: number;
+  discountType?: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING";
 }): string {
   const paragraphs = bodyText
     .split("\n")
@@ -121,29 +130,36 @@ function compileVisualHtml({
     )
     .join("");
 
+  const discountLabel =
+    discountType === "PERCENTAGE"
+      ? `${discountValue}% OFF`
+      : discountType === "FIXED_AMOUNT"
+        ? `₹${discountValue.toLocaleString("en-IN")} OFF`
+        : "Free Delivery & Installation";
+
   return `
-<div style="background-color: #0d0d0d; color: #f5f5f5; font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px 20px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(212,175,55,0.3); border-radius: 16px;">
+<div style="background-color: #0c0a09; color: #f5f5f4; font-family: 'Playfair Display', Georgia, serif; padding: 40px 20px; max-width: 600px; margin: 0 auto; border: 1px solid rgba(212,175,55,0.3); border-radius: 8px;">
   <div style="text-align: center; margin-bottom: 30px;">
     <h2 style="color: #D4AF37; font-size: 24px; letter-spacing: 0.15em; text-transform: uppercase; margin: 0;">James &amp; Sons</h2>
-    <p style="color: #888888; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 4px;">Bespoke Handcrafted Luxury</p>
+    <p style="color: #888888; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 4px;">Bespoke Handcrafted Luxury</p>
   </div>
   
-  <div style="text-align: center; padding: 30px 20px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+  <div style="text-align: center; padding: 30px 20px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
     ${greeting ? `<p style="color: #D4AF37; font-size: 13px; margin-bottom: 8px;">${greeting}</p>` : ""}
-    <h1 style="color: #ffffff; font-size: 26px; font-weight: 300; margin-bottom: 16px;">${headline || "Festive Celebration"}</h1>
+    ${headline ? `<h1 style="color: #ffffff; font-size: 24px; font-weight: 300; margin-bottom: 16px;">${headline}</h1>` : ""}
     
     <div style="text-align: left; margin-bottom: 24px;">
-      ${paragraphs || '<p style="color: #cccccc; font-size: 14px; line-height: 1.6;">We invite you to elevate your interior spaces with our signature handcrafted brass lighting.</p>'}
+      ${paragraphs}
     </div>
 
-    <div style="background: linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 100%); border: 1px dashed #D4AF37; padding: 20px; border-radius: 10px; display: inline-block; margin: 10px 0 24px; text-align: center;">
-      <span style="display: block; color: #D4AF37; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase;">Your Personal Single-Use Code</span>
+    <div style="background: linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 100%); border: 1px dashed #D4AF37; padding: 20px; border-radius: 8px; display: inline-block; margin: 10px 0 24px; text-align: center;">
+      <span style="display: block; color: #D4AF37; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;">Your Personal Single-Use Code</span>
       <strong style="color: #ffffff; font-size: 28px; letter-spacing: 0.2em; font-family: monospace; display: block; margin-top: 6px;">{{COUPON_CODE}}</strong>
-      <span style="color: #aaaaaa; font-size: 11px; margin-top: 4px; display: block;">Valid for ${discountValue}% OFF your entire festive order</span>
+      <span style="color: #aaaaaa; font-size: 11px; margin-top: 4px; display: block;">Valid for ${discountLabel} your entire order</span>
     </div>
 
     <div>
-      <a href="https://jamesandsons.in/collections/festive" style="background-color: #D4AF37; color: #000000; padding: 14px 32px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; text-decoration: none; border-radius: 30px; display: inline-block;">
+      <a href="https://jamesandsons.in/collections" style="background-color: #D4AF37; color: #000000; padding: 14px 32px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; text-decoration: none; border-radius: 4px; display: inline-block;">
         ${ctaText || "Claim Your Voucher"}
       </a>
     </div>
@@ -189,6 +205,9 @@ export default function CampaignManagerClient({
   const [editWhatsappText, setEditWhatsappText] = useState("");
   const [editSegment, setEditSegment] = useState("VIP");
   const [editDiscount, setEditDiscount] = useState(15);
+  const [editDiscountType, setEditDiscountType] = useState<
+    "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING"
+  >("PERCENTAGE");
   const [editProducts, setEditProducts] = useState<any[]>([]);
 
   // Simple text editor fields
@@ -289,21 +308,41 @@ export default function CampaignManagerClient({
 
   const openEditor = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
-    setEditName(campaign.name || "");
-    setEditSubject(campaign.emailSubject || "");
+    const cleanName = campaign.name.replace(/\[AI Synced\]\s*/g, "");
+    const initialDiscount = campaign.segmentationRules?.discountValue || 15;
+    const initialType: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_SHIPPING" =
+      campaign.segmentationRules?.discountType ||
+      (initialDiscount > 100 ? "FIXED_AMOUNT" : "PERCENTAGE");
+
+    const initialHeadline = campaign.emailSubject
+      ? campaign.emailSubject
+          .replace(/\[AI Synced\]\s*/g, "")
+          .replace(/✨|🪔/g, "")
+          .trim()
+      : cleanName;
+
+    const initialBodyText = campaign.whatsappText
+      ? campaign.whatsappText
+          .replace(/Namaste.*?\!/gi, "")
+          .replace(/https:.*/gi, "")
+          .trim()
+      : "We invite you to elevate your interior spaces with our signature handcrafted brass lighting and festive decor collection.";
+
+    setEditName(cleanName);
+    setEditSubject(
+      campaign.emailSubject
+        ? campaign.emailSubject.replace(/\[AI Synced\]\s*/g, "")
+        : "",
+    );
     setEditBodyHtml(campaign.emailBodyHtml || "");
     setEditWhatsappText(campaign.whatsappText || "");
     setEditSegment(campaign.segmentationRules?.segment || "VIP");
-    setEditDiscount(campaign.segmentationRules?.discountValue || 15);
+    setEditDiscount(initialDiscount);
+    setEditDiscountType(initialType);
     setEditProducts(campaign.recommendedProducts || []);
 
-    setVisHeadline(
-      campaign.name.replace(/Festive Blast.*/, "").trim() ||
-        "Festive Celebration",
-    );
-    setVisBodyText(
-      "We invite you to elevate your interior spaces with our signature handcrafted brass lighting and festive decor collection.",
-    );
+    setVisHeadline(initialHeadline);
+    setVisBodyText(initialBodyText);
     setVisCtaText("Claim Your Exclusive Voucher");
 
     setChannel("EMAIL");
@@ -332,15 +371,17 @@ export default function CampaignManagerClient({
 
   // Recompile HTML when visual text fields change
   useEffect(() => {
+    if (!visHeadline && !visBodyText) return;
     const compiled = compileVisualHtml({
       headline: visHeadline,
       greeting: "Dear {{CUSTOMER_NAME}},",
       bodyText: visBodyText,
       ctaText: visCtaText,
       discountValue: editDiscount,
+      discountType: editDiscountType,
     });
     setEditBodyHtml(compiled);
-  }, [visHeadline, visBodyText, visCtaText, editDiscount]);
+  }, [visHeadline, visBodyText, visCtaText, editDiscount, editDiscountType]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleDraftAI = async (holidayId: string, segment = "VIP") => {
@@ -580,17 +621,35 @@ export default function CampaignManagerClient({
     return list;
   }, [couponsForCampaign, couponFilter, couponSearch]);
 
+  const samplePromoCode =
+    selectedCampaign?.segmentationRules?.promoCode ||
+    selectedCampaign?.name.match(/([A-Z0-9_]{4,15})/i)?.[1] ||
+    "PROMO_CODE";
+
+  const discountLabelText =
+    editDiscountType === "PERCENTAGE"
+      ? `${editDiscount}% OFF`
+      : editDiscountType === "FIXED_AMOUNT"
+        ? `₹${editDiscount.toLocaleString("en-IN")} OFF`
+        : "Free Delivery";
+
   const personalizedSubject = editSubject
-    .replace(/\{\{CUSTOMER_NAME\}\}/g, "Priya")
-    .replace(/\{\{COUPON_CODE\}\}/g, "DIW8K9X2");
+    .replace(/\[AI Synced\]\s*/gi, "")
+    .replace(/\{\{CUSTOMER_NAME\}\}/g, "Rahul")
+    .replace(/\{\{COUPON_CODE\}\}/g, samplePromoCode)
+    .replace(/\{\{DISCOUNT_VALUE\}\}/g, discountLabelText);
+
   const personalizedHtml = editBodyHtml
-    .replace(/\{\{CUSTOMER_NAME\}\}/g, "Priya")
-    .replace(/\{\{COUPON_CODE\}\}/g, "DIW8K9X2")
-    .replace(/\{\{DISCOUNT_VALUE\}\}/g, String(editDiscount));
+    .replace(/\[AI Synced\]\s*/gi, "")
+    .replace(/\{\{CUSTOMER_NAME\}\}/g, "Rahul")
+    .replace(/\{\{COUPON_CODE\}\}/g, samplePromoCode)
+    .replace(/\{\{DISCOUNT_VALUE\}\}/g, discountLabelText);
+
   const personalizedWA = editWhatsappText
-    .replace(/\{\{CUSTOMER_NAME\}\}/g, "Priya")
-    .replace(/\{\{COUPON_CODE\}\}/g, "DIW8K9X2")
-    .replace(/\{\{DISCOUNT_VALUE\}\}/g, String(editDiscount));
+    .replace(/\[AI Synced\]\s*/gi, "")
+    .replace(/\{\{CUSTOMER_NAME\}\}/g, "Rahul")
+    .replace(/\{\{COUPON_CODE\}\}/g, samplePromoCode)
+    .replace(/\{\{DISCOUNT_VALUE\}\}/g, discountLabelText);
 
   const swapFiltered = swapQuery
     ? catalogProducts.filter((p) =>
@@ -921,26 +980,58 @@ export default function CampaignManagerClient({
                   1. Audience &amp; Offer
                 </span>
 
-                {/* Enlarged Discount Percentage Selector */}
-                <div className="flex items-center gap-2 border border-border/90 bg-surface px-3.5 py-1.5 rounded-md focus-within:border-accent transition-colors shadow-sm">
+                {/* Interactive Discount & Unit Selector */}
+                <div className="flex items-center gap-2 border border-border/90 bg-surface px-3 py-1.5 rounded-md focus-within:border-accent transition-colors shadow-sm">
                   <label
                     htmlFor="edit-discount-input"
                     className="font-sans text-[11px] font-bold text-muted uppercase tracking-wider"
                   >
-                    Discount:
+                    Offer:
                   </label>
-                  <input
-                    id="edit-discount-input"
-                    type="number"
-                    value={editDiscount}
-                    onChange={(e) => setEditDiscount(Number(e.target.value))}
-                    min={5}
-                    max={50}
-                    className="w-16 bg-transparent text-accent font-sans text-[20px] font-bold text-center focus:outline-none tabular-nums"
-                  />
-                  <span className="font-sans text-[15px] font-bold text-accent">
-                    % OFF
-                  </span>
+                  <select
+                    value={editDiscountType}
+                    onChange={(e) => setEditDiscountType(e.target.value as any)}
+                    className="bg-transparent text-accent font-sans text-[12px] font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option
+                      value="PERCENTAGE"
+                      className="bg-background text-primary"
+                    >
+                      % OFF
+                    </option>
+                    <option
+                      value="FIXED_AMOUNT"
+                      className="bg-background text-primary"
+                    >
+                      ₹ OFF
+                    </option>
+                    <option
+                      value="FREE_SHIPPING"
+                      className="bg-background text-primary"
+                    >
+                      Free Shipping
+                    </option>
+                  </select>
+                  {editDiscountType !== "FREE_SHIPPING" && (
+                    <div className="flex items-center">
+                      <span className="font-sans text-[14px] font-bold text-accent">
+                        {editDiscountType === "FIXED_AMOUNT" ? "₹" : ""}
+                      </span>
+                      <input
+                        id="edit-discount-input"
+                        type="number"
+                        value={editDiscount}
+                        onChange={(e) =>
+                          setEditDiscount(Number(e.target.value))
+                        }
+                        min={1}
+                        className="w-16 bg-transparent text-accent font-sans text-[18px] font-bold text-center focus:outline-none tabular-nums"
+                      />
+                      <span className="font-sans text-[12px] font-bold text-accent">
+                        {editDiscountType === "PERCENTAGE" ? "% OFF" : "OFF"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1179,7 +1270,7 @@ export default function CampaignManagerClient({
                 Live Campaign Preview
               </span>
               <span className="font-mono text-[10px] text-muted">
-                Customer: Priya (DIW8K9X2)
+                Customer: Sample Customer ({samplePromoCode})
               </span>
             </div>
 
@@ -1461,6 +1552,59 @@ export default function CampaignManagerClient({
           )}
         </div>
       </div>
+
+      {/* Promotion Email Sequences Synced Alert Banner */}
+      {campaigns.filter(
+        (c) =>
+          c.emailSubject ||
+          c.name.includes("Festive") ||
+          c.name.includes("Sale"),
+      ).length > 0 && (
+        <div className="p-4 rounded border border-purple-500/30 bg-purple-500/10 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-300" />
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-purple-300">
+                Promotion Email Sequences (
+                {campaigns.filter((c) => c.emailSubject).length} Campaigns
+                Ready)
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono uppercase bg-purple-500/20 text-purple-200 border border-purple-500/30 px-2 py-0.5 rounded">
+              Synced with Promotions Engine
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+            {campaigns
+              .filter((c) => c.emailSubject)
+              .map((c) => (
+                <div
+                  key={c.id}
+                  className="p-3 rounded bg-background/80 border border-border flex items-center justify-between gap-3 text-xs font-mono hover:border-purple-500/50 transition-colors"
+                >
+                  <div className="min-w-0 space-y-0.5">
+                    <span className="text-[9px] uppercase text-purple-400 block truncate">
+                      {c.name.replace(/\[AI Synced\]\s*/g, "")}
+                    </span>
+                    <p className="font-semibold text-primary truncate">
+                      {c.emailSubject
+                        ? c.emailSubject.replace(/\[AI Synced\]\s*/g, "")
+                        : "No Subject"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openEditor(c)}
+                    className="px-3 py-1.5 bg-purple-600 text-white rounded text-[10px] uppercase font-semibold hover:bg-purple-500 shrink-0 cursor-pointer"
+                  >
+                    View &amp; Send
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* KPI Row with Trend Context */}
       <section
