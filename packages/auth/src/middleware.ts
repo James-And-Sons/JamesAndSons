@@ -63,6 +63,7 @@ export async function updateSession(
     pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/api/admin/export") ||
     pathname.startsWith("/api/admin/sync-all") ||
+    pathname.startsWith("/api/promotions/") ||
     pathname.startsWith("/api/push") ||
     pathname.startsWith("/api/notifications/summary") ||
     pathname.startsWith("/api/health");
