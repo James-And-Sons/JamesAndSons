@@ -25,6 +25,51 @@ export class GoogleMerchantPromotionsService {
   static getSourceName(): string {
     return process.env.GOOGLE_MERCHANT_SOURCE_NAME || "Admin app";
   }
+
+  /**
+   * Formats a clean, Google Merchant Editorial compliant title under 60 characters.
+   * Prohibits raw code strings (e.g. INDEPE_XD3M), underscores, missing currency symbols, or all-caps gibberish.
+   */
+  static formatPromotionTitle(coupon: Coupon): string {
+    const isPercent = coupon.type === "PERCENTAGE";
+    const isFixed = coupon.type === "FIXED_AMOUNT";
+    const isShipping = coupon.type === "FREE_SHIPPING";
+
+    let title = "";
+
+    if (
+      coupon.description &&
+      coupon.description.length >= 6 &&
+      !coupon.description.includes("_") &&
+      !coupon.description.includes("[AI") &&
+      !coupon.description.includes(coupon.code)
+    ) {
+      title = coupon.description.trim();
+    } else if (isPercent) {
+      title = `Get ${coupon.value}% Off Luxury Lighting`;
+    } else if (isFixed) {
+      title = `Save ₹${coupon.value.toLocaleString("en-IN")} On Luxury Lighting`;
+    } else if (isShipping) {
+      title = "Free Shipping On Luxury Lighting";
+    } else {
+      title = "Exclusive Offer On Luxury Decor";
+    }
+
+    // Clean up internal tags, underscores, extra spaces
+    title = title
+      .replace(/\[.*?\]/g, "")
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Enforce Google Merchant 60-character maximum title limit
+    if (title.length > 60) {
+      title = title.slice(0, 57).trim() + "...";
+    }
+
+    return title;
+  }
+
   /**
    * Transforms a Coupon object into a structured Google Merchant Promotion payload.
    */
@@ -48,13 +93,11 @@ export class GoogleMerchantPromotionsService {
     }
 
     const payload: GoogleMerchantPromotionPayload = {
-      promotionId: `promo_${coupon.code.toLowerCase()}_${coupon.id.slice(0, 8)}`,
+      promotionId: `promo_${coupon.code.toLowerCase().replace(/[^a-z0-9]/g, "")}_${coupon.id.slice(0, 8)}`,
       targetCountry: "IN",
       contentLanguage: "en",
       redemptionChannel: "ONLINE",
-      promotionTitle:
-        coupon.description ||
-        `${coupon.code} - ${coupon.value}${coupon.type === "PERCENTAGE" ? "% OFF" : " OFF"}`,
+      promotionTitle: this.formatPromotionTitle(coupon),
       couponValueType,
       genericRedemptionCode: coupon.code,
       promotionEffectiveTimePeriod: {
@@ -93,6 +136,7 @@ export class GoogleMerchantPromotionsService {
         const payload = this.formatForGoogleMerchant(c);
         const startTime = payload.promotionEffectiveTimePeriod.startTime;
         const endTime = payload.promotionEffectiveTimePeriod.endTime;
+        const offerType = c.code ? "GENERIC_CODE" : "NO_CODE";
 
         return `    <item>
       <g:promotion_id>${escapeXml(payload.promotionId)}</g:promotion_id>
@@ -101,8 +145,8 @@ export class GoogleMerchantPromotionsService {
       <g:redemption_channel>ONLINE</g:redemption_channel>
       <g:title>${escapeXml(payload.promotionTitle)}</g:title>
       <g:promotion_effective_dates>${startTime}/${endTime}</g:promotion_effective_dates>
-      <g:generic_redemption_code>${escapeXml(c.code)}</g:generic_redemption_code>
-      <g:offer_type>NO_CODE</g:offer_type>
+      <g:offer_type>${offerType}</g:offer_type>
+      ${c.code ? `<g:generic_redemption_code>${escapeXml(c.code)}</g:generic_redemption_code>` : ""}
       ${
         c.type === "PERCENTAGE"
           ? `<g:percent_off>${c.value}</g:percent_off>`
@@ -142,8 +186,8 @@ ${itemsXml}
       "redemption_channel",
       "title",
       "promotion_effective_dates",
-      "generic_redemption_code",
       "offer_type",
+      "generic_redemption_code",
       "percent_off",
       "money_off_amount",
       "minimum_purchase_amount",
@@ -156,6 +200,7 @@ ${itemsXml}
         const startTime = p.promotionEffectiveTimePeriod.startTime;
         const endTime = p.promotionEffectiveTimePeriod.endTime;
         const dates = `${startTime}/${endTime}`;
+        const offerType = c.code ? "GENERIC_CODE" : "NO_CODE";
 
         return [
           p.promotionId,
@@ -164,8 +209,8 @@ ${itemsXml}
           "ONLINE",
           `"${p.promotionTitle.replace(/"/g, '""')}"`,
           dates,
-          c.code,
-          "NO_CODE",
+          offerType,
+          c.code || "",
           c.type === "PERCENTAGE" ? String(c.value) : "",
           c.type === "FIXED_AMOUNT" ? `${c.value} INR` : "",
           c.minOrderAmount && c.minOrderAmount > 0
@@ -194,11 +239,10 @@ ${itemsXml}
     const sourceId = this.getSourceId();
     const sourceName = this.getSourceName();
 
-    // Call / format for Content API for Shopping v2.1 promotions endpoint
     return {
       success: true,
       status: "SYNCED",
-      message: `Promotion '${payload.promotionId}' submitted via Merchant API '${sourceName}' (Source ID: ${sourceId}) for James & Sons (Merchant ID: ${merchantId}). Status: Active in Google Merchant Center.`,
+      message: `Promotion '${payload.promotionId}' with title '${payload.promotionTitle}' submitted via Merchant API '${sourceName}' (Source ID: ${sourceId}) for James & Sons (Merchant ID: ${merchantId}). Status: Active in Google Merchant Center.`,
       merchantId,
       sourceId,
       sourceName,
