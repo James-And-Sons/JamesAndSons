@@ -28,23 +28,43 @@ export class GoogleMerchantPromotionsService {
 
   /**
    * Formats a clean, Google Merchant Editorial compliant title under 60 characters.
-   * Prohibits raw code strings (e.g. INDEPE_XD3M), underscores, missing currency symbols, or all-caps gibberish.
+   * Corrects spelling (Independance -> Independence), removes conversational prompt filler,
+   * and enforces proper English capitalization.
    */
   static formatPromotionTitle(coupon: Coupon): string {
     const isPercent = coupon.type === "PERCENTAGE";
     const isFixed = coupon.type === "FIXED_AMOUNT";
     const isShipping = coupon.type === "FREE_SHIPPING";
 
+    const discountLabel = isPercent
+      ? `${coupon.value}% Off`
+      : isFixed
+        ? `Save ₹${coupon.value.toLocaleString("en-IN")}`
+        : "Free Shipping";
+
+    let rawDesc = (coupon.description || "").trim();
+
+    // Fix spelling & strip conversational prompt filler (e.g. "Independance day is coming up let's plan something")
+    rawDesc = rawDesc
+      .replace(/Independance/gi, "Independence")
+      .replace(/Valantine/gi, "Valentine")
+      .replace(/is coming up.*$/gi, "")
+      .replace(/let's plan.*$/gi, "")
+      .replace(/plan something.*$/gi, "")
+      .replace(/\[.*?\]/g, "")
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
     let title = "";
 
+    // If description is clean, meaningful, and not conversational filler or code substring
     if (
-      coupon.description &&
-      coupon.description.length >= 6 &&
-      !coupon.description.includes("_") &&
-      !coupon.description.includes("[AI") &&
-      !coupon.description.includes(coupon.code)
+      rawDesc.length >= 6 &&
+      !rawDesc.toLowerCase().includes(coupon.code.toLowerCase()) &&
+      !/^(test|demo|promo|coupon|draft)/i.test(rawDesc)
     ) {
-      title = coupon.description.trim();
+      title = `${rawDesc} - ${discountLabel}`;
     } else if (isPercent) {
       title = `Get ${coupon.value}% Off Luxury Lighting`;
     } else if (isFixed) {
@@ -55,12 +75,8 @@ export class GoogleMerchantPromotionsService {
       title = "Exclusive Offer On Luxury Decor";
     }
 
-    // Clean up internal tags, underscores, extra spaces
-    title = title
-      .replace(/\[.*?\]/g, "")
-      .replace(/_/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    // Final cleanup of extra spaces
+    title = title.replace(/\s+/g, " ").trim();
 
     // Enforce Google Merchant 60-character maximum title limit
     if (title.length > 60) {
@@ -143,7 +159,7 @@ export class GoogleMerchantPromotionsService {
       <g:target_country>IN</g:target_country>
       <g:content_language>en</g:content_language>
       <g:redemption_channel>ONLINE</g:redemption_channel>
-      <g:title>${escapeXml(payload.promotionTitle)}</g:title>
+      <g:promotion_title>${escapeXml(payload.promotionTitle)}</g:promotion_title>
       <g:promotion_effective_dates>${startTime}/${endTime}</g:promotion_effective_dates>
       <g:offer_type>${offerType}</g:offer_type>
       ${c.code ? `<g:generic_redemption_code>${escapeXml(c.code)}</g:generic_redemption_code>` : ""}
@@ -184,7 +200,7 @@ ${itemsXml}
       "target_country",
       "content_language",
       "redemption_channel",
-      "title",
+      "promotion_title",
       "promotion_effective_dates",
       "offer_type",
       "generic_redemption_code",
