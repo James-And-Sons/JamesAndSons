@@ -10,6 +10,51 @@
 
 import { prisma } from "@/lib/prisma";
 
+export function sanitizeRootPromotionText(input?: string): string {
+  if (!input) return "";
+
+  let clean = input.trim();
+
+  // 1. Fix common spelling errors
+  clean = clean
+    .replace(/Independance/gi, "Independence")
+    .replace(/Valantine/gi, "Valentine")
+    .replace(/Diwaly/gi, "Diwali")
+    .replace(/Dhanterass/gi, "Dhanteras")
+    .replace(/Chritmas/gi, "Christmas")
+    .replace(/Ganesh chaturthi/gi, "Ganesh Chaturthi")
+    .replace(/Durga puja/gi, "Durga Puja");
+
+  // 2. Strip conversational prompt junk & informal phrasing
+  clean = clean
+    .replace(/is coming up.*$/gi, "")
+    .replace(/let's plan.*$/gi, "")
+    .replace(/plan something.*$/gi, "")
+    .replace(/create an? (offer|promotion|coupon).*$/gi, "")
+    .replace(/can we do.*$/gi, "")
+    .replace(/\[.*?\]/g, "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!clean) return "";
+
+  // 3. Ensure proper Title Case for short descriptions
+  if (clean.length < 50 && !clean.includes(".")) {
+    clean = clean
+      .split(" ")
+      .map((word) => {
+        if (/^(and|of|the|for|in|on|at|to|a|an|with|or)$/i.test(word))
+          return word.toLowerCase();
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(" ");
+    clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+
+  return clean;
+}
+
 export async function adminCreateCoupon(data: {
   code: string;
   description?: string;
@@ -28,6 +73,7 @@ export async function adminCreateCoupon(data: {
     data: {
       ...data,
       code: data.code.trim().toUpperCase(),
+      description: sanitizeRootPromotionText(data.description),
     },
   });
 
@@ -267,7 +313,7 @@ export async function adminLaunchPrebuiltPromotion(presetId: string) {
   const coupon = await (prisma as any).coupon.create({
     data: {
       code,
-      description: preset.description,
+      description: sanitizeRootPromotionText(preset.description),
       type: preset.type,
       value: preset.value,
       status: "ACTIVE",

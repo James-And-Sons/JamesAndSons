@@ -114,7 +114,21 @@ Respond strictly with JSON.`;
           .replace(/```json/g, "")
           .replace(/```/g, "")
           .trim();
-        return JSON.parse(jsonText) as AIPromotionResult;
+        const parsed = JSON.parse(jsonText) as AIPromotionResult;
+
+        if (parsed.promotion?.description) {
+          const { sanitizeRootPromotionText } =
+            await import("@/app/promotions/server-actions");
+          parsed.promotion.description = sanitizeRootPromotionText(
+            parsed.promotion.description,
+          );
+          if (parsed.promotion.copywriting?.headline) {
+            parsed.promotion.copywriting.headline = sanitizeRootPromotionText(
+              parsed.promotion.copywriting.headline,
+            );
+          }
+        }
+        return parsed;
       } catch (err) {
         console.warn(
           "Gemini API unconfigured/failed, using AI fallback engine:",
