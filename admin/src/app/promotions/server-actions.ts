@@ -10,7 +10,9 @@
 
 import { prisma } from "@/lib/prisma";
 
-export function sanitizeRootPromotionText(input?: string): string {
+export async function sanitizeRootPromotionText(
+  input?: string,
+): Promise<string> {
   if (!input) return "";
 
   let clean = input.trim();
@@ -73,7 +75,7 @@ export async function adminCreateCoupon(data: {
     data: {
       ...data,
       code: data.code.trim().toUpperCase(),
-      description: sanitizeRootPromotionText(data.description),
+      description: await sanitizeRootPromotionText(data.description),
     },
   });
 
@@ -313,7 +315,7 @@ export async function adminLaunchPrebuiltPromotion(presetId: string) {
   const coupon = await (prisma as any).coupon.create({
     data: {
       code,
-      description: sanitizeRootPromotionText(preset.description),
+      description: await sanitizeRootPromotionText(preset.description),
       type: preset.type,
       value: preset.value,
       status: "ACTIVE",

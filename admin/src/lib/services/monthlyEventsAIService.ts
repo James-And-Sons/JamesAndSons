@@ -23,12 +23,14 @@ export class MonthlyEventsAIService {
     const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
     try {
-      // Check last run month stored in database (TenantCredential or IndianHoliday meta)
-      const existingSetting = await (prisma as any).tenantCredential.findFirst({
-        where: { service: SETTING_KEY },
+      // Check last run month stored in IndianHoliday meta record
+      const existingGuard = await (prisma as any).indianHoliday.findFirst({
+        where: { name: SETTING_KEY },
       });
 
-      const lastRunMonth = existingSetting?.credentials?.month;
+      const lastRunMonth = existingGuard?.date
+        ? `${new Date(existingGuard.date).getFullYear()}-${String(new Date(existingGuard.date).getMonth() + 1).padStart(2, "0")}`
+        : null;
 
       if (lastRunMonth === currentMonthKey) {
         // Already executed for this month -> Instant 1ms skip!
@@ -38,25 +40,18 @@ export class MonthlyEventsAIService {
       // First run of the new calendar month -> Execute scan!
       const result = await this.scanAndGenerateMonthlyPromotions();
 
-      // Record completion for this month
-      if (existingSetting) {
-        await (prisma as any).tenantCredential.update({
-          where: { id: existingSetting.id },
-          data: {
-            credentials: {
-              month: currentMonthKey,
-              lastExecutedAt: now.toISOString(),
-            },
-          },
+      // Record completion in IndianHoliday table
+      if (existingGuard) {
+        await (prisma as any).indianHoliday.update({
+          where: { id: existingGuard.id },
+          data: { date: now },
         });
       } else {
-        await (prisma as any).tenantCredential.create({
+        await (prisma as any).indianHoliday.create({
           data: {
-            service: SETTING_KEY,
-            credentials: {
-              month: currentMonthKey,
-              lastExecutedAt: now.toISOString(),
-            },
+            name: SETTING_KEY,
+            date: now,
+            isMajor: false,
           },
         });
       }

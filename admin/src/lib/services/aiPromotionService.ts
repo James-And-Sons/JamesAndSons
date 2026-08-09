@@ -119,13 +119,14 @@ Respond strictly with JSON.`;
         if (parsed.promotion?.description) {
           const { sanitizeRootPromotionText } =
             await import("@/app/promotions/server-actions");
-          parsed.promotion.description = sanitizeRootPromotionText(
+          parsed.promotion.description = await sanitizeRootPromotionText(
             parsed.promotion.description,
           );
           if (parsed.promotion.copywriting?.headline) {
-            parsed.promotion.copywriting.headline = sanitizeRootPromotionText(
-              parsed.promotion.copywriting.headline,
-            );
+            parsed.promotion.copywriting.headline =
+              await sanitizeRootPromotionText(
+                parsed.promotion.copywriting.headline,
+              );
           }
         }
         return parsed;
