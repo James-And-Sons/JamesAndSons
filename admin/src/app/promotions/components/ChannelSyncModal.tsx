@@ -121,6 +121,21 @@ export default function ChannelSyncModal({
           </button>
         </div>
 
+        {/* Essential Navigation Warning */}
+        <div className="p-3 rounded border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[11px] leading-relaxed flex items-center gap-2 font-mono">
+          <Globe className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>
+            <strong>Google Merchant Navigation Note:</strong> In Google Merchant
+            Center, navigate to{" "}
+            <strong className="text-amber-200">
+              Marketing &gt; Promotions
+            </strong>{" "}
+            (NOT <em>Products &gt; Feeds</em>). Promotions attributes like{" "}
+            <code className="text-amber-200">promotion_title</code> are
+            supported under Promotions.
+          </span>
+        </div>
+
         {/* TAB 1: API (Option 3) */}
         {activeTab === "api" && (
           <div className="space-y-4 font-mono text-xs">
