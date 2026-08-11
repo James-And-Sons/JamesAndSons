@@ -154,7 +154,8 @@ export default function RootLayout({
           );
         })()}
         <Analytics />
-        <script
+        <Script
+          id="json-ld-layout-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -208,7 +209,9 @@ export default function RootLayout({
             }),
           }}
         />
-        <script
+        <Script
+          id="sw-registration"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {

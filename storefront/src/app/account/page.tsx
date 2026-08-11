@@ -34,9 +34,19 @@ export default async function AccountPage() {
 
   let orders: any[] = [];
   let totalOrderCount = 0;
-  try {
-    if (dbUser) {
-      [orders, totalOrderCount] = await Promise.all([
+  let addresses: any[] = [];
+  let rfqs: any[] = [];
+  let tickets: any[] = [];
+
+  if (dbUser) {
+    try {
+      const [
+        fetchedOrders,
+        count,
+        fetchedAddresses,
+        fetchedRfqs,
+        fetchedTickets,
+      ] = await Promise.all([
         prisma.order.findMany({
           where: { userId: dbUser.id },
           orderBy: { createdAt: "desc" },
@@ -44,48 +54,30 @@ export default async function AccountPage() {
           include: { items: { include: { product: true } } },
         }),
         prisma.order.count({ where: { userId: dbUser.id } }),
+        prisma.userAddress.findMany({
+          where: { userId: dbUser.id },
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+        }),
+        prisma.rFQ.findMany({
+          where: { userId: dbUser.id },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
+        prisma.ticket.findMany({
+          where: { userId: dbUser.id },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
       ]);
-    }
-  } catch (error) {
-    console.error("Error fetching orders in AccountPage:", error);
-  }
 
-  let addresses: any[] = [];
-  try {
-    if (dbUser) {
-      addresses = await prisma.userAddress.findMany({
-        where: { userId: dbUser.id },
-        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-      });
+      orders = fetchedOrders;
+      totalOrderCount = count;
+      addresses = fetchedAddresses;
+      rfqs = fetchedRfqs;
+      tickets = fetchedTickets;
+    } catch (error) {
+      console.error("Error fetching account data in AccountPage:", error);
     }
-  } catch (error) {
-    console.error("Error fetching addresses in AccountPage:", error);
-  }
-
-  let rfqs: any[] = [];
-  try {
-    if (dbUser) {
-      rfqs = await prisma.rFQ.findMany({
-        where: { userId: dbUser.id },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching rfqs in AccountPage:", error);
-  }
-
-  let tickets: any[] = [];
-  try {
-    if (dbUser) {
-      tickets = await prisma.ticket.findMany({
-        where: { userId: dbUser.id },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching tickets in AccountPage:", error);
   }
 
   const meta = user.user_metadata || {};

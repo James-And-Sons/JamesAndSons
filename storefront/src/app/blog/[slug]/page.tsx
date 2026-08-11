@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
 import type { Metadata } from "next";
 import BlogContentRenderer from "@/components/BlogContentRenderer";
 import { formatPrice } from "@/lib/utils";
@@ -176,7 +177,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     <>
       <main style={{ minHeight: "100vh", background: "var(--obsidian)" }}>
         {/* Inject JSON-LD Schema markup */}
-        <script
+        <Script
+          id={`json-ld-blog-${post.id}`}
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaList) }}
         />
