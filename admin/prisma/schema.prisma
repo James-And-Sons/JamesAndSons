@@ -80,6 +80,7 @@ model User {
   role      Role     @default(CUSTOMER)
   permissions String[] @default([])
   phone     String?
+  avatarUrl String?
   companyId String?
   lastPincode String?
   
@@ -220,7 +221,77 @@ model Product {
   variants         ProductVariant[]
   orderItems       OrderItem[]
   rfqItems         RFQItem[]
+  seoHealth        SeoProductHealth?
 }
+
+model SeoProductHealth {
+  id                     String   @id @default(uuid())
+  productId              String   @unique
+  product                Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // GSC Indexing Status
+  indexingStatus         String   @default("UNKNOWN") // INDEXED, DISCOVERED_NOT_INDEXED, CRAWLED_NOT_INDEXED, NOT_INDEXED, UNKNOWN
+  indexingCoverageState  String?
+  lastInspectedAt        DateTime?
+
+  // Core Web Vitals & Lighthouse Scores
+  mobileLighthouseScore  Int?     // 0-100
+  desktopLighthouseScore Int?     // 0-100
+  mobileLcp              Float?   // in seconds
+  mobileCls              Float?
+  mobileInp              Float?   // in ms
+  desktopLcp             Float?
+  desktopCls             Float?
+  desktopInp             Float?
+  
+  // Lighthouse Diagnostic Warnings (JSON array of warning objects)
+  pageSpeedAuditWarnings Json?
+
+  // Schema Structured Data Validation (Product, Offer, AggregateRating, InStock)
+  schemaValidation       Json?
+
+  // SERP & Health Checks
+  serpTitle              String?
+  serpDescription        String?
+  missingAltCount        Int      @default(0)
+
+  // Low-Hanging Fruit & Top Keywords (JSON array of query objects)
+  topKeywords            Json?
+
+  lastScannedAt          DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model SeoSearchAnalytics {
+  id          String   @id @default(uuid())
+  date        DateTime
+  pageUrl     String
+  productId   String?
+  query       String
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  ctr         Float    @default(0)
+  position    Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([date])
+  @@index([pageUrl])
+  @@index([query])
+  @@index([productId])
+}
+
+model SeoRedirect {
+  id          String   @id @default(uuid())
+  sourceUrl   String   @unique
+  targetUrl   String
+  statusCode  Int      @default(301)
+  isCanonical Boolean  @default(false)
+  productId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 
 model ProductVariant {
   id            String   @id @default(uuid())

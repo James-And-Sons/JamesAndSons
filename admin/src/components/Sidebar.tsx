@@ -28,6 +28,7 @@ import {
   FileSpreadsheet,
   Settings,
   Sliders,
+  Gauge,
 } from "lucide-react";
 
 let cachedTickets: number | null = null;
@@ -357,6 +358,13 @@ function Sidebar({
                 href="/blog"
                 icon={BookOpen}
                 isActive={pathname.startsWith("/blog")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="SEO & Performance"
+                href="/seo"
+                icon={Gauge}
+                isActive={pathname.startsWith("/seo")}
                 onClick={handleNavClick}
               />
               <SidebarNavItem

@@ -6,6 +6,7 @@ import CloudinaryUpload from "@/components/CloudinaryUpload";
 import SyncButton from "@/components/SyncButton";
 import { useSidebar } from "@/lib/context/SidebarContext";
 import { ProductImageEditor } from "@james-andsons/media";
+import SeoHealthPanelContainer from "./components/seo/SeoHealthPanelContainer";
 
 type Category = {
   id: string;
@@ -2851,6 +2852,24 @@ export default function ProductFormClient({
                 />
               </div>
             </CollapsibleCard>
+
+            {mode === "edit" && defaultValues?.id && (
+              <div className="pt-4">
+                <SeoHealthPanelContainer
+                  productId={defaultValues.id}
+                  title={parentValues.name}
+                  description={parentValues.description}
+                  slug={defaultValues?.slug || ""}
+                  onWeaveKeyword={(keyword) => {
+                    handleParentFieldChange(
+                      "description",
+                      `${parentValues.description}\n\nKeywords: ${keyword}`,
+                    );
+                    setIsDirty(true);
+                  }}
+                />
+              </div>
+            )}
           </div>
         ) : (
           /* ========================================================================= */

@@ -34,6 +34,7 @@
         "../packages/pdf-generator/src/index.ts"
       ],
       "@james-andsons/razorpay": ["../packages/razorpay/src/index.ts"],
+      "@james-andsons/seo": ["../packages/seo/src/index.ts"],
       "@james-andsons/shiprocket": ["../packages/shiprocket/src/index.ts"],
       "@james-andsons/ui": ["../packages/ui/src/index.ts"],
       "@james-andsons/utils": ["../packages/utils/src/index.ts"],

@@ -167,24 +167,141 @@ export async function getShippingRates(
 export async function generateLabel(
   shipmentId: any,
   config?: ConfigOrToken,
-): Promise<any> {
-  const idStr = Array.isArray(shipmentId) ? shipmentId[0] : shipmentId;
-  return `https://apiv2.shiprocket.in/v1/external/courier/generate/label?shipment_id=${idStr}`;
+): Promise<string | null> {
+  const cfg = typeof config === "object" ? config : {};
+  const token = await getShiprocketToken(cfg);
+  if (!token) return null;
+
+  const rawIds = Array.isArray(shipmentId) ? shipmentId : [shipmentId];
+  const shipmentIds = rawIds.map((id) => Number(id)).filter((n) => !isNaN(n));
+
+  if (shipmentIds.length === 0) return null;
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/courier/generate/label",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ shipment_id: shipmentIds }),
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) {
+      console.error("generateLabel HTTP status:", res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    return data.label_url || data.url || null;
+  } catch (err) {
+    console.error("generateLabel Error:", err);
+    return null;
+  }
 }
 
 export async function generateManifest(
   shipmentId: any,
   config?: ConfigOrToken,
-): Promise<any> {
-  const idStr = Array.isArray(shipmentId) ? shipmentId[0] : shipmentId;
-  return `https://apiv2.shiprocket.in/v1/external/manifests/generate?shipment_id=${idStr}`;
+): Promise<string | null> {
+  const cfg = typeof config === "object" ? config : {};
+  const token = await getShiprocketToken(cfg);
+  if (!token) return null;
+
+  const rawIds = Array.isArray(shipmentId) ? shipmentId : [shipmentId];
+  const shipmentIds = rawIds.map((id) => Number(id)).filter((n) => !isNaN(n));
+
+  if (shipmentIds.length === 0) return null;
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/manifests/generate",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ shipment_id: shipmentIds }),
+        cache: "no-store",
+      },
+    );
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.manifest_url || data.url) {
+        return data.manifest_url || data.url;
+      }
+    }
+
+    // Try fallback to print manifest endpoint if generate endpoint didn't return direct manifest_url
+    const printRes = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/manifests/print",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ shipment_id: shipmentIds }),
+        cache: "no-store",
+      },
+    );
+
+    if (printRes.ok) {
+      const printData = await printRes.json();
+      return printData.manifest_url || printData.url || null;
+    }
+
+    return null;
+  } catch (err) {
+    console.error("generateManifest Error:", err);
+    return null;
+  }
 }
 
 export async function generateInvoice(
   orderIds: any,
   config?: ConfigOrToken,
-): Promise<any> {
-  return `https://apiv2.shiprocket.in/v1/external/orders/print/invoice`;
+): Promise<string | null> {
+  const cfg = typeof config === "object" ? config : {};
+  const token = await getShiprocketToken(cfg);
+  if (!token) return null;
+
+  const rawIds = Array.isArray(orderIds) ? orderIds : [orderIds];
+  const ids = rawIds.map((id) => Number(id)).filter((n) => !isNaN(n));
+
+  if (ids.length === 0) return null;
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/orders/print/invoice",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids }),
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) {
+      console.error("generateInvoice HTTP status:", res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    return data.invoice_url || data.url || null;
+  } catch (err) {
+    console.error("generateInvoice Error:", err);
+    return null;
+  }
 }
 
 export async function requestPickup(

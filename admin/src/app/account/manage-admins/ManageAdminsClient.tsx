@@ -34,6 +34,7 @@ export const PERMISSION_SECTIONS = [
     group: "Navigation",
   },
   { key: "blog", label: "✍️ Blog & Content Management", group: "Navigation" },
+  { key: "seo", label: "🔍 SEO & Storefront Performance", group: "Navigation" },
   { key: "marketing", label: "📢 Marketing & Campaigns", group: "Navigation" },
   {
     key: "push_campaigns",

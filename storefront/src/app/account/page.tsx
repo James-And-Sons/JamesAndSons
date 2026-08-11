@@ -1,19 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import AccountProfileCard from "./components/AccountProfileCard";
-import RecentOrdersSection from "./components/RecentOrdersSection";
-import AccountWishlistClient from "./AccountWishlistClient";
-import PasskeyManagerCard from "@/components/PasskeyManagerCard";
-import {
-  ShoppingBag,
-  FileText,
-  Bookmark,
-  Ticket,
-  KeyRound,
-  MapPin,
-} from "lucide-react";
+import AccountTabsClient from "./components/AccountTabsClient";
 
 export const dynamic = "force-dynamic";
 
@@ -45,17 +33,33 @@ export default async function AccountPage() {
   }
 
   let orders: any[] = [];
+  let totalOrderCount = 0;
   try {
     if (dbUser) {
-      orders = await prisma.order.findMany({
-        where: { userId: dbUser.id },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-        include: { items: { include: { product: true } } },
-      });
+      [orders, totalOrderCount] = await Promise.all([
+        prisma.order.findMany({
+          where: { userId: dbUser.id },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          include: { items: { include: { product: true } } },
+        }),
+        prisma.order.count({ where: { userId: dbUser.id } }),
+      ]);
     }
   } catch (error) {
     console.error("Error fetching orders in AccountPage:", error);
+  }
+
+  let addresses: any[] = [];
+  try {
+    if (dbUser) {
+      addresses = await prisma.userAddress.findMany({
+        where: { userId: dbUser.id },
+        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching addresses in AccountPage:", error);
   }
 
   const meta = user.user_metadata || {};
@@ -64,66 +68,56 @@ export default async function AccountPage() {
     dbUser?.role === "B2B_APPROVER" ||
     meta.account_type === "business";
 
-  const quickLinks = [
-    {
-      title: "Order History",
-      desc: "Track shipments & download GST invoices",
-      href: "/account/orders",
-      icon: ShoppingBag,
-    },
-    {
-      title: "Saved Addresses",
-      desc: "Manage billing & shipping address book",
-      href: "/account/addresses",
-      icon: MapPin,
-    },
-    {
-      title: "Custom RFQ Quotes",
-      desc: "B2B trade quotes & custom pricing",
-      href: "/account/rfqs",
-      icon: FileText,
-    },
-    {
-      title: "Support Tickets",
-      desc: "Concierge help & order inquiries",
-      href: "/account/tickets",
-      icon: Ticket,
-    },
-  ];
+  // Serialize dates for client components
+  const serializedOrders = orders.map((o) => ({
+    ...o,
+    createdAt: o.createdAt.toISOString(),
+    updatedAt: o.updatedAt.toISOString(),
+    items: o.items.map((i: any) => ({
+      ...i,
+      createdAt: i.createdAt.toISOString(),
+      updatedAt: i.updatedAt.toISOString(),
+      product: i.product
+        ? {
+            ...i.product,
+            createdAt: i.product.createdAt.toISOString(),
+            updatedAt: i.product.updatedAt.toISOString(),
+          }
+        : null,
+    })),
+  }));
+
+  const serializedAddresses = addresses.map((a) => ({
+    ...a,
+    createdAt: a.createdAt.toISOString(),
+    updatedAt: a.updatedAt.toISOString(),
+  }));
+
+  const serializedDbUser = dbUser
+    ? {
+        ...dbUser,
+        createdAt: dbUser.createdAt.toISOString(),
+        updatedAt: dbUser.updatedAt.toISOString(),
+        company: dbUser.company
+          ? {
+              ...dbUser.company,
+              createdAt: dbUser.company.createdAt.toISOString(),
+              updatedAt: dbUser.company.updatedAt.toISOString(),
+            }
+          : null,
+      }
+    : null;
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-background max-w-6xl mx-auto space-y-8">
-      {/* Profile Header */}
-      <AccountProfileCard user={user} dbUser={dbUser} isB2B={isB2B} />
-
-      {/* Quick Access Tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {quickLinks.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="p-5 bg-surface border border-border hover:border-gold/50 rounded-2xl shadow-sm transition-all group hover:-translate-y-0.5"
-          >
-            <item.icon
-              size={22}
-              className="text-gold mb-3 group-hover:scale-110 transition-transform"
-            />
-            <h4 className="font-semibold text-text text-sm group-hover:text-gold transition-colors">
-              {item.title}
-            </h4>
-            <p className="text-xs text-textMuted mt-1">{item.desc}</p>
-          </Link>
-        ))}
-      </div>
-
-      {/* Recent Orders List */}
-      <RecentOrdersSection orders={orders} />
-
-      {/* Passkey Security Manager */}
-      <PasskeyManagerCard />
-
-      {/* Wishlist Component */}
-      <AccountWishlistClient />
+    <div className="min-h-screen py-8 px-4 sm:px-6 bg-background max-w-5xl mx-auto">
+      <AccountTabsClient
+        user={user}
+        dbUser={serializedDbUser}
+        isB2B={isB2B}
+        orders={serializedOrders}
+        addresses={serializedAddresses}
+        totalOrderCount={totalOrderCount}
+      />
     </div>
   );
 }

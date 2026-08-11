@@ -377,15 +377,15 @@ export async function getShiprocketDocumentUrlsAction(orderId: string) {
       generateManifest([shipmentId]),
       shiprocketOrderDbId
         ? generateInvoice([shiprocketOrderDbId])
-        : generateLabel([shipmentId]),
+        : Promise.resolve(null),
     ]);
 
-    const finalInvoiceUrl = invoiceUrl || labelUrl;
-    const finalManifestUrl = manifestUrl || labelUrl;
+    const finalInvoiceUrl = invoiceUrl || null;
+    const finalManifestUrl = manifestUrl || null;
 
     return {
       success: true,
-      labelUrl,
+      labelUrl: labelUrl || null,
       manifestUrl: finalManifestUrl,
       invoiceUrl: finalInvoiceUrl,
       shipmentId,
