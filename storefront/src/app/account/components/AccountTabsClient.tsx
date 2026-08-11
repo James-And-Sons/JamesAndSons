@@ -2,7 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { ShoppingBag, FileText, Bookmark, Ticket, MapPin } from "lucide-react";
+import {
+  Package,
+  FileText,
+  Heart,
+  MapPin,
+  Ticket,
+  ChevronRight,
+  Shield,
+} from "lucide-react";
 import AccountProfileCard from "./AccountProfileCard";
 import RecentOrdersSection from "./RecentOrdersSection";
 import AccountWishlistClient from "../AccountWishlistClient";
@@ -19,33 +27,6 @@ interface AccountTabsClientProps {
   totalOrderCount: number;
 }
 
-const QUICK_LINKS = [
-  {
-    title: "Order History",
-    desc: "Track shipments & download GST invoices",
-    href: "/account/orders",
-    icon: ShoppingBag,
-  },
-  {
-    title: "Saved Addresses",
-    desc: "Manage billing & shipping address book",
-    href: "/account/addresses",
-    icon: MapPin,
-  },
-  {
-    title: "Custom RFQ Quotes",
-    desc: "B2B trade quotes & custom pricing",
-    href: "/account/rfqs",
-    icon: FileText,
-  },
-  {
-    title: "Support Tickets",
-    desc: "Concierge help & order inquiries",
-    href: "/account/tickets",
-    icon: Ticket,
-  },
-];
-
 export default function AccountTabsClient({
   user,
   dbUser,
@@ -56,46 +37,107 @@ export default function AccountTabsClient({
   tickets,
   totalOrderCount,
 }: AccountTabsClientProps) {
+  const accountLinks = [
+    {
+      label: "My Orders",
+      desc: "Manage your purchases, shipments & GST invoices",
+      href: "/account/orders",
+      icon: Package,
+    },
+    {
+      label: "Address Book",
+      desc: "Manage billing & shipping address book",
+      href: "/account/addresses",
+      icon: MapPin,
+    },
+    {
+      label: "Saved Wishlist",
+      desc: "View your saved luxury pieces",
+      href: "/account/wishlist",
+      icon: Heart,
+    },
+    {
+      label: "Support Tickets",
+      desc: "Concierge help, return requests & order inquiries",
+      href: "/account/tickets",
+      icon: Ticket,
+    },
+    {
+      label: "Trade RFQs",
+      desc: "Custom quotes & architect volume pricing",
+      href: "/account/rfqs",
+      icon: FileText,
+    },
+  ];
+
   return (
-    <div className="space-y-8">
-      {/* Profile Header Card */}
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* ── 1. Profile Hero Card ── */}
       <AccountProfileCard user={user} dbUser={dbUser} isB2B={isB2B} />
 
-      {/* Quick Access Tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {QUICK_LINKS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="p-5 bg-surface border border-border hover:border-gold/50 rounded-2xl shadow-sm transition-all group hover:-translate-y-0.5"
-          >
-            <item.icon
-              size={22}
-              className="text-gold mb-3 group-hover:scale-110 transition-transform"
-            />
-            <h4 className="font-semibold text-text text-sm group-hover:text-gold transition-colors">
-              {item.title}
-            </h4>
-            <p className="text-xs text-textMuted mt-1">{item.desc}</p>
-          </Link>
-        ))}
+      {/* ── 2. Account Menu Card ── */}
+      <div className="space-y-3">
+        <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
+          My Account
+        </div>
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] overflow-hidden divide-y divide-[var(--border)]">
+          {accountLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-4 p-4 sm:p-5 hover:bg-[var(--surface2)] transition-colors group text-decoration-none"
+              >
+                <div className="w-10 h-10 rounded-[12px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] shrink-0 group-hover:border-[var(--gold)]/40 transition-colors">
+                  <Icon size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
+                    {link.label}
+                  </div>
+                  <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                    {link.desc}
+                  </div>
+                </div>
+                <ChevronRight
+                  size={18}
+                  className="text-[var(--text-muted)] group-hover:text-[var(--gold)] group-hover:translate-x-0.5 transition-all"
+                />
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Recent Purchases & Orders */}
-      <RecentOrdersSection orders={orders} />
-
-      {/* Biometric Passkey Security */}
-      <div className="bg-surface border border-border rounded-2xl p-6 shadow-md space-y-4">
-        <PasskeyManagerCard />
+      {/* ── 3. Recent Purchases & Orders Card ── */}
+      <div className="space-y-3">
+        <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
+          Recent Purchases
+        </div>
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+          <RecentOrdersSection orders={orders} />
+        </div>
       </div>
 
-      {/* Wishlist Section */}
-      <div className="bg-surface border border-border rounded-2xl p-6 shadow-md space-y-4">
-        <h3 className="text-lg font-serif font-bold text-text flex items-center gap-2 border-b border-border/40 pb-3">
-          <Bookmark size={18} className="text-gold" />
-          My Wishlist
-        </h3>
-        <AccountWishlistClient />
+      {/* ── 4. Biometric Passkey Security ── */}
+      <div className="space-y-3">
+        <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
+          Security & Authentication
+        </div>
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+          <PasskeyManagerCard />
+        </div>
+      </div>
+
+      {/* ── 5. Wishlist ── */}
+      <div className="space-y-3">
+        <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
+          Saved Items
+        </div>
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+          <AccountWishlistClient />
+        </div>
       </div>
     </div>
   );

@@ -48,6 +48,10 @@ export default function AccountProfileCard({
 
   const email = dbUser?.email || user.email;
   const companyName = dbUser?.company?.name || meta.company_name;
+  const memberYear = dbUser?.createdAt
+    ? new Date(dbUser.createdAt).getFullYear()
+    : new Date().getFullYear();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +89,7 @@ export default function AccountProfileCard({
       const newUrl = data.secure_url as string;
       setAvatarUrl(newUrl);
 
-      // Persist avatar to DB
+      // Save to DB
       await updateProfileAction({ avatarUrl: newUrl });
     } catch (err) {
       console.error("Avatar upload error:", err);
@@ -115,19 +119,35 @@ export default function AccountProfileCard({
     setSaveMsg(null);
   };
 
+  const displayName = `${firstName} ${lastName}`.trim();
   const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
 
   return (
-    <div className="bg-surface border border-border rounded-2xl p-6 shadow-md">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        {/* Avatar & User Details */}
-        <div className="flex items-center gap-4">
+    <div
+      className="relative p-6 sm:p-8 rounded-[24px] border border-border overflow-hidden shadow-xl"
+      style={{
+        background:
+          "linear-gradient(150deg, #1a160a 0%, #0d0b06 100%), var(--surface)",
+      }}
+    >
+      {/* Ambient Radial Glow Effect */}
+      <div
+        className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        {/* User Identity & Avatar */}
+        <div className="flex items-center gap-4 sm:gap-5">
           <div className="relative group flex-shrink-0">
-            <div className="w-16 h-16 rounded-full bg-gold/20 text-gold flex items-center justify-center text-xl font-bold font-serif border border-gold/40 overflow-hidden">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[rgba(196,160,90,0.13)] border-[1.5px] border-[rgba(196,160,90,0.35)] flex items-center justify-center font-serif text-xl font-bold text-[var(--gold-light)] overflow-hidden shadow-md">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
-                  alt={`${firstName} ${lastName}`}
+                  alt={displayName}
                   width={64}
                   height={64}
                   className="w-full h-full object-cover"
@@ -162,44 +182,44 @@ export default function AccountProfileCard({
             {!isEditing ? (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-serif font-bold text-text">
-                    {firstName} {lastName}
+                  <h2 className="text-xl sm:text-2xl font-serif font-medium text-[var(--cream)]">
+                    {displayName}
                   </h2>
-                  {isB2B && (
-                    <span className="px-2 py-0.5 text-[10px] uppercase font-mono font-bold bg-gold text-obsidian rounded">
-                      B2B Trade Partner
-                    </span>
-                  )}
                 </div>
-                <div className="text-xs text-textMuted flex flex-wrap items-center gap-3 mt-1 font-mono">
-                  <span className="flex items-center gap-1">
-                    <Mail size={12} /> {email}
-                  </span>
-                  {phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone size={12} /> {phone}
-                    </span>
-                  )}
+                <div className="text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-3 mt-1 font-mono">
+                  <span>{email}</span>
+                  {phone && <span>• {phone}</span>}
                   {companyName && (
-                    <span className="flex items-center gap-1 font-semibold text-gold">
+                    <span className="text-[var(--gold)] flex items-center gap-1 font-semibold">
                       <Building2 size={12} /> {companyName}
                     </span>
                   )}
                 </div>
               </>
             ) : null}
+
+            {/* Member Status Pill */}
+            {!isEditing && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
+                <div className="text-[11px] font-mono text-[var(--green)] tracking-wider uppercase">
+                  {isB2B ? "B2B Trade Partner" : "Personal Account"} · Member
+                  since {memberYear}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Header Controls */}
-        <div className="flex items-center gap-3">
+        {/* Action Buttons & Theme Switcher */}
+        <div className="flex items-center gap-3 self-end sm:self-center">
           <ThemeToggle />
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border rounded text-textMuted hover:text-gold hover:border-gold/40 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-[var(--gold)] hover:border-[var(--border-gold)] transition-colors"
             >
-              <Edit3 size={12} />
+              <Edit3 size={13} />
               Edit
             </button>
           ) : (
@@ -207,27 +227,27 @@ export default function AccountProfileCard({
               <button
                 onClick={handleSave}
                 disabled={isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gold text-obsidian rounded font-semibold hover:brightness-110 transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider bg-[var(--gold)] text-black rounded-lg font-bold hover:brightness-110 transition-all disabled:opacity-50"
               >
                 {isPending ? (
-                  <Loader2 size={12} className="animate-spin" />
+                  <Loader2 size={13} className="animate-spin" />
                 ) : (
-                  <Check size={12} />
+                  <Check size={13} />
                 )}
                 Save
               </button>
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-1.5 px-2 py-1.5 text-xs border border-border rounded text-textMuted hover:text-text transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono uppercase border border-[var(--border)] rounded text-[var(--text-muted)] hover:text-white transition-colors"
               >
-                <X size={12} />
+                <X size={13} />
               </button>
             </div>
           )}
           <form action="/auth/signout" method="post">
             <button
               type="submit"
-              className="px-3 py-1.5 text-xs border border-border rounded text-textMuted hover:text-red-400 hover:bg-surface2 transition-colors"
+              className="px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--surface2)] transition-colors"
             >
               Sign Out
             </button>
@@ -235,38 +255,38 @@ export default function AccountProfileCard({
         </div>
       </div>
 
-      {/* Inline Edit Mode */}
+      {/* Inline Edit Form */}
       {isEditing && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-border/40">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-[var(--border)]">
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)] mb-1">
               First Name
             </label>
             <input
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)] mb-1">
               Last Name
             </label>
             <input
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)] mb-1">
               Phone Number
             </label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="9876543210"
-              className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
+              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]"
             />
           </div>
         </div>
@@ -274,12 +294,12 @@ export default function AccountProfileCard({
 
       {saveMsg === "success" && (
         <div className="mt-3 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
-          <Check size={11} /> Profile updated successfully.
+          <Check size={12} /> Profile updated successfully.
         </div>
       )}
       {saveMsg === "error" && (
         <div className="mt-3 text-[11px] font-mono text-red-400">
-          Failed to save changes.
+          Failed to save profile changes.
         </div>
       )}
     </div>
