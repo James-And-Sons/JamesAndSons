@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,20 @@ export async function GET(request: Request) {
         categories: [],
         spaces: [],
         blogs: [],
+        userOrders: [],
+        userTickets: [],
+        userRfqs: [],
       });
     }
 
-    // Query Products, Categories, Spaces, and Blogs in parallel using correct Prisma schema fields
-    const [products, categories, spaces, blogs] = await Promise.all([
+    // Authenticate user to fetch account specific records (Orders, Tickets, RFQs)
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Query Catalog Products, Categories, Spaces, and Blogs
+    const catalogPromises = Promise.all([
       prisma.product.findMany({
         where: {
           OR: [
@@ -94,7 +104,121 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    // Format products for frontend consumption
+    // Query User Account Specific Records if Authenticated
+    let userSpecificPromise = Promise.resolve<{
+      userOrders: any[];
+      userTickets: any[];
+      userRfqs: any[];
+    }>({ userOrders: [], userTickets: [], userRfqs: [] });
+
+    if (user) {
+      userSpecificPromise = (async () => {
+        const dbUser = await prisma.user.findFirst({
+          where: { OR: [{ id: user.id }, { email: user.email }] },
+          select: { id: true },
+        });
+
+        const userIdToQuery = dbUser?.id || user.id;
+
+        const [orders, tickets, rfqs] = await Promise.all([
+          prisma.order.findMany({
+            where: {
+              userId: userIdToQuery,
+              OR: [
+                { orderNumber: { contains: q, mode: "insensitive" } },
+                { trackingNumber: { contains: q, mode: "insensitive" } },
+                {
+                  items: {
+                    some: {
+                      product: {
+                        name: { contains: q, mode: "insensitive" },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            take: 4,
+            select: {
+              id: true,
+              orderNumber: true,
+              status: true,
+              totalAmount: true,
+              createdAt: true,
+            },
+          }),
+          prisma.ticket.findMany({
+            where: {
+              userId: userIdToQuery,
+              OR: [
+                { ticketNumber: { contains: q, mode: "insensitive" } },
+                { subject: { contains: q, mode: "insensitive" } },
+                { description: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 4,
+            select: {
+              id: true,
+              ticketNumber: true,
+              subject: true,
+              status: true,
+              createdAt: true,
+            },
+          }),
+          prisma.rFQ.findMany({
+            where: {
+              userId: userIdToQuery,
+              OR: [
+                { rfqNumber: { contains: q, mode: "insensitive" } },
+                { projectName: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 4,
+            select: {
+              id: true,
+              rfqNumber: true,
+              projectName: true,
+              status: true,
+            },
+          }),
+        ]);
+
+        return {
+          userOrders: orders.map((o) => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            title: `Order #${o.orderNumber}`,
+            subtitle: `${o.status.toUpperCase()} · ${new Date(
+              o.createdAt,
+            ).toLocaleDateString("en-IN")}`,
+            url: `/account/orders`,
+            amount: o.totalAmount,
+          })),
+          userTickets: tickets.map((t) => ({
+            id: t.id,
+            ticketNumber: t.ticketNumber,
+            title: `Ticket #${t.ticketNumber}: ${t.subject}`,
+            subtitle: `Status: ${t.status.toUpperCase()}`,
+            url: `/account/tickets`,
+          })),
+          userRfqs: rfqs.map((r) => ({
+            id: r.id,
+            rfqNumber: r.rfqNumber,
+            title: `Trade RFQ #${r.rfqNumber}`,
+            subtitle: r.projectName
+              ? `Project: ${r.projectName}`
+              : `Status: ${r.status}`,
+            url: `/account/rfqs`,
+          })),
+        };
+      })();
+    }
+
+    const [[products, categories, spaces, blogs], userData] = await Promise.all(
+      [catalogPromises, userSpecificPromise],
+    );
+
+    // Format products
     const formattedProducts = products.map((p) => {
       const primaryImage =
         Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
@@ -136,10 +260,13 @@ export async function GET(request: Request) {
           imageUrl: b.featuredImg,
           url: `/blog/${b.slug}`,
         })),
+        userOrders: userData.userOrders,
+        userTickets: userData.userTickets,
+        userRfqs: userData.userRfqs,
       },
       {
         headers: {
-          "Cache-Control": "public, max-age=60, s-maxage=120",
+          "Cache-Control": "private, max-age=10, s-maxage=30",
         },
       },
     );

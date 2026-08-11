@@ -15,6 +15,8 @@ import {
   LayoutGrid,
   FileText,
   Compass,
+  ShoppingBag,
+  Ticket,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
@@ -40,7 +42,18 @@ export default function SearchModal({ onClose }: SearchModalProps) {
     categories: any[];
     spaces: any[];
     blogs: any[];
-  }>({ products: [], categories: [], spaces: [], blogs: [] });
+    userOrders: any[];
+    userTickets: any[];
+    userRfqs: any[];
+  }>({
+    products: [],
+    categories: [],
+    spaces: [],
+    blogs: [],
+    userOrders: [],
+    userTickets: [],
+    userRfqs: [],
+  });
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +80,15 @@ export default function SearchModal({ onClose }: SearchModalProps) {
   // Debounced API fetch
   useEffect(() => {
     if (!query.trim() || query.trim().length < 2) {
-      setResults({ products: [], categories: [], spaces: [], blogs: [] });
+      setResults({
+        products: [],
+        categories: [],
+        spaces: [],
+        blogs: [],
+        userOrders: [],
+        userTickets: [],
+        userRfqs: [],
+      });
       setLoading(false);
       return;
     }
@@ -84,6 +105,9 @@ export default function SearchModal({ onClose }: SearchModalProps) {
           categories: data.categories || [],
           spaces: data.spaces || [],
           blogs: data.blogs || [],
+          userOrders: data.userOrders || [],
+          userTickets: data.userTickets || [],
+          userRfqs: data.userRfqs || [],
         });
       } catch (err) {
         console.error("Search API error:", err);
@@ -131,7 +155,10 @@ export default function SearchModal({ onClose }: SearchModalProps) {
     results.products.length > 0 ||
     results.categories.length > 0 ||
     results.spaces.length > 0 ||
-    results.blogs.length > 0;
+    results.blogs.length > 0 ||
+    results.userOrders.length > 0 ||
+    results.userTickets.length > 0 ||
+    results.userRfqs.length > 0;
 
   return (
     <div className="fixed inset-0 z-[1000] overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center pt-12 sm:pt-20 px-4">
@@ -149,7 +176,7 @@ export default function SearchModal({ onClose }: SearchModalProps) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search products, SKUs, collections, spaces..."
+            placeholder="Search products, orders, tickets, collections..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
@@ -237,7 +264,7 @@ export default function SearchModal({ onClose }: SearchModalProps) {
           {/* 2. No Match State */}
           {query.trim().length >= 2 && !loading && !hasResults && (
             <div className="text-center py-10 text-[var(--text-muted)] text-sm font-mono">
-              No matching products or categories found for &ldquo;
+              No matching products, orders, or support tickets found for &ldquo;
               <span className="text-[var(--cream)]">{query}</span>&rdquo;.
               <div className="mt-4">
                 <button
@@ -253,6 +280,106 @@ export default function SearchModal({ onClose }: SearchModalProps) {
           {/* 3. Categorized Search Results */}
           {hasResults && (
             <div className="space-y-6">
+              {/* User Personal Orders */}
+              {results.userOrders.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                    <ShoppingBag size={14} /> My Orders (
+                    {results.userOrders.length})
+                  </div>
+                  <div className="space-y-2">
+                    {results.userOrders.map((o) => (
+                      <Link
+                        key={o.id}
+                        href={o.url}
+                        onClick={onClose}
+                        className="flex items-center justify-between p-3 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface2)] border border-[var(--border)] hover:border-[var(--gold)]/40 transition-all text-decoration-none group"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
+                            {o.title}
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
+                            {o.subtitle}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-bold font-mono text-[var(--gold)]">
+                            {formatPrice(o.amount)}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* User Personal Support Tickets */}
+              {results.userTickets.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                    <Ticket size={14} /> My Support Tickets (
+                    {results.userTickets.length})
+                  </div>
+                  <div className="space-y-2">
+                    {results.userTickets.map((t) => (
+                      <Link
+                        key={t.id}
+                        href={t.url}
+                        onClick={onClose}
+                        className="flex items-center justify-between p-3 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface2)] border border-[var(--border)] hover:border-[var(--gold)]/40 transition-all text-decoration-none group"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
+                            {t.title}
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
+                            {t.subtitle}
+                          </div>
+                        </div>
+                        <ArrowRight
+                          size={14}
+                          className="text-[var(--text-muted)] group-hover:text-[var(--gold)] transition-colors"
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* User Trade RFQs */}
+              {results.userRfqs.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                    <FileText size={14} /> My Trade RFQs (
+                    {results.userRfqs.length})
+                  </div>
+                  <div className="space-y-2">
+                    {results.userRfqs.map((r) => (
+                      <Link
+                        key={r.id}
+                        href={r.url}
+                        onClick={onClose}
+                        className="flex items-center justify-between p-3 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface2)] border border-[var(--border)] hover:border-[var(--gold)]/40 transition-all text-decoration-none group"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
+                            {r.title}
+                          </div>
+                          <div className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">
+                            {r.subtitle}
+                          </div>
+                        </div>
+                        <ArrowRight
+                          size={14}
+                          className="text-[var(--text-muted)] group-hover:text-[var(--gold)] transition-colors"
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Product Matches */}
               {results.products.length > 0 && (
                 <div>
@@ -329,60 +456,6 @@ export default function SearchModal({ onClose }: SearchModalProps) {
                       >
                         <span className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--gold)] truncate">
                           {c.name}
-                        </span>
-                        <ArrowRight
-                          size={14}
-                          className="text-[var(--text-muted)] group-hover:text-[var(--gold)] transition-colors"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Spaces / Rooms Matches */}
-              {results.spaces.length > 0 && (
-                <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
-                    <Compass size={14} /> Spaces &amp; Environments
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {results.spaces.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={s.url}
-                        onClick={onClose}
-                        className="p-3 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface2)] border border-[var(--border)] hover:border-[var(--gold)]/40 transition-all flex items-center justify-between text-decoration-none group"
-                      >
-                        <span className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--gold)] truncate">
-                          {s.name}
-                        </span>
-                        <ArrowRight
-                          size={14}
-                          className="text-[var(--text-muted)] group-hover:text-[var(--gold)] transition-colors"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Blog Article Matches */}
-              {results.blogs.length > 0 && (
-                <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
-                    <FileText size={14} /> Articles &amp; Journal
-                  </div>
-                  <div className="space-y-2">
-                    {results.blogs.map((b) => (
-                      <Link
-                        key={b.id}
-                        href={b.url}
-                        onClick={onClose}
-                        className="p-3 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface2)] border border-[var(--border)] hover:border-[var(--gold)]/40 transition-all flex items-center justify-between text-decoration-none group"
-                      >
-                        <span className="text-xs font-medium text-[var(--cream)] group-hover:text-[var(--gold)] truncate">
-                          {b.title}
                         </span>
                         <ArrowRight
                           size={14}
