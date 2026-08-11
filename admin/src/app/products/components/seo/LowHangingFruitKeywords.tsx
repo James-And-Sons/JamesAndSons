@@ -12,9 +12,10 @@ export default function LowHangingFruitKeywords({
   keywords = [],
   onInsertKeyword,
 }: LowHangingFruitKeywordsProps) {
+  const safeKeywords = Array.isArray(keywords) ? keywords : [];
   const items =
-    keywords.length > 0
-      ? keywords
+    safeKeywords.length > 0
+      ? safeKeywords
       : [
           {
             query: "brass wall fixture light",

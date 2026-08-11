@@ -16,28 +16,35 @@ interface PerformanceChartWidgetProps {
 }
 
 export default function PerformanceChartWidget({
-  metrics,
+  metrics = [],
   days,
   onDaysChange,
 }: PerformanceChartWidgetProps) {
-  const totalClicks = metrics.reduce((acc, m) => acc + m.clicks, 0);
-  const totalImpressions = metrics.reduce((acc, m) => acc + m.impressions, 0);
+  const safeMetrics = Array.isArray(metrics) ? metrics : [];
+  const totalClicks = safeMetrics.reduce((acc, m) => acc + m.clicks, 0);
+  const totalImpressions = safeMetrics.reduce(
+    (acc, m) => acc + m.impressions,
+    0,
+  );
   const avgCtr =
-    metrics.length > 0
-      ? (metrics.reduce((acc, m) => acc + m.ctr, 0) / metrics.length).toFixed(2)
+    safeMetrics.length > 0
+      ? (
+          safeMetrics.reduce((acc, m) => acc + m.ctr, 0) / safeMetrics.length
+        ).toFixed(2)
       : "0";
   const avgPos =
-    metrics.length > 0
+    safeMetrics.length > 0
       ? (
-          metrics.reduce((acc, m) => acc + m.position, 0) / metrics.length
+          safeMetrics.reduce((acc, m) => acc + m.position, 0) /
+          safeMetrics.length
         ).toFixed(1)
       : "0";
 
   // Simple SVG trend path generator
-  const maxVal = Math.max(...metrics.map((m) => m.clicks), 1);
-  const points = metrics
+  const maxVal = Math.max(...safeMetrics.map((m) => m.clicks), 1);
+  const points = safeMetrics
     .map((m, idx) => {
-      const x = (idx / Math.max(metrics.length - 1, 1)) * 500;
+      const x = (idx / Math.max(safeMetrics.length - 1, 1)) * 500;
       const y = 120 - (m.clicks / maxVal) * 100;
       return `${x},${y}`;
     })
