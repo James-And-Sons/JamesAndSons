@@ -40,8 +40,8 @@ export default function AccountTabsClient({
   totalOrderCount,
 }: AccountTabsClientProps) {
   return (
-    <div className="space-y-8 lg:space-y-10">
-      {/* ─── 1. Header Profile Banner ─── */}
+    <div className="space-y-10 sm:space-y-12 lg:space-y-14">
+      {/* ─── 1. Header Profile Card Banner ─── */}
       <AccountProfileCard
         user={user}
         dbUser={dbUser}
@@ -51,19 +51,19 @@ export default function AccountTabsClient({
         ticketCount={tickets.length}
       />
 
-      {/* ─── 2. Responsive 2-Column Desktop Grid (No Selector Pills) ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+      {/* ─── 2. Responsive 2-Column Widescreen Desktop Grid (No Selector Pills) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
         {/* ─── Left Sidebar Cards Column (4 cols on desktop) ─── */}
-        <div className="lg:col-span-4 space-y-8 lg:space-y-10">
-          {/* Card: Concierge Support & Trade Quotes */}
-          <div className="bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 shadow-lg shadow-black/5 space-y-6 flex flex-col justify-between">
+        <div className="lg:col-span-4 space-y-10 lg:space-y-12">
+          {/* Card: Concierge Support Tickets */}
+          <div className="bg-surface/90 border border-border/50 rounded-3xl p-8 sm:p-10 shadow-lg shadow-black/5 space-y-6 flex flex-col justify-between hover:border-gold/30 transition-all duration-300">
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <h3 className="font-serif text-xl font-medium text-text flex items-center gap-2">
-                  <Ticket size={18} className="text-gold" />
+              <div className="flex items-center justify-between border-b border-border/40 pb-4">
+                <h3 className="font-serif text-xl font-medium text-text flex items-center gap-2.5">
+                  <Ticket size={20} className="text-gold" />
                   Concierge Support
                 </h3>
-                <span className="text-xs font-mono text-gold bg-gold/10 px-2.5 py-0.5 rounded-full border border-gold/20 font-semibold">
+                <span className="text-xs font-mono text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20 font-semibold">
                   {tickets.length} Active
                 </span>
               </div>
@@ -73,12 +73,12 @@ export default function AccountTabsClient({
               </p>
 
               {tickets.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5 pt-2">
                   {tickets.slice(0, 3).map((t) => (
                     <Link
                       key={t.id}
                       href={`/account/tickets/${t.id}`}
-                      className="block p-3.5 bg-background/70 border border-border/50 rounded-2xl hover:border-gold/40 transition-colors"
+                      className="block p-4 bg-background/70 border border-border/50 rounded-2xl hover:border-gold/40 transition-colors"
                     >
                       <div className="flex items-center justify-between text-xs font-mono font-semibold text-text">
                         <span className="truncate max-w-[180px]">
@@ -94,7 +94,7 @@ export default function AccountTabsClient({
               ) : null}
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-4 border-t border-border/40">
               <Link
                 href="/account/tickets/new"
                 className="flex-1 py-3 bg-gold text-obsidian font-mono text-xs uppercase font-bold text-center rounded-xl hover:brightness-110 transition-all shadow-md shadow-gold/10 flex items-center justify-center gap-1.5"
@@ -112,14 +112,14 @@ export default function AccountTabsClient({
           </div>
 
           {/* Card: Custom Trade RFQs */}
-          <div className="bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 shadow-lg shadow-black/5 space-y-6 flex flex-col justify-between">
+          <div className="bg-surface/90 border border-border/50 rounded-3xl p-8 sm:p-10 shadow-lg shadow-black/5 space-y-6 flex flex-col justify-between hover:border-gold/30 transition-all duration-300">
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <h3 className="font-serif text-xl font-medium text-text flex items-center gap-2">
-                  <FileText size={18} className="text-gold" />
+              <div className="flex items-center justify-between border-b border-border/40 pb-4">
+                <h3 className="font-serif text-xl font-medium text-text flex items-center gap-2.5">
+                  <FileText size={20} className="text-gold" />
                   Trade RFQ Quotes
                 </h3>
-                <span className="text-xs font-mono text-gold bg-gold/10 px-2.5 py-0.5 rounded-full border border-gold/20 font-semibold">
+                <span className="text-xs font-mono text-gold bg-gold/10 px-3 py-1 rounded-full border border-gold/20 font-semibold">
                   {rfqs.length} Active
                 </span>
               </div>
@@ -129,11 +129,11 @@ export default function AccountTabsClient({
               </p>
 
               {rfqs.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5 pt-2">
                   {rfqs.slice(0, 3).map((r) => (
                     <div
                       key={r.id}
-                      className="p-3.5 bg-background/70 border border-border/50 rounded-2xl text-xs font-mono text-text flex items-center justify-between"
+                      className="p-4 bg-background/70 border border-border/50 rounded-2xl text-xs font-mono text-text flex items-center justify-between"
                     >
                       <span>RFQ #{r.id.slice(0, 8)}</span>
                       <span className="text-[10px] text-gold uppercase tracking-wider">
@@ -145,7 +145,7 @@ export default function AccountTabsClient({
               ) : null}
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-4 border-t border-border/40">
               <Link
                 href="/rfq"
                 className="flex-1 py-3 bg-surface2 border border-gold/40 text-gold font-mono text-xs uppercase font-bold text-center rounded-xl hover:bg-gold hover:text-obsidian transition-all flex items-center justify-center gap-1.5"
@@ -163,15 +163,15 @@ export default function AccountTabsClient({
           </div>
 
           {/* Card: Biometric Passkey Security */}
-          <div className="bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 shadow-lg shadow-black/5 space-y-4">
-            <div className="border-b border-border/40 pb-3">
-              <h3 className="text-xl font-serif font-medium text-text flex items-center gap-2">
-                <Shield size={18} className="text-gold" />
+          <div className="bg-surface/90 border border-border/50 rounded-3xl p-8 sm:p-10 shadow-lg shadow-black/5 space-y-6 hover:border-gold/30 transition-all duration-300">
+            <div className="border-b border-border/40 pb-4">
+              <h3 className="text-xl font-serif font-medium text-text flex items-center gap-2.5">
+                <Shield size={20} className="text-gold" />
                 Security & Passkeys
               </h3>
-              <p className="text-xs text-textMuted mt-1 leading-relaxed">
+              <p className="text-xs text-textMuted mt-1.5 leading-relaxed">
                 Register Touch ID, Face ID, or hardware security keys for
-                passwordless sign-in.
+                instant passwordless sign-in.
               </p>
             </div>
             <PasskeyManagerCard />
@@ -179,17 +179,17 @@ export default function AccountTabsClient({
         </div>
 
         {/* ─── Right Main Cards Column (8 cols on desktop) ─── */}
-        <div className="lg:col-span-8 space-y-8 lg:space-y-10">
+        <div className="lg:col-span-8 space-y-10 lg:space-y-12">
           {/* Card: Order History & Recent Purchases */}
-          <div className="bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg shadow-black/5">
+          <div className="bg-surface/90 border border-border/50 rounded-3xl p-8 sm:p-10 md:p-12 shadow-lg shadow-black/5 hover:border-gold/30 transition-all duration-300">
             <RecentOrdersSection orders={orders} />
           </div>
 
           {/* Card: Saved Address Book */}
-          <div className="bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg shadow-black/5 space-y-6">
+          <div className="bg-surface/90 border border-border/50 rounded-3xl p-8 sm:p-10 md:p-12 shadow-lg shadow-black/5 space-y-6 hover:border-gold/30 transition-all duration-300">
             <div className="flex items-center justify-between border-b border-border/40 pb-4">
-              <h3 className="text-xl font-serif font-medium text-text flex items-center gap-2">
-                <MapPin size={20} className="text-gold" />
+              <h3 className="text-xl font-serif font-medium text-text flex items-center gap-2.5">
+                <MapPin size={22} className="text-gold" />
                 Saved Address Book
               </h3>
             </div>
@@ -197,10 +197,10 @@ export default function AccountTabsClient({
           </div>
 
           {/* Card: Saved Wishlist Items */}
-          <div className="bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg shadow-black/5 space-y-6">
+          <div className="bg-surface/90 border border-border/50 rounded-3xl p-8 sm:p-10 md:p-12 shadow-lg shadow-black/5 space-y-6 hover:border-gold/30 transition-all duration-300">
             <div className="flex items-center justify-between border-b border-border/40 pb-4">
-              <h3 className="text-xl font-serif font-medium text-text flex items-center gap-2">
-                <Bookmark size={20} className="text-gold" />
+              <h3 className="text-xl font-serif font-medium text-text flex items-center gap-2.5">
+                <Bookmark size={22} className="text-gold" />
                 My Wishlist
               </h3>
             </div>

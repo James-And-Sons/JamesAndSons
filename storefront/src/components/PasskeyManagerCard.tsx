@@ -46,25 +46,10 @@ export default function PasskeyManagerCard() {
   };
 
   return (
-    <div className="bg-[#0a0a0b] border border-[#C97E6A]/30 p-6 rounded-sm space-y-3 font-sans text-white">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🔑</span>
-          <div>
-            <h3 className="font-serif text-[18px] text-white font-medium m-0">
-              Biometric Passkeys
-            </h3>
-            <p className="font-mono text-[11px] text-gray-400 m-0">
-              Sign in instantly using Touch ID, Face ID, or your device security
-              key.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-4 font-sans">
       {msg && (
         <div
-          className={`p-3 text-[12px] font-mono rounded-sm border ${
+          className={`p-3.5 text-xs font-mono rounded-xl border ${
             msg.type === "success"
               ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
               : "bg-red-500/10 border-red-500/30 text-red-400"
@@ -77,11 +62,11 @@ export default function PasskeyManagerCard() {
       <button
         onClick={handleRegisterPasskey}
         disabled={isRegistering}
-        className="w-full py-2.5 bg-gradient-to-r from-[#C97E6A] to-[#b36754] text-white font-mono text-[10px] uppercase tracking-widest font-bold rounded-xs shadow hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
+        className="w-full py-3 bg-gradient-to-r from-gold to-gold-light text-obsidian font-mono text-xs uppercase tracking-wider font-bold rounded-xl shadow-md hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
       >
         {isRegistering
           ? "Prompting Biometrics..."
-          : "+ Add Touch ID / Face ID Passkey"}
+          : "+ Register Touch ID / Face ID Passkey"}
       </button>
     </div>
   );
