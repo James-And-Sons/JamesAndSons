@@ -288,12 +288,10 @@ export default function LayoutClient({
 
             {/* Mobile expandable search bar */}
             {!isLoginPage && mobileSearchOpen && (
-              <div className="lg:hidden px-4 py-3 bg-background border-b border-border z-30 sticky top-[64px]">
-                <GlobalSearch
-                  autoFocus
-                  onClose={() => setMobileSearchOpen(false)}
-                />
-              </div>
+              <GlobalSearch
+                isOpen={mobileSearchOpen}
+                onClose={() => setMobileSearchOpen(false)}
+              />
             )}
 
             <main
