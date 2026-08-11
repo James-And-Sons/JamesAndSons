@@ -147,7 +147,7 @@ export default async function AccountPage() {
     : null;
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 bg-background max-w-5xl mx-auto">
+    <div className="min-h-screen py-10 px-4 sm:px-8 lg:px-12 bg-background max-w-7xl mx-auto w-full">
       <AccountTabsClient
         user={user}
         dbUser={serializedDbUser}
