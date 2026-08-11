@@ -24,6 +24,7 @@ export async function generateMetadata(props: {
         images: true,
         whiteBackgroundImages: true,
         category: { select: { name: true } },
+        seoHealth: { select: { serpTitle: true, serpDescription: true } },
       },
     });
   } catch (error) {
@@ -32,12 +33,20 @@ export async function generateMetadata(props: {
 
   if (!product) return {};
 
-  const title = `${product.name} | James & Sons`;
+  const title =
+    product.seoHealth?.serpTitle ||
+    (`${product.name} - Luxury ${product.category?.name || "Lighting"} | James & Sons`
+      .length <= 60
+      ? `${product.name} - Luxury ${product.category?.name || "Lighting"} | James & Sons`
+      : `${product.name} | James & Sons`);
+
   const rawDesc =
+    product.seoHealth?.serpDescription ||
     product.description ||
     `Discover ${product.name} at James & Sons. Luxury handcrafted lighting for grand architectural spaces.`;
+
   const description =
-    rawDesc.length > 155 ? rawDesc.substring(0, 152) + "..." : rawDesc;
+    rawDesc.length > 160 ? rawDesc.substring(0, 156) + "..." : rawDesc;
 
   let rawImg =
     product.images?.[0] ||
@@ -67,6 +76,9 @@ export async function generateMetadata(props: {
   return {
     title,
     description,
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
       title,
       description,
