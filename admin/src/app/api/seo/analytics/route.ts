@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   querySearchAnalytics,
+  querySearchAnalyticsByQueryAndPage,
   detectKeywordCannibalization,
   getProductPublicUrl,
 } from "@james-andsons/seo";
@@ -13,8 +14,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get("days") || "28", 10);
 
-    // 1. Fetch Search Console Analytics
-    const analytics = await querySearchAnalytics(days);
+    // 1. Fetch Search Console Analytics & Query+Page Rows
+    const [analytics, liveGscQueryPageRows] = await Promise.all([
+      querySearchAnalytics(days),
+      querySearchAnalyticsByQueryAndPage(days),
+    ]);
 
     // 2. Fetch product catalog count & indexation ratio from DB
     const [totalProducts, indexedHealthCount, products] = await Promise.all([
@@ -149,9 +153,14 @@ export async function GET(request: Request) {
       },
     ]);
 
-    const cannibalizationIssues = detectKeywordCannibalization(
-      formattedRows.length > 0 ? formattedRows : fallbackRows.slice(0, 8),
-    );
+    const activeRows =
+      liveGscQueryPageRows.length > 0
+        ? liveGscQueryPageRows
+        : formattedRows.length > 0
+          ? formattedRows
+          : fallbackRows.slice(0, 8);
+
+    const cannibalizationIssues = detectKeywordCannibalization(activeRows);
 
     return NextResponse.json({
       metrics: analytics.metrics,

@@ -189,6 +189,74 @@ export async function querySearchAnalytics(
 }
 
 /**
+ * Queries Search Console Analytics for query + page dimensions to detect keyword cannibalization.
+ */
+export async function querySearchAnalyticsByQueryAndPage(
+  days = 28,
+  options?: SearchConsoleOptions,
+): Promise<
+  {
+    query: string;
+    pageUrl: string;
+    clicks: number;
+    impressions: number;
+    position: number;
+  }[]
+> {
+  const email =
+    options?.serviceAccountEmail || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const key =
+    options?.serviceAccountPrivateKey ||
+    process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+  const siteUrl =
+    options?.siteUrl || process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL;
+
+  if (!email || !key || !siteUrl) {
+    return [];
+  }
+
+  try {
+    const accessToken = await getServiceAccountAccessToken(email, key);
+    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const endDate = new Date().toISOString().split("T")[0];
+
+    const endpoint = `https://searchconsole.googleapis.com/v1/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        startDate,
+        endDate,
+        dimensions: ["query", "page"],
+        rowLimit: 100,
+      }),
+    });
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const rows = data.rows || [];
+
+    return rows.map((r: any) => ({
+      query: r.keys[0],
+      pageUrl: r.keys[1],
+      clicks: r.clicks || 0,
+      impressions: r.impressions || 0,
+      position: parseFloat((r.position || 0).toFixed(1)),
+    }));
+  } catch (err) {
+    console.error("GSC query+page analytics error:", err);
+    return [];
+  }
+}
+
+/**
  * Triggers a manual Indexing Request via Search Console or notification stub.
  */
 export async function requestUrlIndexing(
