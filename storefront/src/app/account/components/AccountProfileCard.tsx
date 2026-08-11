@@ -124,7 +124,7 @@ export default function AccountProfileCard({
 
   return (
     <div
-      className="relative p-6 sm:p-8 rounded-[24px] border border-border overflow-hidden shadow-xl"
+      className="relative p-5 sm:p-8 rounded-[24px] border border-border overflow-hidden shadow-xl"
       style={{
         background:
           "linear-gradient(150deg, #1a160a 0%, #0d0b06 100%), var(--surface)",
@@ -139,9 +139,9 @@ export default function AccountProfileCard({
         }}
       />
 
-      <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        {/* User Identity & Avatar */}
-        <div className="flex items-center gap-4 sm:gap-5">
+      <div className="relative flex flex-col gap-5">
+        {/* Top Section: Avatar & Details */}
+        <div className="flex items-center gap-4">
           <div className="relative group flex-shrink-0">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[rgba(196,160,90,0.13)] border-[1.5px] border-[rgba(196,160,90,0.35)] flex items-center justify-center font-serif text-xl font-bold text-[var(--gold-light)] overflow-hidden shadow-md">
               {avatarUrl ? (
@@ -178,16 +178,16 @@ export default function AccountProfileCard({
             />
           </div>
 
-          <div>
+          <div className="min-w-0 flex-1">
             {!isEditing ? (
               <>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-serif font-medium text-[var(--cream)]">
+                  <h2 className="text-lg sm:text-2xl font-serif font-medium text-[var(--cream)] truncate">
                     {displayName}
                   </h2>
                 </div>
-                <div className="text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-3 mt-1 font-mono">
-                  <span>{email}</span>
+                <div className="text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 font-mono truncate">
+                  <span className="truncate">{email}</span>
                   {phone && <span>• {phone}</span>}
                   {companyName && (
                     <span className="text-[var(--gold)] flex items-center gap-1 font-semibold">
@@ -200,9 +200,9 @@ export default function AccountProfileCard({
 
             {/* Member Status Pill */}
             {!isEditing && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
-                <div className="text-[11px] font-mono text-[var(--green)] tracking-wider uppercase">
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--green)] shrink-0" />
+                <div className="text-[10px] sm:text-[11px] font-mono text-[var(--green)] tracking-wider uppercase truncate">
                   {isB2B ? "B2B Trade Partner" : "Personal Account"} · Member
                   since {memberYear}
                 </div>
@@ -211,47 +211,52 @@ export default function AccountProfileCard({
           </div>
         </div>
 
-        {/* Action Buttons & Theme Switcher */}
-        <div className="flex items-center gap-3 self-end sm:self-center">
-          <ThemeToggle />
-          {!isEditing ? (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-[var(--gold)] hover:border-[var(--border-gold)] transition-colors"
-            >
-              <Edit3 size={13} />
-              Edit
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
+        {/* Bottom Control Toolbar: Wraps Naturally on Mobile without Overflow */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border)]/40">
+          <div className="overflow-x-auto max-w-full">
+            <ThemeToggle />
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {!isEditing ? (
               <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider bg-[var(--gold)] text-black rounded-lg font-bold hover:brightness-110 transition-all disabled:opacity-50"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono uppercase tracking-wider border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-[var(--gold)] hover:border-[var(--border-gold)] transition-colors cursor-pointer"
               >
-                {isPending ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Check size={13} />
-                )}
-                Save
+                <Edit3 size={13} />
+                Edit
               </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono uppercase tracking-wider bg-[var(--gold)] text-black rounded-lg font-bold hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isPending ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Check size={13} />
+                  )}
+                  Save
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono uppercase border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-white transition-colors cursor-pointer"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+            <form action="/auth/signout" method="post">
               <button
-                onClick={handleCancel}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono uppercase border border-[var(--border)] rounded text-[var(--text-muted)] hover:text-white transition-colors"
+                type="submit"
+                className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--surface2)] transition-colors cursor-pointer"
               >
-                <X size={13} />
+                Sign Out
               </button>
-            </div>
-          )}
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider border border-[var(--border)] rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--surface2)] transition-colors"
-            >
-              Sign Out
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
 
