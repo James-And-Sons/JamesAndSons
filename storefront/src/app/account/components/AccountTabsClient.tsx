@@ -9,7 +9,6 @@ import {
   MapPin,
   Ticket,
   ChevronRight,
-  Shield,
 } from "lucide-react";
 import AccountProfileCard from "./AccountProfileCard";
 import RecentOrdersSection from "./RecentOrdersSection";
@@ -77,74 +76,54 @@ export default function AccountTabsClient({
 
       {/* ── 2. Responsive Full-Viewport Desktop Grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-        {/* Left Column: Account Menu + Passkey Security */}
-        <div className="lg:col-span-5 space-y-8">
-          {/* Account Navigation Card */}
+        {/* Left Column: Standalone Navigation Tile Cards + Passkey Security */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Account Navigation Tiles with Gaps */}
           <div className="space-y-3">
-            <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
-              My Account
-            </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] overflow-hidden divide-y divide-[var(--border)] shadow-sm">
-              {accountLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="flex items-center gap-4 p-4 sm:p-5 hover:bg-[var(--surface2)] transition-colors group text-decoration-none"
-                  >
-                    <div className="w-10 h-10 rounded-[12px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] shrink-0 group-hover:border-[var(--gold)]/40 transition-colors">
-                      <Icon size={18} />
+            {accountLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex items-center gap-4 p-4 sm:p-5 bg-[var(--surface)] border border-[var(--border)] rounded-[20px] hover:border-[var(--gold)]/40 hover:bg-[var(--surface2)] transition-all group text-decoration-none shadow-sm"
+                >
+                  <div className="w-10 h-10 rounded-[12px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] shrink-0 group-hover:border-[var(--gold)]/40 transition-colors">
+                    <Icon size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
+                      {link.label}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
-                        {link.label}
-                      </div>
-                      <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
-                        {link.desc}
-                      </div>
+                    <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                      {link.desc}
                     </div>
-                    <ChevronRight
-                      size={18}
-                      className="text-[var(--text-muted)] group-hover:text-[var(--gold)] group-hover:translate-x-0.5 transition-all"
-                    />
-                  </Link>
-                );
-              })}
-            </div>
+                  </div>
+                  <ChevronRight
+                    size={18}
+                    className="text-[var(--text-muted)] group-hover:text-[var(--gold)] group-hover:translate-x-0.5 transition-all"
+                  />
+                </Link>
+              );
+            })}
           </div>
 
           {/* Security & Authentication Card */}
-          <div className="space-y-3">
-            <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
-              Security & Authentication
-            </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
-              <PasskeyManagerCard />
-            </div>
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+            <PasskeyManagerCard />
           </div>
         </div>
 
         {/* Right Column: Recent Purchases + Saved Wishlist */}
         <div className="lg:col-span-7 space-y-8">
           {/* Recent Purchases Card */}
-          <div className="space-y-3">
-            <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
-              Recent Purchases
-            </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
-              <RecentOrdersSection orders={orders} />
-            </div>
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+            <RecentOrdersSection orders={orders} />
           </div>
 
           {/* Saved Items Card */}
-          <div className="space-y-3">
-            <div className="text-xs font-mono font-bold text-[var(--gold)] tracking-[0.14em] uppercase px-1">
-              Saved Items
-            </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
-              <AccountWishlistClient />
-            </div>
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+            <AccountWishlistClient />
           </div>
         </div>
       </div>
