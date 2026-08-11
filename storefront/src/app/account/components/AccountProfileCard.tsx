@@ -11,6 +11,9 @@ import {
   Phone,
   Edit3,
   Loader2,
+  Package,
+  MapPin,
+  Ticket,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { updateProfileAction } from "../actions";
@@ -19,12 +22,18 @@ interface AccountProfileCardProps {
   user: any;
   dbUser: any;
   isB2B: boolean;
+  totalOrderCount: number;
+  addressCount: number;
+  ticketCount: number;
 }
 
 export default function AccountProfileCard({
   user,
   dbUser,
   isB2B,
+  totalOrderCount,
+  addressCount,
+  ticketCount,
 }: AccountProfileCardProps) {
   const meta = user.user_metadata || {};
   const [firstName, setFirstName] = useState(
@@ -48,13 +57,6 @@ export default function AccountProfileCard({
 
   const email = dbUser?.email || user.email;
   const companyName = dbUser?.company?.name || meta.company_name;
-  const memberSince = dbUser?.createdAt
-    ? new Date(dbUser.createdAt).toLocaleDateString("en-IN", {
-        month: "long",
-        year: "numeric",
-      })
-    : null;
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,66 +127,94 @@ export default function AccountProfileCard({
   const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
 
   return (
-    <div className="relative bg-surface border border-border rounded-2xl overflow-hidden shadow-lg">
-      {/* Gold gradient banner strip */}
+    <div className="relative bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
+      {/* Subtle Ambient Top Accent */}
       <div
-        className="h-24 sm:h-28 w-full"
+        className="h-16 w-full"
         style={{
           background:
-            "linear-gradient(135deg, var(--gold) 0%, transparent 70%), var(--surface2)",
-          opacity: 0.55,
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
+            "linear-gradient(90deg, rgba(196,160,90,0.15) 0%, rgba(196,160,90,0.02) 100%)",
         }}
       />
 
-      <div className="relative px-6 pt-6 pb-6">
-        {/* Top Row: Avatar + Actions */}
-        <div className="flex items-start justify-between gap-4">
-          {/* Avatar */}
-          <div className="relative group flex-shrink-0 mt-1">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-gold/60 overflow-hidden bg-gold/20 flex items-center justify-center shadow-lg">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={`${firstName} ${lastName}`}
-                  width={96}
-                  height={96}
-                  className="w-full h-full object-cover"
-                  sizes="96px"
-                />
-              ) : (
-                <span className="text-2xl font-serif font-bold text-gold">
-                  {initials}
-                </span>
-              )}
+      <div className="relative px-6 pb-6 -mt-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+          {/* Avatar + Main Info */}
+          <div className="flex items-end gap-4">
+            <div className="relative group flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-gold/40 overflow-hidden bg-surface2 flex items-center justify-center shadow-lg">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt={`${firstName} ${lastName}`}
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                    sizes="96px"
+                  />
+                ) : (
+                  <span className="text-2xl font-serif font-bold text-gold">
+                    {initials}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                title="Upload Profile Picture"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 size={18} className="text-white animate-spin" />
+                ) : (
+                  <Camera size={18} className="text-white" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
             </div>
-            {/* Upload overlay */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingAvatar}
-              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              title="Change profile picture"
-            >
-              {uploadingAvatar ? (
-                <Loader2 size={18} className="text-white animate-spin" />
-              ) : (
-                <Camera size={18} className="text-white" />
-              )}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
+
+            {!isEditing ? (
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-xl sm:text-2xl font-serif font-bold text-text">
+                    {firstName} {lastName}
+                  </h1>
+                  {isB2B && (
+                    <span className="px-2 py-0.5 text-[9px] uppercase font-mono font-bold bg-gold text-obsidian rounded">
+                      B2B Trade Partner
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-textMuted mt-1 font-mono">
+                  <span className="flex items-center gap-1">
+                    <Mail size={11} className="text-gold/70" />
+                    {email}
+                  </span>
+                  {phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone size={11} className="text-gold/70" />
+                      {phone}
+                    </span>
+                  )}
+                  {companyName && (
+                    <span className="flex items-center gap-1 font-semibold text-gold">
+                      <Building2 size={11} />
+                      {companyName}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-2 mt-1">
+          {/* Quick Header Controls */}
+          <div className="flex items-center gap-2 self-end sm:self-center">
             <ThemeToggle />
             {!isEditing ? (
               <button
@@ -192,7 +222,7 @@ export default function AccountProfileCard({
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border rounded-lg text-textMuted hover:text-gold hover:border-gold/40 transition-colors"
               >
                 <Edit3 size={12} />
-                Edit
+                Edit Profile
               </button>
             ) : (
               <div className="flex items-center gap-2">
@@ -227,100 +257,68 @@ export default function AccountProfileCard({
           </div>
         </div>
 
-        {/* Name & Details */}
-        <div className="mt-4">
-          {!isEditing ? (
-            <>
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h2 className="text-xl sm:text-2xl font-serif font-bold text-text">
-                  {firstName} {lastName}
-                </h2>
-                {isB2B && (
-                  <span className="px-2 py-0.5 text-[9px] uppercase font-mono font-bold bg-gold text-obsidian rounded">
-                    B2B Trade Partner
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-textMuted mt-1">
-                <span className="flex items-center gap-1.5">
-                  <Mail size={11} className="text-gold/70" />
-                  {email}
-                </span>
-                {phone && (
-                  <span className="flex items-center gap-1.5">
-                    <Phone size={11} className="text-gold/70" />
-                    {phone}
-                  </span>
-                )}
-                {companyName && (
-                  <span className="flex items-center gap-1.5 font-semibold text-gold">
-                    <Building2 size={11} />
-                    {companyName}
-                  </span>
-                )}
-              </div>
-              {memberSince && (
-                <p className="text-[10px] font-mono text-textMuted mt-2 uppercase tracking-widest">
-                  Member since {memberSince}
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-              <div>
-                <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
-                  First Name
-                </label>
-                <input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
-                  Last Name
-                </label>
-                <input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
-                  Phone Number
-                </label>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="9876543210"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
-                  Email Address
-                </label>
-                <input
-                  value={email}
-                  disabled
-                  className="w-full bg-surface2 border border-border/50 rounded-lg px-3 py-2 text-sm text-textMuted cursor-not-allowed"
-                />
-              </div>
+        {/* Inline Edit Form */}
+        {isEditing && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-border/40">
+            <div>
+              <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
+                First Name
+              </label>
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
+              />
             </div>
-          )}
+            <div>
+              <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
+                Last Name
+              </label>
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
+                Phone Number
+              </label>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="9876543210"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
+              />
+            </div>
+          </div>
+        )}
 
-          {saveMsg === "success" && (
-            <div className="mt-3 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
-              <Check size={11} /> Profile updated successfully.
-            </div>
-          )}
-          {saveMsg === "error" && (
-            <div className="mt-3 text-[11px] font-mono text-red-400">
-              Failed to save. Please try again.
-            </div>
-          )}
+        {saveMsg === "success" && (
+          <div className="mt-3 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+            <Check size={11} /> Profile details saved.
+          </div>
+        )}
+        {saveMsg === "error" && (
+          <div className="mt-3 text-[11px] font-mono text-red-400">
+            Failed to save profile changes.
+          </div>
+        )}
+
+        {/* Integrated Quick Badges Strip */}
+        <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-border/40 text-xs font-mono text-textMuted">
+          <span className="flex items-center gap-1.5 bg-surface2 px-3 py-1 rounded-full border border-border/40">
+            <Package size={13} className="text-gold" />
+            <strong className="text-text">{totalOrderCount}</strong> Orders
+          </span>
+          <span className="flex items-center gap-1.5 bg-surface2 px-3 py-1 rounded-full border border-border/40">
+            <MapPin size={13} className="text-gold" />
+            <strong className="text-text">{addressCount}</strong> Addresses
+          </span>
+          <span className="flex items-center gap-1.5 bg-surface2 px-3 py-1 rounded-full border border-border/40">
+            <Ticket size={13} className="text-gold" />
+            <strong className="text-text">{ticketCount}</strong> Support Tickets
+          </span>
         </div>
       </div>
     </div>

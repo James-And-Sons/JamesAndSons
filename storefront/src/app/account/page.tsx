@@ -62,6 +62,32 @@ export default async function AccountPage() {
     console.error("Error fetching addresses in AccountPage:", error);
   }
 
+  let rfqs: any[] = [];
+  try {
+    if (dbUser) {
+      rfqs = await prisma.rFQ.findMany({
+        where: { userId: dbUser.id },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching rfqs in AccountPage:", error);
+  }
+
+  let tickets: any[] = [];
+  try {
+    if (dbUser) {
+      tickets = await prisma.ticket.findMany({
+        where: { userId: dbUser.id },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching tickets in AccountPage:", error);
+  }
+
   const meta = user.user_metadata || {};
   const isB2B =
     dbUser?.role === "B2B_BUYER" ||
@@ -93,6 +119,18 @@ export default async function AccountPage() {
     updatedAt: a.updatedAt.toISOString(),
   }));
 
+  const serializedRfqs = rfqs.map((r) => ({
+    ...r,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+  }));
+
+  const serializedTickets = tickets.map((t) => ({
+    ...t,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  }));
+
   const serializedDbUser = dbUser
     ? {
         ...dbUser,
@@ -116,6 +154,8 @@ export default async function AccountPage() {
         isB2B={isB2B}
         orders={serializedOrders}
         addresses={serializedAddresses}
+        rfqs={serializedRfqs}
+        tickets={serializedTickets}
         totalOrderCount={totalOrderCount}
       />
     </div>
