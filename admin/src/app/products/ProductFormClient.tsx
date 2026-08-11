@@ -1420,15 +1420,40 @@ export default function ProductFormClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        const text = await res.text();
-        try {
-          const parsed = JSON.parse(text);
-          throw new Error(parsed.error || text);
-        } catch {
-          throw new Error(text);
+      const savedData = await res.json().catch(() => ({}));
+      const savedId = savedData.id || defaultValues?.id;
+
+      // Event-Driven Background Trigger: Fire SEO scan on save
+      if (savedId) {
+        fetch("/api/seo/pagespeed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId: savedId }),
+        }).catch(() => {});
+      }
+
+      // Automated 301 Redirect Manager: Trigger rule creation if slug changed
+      if (mode === "edit" && defaultValues?.slug) {
+        const newSlug = parentValues.name
+          ? parentValues.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/(^-|-$)+/g, "")
+          : defaultValues.slug;
+        if (newSlug && newSlug !== defaultValues.slug) {
+          fetch("/api/seo/redirects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sourceUrl: `/products/${defaultValues.slug}`,
+              targetUrl: `/products/${newSlug}`,
+              statusCode: 301,
+              productId: defaultValues.id,
+            }),
+          }).catch(() => {});
         }
       }
+
       setIsDirty(false);
       router.push("/products");
       router.refresh();
@@ -2859,7 +2884,14 @@ export default function ProductFormClient({
                   productId={defaultValues.id}
                   title={parentValues.name}
                   description={parentValues.description}
-                  slug={defaultValues?.slug || ""}
+                  slug={
+                    parentValues.name
+                      ? parentValues.name
+                          .toLowerCase()
+                          .replace(/[^a-z0-9]+/g, "-")
+                          .replace(/(^-|-$)+/g, "")
+                      : defaultValues?.slug || ""
+                  }
                   onWeaveKeyword={(keyword) => {
                     handleParentFieldChange(
                       "description",

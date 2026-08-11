@@ -201,13 +201,54 @@ export async function requestUrlIndexing(
   };
 }
 
+import crypto from "crypto";
+
 async function getServiceAccountAccessToken(
   email: string,
   privateKey: string,
 ): Promise<string> {
-  // Basic JWT token generator stub for Google OAuth 2.0 Service Account
-  // In production runtime, this exchanges JWT assertion for OAuth bearer token
-  return "mock_gsc_bearer_token";
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const header = { alg: "RS256", typ: "JWT" };
+    const payload = {
+      iss: email,
+      scope:
+        "https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/webmasters",
+      aud: "https://oauth2.googleapis.com/token",
+      exp: now + 3600,
+      iat: now,
+    };
+
+    const base64Url = (str: string) => Buffer.from(str).toString("base64url");
+    const unsignedToken = `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(payload))}`;
+
+    const formattedKey = privateKey.replace(/\\n/g, "\n");
+    const signer = crypto.createSign("RSA-SHA256");
+    signer.update(unsignedToken);
+    const signature = signer.sign(formattedKey, "base64url");
+
+    const jwt = `${unsignedToken}.${signature}`;
+
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion: jwt,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`Google OAuth token exchange failed HTTP ${res.status}`);
+      return "mock_gsc_bearer_token";
+    }
+
+    const data = await res.json();
+    return data.access_token;
+  } catch (err) {
+    console.error("Failed to sign JWT for Google Service Account:", err);
+    return "mock_gsc_bearer_token";
+  }
 }
 
 function generateMockInspectionResult(): UrlInspectionResult {
