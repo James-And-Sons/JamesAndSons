@@ -78,15 +78,15 @@ export default function AccountTabsClient({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
         {/* Left Column: Single Navigation Card + Passkey Security */}
         <div className="lg:col-span-5 space-y-8 lg:space-y-10">
-          {/* Single Navigation Menu Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] overflow-hidden divide-y divide-[var(--border)] shadow-sm">
+          {/* Single Navigation Menu Card with Spaced Inner Tiles */}
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-3 sm:p-4 shadow-sm flex flex-col gap-2.5">
             {accountLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center gap-4 p-4 sm:p-5 hover:bg-[var(--surface2)] transition-colors group text-decoration-none"
+                  className="flex items-center gap-4 p-3.5 sm:p-4 rounded-[16px] bg-[var(--background)]/60 border border-[var(--border)]/50 hover:border-[var(--gold)]/40 hover:bg-[var(--surface2)] transition-all group text-decoration-none shadow-xs"
                 >
                   <div className="w-10 h-10 rounded-[12px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] shrink-0 group-hover:border-[var(--gold)]/40 transition-colors">
                     <Icon size={18} />
@@ -109,7 +109,7 @@ export default function AccountTabsClient({
           </div>
 
           {/* Security & Authentication Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 sm:p-8 shadow-sm">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 shadow-sm">
             <h3 className="text-xl font-serif font-medium text-[var(--cream)] mb-4 pb-3 border-b border-[var(--border)]">
               Security & Passkeys
             </h3>
@@ -120,12 +120,12 @@ export default function AccountTabsClient({
         {/* Right Column: Recent Purchases + Saved Wishlist */}
         <div className="lg:col-span-7 space-y-8 lg:space-y-10">
           {/* Recent Purchases Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 sm:p-8 shadow-sm">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 shadow-sm">
             <RecentOrdersSection orders={orders} />
           </div>
 
           {/* Saved Items Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 sm:p-8 shadow-sm">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 shadow-sm">
             <h3 className="text-xl font-serif font-medium text-[var(--cream)] mb-4 pb-3 border-b border-[var(--border)]">
               Saved Items
             </h3>
