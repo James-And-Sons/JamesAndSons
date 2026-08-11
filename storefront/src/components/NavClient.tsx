@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCartStore } from "@/store/cart";
@@ -12,7 +13,7 @@ export default function NavClient({
   products,
 }: {
   user: { id: string; email?: string } | null;
-  products: Product[];
+  products?: Product[];
 }) {
   const { itemCount, openCart } = useCartStore();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -26,14 +27,26 @@ export default function NavClient({
   useEffect(() => {
     setMounted(true);
 
-    // Listen for custom event from MobileBottomNav
+    // Listen for custom event from MobileBottomNav & MobileHeader
     const handleOpenSearch = () => setSearchOpen(true);
     const handleOpenCart = () => openCart();
+
+    // Global Cmd+K or Ctrl+K shortcut listener
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+
     window.addEventListener("open-search", handleOpenSearch);
     window.addEventListener("open-cart", handleOpenCart);
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       window.removeEventListener("open-search", handleOpenSearch);
       window.removeEventListener("open-cart", handleOpenCart);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -55,8 +68,8 @@ export default function NavClient({
         style={{ display: "flex", alignItems: "center", gap: "16px" }}
       >
         <button
-          className="nav-icon hide-on-mobile nav-haptic"
-          title="Search"
+          className="nav-icon hide-on-mobile nav-haptic flex items-center gap-2"
+          title="Search (⌘K)"
           onClick={() => {
             triggerHaptic();
             setSearchOpen(true);
@@ -81,6 +94,9 @@ export default function NavClient({
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
+          <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface)]">
+            ⌘K
+          </span>
         </button>
 
         {user ? (
@@ -184,9 +200,7 @@ export default function NavClient({
       </div>
 
       <CartDrawer />
-      {searchOpen && (
-        <SearchModal products={products} onClose={() => setSearchOpen(false)} />
-      )}
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
     </>
   );
 }
