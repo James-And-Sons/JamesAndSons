@@ -11,9 +11,6 @@ import {
   Phone,
   Edit3,
   Loader2,
-  Package,
-  MapPin,
-  Ticket,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { updateProfileAction } from "../actions";
@@ -22,18 +19,12 @@ interface AccountProfileCardProps {
   user: any;
   dbUser: any;
   isB2B: boolean;
-  totalOrderCount: number;
-  addressCount: number;
-  ticketCount: number;
 }
 
 export default function AccountProfileCard({
   user,
   dbUser,
   isB2B,
-  totalOrderCount,
-  addressCount,
-  ticketCount,
 }: AccountProfileCardProps) {
   const meta = user.user_metadata || {};
   const [firstName, setFirstName] = useState(
@@ -94,7 +85,7 @@ export default function AccountProfileCard({
       const newUrl = data.secure_url as string;
       setAvatarUrl(newUrl);
 
-      // Persist to DB immediately
+      // Persist avatar to DB
       await updateProfileAction({ avatarUrl: newUrl });
     } catch (err) {
       console.error("Avatar upload error:", err);
@@ -127,38 +118,35 @@ export default function AccountProfileCard({
   const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
 
   return (
-    <div className="relative bg-surface/90 border border-border/50 rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg shadow-black/5 transition-all duration-300">
-      {/* Soft Ambient Header Backdrop */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        {/* User Identity & Avatar */}
-        <div className="flex items-center gap-5 sm:gap-6">
+    <div className="bg-surface border border-border rounded-2xl p-6 shadow-md">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Avatar & User Details */}
+        <div className="flex items-center gap-4">
           <div className="relative group flex-shrink-0">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-gold/30 overflow-hidden bg-surface2 flex items-center justify-center shadow-md">
+            <div className="w-16 h-16 rounded-full bg-gold/20 text-gold flex items-center justify-center text-xl font-bold font-serif border border-gold/40 overflow-hidden">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
                   alt={`${firstName} ${lastName}`}
-                  width={96}
-                  height={96}
+                  width={64}
+                  height={64}
                   className="w-full h-full object-cover"
-                  sizes="96px"
+                  sizes="64px"
                 />
               ) : (
-                <span className="text-2xl font-serif font-bold text-gold">
-                  {initials}
-                </span>
+                initials
               )}
             </div>
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
-              className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
+              className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
               title="Upload Profile Picture"
             >
               {uploadingAvatar ? (
-                <Loader2 size={18} className="text-white animate-spin" />
+                <Loader2 size={16} className="text-white animate-spin" />
               ) : (
-                <Camera size={18} className="text-white" />
+                <Camera size={16} className="text-white" />
               )}
             </button>
             <input
@@ -173,31 +161,28 @@ export default function AccountProfileCard({
           <div>
             {!isEditing ? (
               <>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-serif font-medium text-text tracking-wide">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-serif font-bold text-text">
                     {firstName} {lastName}
-                  </h1>
+                  </h2>
                   {isB2B && (
-                    <span className="px-2.5 py-0.5 text-[10px] uppercase font-mono font-bold bg-gold/15 text-gold border border-gold/30 rounded-full">
+                    <span className="px-2 py-0.5 text-[10px] uppercase font-mono font-bold bg-gold text-obsidian rounded">
                       B2B Trade Partner
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-textMuted mt-2 font-mono">
-                  <span className="flex items-center gap-1.5">
-                    <Mail size={13} className="text-gold/70" />
-                    {email}
+                <div className="text-xs text-textMuted flex flex-wrap items-center gap-3 mt-1 font-mono">
+                  <span className="flex items-center gap-1">
+                    <Mail size={12} /> {email}
                   </span>
                   {phone && (
-                    <span className="flex items-center gap-1.5">
-                      <Phone size={13} className="text-gold/70" />
-                      {phone}
+                    <span className="flex items-center gap-1">
+                      <Phone size={12} /> {phone}
                     </span>
                   )}
                   {companyName && (
-                    <span className="flex items-center gap-1.5 font-semibold text-gold">
-                      <Building2 size={13} />
-                      {companyName}
+                    <span className="flex items-center gap-1 font-semibold text-gold">
+                      <Building2 size={12} /> {companyName}
                     </span>
                   )}
                 </div>
@@ -206,43 +191,43 @@ export default function AccountProfileCard({
           </div>
         </div>
 
-        {/* Action Controls & Theme Toggle */}
-        <div className="flex items-center gap-3 self-end md:self-center">
+        {/* Header Controls */}
+        <div className="flex items-center gap-3">
           <ThemeToggle />
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-wider border border-border rounded-xl text-textMuted hover:text-gold hover:border-gold/40 transition-all duration-300"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border rounded text-textMuted hover:text-gold hover:border-gold/40 transition-colors"
             >
-              <Edit3 size={13} />
-              Edit Profile
+              <Edit3 size={12} />
+              Edit
             </button>
           ) : (
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSave}
                 disabled={isPending}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono uppercase tracking-wider bg-gold text-obsidian rounded-xl font-semibold hover:brightness-110 transition-all duration-300 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gold text-obsidian rounded font-semibold hover:brightness-110 transition-all disabled:opacity-50"
               >
                 {isPending ? (
-                  <Loader2 size={13} className="animate-spin" />
+                  <Loader2 size={12} className="animate-spin" />
                 ) : (
-                  <Check size={13} />
+                  <Check size={12} />
                 )}
                 Save
               </button>
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono uppercase tracking-wider border border-border rounded-xl text-textMuted hover:text-text transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1.5 text-xs border border-border rounded text-textMuted hover:text-text transition-colors"
               >
-                <X size={13} />
+                <X size={12} />
               </button>
             </div>
           )}
           <form action="/auth/signout" method="post">
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-mono uppercase tracking-wider border border-border rounded-xl text-textMuted hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/5 transition-all duration-300"
+              className="px-3 py-1.5 text-xs border border-border rounded text-textMuted hover:text-red-400 hover:bg-surface2 transition-colors"
             >
               Sign Out
             </button>
@@ -250,74 +235,53 @@ export default function AccountProfileCard({
         </div>
       </div>
 
-      {/* Inline Edit Form */}
+      {/* Inline Edit Mode */}
       {isEditing && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border/40">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-border/40">
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1.5">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
               First Name
             </label>
             <input
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="w-full bg-background/80 border border-border/60 rounded-xl px-4 py-2.5 text-sm text-text focus:outline-none focus:border-gold/50 transition-colors"
+              className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1.5">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
               Last Name
             </label>
             <input
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="w-full bg-background/80 border border-border/60 rounded-xl px-4 py-2.5 text-sm text-text focus:outline-none focus:border-gold/50 transition-colors"
+              className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1.5">
+            <label className="block text-[10px] font-mono uppercase tracking-wider text-textMuted mb-1">
               Phone Number
             </label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="9876543210"
-              className="w-full bg-background/80 border border-border/60 rounded-xl px-4 py-2.5 text-sm text-text focus:outline-none focus:border-gold/50 transition-colors"
+              className="w-full bg-background border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-gold/50"
             />
           </div>
         </div>
       )}
 
       {saveMsg === "success" && (
-        <div className="mt-4 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
-          <Check size={12} /> Profile saved successfully.
+        <div className="mt-3 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+          <Check size={11} /> Profile updated successfully.
         </div>
       )}
       {saveMsg === "error" && (
-        <div className="mt-4 text-[11px] font-mono text-red-400">
+        <div className="mt-3 text-[11px] font-mono text-red-400">
           Failed to save changes.
         </div>
       )}
-
-      {/* Integrated Soft Summary Badges Strip */}
-      <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-6 pt-6 border-t border-border/40 text-xs font-mono text-textMuted">
-        <span className="flex items-center gap-2 bg-surface2/60 px-4 py-1.5 rounded-full border border-border/40">
-          <Package size={14} className="text-gold" />
-          <strong className="text-text font-bold">
-            {totalOrderCount}
-          </strong>{" "}
-          Orders
-        </span>
-        <span className="flex items-center gap-2 bg-surface2/60 px-4 py-1.5 rounded-full border border-border/40">
-          <MapPin size={14} className="text-gold" />
-          <strong className="text-text font-bold">{addressCount}</strong>{" "}
-          Addresses
-        </span>
-        <span className="flex items-center gap-2 bg-surface2/60 px-4 py-1.5 rounded-full border border-border/40">
-          <Ticket size={14} className="text-gold" />
-          <strong className="text-text font-bold">{ticketCount}</strong> Support
-          Tickets
-        </span>
-      </div>
     </div>
   );
 }
