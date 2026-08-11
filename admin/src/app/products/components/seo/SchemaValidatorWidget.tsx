@@ -26,6 +26,13 @@ export default function SchemaValidatorWidget({
     isValid: true,
   };
 
+  const reqFields = Array.isArray(v.missingRequiredFields)
+    ? v.missingRequiredFields
+    : [];
+  const recFields = Array.isArray(v.missingRecommendedFields)
+    ? v.missingRecommendedFields
+    : [];
+
   return (
     <div className="bg-surface border border-border rounded-lg p-5">
       <div className="flex items-center justify-between">
@@ -51,17 +58,20 @@ export default function SchemaValidatorWidget({
           }`}
         >
           {v.isValid ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Schema Valid
+            </>
           ) : (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            <>
+              <AlertTriangle className="w-3.5 h-3.5" /> Action Required
+            </>
           )}
-          <span>{v.isValid ? "Schema Valid" : "Action Required"}</span>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 font-sans text-[13px]">
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12px] font-sans">
         {/* Product Schema */}
-        <div className="p-3 bg-surface-muted/40 border border-border rounded flex items-center gap-2">
+        <div className="p-2.5 bg-surface-muted/30 border border-border/50 rounded flex items-center gap-2">
           {v.hasProductSchema ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           ) : (
@@ -71,7 +81,7 @@ export default function SchemaValidatorWidget({
         </div>
 
         {/* Offer Schema */}
-        <div className="p-3 bg-surface-muted/40 border border-border rounded flex items-center gap-2">
+        <div className="p-2.5 bg-surface-muted/30 border border-border/50 rounded flex items-center gap-2">
           {v.hasOfferSchema ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           ) : (
@@ -81,7 +91,7 @@ export default function SchemaValidatorWidget({
         </div>
 
         {/* AggregateRating */}
-        <div className="p-3 bg-surface-muted/40 border border-border rounded flex items-center gap-2">
+        <div className="p-2.5 bg-surface-muted/30 border border-border/50 rounded flex items-center gap-2">
           {v.hasAggregateRatingSchema ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           ) : (
@@ -91,7 +101,7 @@ export default function SchemaValidatorWidget({
         </div>
 
         {/* InStock */}
-        <div className="p-3 bg-surface-muted/40 border border-border rounded flex items-center gap-2">
+        <div className="p-2.5 bg-surface-muted/30 border border-border/50 rounded flex items-center gap-2">
           {v.hasInStockSchema ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
           ) : (
@@ -102,10 +112,9 @@ export default function SchemaValidatorWidget({
       </div>
 
       {/* Missing Fields Alerts */}
-      {(v.missingRequiredFields.length > 0 ||
-        v.missingRecommendedFields.length > 0) && (
+      {(reqFields.length > 0 || recFields.length > 0) && (
         <div className="mt-4 space-y-2">
-          {v.missingRequiredFields.map((f: string, i: number) => (
+          {reqFields.map((f: string, i: number) => (
             <div
               key={i}
               className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 rounded text-[12px] flex items-center gap-2 font-mono"
@@ -115,7 +124,7 @@ export default function SchemaValidatorWidget({
             </div>
           ))}
 
-          {v.missingRecommendedFields.map((f: string, i: number) => (
+          {recFields.map((f: string, i: number) => (
             <div
               key={i}
               className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded text-[12px] flex items-center gap-2 font-mono"

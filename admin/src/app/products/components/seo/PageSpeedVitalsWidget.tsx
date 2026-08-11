@@ -172,7 +172,7 @@ export default function PageSpeedVitalsWidget({
           Recommended Action Items
         </h4>
 
-        {warnings && warnings.length > 0 ? (
+        {Array.isArray(warnings) && warnings.length > 0 ? (
           <div className="space-y-2.5">
             {warnings.map((w, idx) => (
               <div

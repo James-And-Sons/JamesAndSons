@@ -18,8 +18,8 @@ export default function SerpPreviewCard({
 }: SerpPreviewCardProps) {
   const publicUrl = getProductPublicUrl(slug || "sample-product");
 
-  const titleLen = title.length;
-  const descLen = description.length;
+  const titleLen = (title || "").length;
+  const descLen = (description || "").length;
 
   const isTitleGood = titleLen >= 50 && titleLen <= 60;
   const isDescGood = descLen >= 150 && descLen <= 160;
