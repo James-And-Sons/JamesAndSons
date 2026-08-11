@@ -70,59 +70,63 @@ export default function AccountTabsClient({
   ];
 
   return (
-    <div className="space-y-8 w-full">
-      {/* ── 1. Profile Hero Card (Spans Full Desktop Width) ── */}
+    <div className="space-y-8 lg:space-y-10 w-full">
+      {/* ── 1. Profile Hero Card Banner ── */}
       <AccountProfileCard user={user} dbUser={dbUser} isB2B={isB2B} />
 
-      {/* ── 2. Responsive Full-Viewport Desktop Grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-        {/* Left Column: Standalone Navigation Tile Cards + Passkey Security */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* Account Navigation Tiles with Gaps */}
-          <div className="space-y-3">
-            {accountLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="flex items-center gap-4 p-4 sm:p-5 bg-[var(--surface)] border border-[var(--border)] rounded-[20px] hover:border-[var(--gold)]/40 hover:bg-[var(--surface2)] transition-all group text-decoration-none shadow-sm"
-                >
-                  <div className="w-10 h-10 rounded-[12px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] shrink-0 group-hover:border-[var(--gold)]/40 transition-colors">
-                    <Icon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
-                      {link.label}
-                    </div>
-                    <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
-                      {link.desc}
-                    </div>
-                  </div>
-                  <ChevronRight
-                    size={18}
-                    className="text-[var(--text-muted)] group-hover:text-[var(--gold)] group-hover:translate-x-0.5 transition-all"
-                  />
-                </Link>
-              );
-            })}
-          </div>
+      {/* ── 2. Grid of Navigation Tiles with Explicit Gaps ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-5">
+        {accountLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="p-5 bg-[var(--surface)] border border-[var(--border)] rounded-[20px] hover:border-[var(--gold)]/50 hover:bg-[var(--surface2)] transition-all duration-300 group flex flex-col justify-between shadow-sm hover:-translate-y-1 text-decoration-none"
+            >
+              <div>
+                <div className="w-11 h-11 rounded-[14px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] mb-3 group-hover:border-[var(--gold)]/40 transition-colors">
+                  <Icon size={20} />
+                </div>
+                <div className="text-base font-serif font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
+                  {link.label}
+                </div>
+                <div className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                  {link.desc}
+                </div>
+              </div>
+              <div className="flex items-center justify-end mt-4 pt-3 border-t border-[var(--border)]/40 text-xs font-mono text-[var(--gold)] group-hover:translate-x-1 transition-all">
+                <ChevronRight size={18} />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
 
-          {/* Security & Authentication Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
-            <PasskeyManagerCard />
+      {/* ── 3. Main Desktop Grid for Recent Purchases, Security, and Wishlist ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+        {/* Left Column: Recent Purchases (7 cols) */}
+        <div className="lg:col-span-7 space-y-8">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 shadow-sm">
+            <RecentOrdersSection orders={orders} />
           </div>
         </div>
 
-        {/* Right Column: Recent Purchases + Saved Wishlist */}
-        <div className="lg:col-span-7 space-y-8">
-          {/* Recent Purchases Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
-            <RecentOrdersSection orders={orders} />
+        {/* Right Column: Security Passkeys & Wishlist (5 cols) */}
+        <div className="lg:col-span-5 space-y-8">
+          {/* Security & Authentication */}
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 shadow-sm">
+            <h3 className="text-xl font-serif font-medium text-[var(--cream)] mb-4 pb-3 border-b border-[var(--border)]">
+              Security & Passkeys
+            </h3>
+            <PasskeyManagerCard />
           </div>
 
-          {/* Saved Items Card */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[20px] p-6 shadow-sm">
+          {/* Saved Wishlist */}
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 shadow-sm">
+            <h3 className="text-xl font-serif font-medium text-[var(--cream)] mb-4 pb-3 border-b border-[var(--border)]">
+              Saved Items
+            </h3>
             <AccountWishlistClient />
           </div>
         </div>
