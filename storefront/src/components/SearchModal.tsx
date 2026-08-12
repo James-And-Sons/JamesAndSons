@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -24,7 +25,7 @@ type SearchModalProps = {
   onClose: () => void;
 };
 
-const TRENDING_TAGS = [
+const POPULAR_HINTS = [
   "Chandeliers",
   "Wall Sconces",
   "LED Pendant Lights",
@@ -37,6 +38,7 @@ const LOCAL_STORAGE_KEY = "james_sons_recent_searches";
 export default function SearchModal({ onClose }: SearchModalProps) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [results, setResults] = useState<{
     products: any[];
     categories: any[];
@@ -58,8 +60,9 @@ export default function SearchModal({ onClose }: SearchModalProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load recent searches from localStorage
+  // Mount check for createPortal client rendering
   useEffect(() => {
+    setMounted(true);
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
@@ -67,6 +70,13 @@ export default function SearchModal({ onClose }: SearchModalProps) {
       }
     } catch {}
   }, []);
+
+  // Auto-focus input on mount
+  useEffect(() => {
+    if (mounted) {
+      inputRef.current?.focus();
+    }
+  }, [mounted]);
 
   // Listen for Escape key
   useEffect(() => {
@@ -160,27 +170,66 @@ export default function SearchModal({ onClose }: SearchModalProps) {
     results.userTickets.length > 0 ||
     results.userRfqs.length > 0;
 
-  return (
-    <div className="fixed inset-0 z-[1000] overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center pt-12 sm:pt-20 px-4">
-      {/* Backdrop Click */}
-      <div className="fixed inset-0" onClick={onClose} />
+  if (!mounted) return null;
 
-      {/* Modal Container */}
-      <div className="relative w-full max-w-2xl bg-[#0f0d08] border border-[var(--border)] rounded-[24px] shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header Search Input Bar */}
+  return createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.75)",
+          zIndex: 9998,
+          backdropFilter: "blur(6px)",
+        }}
+      />
+
+      {/* Overlapping Floating Search Panel */}
+      <div
+        style={{
+          position: "fixed",
+          top: "80px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "640px",
+          maxWidth: "calc(100vw - 40px)",
+          background: "var(--void)",
+          border: "1px solid var(--border-gold)",
+          borderRadius: "20px",
+          zIndex: 10000,
+          boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Input Bar Header */}
         <form
           onSubmit={handleFormSubmit}
-          className="flex items-center p-4 sm:p-5 border-b border-[var(--border)] bg-[var(--surface)]"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            borderBottom: "1px solid var(--border)",
+            padding: "0 20px",
+            background: "var(--surface)",
+          }}
         >
-          <Search size={22} className="text-[var(--gold)] mr-3 shrink-0" />
+          <Search size={18} className="text-[var(--gold)] shrink-0 mr-3" />
           <input
             ref={inputRef}
-            type="text"
-            placeholder="Search products, orders, tickets, collections..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-            className="flex-1 bg-transparent text-[var(--cream)] text-base placeholder-[var(--text-muted)] focus:outline-none font-sans"
+            placeholder="Search products, orders, tickets, collections..."
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              fontFamily: "var(--font-body)",
+              fontSize: "16px",
+              color: "var(--text)",
+              padding: "18px 0",
+            }}
           />
           {loading && (
             <Loader2
@@ -192,7 +241,14 @@ export default function SearchModal({ onClose }: SearchModalProps) {
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="p-1 text-[var(--text-muted)] hover:text-white rounded-lg mr-2 cursor-pointer"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                padding: "4px",
+                marginRight: "8px",
+              }}
             >
               <X size={18} />
             </button>
@@ -200,21 +256,32 @@ export default function SearchModal({ onClose }: SearchModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-2.5 py-1 text-xs font-mono text-[var(--text-muted)] border border-[var(--border)] rounded-md hover:text-white transition-colors cursor-pointer shrink-0"
+            style={{
+              background: "transparent",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+            }}
           >
             ESC
           </button>
         </form>
 
-        {/* Results / Default State Container */}
-        <div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6 space-y-6">
-          {/* 1. Default State: Recent Searches & Trending Tags */}
+        {/* Results Container */}
+        <div
+          style={{ maxHeight: "60vh", overflowY: "auto", padding: "16px 20px" }}
+        >
+          {/* Default State: Popular Searches & Recent History */}
           {!query.trim() && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {recentSearches.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[var(--gold)] mb-3">
-                    <span className="flex items-center gap-1.5 font-semibold">
+                  <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 font-semibold">
+                    <span className="flex items-center gap-1.5">
                       <History size={14} /> Recent Searches
                     </span>
                     <button
@@ -243,17 +310,17 @@ export default function SearchModal({ onClose }: SearchModalProps) {
               )}
 
               <div>
-                <div className="text-xs font-mono uppercase tracking-wider text-[var(--gold)] mb-3 flex items-center gap-1.5 font-semibold">
-                  <Sparkles size={14} /> Popular Trending Categories
+                <div className="text-xs font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 flex items-center gap-1.5 font-semibold">
+                  <Sparkles size={14} /> Popular Searches
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {TRENDING_TAGS.map((tag) => (
+                  {POPULAR_HINTS.map((hint) => (
                     <button
-                      key={tag}
-                      onClick={() => handleSelectTerm(tag)}
+                      key={hint}
+                      onClick={() => handleSelectTerm(hint)}
                       className="px-3.5 py-1.5 rounded-xl bg-[rgba(196,160,90,0.08)] border border-[rgba(196,160,90,0.2)] text-xs text-[var(--gold-light)] hover:bg-[rgba(196,160,90,0.18)] transition-all cursor-pointer"
                     >
-                      {tag}
+                      {hint}
                     </button>
                   ))}
                 </div>
@@ -261,33 +328,45 @@ export default function SearchModal({ onClose }: SearchModalProps) {
             </div>
           )}
 
-          {/* 2. No Match State */}
+          {/* No Results Match */}
           {query.trim().length >= 2 && !loading && !hasResults && (
-            <div className="text-center py-10 text-[var(--text-muted)] text-sm font-mono">
-              No matching products, orders, or support tickets found for &ldquo;
-              <span className="text-[var(--cream)]">{query}</span>&rdquo;.
-              <div className="mt-4">
-                <button
-                  onClick={handleFormSubmit}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--gold)] text-black font-bold text-xs uppercase tracking-wider hover:brightness-110 transition-all cursor-pointer"
-                >
-                  Search Full Catalog <ArrowRight size={14} />
-                </button>
+            <div style={{ padding: "40px 24px", textAlign: "center" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-serif)",
+                  fontSize: "20px",
+                  fontWeight: 300,
+                  color: "var(--text-muted)",
+                }}
+              >
+                No results for &ldquo;{query}&rdquo;
               </div>
+              <p
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "10px",
+                  letterSpacing: "0.1em",
+                  color: "var(--text-dim)",
+                  marginTop: "8px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Try a product name, order #, collection, or ticket number
+              </p>
             </div>
           )}
 
-          {/* 3. Categorized Search Results */}
+          {/* Search Results Groups */}
           {hasResults && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* User Personal Orders */}
               {results.userOrders.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 font-bold flex items-center gap-1.5">
                     <ShoppingBag size={14} /> My Orders (
                     {results.userOrders.length})
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {results.userOrders.map((o) => (
                       <Link
                         key={o.id}
@@ -314,14 +393,14 @@ export default function SearchModal({ onClose }: SearchModalProps) {
                 </div>
               )}
 
-              {/* User Personal Support Tickets */}
+              {/* User Support Tickets */}
               {results.userTickets.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 font-bold flex items-center gap-1.5">
                     <Ticket size={14} /> My Support Tickets (
                     {results.userTickets.length})
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {results.userTickets.map((t) => (
                       <Link
                         key={t.id}
@@ -350,11 +429,11 @@ export default function SearchModal({ onClose }: SearchModalProps) {
               {/* User Trade RFQs */}
               {results.userRfqs.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 font-bold flex items-center gap-1.5">
                     <FileText size={14} /> My Trade RFQs (
                     {results.userRfqs.length})
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {results.userRfqs.map((r) => (
                       <Link
                         key={r.id}
@@ -383,10 +462,10 @@ export default function SearchModal({ onClose }: SearchModalProps) {
               {/* Product Matches */}
               {results.products.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 font-bold flex items-center gap-1.5">
                     <Package size={14} /> Products ({results.products.length})
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {results.products.map((item) => (
                       <Link
                         key={item.id}
@@ -424,15 +503,6 @@ export default function SearchModal({ onClose }: SearchModalProps) {
                           <div className="text-sm font-bold font-mono text-[var(--gold)]">
                             {formatPrice(item.price)}
                           </div>
-                          {item.inStock ? (
-                            <span className="text-[10px] font-mono text-[var(--green)]">
-                              In Stock
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                              Made to Order
-                            </span>
-                          )}
                         </div>
                       </Link>
                     ))}
@@ -440,10 +510,10 @@ export default function SearchModal({ onClose }: SearchModalProps) {
                 </div>
               )}
 
-              {/* Categories & Collections Matches */}
+              {/* Collections Matches */}
               {results.categories.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-3 font-bold flex items-center gap-1.5">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--gold)] mb-2.5 font-bold flex items-center gap-1.5">
                     <LayoutGrid size={14} /> Collections
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -466,20 +536,11 @@ export default function SearchModal({ onClose }: SearchModalProps) {
                   </div>
                 </div>
               )}
-
-              {/* View All Results Button */}
-              <div className="pt-2 text-center">
-                <button
-                  onClick={handleFormSubmit}
-                  className="w-full py-3 rounded-xl bg-[rgba(196,160,90,0.12)] hover:bg-[rgba(196,160,90,0.2)] border border-[rgba(196,160,90,0.3)] text-xs font-mono font-bold uppercase tracking-wider text-[var(--gold)] transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  View All Search Results <ArrowRight size={14} />
-                </button>
-              </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </>,
+    document.body,
   );
 }

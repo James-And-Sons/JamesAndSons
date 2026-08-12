@@ -68,8 +68,8 @@ export default function NavClient({
         style={{ display: "flex", alignItems: "center", gap: "16px" }}
       >
         <button
-          className="nav-icon hide-on-mobile nav-haptic flex items-center gap-2"
-          title="Search (⌘K)"
+          className="nav-icon hide-on-mobile nav-haptic"
+          title="Search"
           onClick={() => {
             triggerHaptic();
             setSearchOpen(true);
@@ -94,9 +94,6 @@ export default function NavClient({
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface)]">
-            ⌘K
-          </span>
         </button>
 
         {user ? (
