@@ -96,6 +96,11 @@ export async function generateMetadata(props: {
       ],
       type: "website",
     },
+    other: {
+      "og:type": "product",
+      "product:price:amount": (product.d2cPrice / 100).toFixed(2),
+      "product:price:currency": "INR",
+    },
     twitter: {
       card: "summary_large_image",
       title,
@@ -157,8 +162,63 @@ export default async function ProductPage(props: {
     console.error("Error fetching related products:", error);
   }
 
+  const baseUrl =
+    process.env.NEXT_PUBLIC_STOREFRONT_URL || "https://jamesandsons.in";
+  const cleanBase = baseUrl.replace(/\/+$/, "");
+  const productUrl = `${cleanBase}/products/${product.slug}`;
+
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: product.images || [],
+    url: productUrl,
+    brand: { "@type": "Brand", name: "James & Sons" },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: (product.d2cPrice / 100).toFixed(2),
+      availability: "https://schema.org/InStock",
+      seller: { "@type": "Organization", name: "James & Sons" },
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: cleanBase,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: product.category?.name || "Collections",
+        item: `${cleanBase}/collections`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: product.name,
+        item: productUrl,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <main
         className="pdp-main pt-14 md:pt-16 min-h-screen"
         style={{ background: "var(--obsidian)" }}
@@ -308,14 +368,12 @@ export default async function ProductPage(props: {
                     <div className="product-img">
                       <div className="product-img-bg" />
                       {p.images?.[0] ? (
-                        <img
+                        <Image
                           src={p.images[0]}
                           alt={p.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
+                          fill
+                          sizes="25vw"
+                          style={{ objectFit: "cover" }}
                         />
                       ) : (
                         <svg

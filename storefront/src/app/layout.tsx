@@ -95,8 +95,8 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
 };
 
@@ -111,16 +111,7 @@ export default function RootLayout({
       className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
-        />
-        <meta
-          name="p:domain_verify"
-          content="05e17f9bd7917ad9a8dd38bdc291baf3"
-        />
-      </head>
+      <head />
       <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <ThemeColorSync />
