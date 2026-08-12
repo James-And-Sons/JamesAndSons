@@ -56,7 +56,15 @@ export async function inspectUrlStatus(
     );
 
     if (!res.ok) {
-      console.warn(`GSC Inspection API returned HTTP ${res.status}`);
+      if (res.status === 403) {
+        console.warn(
+          `[SEO] GSC URL Inspection returned 403 Forbidden. ` +
+            `The service account (${email}) must be added as a Full User in Google Search Console: ` +
+            `https://search.google.com/search-console → Settings → Users and permissions → Add User.`,
+        );
+      } else {
+        console.warn(`[SEO] GSC Inspection API returned HTTP ${res.status}`);
+      }
       return generateMockInspectionResult();
     }
 

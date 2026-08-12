@@ -62,6 +62,28 @@ export async function GET(request: Request) {
           message: `Starting bulk scan of ${total} products...`,
         });
 
+        // ── Pre-flight credential checks ────────────────────────────
+        const psKey = process.env.GOOGLE_PAGESPEED_API_KEY || "";
+        const geminiKey = process.env.GEMINI_API_KEY || "";
+        const gscEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "";
+
+        if (!psKey || psKey.startsWith("AQ.") || psKey === geminiKey) {
+          send({
+            type: "warning",
+            message:
+              "⚠️  PageSpeed API key is missing or set to the Gemini key. Scans will use mock data. " +
+              "Fix: Create a Cloud API key at console.cloud.google.com → Credentials → API Key, restrict it to PageSpeed Insights API, " +
+              "then set GOOGLE_PAGESPEED_API_KEY in admin/.env.local.",
+          });
+        }
+        if (!gscEmail) {
+          send({
+            type: "warning",
+            message:
+              "⚠️  GOOGLE_SERVICE_ACCOUNT_EMAIL is not set. Google indexing status will use mock data.",
+          });
+        }
+
         let completed = 0;
         let failed = 0;
         const errors: { productId: string; name: string; error: string }[] = [];

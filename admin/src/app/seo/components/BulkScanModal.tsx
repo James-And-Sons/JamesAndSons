@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 interface ScanProgress {
-  type: "init" | "progress" | "complete" | "error";
+  type: "init" | "progress" | "complete" | "error" | "warning";
   total?: number;
   completed?: number;
   failed?: number;
@@ -38,6 +38,7 @@ export default function BulkScanModal({
     "idle",
   );
   const [progress, setProgress] = useState<ScanProgress | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [log, setLog] = useState<
     { name: string; status: "success" | "error"; error?: string }[]
   >([]);
@@ -54,6 +55,7 @@ export default function BulkScanModal({
     setPhase("scanning");
     setLog([]);
     setProgress(null);
+    setWarnings([]);
 
     abortRef.current = new AbortController();
 
@@ -85,6 +87,10 @@ export default function BulkScanModal({
           try {
             const data: ScanProgress = JSON.parse(line.slice(6));
             setProgress(data);
+
+            if (data.type === "warning" && data.message) {
+              setWarnings((prev) => [...prev, data.message!]);
+            }
 
             if (data.type === "progress" && data.productName) {
               setLog((prev) => [
@@ -283,6 +289,23 @@ export default function BulkScanModal({
                   />
                 </div>
               </div>
+
+              {/* Credential warnings — shown when pre-flight detects bad/missing keys */}
+              {warnings.length > 0 && (
+                <div className="space-y-2">
+                  {warnings.map((w, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2.5 p-3 rounded-sm border border-amber-500/25 bg-amber-500/5"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-[11px] font-mono text-amber-400 leading-relaxed">
+                        {w}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Live Log */}
               <div className="rounded-sm border border-[var(--color-border)] bg-[var(--color-surface-muted)] overflow-hidden">

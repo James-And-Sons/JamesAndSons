@@ -24,8 +24,24 @@ export async function runPageSpeedScan(
   options: PageSpeedScanOptions,
 ): Promise<PageSpeedScanResult> {
   const apiKey = options.apiKey || process.env.GOOGLE_PAGESPEED_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || "";
 
-  if (!apiKey || apiKey.trim().length === 0) {
+  // Guard: missing key, or key is the Gemini/AI Studio key (prefix AQ.) mistakenly
+  // placed in the PageSpeed slot — fall back to mock immediately, no API call.
+  const keyInvalid =
+    !apiKey ||
+    apiKey.trim().length === 0 ||
+    apiKey === geminiKey ||
+    apiKey.startsWith("AQ.");
+
+  if (keyInvalid) {
+    if (apiKey && (apiKey === geminiKey || apiKey.startsWith("AQ."))) {
+      console.warn(
+        "[SEO] GOOGLE_PAGESPEED_API_KEY is set to a Gemini/AI Studio key. " +
+          "Please create a separate Cloud API key restricted to the PageSpeed Insights API. " +
+          "Falling back to mock data.",
+      );
+    }
     return generateMockPageSpeedResult(options.targetUrl);
   }
 
@@ -34,6 +50,11 @@ export async function runPageSpeedScan(
       fetchStrategyData(options.targetUrl, "mobile", apiKey),
       fetchStrategyData(options.targetUrl, "desktop", apiKey),
     ]);
+
+    // Either strategy returning null means the API rejected us — use mock
+    if (!mobileData || !desktopData) {
+      return generateMockPageSpeedResult(options.targetUrl);
+    }
 
     const warnings: PageSpeedAuditWarning[] = [
       ...extractAuditWarnings(mobileData, "mobile"),
@@ -69,12 +90,27 @@ async function fetchStrategyData(
   url: string,
   strategy: "mobile" | "desktop",
   apiKey: string,
-) {
+): Promise<any | null> {
   const endpoint = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(
     url,
   )}&strategy=${strategy}&category=PERFORMANCE&category=ACCESSIBILITY&category=BEST_PRACTICES&category=SEO&key=${apiKey}`;
 
   const res = await fetch(endpoint, { next: { revalidate: 3600 } } as any);
+
+  // Auth/rate-limit errors: return null so caller falls back to mock (do NOT throw)
+  if (res.status === 401 || res.status === 403) {
+    console.warn(
+      `[SEO] PageSpeed API rejected the request (HTTP ${res.status}) for strategy=${strategy}. ` +
+        `Check that GOOGLE_PAGESPEED_API_KEY is a valid Cloud API key with PageSpeed Insights API enabled.`,
+    );
+    return null;
+  }
+  if (res.status === 429) {
+    console.warn(
+      `[SEO] PageSpeed API rate-limited (HTTP 429) for strategy=${strategy}. Falling back to mock.`,
+    );
+    return null;
+  }
   if (!res.ok) {
     throw new Error(`PageSpeed API returned HTTP ${res.status}`);
   }
