@@ -13,10 +13,19 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default process.env.SENTRY_AUTH_TOKEN
+const hasValidSentryConfig = Boolean(
+  process.env.SENTRY_AUTH_TOKEN &&
+  process.env.SENTRY_ORG &&
+  process.env.SENTRY_PROJECT &&
+  process.env.SENTRY_ORG !== "your-sentry-org-slug" &&
+  process.env.SENTRY_PROJECT !== "your-sentry-project-slug",
+);
+
+export default hasValidSentryConfig
   ? withSentryConfig(nextConfig, {
-      org: process.env.SENTRY_ORG || "your-sentry-org-slug",
-      project: process.env.SENTRY_PROJECT || "your-sentry-project-slug",
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
       sourcemaps: {
         deleteSourcemapsAfterUpload: true,
       },
