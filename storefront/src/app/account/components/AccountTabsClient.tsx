@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Package,
   FileText,
@@ -9,11 +10,13 @@ import {
   MapPin,
   Ticket,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import AccountProfileCard from "./AccountProfileCard";
 import RecentOrdersSection from "./RecentOrdersSection";
 import AccountWishlistClient from "../AccountWishlistClient";
 import PasskeyManagerCard from "@/components/PasskeyManagerCard";
+import { triggerHaptic } from "@/lib/utils";
 
 interface AccountTabsClientProps {
   user: any;
@@ -36,6 +39,9 @@ export default function AccountTabsClient({
   tickets,
   totalOrderCount,
 }: AccountTabsClientProps) {
+  const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
+  const router = useRouter();
+
   const accountLinks = [
     {
       label: "My Orders",
@@ -69,6 +75,13 @@ export default function AccountTabsClient({
     },
   ];
 
+  const handleTileClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    triggerHaptic();
+    setNavigatingHref(href);
+    router.push(href);
+  };
+
   return (
     <div className="space-y-8 lg:space-y-10 w-full">
       {/* ── 1. Profile Hero Card Banner (Spans Full Desktop Width) ── */}
@@ -82,28 +95,54 @@ export default function AccountTabsClient({
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[24px] p-3 sm:p-4 shadow-sm flex flex-col gap-2.5">
             {accountLinks.map((link) => {
               const Icon = link.icon;
+              const isLoading = navigatingHref === link.href;
+
               return (
-                <Link
+                <a
                   key={link.href}
                   href={link.href}
-                  className="flex items-center gap-4 p-3.5 sm:p-4 rounded-[16px] bg-[var(--background)]/60 border border-[var(--border)]/50 hover:border-[var(--gold)]/40 hover:bg-[var(--surface2)] transition-all group text-decoration-none shadow-xs"
+                  onClick={(e) => handleTileClick(e, link.href)}
+                  className={`flex items-center gap-4 p-3.5 sm:p-4 rounded-[16px] border transition-all group text-decoration-none shadow-xs cursor-pointer ${
+                    isLoading
+                      ? "bg-[rgba(196,160,90,0.15)] border-[var(--gold)] animate-pulse"
+                      : "bg-[var(--background)]/60 border-[var(--border)]/50 hover:border-[var(--gold)]/40 hover:bg-[var(--surface2)]"
+                  }`}
                 >
                   <div className="w-10 h-10 rounded-[12px] bg-[rgba(196,160,90,0.13)] border border-[var(--border)] flex items-center justify-center text-[var(--gold)] shrink-0 group-hover:border-[var(--gold)]/40 transition-colors">
-                    <Icon size={18} />
+                    {isLoading ? (
+                      <Loader2
+                        size={18}
+                        className="animate-spin text-[var(--gold)]"
+                      />
+                    ) : (
+                      <Icon size={18} />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors">
-                      {link.label}
+                    <div className="text-sm font-medium text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors flex items-center gap-2">
+                      <span>{link.label}</span>
+                      {isLoading && (
+                        <span className="text-[10px] font-mono text-[var(--gold)] uppercase tracking-wider">
+                          Loading...
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
                       {link.desc}
                     </div>
                   </div>
-                  <ChevronRight
-                    size={18}
-                    className="text-[var(--text-muted)] group-hover:text-[var(--gold)] group-hover:translate-x-0.5 transition-all"
-                  />
-                </Link>
+                  {isLoading ? (
+                    <Loader2
+                      size={18}
+                      className="text-[var(--gold)] animate-spin"
+                    />
+                  ) : (
+                    <ChevronRight
+                      size={18}
+                      className="text-[var(--text-muted)] group-hover:text-[var(--gold)] group-hover:translate-x-0.5 transition-all"
+                    />
+                  )}
+                </a>
               );
             })}
           </div>
