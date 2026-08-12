@@ -111,7 +111,12 @@ export default function RootLayout({
       className={`${cormorant.variable} ${dmMono.variable} ${outfit.variable}`}
       suppressHydrationWarning
     >
-      <head />
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+        />
+      </head>
       <body className="antialiased" suppressHydrationWarning>
         <Providers>
           <ThemeColorSync />
