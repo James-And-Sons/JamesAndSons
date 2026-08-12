@@ -36,8 +36,8 @@ export async function runPageSpeedScan(
 
   if (keyInvalid) {
     if (apiKey && (apiKey === geminiKey || apiKey.startsWith("AQ."))) {
-      console.warn(
-        "[SEO] GOOGLE_PAGESPEED_API_KEY is set to a Gemini/AI Studio key. " +
+      console.error(
+        "[SEO] ❌ GOOGLE_PAGESPEED_API_KEY is set to a Gemini/AI Studio key. " +
           "Please create a separate Cloud API key restricted to the PageSpeed Insights API. " +
           "Falling back to mock data.",
       );
@@ -99,15 +99,15 @@ async function fetchStrategyData(
 
   // Auth/rate-limit errors: return null so caller falls back to mock (do NOT throw)
   if (res.status === 401 || res.status === 403) {
-    console.warn(
-      `[SEO] PageSpeed API rejected the request (HTTP ${res.status}) for strategy=${strategy}. ` +
+    console.error(
+      `[SEO] ❌ PageSpeed API rejected the request (HTTP ${res.status}) for strategy=${strategy}. ` +
         `Check that GOOGLE_PAGESPEED_API_KEY is a valid Cloud API key with PageSpeed Insights API enabled.`,
     );
     return null;
   }
   if (res.status === 429) {
-    console.warn(
-      `[SEO] PageSpeed API rate-limited (HTTP 429) for strategy=${strategy}. Falling back to mock.`,
+    console.error(
+      `[SEO] ⚠️  PageSpeed API rate-limited (HTTP 429) for strategy=${strategy}. Falling back to mock.`,
     );
     return null;
   }
