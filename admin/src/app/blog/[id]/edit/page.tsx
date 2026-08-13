@@ -6,9 +6,9 @@ import BlogFormClient from "./BlogFormClient";
 export const dynamic = "force-dynamic";
 
 interface EditBlogPostPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditBlogPostPage({

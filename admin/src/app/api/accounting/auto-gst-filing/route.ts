@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { generateFinancialStatementWorkbook } from "../../../../lib/accounting-exporter";
 
-export const TARGET_ACCOUNTS_EMAIL = "accounts@jamesandsons.in";
+const TARGET_ACCOUNTS_EMAIL = "accounts@jamesandsons.in";
 
 // In-memory cache to prevent duplicate email dispatches within the same month session
 let lastDispatchedMonthKey = "";
 
-export async function executeGstFilingDispatch() {
+async function executeGstFilingDispatch() {
   const now = new Date();
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
