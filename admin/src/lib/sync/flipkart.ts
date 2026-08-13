@@ -102,78 +102,81 @@ export async function syncToFlipkart(product: any) {
         },
       });
 
+      const createListingHelper = async () => {
+        console.log(
+          `[Flipkart Sync] SKU ${sku} is not yet active on Flipkart. Attempting auto-listing creation via API...`,
+        );
+
+        const createUrl = "https://api.flipkart.net/sellers/listings/v3/create";
+        const createPayload = {
+          [sku]: {
+            sku_id: sku,
+            attribute_values: {
+              title: product.name || sku,
+              brand: "JAMES&SONS",
+              description: product.description || product.name || sku,
+              hsn: product.hsnCode || "94051900",
+              tax_code: "GST_18",
+              country_of_origin: "IN",
+              manufacturer_details: ["JAMES&SONS"],
+              packer_details: ["JAMES&SONS"],
+            },
+            price: {
+              mrp: Math.round(mrp),
+              selling_price: Math.round(price),
+              currency: "INR",
+            },
+            fulfillment: {
+              dispatch_in_days: 1,
+              fulfillment_profile: "NON_FBF",
+              procurement_type: "EXPRESS",
+            },
+            package_details: {
+              length: Number(product.packageLength) || 17.78,
+              breadth: Number(product.packageWidth) || 10.16,
+              height: Number(product.packageHeight) || 50.8,
+              weight: Number(product.packageWeight) || 0.7,
+            },
+            locations: [
+              {
+                inventory: Math.max(0, quantity),
+              },
+            ],
+          },
+        };
+
+        const createRes = await fetch(createUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(createPayload),
+        });
+
+        if (createRes.ok) {
+          console.log(
+            `[Flipkart Sync] Successfully created listing draft for SKU ${sku} on Flipkart!`,
+          );
+          return { sku, success: true, status: "CREATED" };
+        } else {
+          const createErr = await createRes.text();
+          console.warn(
+            `[Flipkart Sync] Listing creation for SKU ${sku} returned ${createRes.status}:`,
+            createErr,
+          );
+          return {
+            sku,
+            success: false,
+            status: "SKIPPED",
+            reason: `Unlisted SKU. Creation response: ${createRes.status} - ${createErr.substring(0, 150)}`,
+          };
+        }
+      };
+
       if (!getRes.ok) {
         if (getRes.status === 404) {
-          console.log(
-            `[Flipkart Sync] SKU ${sku} is not yet listed on Flipkart. Attempting auto-listing creation via API...`,
-          );
-
-          const createUrl =
-            "https://api.flipkart.net/sellers/listings/v3/create";
-          const createPayload = {
-            [sku]: {
-              sku_id: sku,
-              attribute_values: {
-                title: product.name || sku,
-                brand: "JAMES&SONS",
-                description: product.description || product.name || sku,
-                hsn: product.hsnCode || "94051900",
-                tax_code: "GST_18",
-                country_of_origin: "IN",
-                manufacturer_details: ["JAMES&SONS"],
-                packer_details: ["JAMES&SONS"],
-              },
-              price: {
-                mrp: Math.round(mrp),
-                selling_price: Math.round(price),
-                currency: "INR",
-              },
-              fulfillment: {
-                dispatch_in_days: 1,
-                fulfillment_profile: "NON_FBF",
-                procurement_type: "EXPRESS",
-              },
-              package_details: {
-                length: Number(product.packageLength) || 17.78,
-                breadth: Number(product.packageWidth) || 10.16,
-                height: Number(product.packageHeight) || 50.8,
-                weight: Number(product.packageWeight) || 0.7,
-              },
-              locations: [
-                {
-                  inventory: Math.max(0, quantity),
-                },
-              ],
-            },
-          };
-
-          const createRes = await fetch(createUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(createPayload),
-          });
-
-          if (createRes.ok) {
-            console.log(
-              `[Flipkart Sync] Successfully created listing draft for SKU ${sku} on Flipkart!`,
-            );
-            return { sku, success: true, status: "CREATED" };
-          } else {
-            const createErr = await createRes.text();
-            console.warn(
-              `[Flipkart Sync] Listing creation for SKU ${sku} returned ${createRes.status}:`,
-              createErr,
-            );
-            return {
-              sku,
-              success: false,
-              status: "SKIPPED",
-              reason: `Unlisted SKU. Creation response: ${createRes.status} - ${createErr.substring(0, 150)}`,
-            };
-          }
+          return await createListingHelper();
         }
         const errText = await getRes.text();
         throw new Error(
@@ -185,15 +188,7 @@ export async function syncToFlipkart(product: any) {
       const listing = getData.available?.[sku];
 
       if (!listing) {
-        console.log(
-          `[Flipkart Sync] SKU ${sku} not found in available listings response. Skipping sync.`,
-        );
-        return {
-          sku,
-          success: true,
-          status: "SKIPPED",
-          reason: "SKU not available",
-        };
+        return await createListingHelper();
       }
 
       const fsn = listing.product_id;
