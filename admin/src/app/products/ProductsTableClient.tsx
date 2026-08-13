@@ -53,6 +53,7 @@ export default function ProductsTableClient({
   const [flipkartExportFilter, setFlipkartExportFilter] = useState<
     "unlisted" | "all"
   >("unlisted");
+  const [flipkartVertical, setFlipkartVertical] = useState("Ceiling Lamp");
 
   useEffect(() => {
     setProductsList(initialProducts);
@@ -799,9 +800,41 @@ export default function ProductsTableClient({
 
             <p className="text-xs text-secondary leading-relaxed">
               Generate a formatted bulk listing template for Flipkart Seller Hub
-              upload. Choose whether you want to export only unlisted SKUs or
-              your full product catalog.
+              upload. Choose your category vertical and scope to export.
             </p>
+
+            {/* Category Vertical Selector */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-secondary font-semibold block">
+                Flipkart Category Vertical:
+              </label>
+              <select
+                value={flipkartVertical}
+                onChange={(e) => setFlipkartVertical(e.target.value)}
+                className="w-full bg-background border border-border px-3 py-2 text-xs font-mono text-primary rounded-sm focus:outline-none focus:border-accent cursor-pointer"
+              >
+                <option value="Ceiling Lamp">
+                  Ceiling Lamp (Chandelier, Hanging Lamp, Pendant)
+                </option>
+                <option value="Wall Lamps">
+                  Wall Lamps (Wall Light, Sconce, Picture Light)
+                </option>
+                <option value="Floor Lamps & Lights">
+                  Floor Lamps & Lights (Floor Standing Lamp)
+                </option>
+                <option value="Table Lamp">
+                  Table Lamp (Desk Lamp, Bedside Lamp)
+                </option>
+                <option value="Lamp Shade">Lamp Shade</option>
+                <option value="Lantern">
+                  Lantern (Outdoor Lantern, Hanging Lantern)
+                </option>
+              </select>
+              <span className="text-[10px] text-secondary/70 block">
+                Downloads exact official template file for this vertical without
+                name changes.
+              </span>
+            </div>
 
             {/* Switch / Toggle Options */}
             <div className="space-y-3 bg-surface-muted p-4 rounded-sm border border-border/50">
@@ -865,8 +898,7 @@ export default function ProductsTableClient({
                 Cancel
               </button>
               <a
-                href={`/api/admin/export/flipkart?filter=${flipkartExportFilter}`}
-                download={`flipkart_listing_feed_${flipkartExportFilter}.xls`}
+                href={`/api/admin/export/flipkart?filter=${flipkartExportFilter}&vertical=${encodeURIComponent(flipkartVertical)}`}
                 onClick={() => setIsFlipkartModalOpen(false)}
                 className="font-mono text-[10px] uppercase tracking-wider bg-primary text-primary-foreground font-bold px-4 py-2 rounded-sm hover:opacity-90 transition-opacity flex items-center gap-2"
               >

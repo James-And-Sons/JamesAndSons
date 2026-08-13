@@ -32,13 +32,12 @@ export async function GET(req: NextRequest) {
       `[Flipkart Export] Generating Flipkart feed for ${products.length} products (Filter: ${filter}, Vertical: ${categoryVertical})...`,
     );
 
-    const fileBuffer = generateFlipkartExcelFeed(products, {
+    const { buffer, filename } = generateFlipkartExcelFeed(products, {
       filter,
       categoryVertical,
     });
 
-    const uint8Array = new Uint8Array(fileBuffer);
-    const filename = `flipkart_bulk_feed_${filter}.xls`;
+    const uint8Array = new Uint8Array(buffer);
 
     return new Response(uint8Array, {
       status: 200,

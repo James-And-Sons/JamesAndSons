@@ -46,6 +46,7 @@ const TEMPLATE_MAP: Record<string, { file: string; sheet: string }> = {
 function getTemplatePath(vertical: string): {
   templatePath: string;
   sheetName: string;
+  filename: string;
 } {
   const normalized = (vertical || "ceiling lamp").toLowerCase();
   const config = TEMPLATE_MAP[normalized] || TEMPLATE_MAP["ceiling lamp"];
@@ -66,7 +67,11 @@ function getTemplatePath(vertical: string): {
 
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
-      return { templatePath: p, sheetName: config.sheet };
+      return {
+        templatePath: p,
+        sheetName: config.sheet,
+        filename: config.file,
+      };
     }
   }
 
@@ -88,9 +93,9 @@ function writeCell(sheet: any, row: number, col: number, value: any) {
 export function generateFlipkartExcelFeed(
   products: any[],
   options: FlipkartExportOptions,
-): Buffer {
+): { buffer: Buffer; filename: string } {
   const vertical = options.categoryVertical || "Ceiling Lamp";
-  const { templatePath, sheetName } = getTemplatePath(vertical);
+  const { templatePath, sheetName, filename } = getTemplatePath(vertical);
 
   console.log(
     `[Flipkart Feed Generator] Reading official template: ${templatePath} (Sheet: ${sheetName})`,
@@ -209,5 +214,6 @@ export function generateFlipkartExcelFeed(
     e: { r: Math.max(rowIdx - 1, 10), c: Math.max(range.e.c, 60) },
   });
 
-  return XLSX.write(workbook, { bookType: "xls", type: "buffer" });
+  const buffer = XLSX.write(workbook, { bookType: "xls", type: "buffer" });
+  return { buffer, filename };
 }
