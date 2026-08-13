@@ -13,6 +13,7 @@ export default async function OrdersPage() {
       id: true,
       orderNumber: true,
       amazonOrderId: true,
+      flipkartOrderId: true,
       createdAt: true,
       totalAmount: true,
       status: true,
@@ -39,6 +40,7 @@ export default async function OrdersPage() {
     if (!n) return true;
     return (
       n.includes("Amazon") ||
+      n.includes("Flipkart") ||
       n.includes("Marketplace") ||
       n.includes("Not Authorized") ||
       n.trim() === ""
@@ -47,11 +49,16 @@ export default async function OrdersPage() {
 
   function isPlaceholderEmail(e?: string | null) {
     if (!e) return true;
-    return e.startsWith("amazon-") || e.includes("amazon-marketplace");
+    return (
+      e.startsWith("amazon-") ||
+      e.startsWith("flipkart-") ||
+      e.includes("marketplace")
+    );
   }
 
   const formattedOrders = orders.map((o: any) => {
     const isAmazon = o.channel === "AMAZON" || Boolean(o.amazonOrderId);
+    const isFlipkart = o.channel === "FLIPKART" || Boolean(o.flipkartOrderId);
     const userFullName =
       `${o.user?.firstName || ""} ${o.user?.lastName || ""}`.trim();
 
@@ -61,7 +68,11 @@ export default async function OrdersPage() {
         : null) ||
       (!isPlaceholderName(userFullName) ? userFullName : null) ||
       o.recipientName ||
-      (isAmazon ? "Amazon Customer" : "Guest Customer");
+      (isAmazon
+        ? "Amazon Customer"
+        : isFlipkart
+          ? "Flipkart Customer"
+          : "Guest Customer");
 
     const displayEmail =
       (o.recipientEmail && !isPlaceholderEmail(o.recipientEmail)
@@ -72,7 +83,9 @@ export default async function OrdersPage() {
         ? `${o.shippingCity}, ${o.shippingState}`
         : isAmazon
           ? "Amazon Order"
-          : "Direct Purchase");
+          : isFlipkart
+            ? "Flipkart Order"
+            : "Direct Purchase");
 
     return {
       id: o.id,

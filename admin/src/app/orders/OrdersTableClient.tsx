@@ -15,7 +15,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
-import { syncAmazonOrdersAction } from "./actions";
+import { syncAmazonOrdersAction, syncFlipkartOrdersAction } from "./actions";
 
 interface OrderItem {
   id: string;
@@ -42,6 +42,7 @@ export default function OrdersTableClient({
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [channelFilter, setChannelFilter] = useState("ALL");
   const [isSyncingAmazon, setIsSyncingAmazon] = useState(false);
+  const [isSyncingFlipkart, setIsSyncingFlipkart] = useState(false);
   const [lastSyncText, setLastSyncText] = useState<string | null>(null);
 
   const performAmazonSync = useCallback(
@@ -90,19 +91,67 @@ export default function OrdersTableClient({
     [router],
   );
 
+  const performFlipkartSync = useCallback(
+    async (forceManual = false) => {
+      const STORAGE_KEY = "jns_flipkart_last_sync_timestamp";
+      const COOLDOWN_MS = 5 * 60 * 1000;
+
+      const lastSyncStr =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem(STORAGE_KEY)
+          : null;
+      const lastSyncTime = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+      const now = Date.now();
+
+      if (!forceManual && lastSyncTime && now - lastSyncTime < COOLDOWN_MS) {
+        return;
+      }
+
+      setIsSyncingFlipkart(true);
+      try {
+        const res = await syncFlipkartOrdersAction();
+        if (res.success) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(STORAGE_KEY, String(now));
+          }
+          setLastSyncText("Just synced");
+          router.refresh();
+          if (forceManual) {
+            alert(`✅ Flipkart Order Sync Complete!\n\n${res.message}`);
+          }
+        } else if (forceManual) {
+          alert(`❌ Flipkart Sync failed: ${res.error}`);
+        }
+      } catch (err: any) {
+        if (forceManual) {
+          alert(`❌ Flipkart Sync error: ${err?.message || err}`);
+        }
+      } finally {
+        setIsSyncingFlipkart(false);
+      }
+    },
+    [router],
+  );
+
   useEffect(() => {
     performAmazonSync(false);
+    performFlipkartSync(false);
     const interval = setInterval(
       () => {
         performAmazonSync(false);
+        performFlipkartSync(false);
       },
       5 * 60 * 1000,
     ); // Check every 5 minutes
     return () => clearInterval(interval);
-  }, [performAmazonSync]);
+  }, [performAmazonSync, performFlipkartSync]);
 
   const handleSyncAmazon = () => {
     performAmazonSync(true);
+  };
+
+  const handleSyncFlipkart = () => {
+    performFlipkartSync(true);
   };
 
   const metrics = useMemo(() => {
@@ -131,6 +180,10 @@ export default function OrdersTableClient({
       (r) => (r.channel || "").toUpperCase() === "AMAZON",
     ).length;
 
+    const flipkartCount = records.filter(
+      (r) => (r.channel || "").toUpperCase() === "FLIPKART",
+    ).length;
+
     const b2bCount = records.filter(
       (r) => (r.channel || "").toUpperCase() === "B2B",
     ).length;
@@ -149,6 +202,7 @@ export default function OrdersTableClient({
       shippedCount,
       cancelledCount,
       amazonCount,
+      flipkartCount,
       b2bCount,
       storefrontCount,
     };
@@ -179,6 +233,8 @@ export default function OrdersTableClient({
       let matchesChannel = true;
       if (channelFilter === "AMAZON") {
         matchesChannel = (r.channel || "").toUpperCase() === "AMAZON";
+      } else if (channelFilter === "FLIPKART") {
+        matchesChannel = (r.channel || "").toUpperCase() === "FLIPKART";
       } else if (channelFilter === "B2B") {
         matchesChannel = (r.channel || "").toUpperCase() === "B2B";
       } else if (channelFilter === "STOREFRONT") {
@@ -211,9 +267,9 @@ export default function OrdersTableClient({
     ];
     const rows = filteredRecords.map((r) => [
       r.displayId,
-      new Date(r.date).toISOString().split("T")[0],
-      r.customerName,
-      r.company || "",
+      new Date(r.date).toLocaleDateString("en-IN"),
+      `"${r.customerName.replace(/"/g, '""')}"`,
+      `"${(r.company || "").replace(/"/g, '""')}"`,
       r.email,
       r.totalValue,
       r.status,
@@ -222,9 +278,7 @@ export default function OrdersTableClient({
 
     const csvContent = [
       headers.join(","),
-      ...rows.map((row) =>
-        row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
-      ),
+      ...rows.map((row) => row.join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -262,52 +316,60 @@ export default function OrdersTableClient({
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* ── Stat Cards Header ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="p-4 bg-surface border border-border rounded-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Net Sales Revenue
           </p>
-          <p className="font-serif text-[22px] text-accent font-light">
+          <p className="font-serif text-[20px] text-accent font-light">
             ₹{metrics.netRev.toLocaleString("en-IN")}
           </p>
         </div>
-        <div className="p-4 bg-surface border border-border rounded-sm">
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Total Orders
           </p>
-          <p className="font-serif text-[22px] text-primary font-light">
+          <p className="font-serif text-[20px] text-primary font-light">
             {records.length.toLocaleString("en-IN")}
           </p>
         </div>
-        <div className="p-4 bg-surface border border-border rounded-sm">
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Ready for Pickup
           </p>
-          <p className="font-serif text-[22px] text-amber-400 font-light">
+          <p className="font-serif text-[20px] text-amber-400 font-light">
             {metrics.readyCount.toLocaleString("en-IN")}
           </p>
         </div>
-        <div className="p-4 bg-surface border border-border rounded-sm">
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Shipped & Delivered
           </p>
-          <p className="font-serif text-[22px] text-emerald-400 font-light">
+          <p className="font-serif text-[20px] text-emerald-400 font-light">
             {metrics.shippedCount.toLocaleString("en-IN")}
           </p>
         </div>
-        <div className="p-4 bg-surface border border-border rounded-sm">
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Amazon.in Orders
           </p>
-          <p className="font-serif text-[22px] text-orange-400 font-light">
+          <p className="font-serif text-[20px] text-amber-400 font-light">
             {metrics.amazonCount.toLocaleString("en-IN")}
           </p>
         </div>
-        <div className="p-4 bg-surface border border-border rounded-sm">
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
+          <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
+            Flipkart Orders
+          </p>
+          <p className="font-serif text-[20px] text-blue-400 font-light">
+            {metrics.flipkartCount.toLocaleString("en-IN")}
+          </p>
+        </div>
+        <div className="p-3.5 bg-surface border border-border rounded-sm">
           <p className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted mb-1">
             Cancelled / Refunded
           </p>
-          <p className="font-serif text-[22px] text-red-400 font-light">
+          <p className="font-serif text-[20px] text-red-400 font-light">
             {metrics.cancelledCount.toLocaleString("en-IN")}
           </p>
         </div>
@@ -343,6 +405,18 @@ export default function OrdersTableClient({
             <span>{isSyncingAmazon ? "Syncing..." : "Sync Amazon Orders"}</span>
           </button>
           <button
+            onClick={handleSyncFlipkart}
+            disabled={isSyncingFlipkart}
+            className="flex-1 md:flex-initial px-4 py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 transition-all font-mono text-[10px] uppercase tracking-wider rounded-xs flex items-center justify-center gap-2"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isSyncingFlipkart ? "animate-spin" : ""}`}
+            />
+            <span>
+              {isSyncingFlipkart ? "Syncing..." : "Sync Flipkart Orders"}
+            </span>
+          </button>
+          <button
             onClick={handleExportCSV}
             className="px-4 py-2.5 bg-surface border border-border hover:bg-white/5 transition-all text-muted font-mono text-[10px] uppercase tracking-wider rounded-xs flex items-center gap-2"
           >
@@ -373,6 +447,7 @@ export default function OrdersTableClient({
               { id: "ALL", label: "All Channels" },
               { id: "STOREFRONT", label: "D2C Storefront" },
               { id: "AMAZON", label: "Amazon" },
+              { id: "FLIPKART", label: "Flipkart" },
               { id: "B2B", label: "B2B Wholesale" },
             ].map((c) => (
               <button
@@ -390,7 +465,7 @@ export default function OrdersTableClient({
           </div>
         </div>
 
-        {/* Status Filter Tabs & Action Buttons */}
+        {/* Status Filter Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/60">
           <div className="flex flex-wrap gap-2">
             {[
@@ -412,41 +487,10 @@ export default function OrdersTableClient({
               </button>
             ))}
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Sync Amazon Manual Trigger Button */}
-            <button
-              onClick={handleSyncAmazon}
-              disabled={isSyncingAmazon}
-              className="font-mono text-[11px] uppercase tracking-wider px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 rounded-xs transition-colors flex items-center gap-1.5 font-bold cursor-pointer disabled:opacity-50"
-              title="Manual Trigger: Fetch recent 24h Amazon orders from SP-API"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${isSyncingAmazon ? "animate-spin" : ""}`}
-              />
-              <span>{isSyncingAmazon ? "Syncing..." : "Sync Amazon"}</span>
-            </button>
-
-            {/* CSV Export Button */}
-            <button
-              onClick={handleExportCSV}
-              className="font-mono text-[11px] uppercase tracking-wider px-3 py-1.5 border border-border text-muted hover:text-accent hover:border-accent/40 rounded-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </button>
-          </div>
         </div>
-
-        {lastSyncText && (
-          <div className="flex justify-between items-center text-[10px] font-mono text-muted/70 pt-1 border-t border-border/40">
-            <span>Amazon SP-API Status: Connected</span>
-            <span>{lastSyncText}</span>
-          </div>
-        )}
       </div>
 
-      {/* ── Orders Table (Desktop) ───────────────────────────────────────── */}
+      {/* ── Orders Table ─────────────────────────────────────────────────── */}
       <div className="bg-surface border border-border rounded-sm overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -516,6 +560,10 @@ export default function OrdersTableClient({
                     {r.channel === "AMAZON" ? (
                       <span className="px-2 py-0.5 bg-amber-500/5 border border-amber-500/20 text-amber-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
                         Amazon
+                      </span>
+                    ) : r.channel === "FLIPKART" ? (
+                      <span className="px-2 py-0.5 bg-blue-500/5 border border-blue-500/20 text-blue-400/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
+                        Flipkart
                       </span>
                     ) : r.channel === "B2B" ? (
                       <span className="px-2 py-0.5 bg-purple-500/5 border border-purple-500/20 text-purple-300/90 font-mono text-[9px] uppercase tracking-wider rounded-xs font-semibold">
