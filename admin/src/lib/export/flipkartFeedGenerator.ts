@@ -80,14 +80,20 @@ function getTemplatePath(vertical: string): {
 
 function writeCell(sheet: any, row: number, col: number, value: any) {
   const cellRef = XLSX.utils.encode_cell({ r: row - 1, c: col - 1 });
-  if (value === null || value === undefined) {
-    delete sheet[cellRef];
+  if (value === null || value === undefined || value === "") {
     return;
   }
   let type = "s";
   if (typeof value === "number") type = "n";
   else if (typeof value === "boolean") type = "b";
-  sheet[cellRef] = { t: type, v: value };
+
+  if (!sheet[cellRef]) {
+    sheet[cellRef] = { t: type, v: value };
+  } else {
+    sheet[cellRef].t = type;
+    sheet[cellRef].v = value;
+    if (sheet[cellRef].w) delete sheet[cellRef].w;
+  }
 }
 
 export function generateFlipkartExcelFeed(
@@ -101,22 +107,19 @@ export function generateFlipkartExcelFeed(
     `[Flipkart Feed Generator] Reading official template: ${templatePath} (Sheet: ${sheetName})`,
   );
   const fileBytes = fs.readFileSync(templatePath);
-  const workbook = XLSX.read(fileBytes, { type: "buffer" });
+  const workbook = XLSX.read(fileBytes, {
+    type: "buffer",
+    cellStyles: true,
+    cellFormula: true,
+    cellDates: true,
+    cellNF: true,
+  });
   const sheet = workbook.Sheets[sheetName];
 
   if (!sheet) {
     throw new Error(
       `Worksheet '${sheetName}' not found in Flipkart workbook template.`,
     );
-  }
-
-  // Clear existing template sample data starting from Row 5
-  for (const key of Object.keys(sheet)) {
-    if (key.startsWith("!")) continue;
-    const cell = XLSX.utils.decode_cell(key);
-    if (cell.r >= 4) {
-      delete sheet[key];
-    }
   }
 
   // Map header columns dynamically from Row 1
@@ -214,6 +217,6 @@ export function generateFlipkartExcelFeed(
     e: { r: Math.max(rowIdx - 1, 10), c: Math.max(range.e.c, 60) },
   });
 
-  const buffer = XLSX.write(workbook, { bookType: "xls", type: "buffer" });
+  const buffer = XLSX.write(workbook, { bookType: "biff8", type: "buffer" });
   return { buffer, filename };
 }
