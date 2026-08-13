@@ -70,6 +70,57 @@ async function getFlipkartAccessToken() {
   return data.access_token;
 }
 
+function getFlipkartVertical(product: any): string {
+  const catName = (
+    typeof product.category === "object"
+      ? product.category?.name || ""
+      : product.category || ""
+  ).toLowerCase();
+  const prodName = (product.name || "").toLowerCase();
+  const skuStr = (product.sku || "").toLowerCase();
+  const combined = `${catName} ${prodName} ${skuStr}`;
+
+  if (
+    combined.includes("pendant") ||
+    combined.includes("chandelier") ||
+    combined.includes("ceiling") ||
+    combined.includes("hanging")
+  ) {
+    return "Ceiling Lamp";
+  }
+  if (combined.includes("floor")) {
+    return "Floor Lamps & Lights";
+  }
+  if (combined.includes("table") || combined.includes("desk")) {
+    return "Table Lamp";
+  }
+  if (
+    combined.includes("wall") ||
+    combined.includes("sconce") ||
+    combined.includes("bracket")
+  ) {
+    return "Wall Lamps";
+  }
+  if (
+    combined.includes("outdoor") ||
+    combined.includes("garden") ||
+    combined.includes("gate")
+  ) {
+    return "Outdoor Lamp";
+  }
+  if (combined.includes("lantern")) {
+    return "Lanterns";
+  }
+  if (combined.includes("shade")) {
+    return "Lamp Shade";
+  }
+  if (combined.includes("base")) {
+    return "Lamp Base";
+  }
+
+  return "Ceiling Lamp";
+}
+
 export async function syncToFlipkart(product: any) {
   const { isPlaceholder } = getFlipkartCredentials();
 
@@ -118,8 +169,9 @@ export async function syncToFlipkart(product: any) {
       }
 
       if (!existingFsn) {
+        const verticalName = getFlipkartVertical(product);
         console.log(
-          `[Flipkart Sync] SKU ${sku} is not currently listed on Flipkart. Executing automated API Listing Creation...`,
+          `[Flipkart Sync] SKU ${sku} is unlisted. Matched to Flipkart Vertical "${verticalName}". Executing automated API Listing Creation...`,
         );
 
         const createUrl = "https://api.flipkart.net/sellers/listings/v3/create";
@@ -130,9 +182,11 @@ export async function syncToFlipkart(product: any) {
         const createPayload = {
           [sku]: {
             sku_id: sku,
+            vertical: verticalName,
             attribute_values: {
               title: product.name || sku,
               brand: brandName,
+              vertical: verticalName,
               description: product.description || product.name || sku,
               hsn: product.hsnCode || "94051900",
               tax_code: "GST_18",
