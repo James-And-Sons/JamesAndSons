@@ -174,30 +174,24 @@ export async function syncToFlipkart(product: any) {
           `[Flipkart Sync] SKU ${sku} is unlisted. Matched to Flipkart Vertical "${verticalName}". Executing automated API Listing Creation...`,
         );
 
-        const createUrl = "https://api.flipkart.net/sellers/listings/v3/create";
+        const createUrl = "https://api.flipkart.net/sellers/listings/v3";
 
         // Approved brand for Ceiling Lamps / Lighting
         const brandName = "James And Sons";
 
         const createPayload = {
           [sku]: {
-            sku_id: sku,
-            vertical: verticalName,
-            attribute_values: {
-              title: product.name || sku,
-              brand: brandName,
-              vertical: verticalName,
-              description: product.description || product.name || sku,
-              hsn: product.hsnCode || "94051900",
-              tax_code: "GST_18",
-              country_of_origin: "IN",
-              manufacturer_details: [brandName],
-              packer_details: [brandName],
-            },
+            product_id: product.fsn || "",
+            listing_status: "ACTIVE",
+            fulfillment_profile: "NON_FBF",
             price: {
               mrp: Math.round(mrp),
               selling_price: Math.round(price),
               currency: "INR",
+            },
+            tax: {
+              hsn: product.hsnCode || "94051900",
+              tax_code: "GST_18",
             },
             fulfillment: {
               dispatch_sla: 1,
@@ -238,7 +232,15 @@ export async function syncToFlipkart(product: any) {
           `[Flipkart Sync] Creation submission for SKU ${sku}: ${createText}`,
         );
 
-        if (createRes.ok) {
+        let isSuccess = createRes.ok;
+        try {
+          const resObj = JSON.parse(createText);
+          if (resObj?.[sku]?.status === "FAILURE") {
+            isSuccess = false;
+          }
+        } catch (e) {}
+
+        if (isSuccess) {
           console.log(
             `[Flipkart Sync] Listing creation request submitted for SKU ${sku}! Response: ${createText}`,
           );
