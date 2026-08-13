@@ -28,11 +28,11 @@ async function getFlipkartAccessToken() {
   const authHeader =
     "Basic " + Buffer.from(`${appId}:${appSecret}`).toString("base64");
 
-  // Attempt 1: Query params + Basic Auth
+  // Flipkart OAuth Self-Access API requires GET method with case-sensitive scope=Seller_Api
   let res = await fetch(
-    "https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_api",
+    "https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_Api",
     {
-      method: "POST",
+      method: "GET",
       headers: {
         Authorization: authHeader,
         Accept: "application/json",
@@ -42,22 +42,20 @@ async function getFlipkartAccessToken() {
     },
   );
 
-  // Attempt 2: Body payload fallback if query params encounter 403 / WAF rejection
-  if (!res.ok && res.status === 403) {
-    res = await fetch("https://api.flipkart.net/oauth-service/oauth/token", {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  // Fallback retry with POST if GET returns 405 Method Not Allowed
+  if (!res.ok && res.status === 405) {
+    res = await fetch(
+      "https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_Api",
+      {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          Accept: "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
       },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        scope: "Seller_api",
-      }),
-    });
+    );
   }
 
   if (!res.ok) {

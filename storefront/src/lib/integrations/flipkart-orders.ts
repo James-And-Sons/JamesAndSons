@@ -33,9 +33,9 @@ export async function getFlipkartAccessToken(): Promise<string> {
     "Basic " + Buffer.from(`${appId}:${appSecret}`).toString("base64");
 
   let res = await fetch(
-    "https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_api",
+    "https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_Api",
     {
-      method: "POST",
+      method: "GET",
       headers: {
         Authorization: authHeader,
         Accept: "application/json",
@@ -45,21 +45,19 @@ export async function getFlipkartAccessToken(): Promise<string> {
     },
   );
 
-  if (!res.ok && res.status === 403) {
-    res = await fetch("https://api.flipkart.net/oauth-service/oauth/token", {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  if (!res.ok && res.status === 405) {
+    res = await fetch(
+      "https://api.flipkart.net/oauth-service/oauth/token?grant_type=client_credentials&scope=Seller_Api",
+      {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          Accept: "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
       },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        scope: "Seller_api",
-      }),
-    });
+    );
   }
 
   if (!res.ok) {
