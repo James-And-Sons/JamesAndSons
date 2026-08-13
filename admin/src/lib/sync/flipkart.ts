@@ -118,14 +118,13 @@ export async function syncToFlipkart(product: any) {
       }
 
       if (!existingFsn) {
-        console.log(
-          `[Flipkart Sync] SKU ${sku} is not currently listed on your Flipkart Seller Hub profile. Price and inventory sync will apply automatically once the SKU is activated on Flipkart.`,
-        );
+        const errorMsg = `SKU ${sku} is not listed on your Flipkart Seller Hub profile. You must list the SKU or latch on to an existing FSN on Flipkart first.`;
+        console.error(`[Flipkart Sync] ERROR: ${errorMsg}`);
         return {
           sku,
-          success: true,
-          status: "SKIPPED",
-          reason: "SKU not listed on Flipkart",
+          success: false,
+          status: "FAILED",
+          reason: errorMsg,
         };
       }
 
@@ -186,14 +185,42 @@ export async function syncToFlipkart(product: any) {
       const invText = await invRes.text();
       console.log(`[Flipkart Sync] Inventory update for ${sku}: ${invText}`);
 
-      if (priceRes.ok || invRes.ok) {
+      // Parse responses to verify clean execution
+      let priceSuccess = priceRes.ok;
+      let invSuccess = invRes.ok;
+
+      try {
+        const priceObj = JSON.parse(priceText);
+        if (priceObj?.[sku]?.status === "FAILURE") {
+          priceSuccess = false;
+        }
+      } catch (e) {}
+
+      try {
+        const invObj = JSON.parse(invText);
+        if (invObj?.[sku]?.status === "FAILURE") {
+          invSuccess = false;
+        }
+      } catch (e) {}
+
+      if (priceSuccess && invSuccess) {
         return { sku, success: true, status: "SUCCESS", fsn: existingFsn };
       } else {
+        const failureDetails = [];
+        if (!priceSuccess)
+          failureDetails.push(`Price sync error: ${priceText}`);
+        if (!invSuccess)
+          failureDetails.push(`Inventory sync error: ${invText}`);
+        const errReason = failureDetails.join(" | ");
+
+        console.error(
+          `[Flipkart Sync] Sync failed for SKU ${sku}: ${errReason}`,
+        );
         return {
           sku,
           success: false,
           status: "FAILED",
-          reason: `Flipkart Price/Inventory API Error: ${priceText} | ${invText}`,
+          reason: errReason,
         };
       }
     };
@@ -215,6 +242,15 @@ export async function syncToFlipkart(product: any) {
         product.stockQuantity,
       );
       results.push(res);
+    }
+
+    const hasFailure = results.some((r) => !r.success);
+    if (hasFailure) {
+      const errorMsg = results
+        .filter((r) => !r.success)
+        .map((r) => `${r.sku}: ${r.reason}`)
+        .join("; ");
+      return { success: false, results, error: errorMsg };
     }
 
     return { success: true, results };
