@@ -105,14 +105,63 @@ export async function syncToFlipkart(product: any) {
       if (!getRes.ok) {
         if (getRes.status === 404) {
           console.log(
-            `[Flipkart Sync] SKU ${sku} is not active or listed on Flipkart. Skipping sync.`,
+            `[Flipkart Sync] SKU ${sku} is not yet listed on Flipkart. Attempting auto-listing creation via API...`,
           );
-          return {
-            sku,
-            success: true,
-            status: "SKIPPED",
-            reason: "SKU not listed",
+
+          const createUrl =
+            "https://api.flipkart.net/sellers/listings/v3/create";
+          const createPayload = {
+            [sku]: {
+              sku_id: sku,
+              attribute_values: {
+                title: product.name || sku,
+                brand: "James & Sons",
+                description: product.description || product.name || sku,
+              },
+              price: {
+                mrp: Math.round(mrp),
+                selling_price: Math.round(price),
+                currency: "INR",
+              },
+              fulfillment: {
+                dispatch_in_days: 2,
+                fulfillment_profile: "NON_FBF",
+              },
+              locations: [
+                {
+                  inventory: Math.max(0, quantity),
+                },
+              ],
+            },
           };
+
+          const createRes = await fetch(createUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(createPayload),
+          });
+
+          if (createRes.ok) {
+            console.log(
+              `[Flipkart Sync] Successfully created listing draft for SKU ${sku} on Flipkart!`,
+            );
+            return { sku, success: true, status: "CREATED" };
+          } else {
+            const createErr = await createRes.text();
+            console.warn(
+              `[Flipkart Sync] Listing creation for SKU ${sku} returned ${createRes.status}:`,
+              createErr,
+            );
+            return {
+              sku,
+              success: false,
+              status: "SKIPPED",
+              reason: `Unlisted SKU. Creation response: ${createRes.status} - ${createErr.substring(0, 150)}`,
+            };
+          }
         }
         const errText = await getRes.text();
         throw new Error(
