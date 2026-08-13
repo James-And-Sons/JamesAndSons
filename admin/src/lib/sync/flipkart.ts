@@ -130,39 +130,41 @@ export async function syncToFlipkart(product: any) {
       }
 
       console.log(
-        `[Flipkart Sync] Updating listing for SKU ${sku} (FSN: ${existingFsn}, Location: ${locationId})...`,
+        `[Flipkart Sync] Syncing Price and Inventory for SKU ${sku} (FSN: ${existingFsn}, Location: ${locationId})...`,
       );
 
-      const updateUrl = "https://api.flipkart.net/sellers/listings/v3/update";
-      const payload: any = {
+      // Step 1: Update Price
+      const priceUrl =
+        "https://api.flipkart.net/sellers/listings/v3/update/price";
+      const pricePayload = {
         [sku]: {
-          listing_status: "ACTIVE",
-          fulfillment_profile: "NON_FBF",
+          product_id: existingFsn,
           price: {
             mrp: Math.round(mrp),
             selling_price: Math.round(price),
             currency: "INR",
           },
-          tax: {
-            hsn: product.hsnCode || "94051900",
-            tax_code: "GST_18",
-          },
-          fulfillment: {
-            dispatch_sla: 1,
-            shipping_provider: "FLIPKART",
-            procurement_type: "EXPRESS",
-          },
-          packages: [
-            {
-              name: sku,
-              dimensions: {
-                length: Number(product.packageLength) || 17.78,
-                breadth: Number(product.packageWidth) || 10.16,
-                height: Number(product.packageHeight) || 50.8,
-              },
-              weight: Number(product.packageWeight) || 0.7,
-            },
-          ],
+        },
+      };
+
+      const priceRes = await fetch(priceUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(pricePayload),
+      });
+
+      const priceText = await priceRes.text();
+      console.log(`[Flipkart Sync] Price update for ${sku}: ${priceText}`);
+
+      // Step 2: Update Inventory
+      const invUrl =
+        "https://api.flipkart.net/sellers/listings/v3/update/inventory";
+      const invPayload = {
+        [sku]: {
+          product_id: existingFsn,
           locations: [
             {
               id: locationId,
@@ -172,34 +174,26 @@ export async function syncToFlipkart(product: any) {
         },
       };
 
-      if (existingFsn) {
-        payload[sku].product_id = existingFsn;
-      }
-
-      const updateRes = await fetch(updateUrl, {
+      const invRes = await fetch(invUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(invPayload),
       });
 
-      const updateText = await updateRes.text();
-      if (updateRes.ok) {
-        console.log(
-          `[Flipkart Sync] Successfully updated/created listing for SKU ${sku} on Flipkart: ${updateText}`,
-        );
+      const invText = await invRes.text();
+      console.log(`[Flipkart Sync] Inventory update for ${sku}: ${invText}`);
+
+      if (priceRes.ok || invRes.ok) {
         return { sku, success: true, status: "SUCCESS", fsn: existingFsn };
       } else {
-        console.warn(
-          `[Flipkart Sync] Listing update/creation for SKU ${sku} returned ${updateRes.status}: ${updateText}`,
-        );
         return {
           sku,
           success: false,
           status: "FAILED",
-          reason: `Flipkart API Error: ${updateRes.status} - ${updateText.substring(0, 200)}`,
+          reason: `Flipkart Price/Inventory API Error: ${priceText} | ${invText}`,
         };
       }
     };
