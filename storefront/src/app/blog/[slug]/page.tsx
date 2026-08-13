@@ -10,9 +10,9 @@ import { AdaptiveImageFrame } from "@james-andsons/media";
 export const dynamic = "force-dynamic";
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({

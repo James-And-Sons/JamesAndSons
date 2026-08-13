@@ -117,8 +117,20 @@ export async function syncToFlipkart(product: any) {
         }
       }
 
+      if (!existingFsn) {
+        console.log(
+          `[Flipkart Sync] SKU ${sku} is not currently listed on your Flipkart Seller Hub profile. Price and inventory sync will apply automatically once the SKU is activated on Flipkart.`,
+        );
+        return {
+          sku,
+          success: true,
+          status: "SKIPPED",
+          reason: "SKU not listed on Flipkart",
+        };
+      }
+
       console.log(
-        `[Flipkart Sync] Syncing SKU ${sku} (FSN: ${existingFsn || "NEW"}, Location: ${locationId})...`,
+        `[Flipkart Sync] Updating listing for SKU ${sku} (FSN: ${existingFsn}, Location: ${locationId})...`,
       );
 
       const updateUrl = "https://api.flipkart.net/sellers/listings/v3/update";
