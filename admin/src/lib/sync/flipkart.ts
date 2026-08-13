@@ -118,14 +118,88 @@ export async function syncToFlipkart(product: any) {
       }
 
       if (!existingFsn) {
-        const errorMsg = `SKU ${sku} is not listed on your Flipkart Seller Hub profile. You must list the SKU or latch on to an existing FSN on Flipkart first.`;
-        console.error(`[Flipkart Sync] ERROR: ${errorMsg}`);
-        return {
-          sku,
-          success: false,
-          status: "FAILED",
-          reason: errorMsg,
+        console.log(
+          `[Flipkart Sync] SKU ${sku} is not currently listed on Flipkart. Executing automated API Listing Creation...`,
+        );
+
+        const createUrl = "https://api.flipkart.net/sellers/listings/v3/create";
+
+        // Approved brand for Ceiling Lamps / Lighting
+        const brandName = "James And Sons";
+
+        const createPayload = {
+          [sku]: {
+            sku_id: sku,
+            attribute_values: {
+              title: product.name || sku,
+              brand: brandName,
+              description: product.description || product.name || sku,
+              hsn: product.hsnCode || "94051900",
+              tax_code: "GST_18",
+              country_of_origin: "IN",
+              manufacturer_details: [brandName],
+              packer_details: [brandName],
+            },
+            price: {
+              mrp: Math.round(mrp),
+              selling_price: Math.round(price),
+              currency: "INR",
+            },
+            fulfillment: {
+              dispatch_sla: 1,
+              shipping_provider: "FLIPKART",
+              procurement_type: "EXPRESS",
+            },
+            packages: [
+              {
+                name: sku,
+                dimensions: {
+                  length: Number(product.packageLength) || 17.78,
+                  breadth: Number(product.packageWidth) || 10.16,
+                  height: Number(product.packageHeight) || 50.8,
+                },
+                weight: Number(product.packageWeight) || 0.7,
+              },
+            ],
+            locations: [
+              {
+                id: locationId,
+                inventory: Math.max(0, quantity),
+              },
+            ],
+          },
         };
+
+        const createRes = await fetch(createUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(createPayload),
+        });
+
+        const createText = await createRes.text();
+        console.log(
+          `[Flipkart Sync] Creation submission for SKU ${sku}: ${createText}`,
+        );
+
+        if (createRes.ok) {
+          console.log(
+            `[Flipkart Sync] Listing creation request submitted for SKU ${sku}! Response: ${createText}`,
+          );
+          return { sku, success: true, status: "CREATED", details: createText };
+        } else {
+          console.error(
+            `[Flipkart Sync] Listing creation failed for SKU ${sku} (${createRes.status}): ${createText}`,
+          );
+          return {
+            sku,
+            success: false,
+            status: "FAILED",
+            reason: `Flipkart Listing Creation Error (${createRes.status}): ${createText}`,
+          };
+        }
       }
 
       console.log(
