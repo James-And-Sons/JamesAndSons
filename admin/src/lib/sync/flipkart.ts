@@ -93,7 +93,7 @@ export async function syncToFlipkart(product: any) {
         `[Flipkart Sync] Retrieving listing status for SKU ${sku}...`,
       );
 
-      // Step 1: Query the Flipkart Listings API to find the FSN and active locations
+      // Dynamic lookup from Flipkart Listings API
       const getUrl = `https://api.flipkart.net/sellers/listings/v3/${sku}`;
       const getRes = await fetch(getUrl, {
         method: "GET",
@@ -102,193 +102,105 @@ export async function syncToFlipkart(product: any) {
         },
       });
 
-      const createListingHelper = async () => {
-        console.log(
-          `[Flipkart Sync] SKU ${sku} is not yet active on Flipkart. Attempting auto-listing creation via API...`,
-        );
+      let existingFsn: string | undefined;
+      let locationId: string | undefined =
+        "LOC51071280198249bf8f318b5988999fba";
 
-        const createUrl = "https://api.flipkart.net/sellers/listings/v3/create";
-        const createPayload = {
-          [sku]: {
-            sku_id: sku,
-            attribute_values: {
-              title: product.name || sku,
-              brand: "JAMES&SONS",
-              description: product.description || product.name || sku,
-              hsn: product.hsnCode || "94051900",
-              tax_code: "GST_18",
-              country_of_origin: "IN",
-              manufacturer_details: ["JAMES&SONS"],
-              packer_details: ["JAMES&SONS"],
-            },
-            price: {
-              mrp: Math.round(mrp),
-              selling_price: Math.round(price),
-              currency: "INR",
-            },
-            fulfillment: {
-              dispatch_in_days: 1,
-              fulfillment_profile: "NON_FBF",
-              procurement_type: "EXPRESS",
-            },
-            package_details: {
-              length: Number(product.packageLength) || 17.78,
-              breadth: Number(product.packageWidth) || 10.16,
-              height: Number(product.packageHeight) || 50.8,
-              weight: Number(product.packageWeight) || 0.7,
-            },
-            locations: [
-              {
-                inventory: Math.max(0, quantity),
-              },
-            ],
-          },
-        };
-
-        const createRes = await fetch(createUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(createPayload),
-        });
-
-        if (createRes.ok) {
-          console.log(
-            `[Flipkart Sync] Successfully created listing draft for SKU ${sku} on Flipkart!`,
-          );
-          return { sku, success: true, status: "CREATED" };
-        } else {
-          const createErr = await createRes.text();
-          console.warn(
-            `[Flipkart Sync] Listing creation for SKU ${sku} returned ${createRes.status}:`,
-            createErr,
-          );
-          return {
-            sku,
-            success: false,
-            status: "SKIPPED",
-            reason: `Unlisted SKU. Creation response: ${createRes.status} - ${createErr.substring(0, 150)}`,
-          };
+      if (getRes.ok) {
+        const getData = await getRes.json();
+        const listing = getData.available?.[sku];
+        if (listing) {
+          existingFsn = listing.product_id;
+          if (listing.locations && listing.locations.length > 0) {
+            locationId = listing.locations[0].id;
+          }
         }
-      };
-
-      if (!getRes.ok) {
-        if (getRes.status === 404) {
-          return await createListingHelper();
-        }
-        const errText = await getRes.text();
-        throw new Error(
-          `GET /listings/v3/${sku} failed: ${getRes.status} - ${errText}`,
-        );
-      }
-
-      const getData = await getRes.json();
-      const listing = getData.available?.[sku];
-
-      if (!listing) {
-        return await createListingHelper();
-      }
-
-      const fsn = listing.product_id;
-      const locations = listing.locations || [];
-
-      if (!fsn) {
-        throw new Error(
-          `Product ID (FSN) missing in listings response for SKU ${sku}`,
-        );
       }
 
       console.log(
-        `[Flipkart Sync] Dynamic lookup succeeded: SKU ${sku} has FSN: ${fsn}. Listing has ${locations.length} fulfillment locations.`,
+        `[Flipkart Sync] Syncing SKU ${sku} (FSN: ${existingFsn || "NEW"}, Location: ${locationId})...`,
       );
 
-      // Step 2: Push Pricing Update (MRP and Selling Price)
-      const priceUrl =
-        "https://api.flipkart.net/sellers/listings/v3/update/price";
-      const pricePayload = {
+      const updateUrl = "https://api.flipkart.net/sellers/listings/v3/update";
+      const payload: any = {
         [sku]: {
-          product_id: fsn,
+          sku_id: sku,
+          listing_status: "ACTIVE",
+          fulfillment_profile: "NON_FBF",
+          attribute_values: {
+            title: product.name || sku,
+            brand: "JAMES&SONS",
+            description: product.description || product.name || sku,
+            hsn: product.hsnCode || "94051900",
+            tax_code: "GST_18",
+            country_of_origin: "IN",
+            manufacturer_details: ["JAMES&SONS"],
+            packer_details: ["JAMES&SONS"],
+          },
           price: {
             mrp: Math.round(mrp),
             selling_price: Math.round(price),
             currency: "INR",
           },
+          tax: {
+            hsn: product.hsnCode || "94051900",
+            tax_code: "GST_18",
+          },
+          fulfillment: {
+            dispatch_sla: 1,
+            shipping_provider: "FLIPKART",
+            procurement_type: "EXPRESS",
+          },
+          packages: [
+            {
+              name: sku,
+              dimensions: {
+                length: Number(product.packageLength) || 17.78,
+                breadth: Number(product.packageWidth) || 10.16,
+                height: Number(product.packageHeight) || 50.8,
+              },
+              weight: Number(product.packageWeight) || 0.7,
+            },
+          ],
+          locations: [
+            {
+              id: locationId,
+              inventory: Math.max(0, quantity),
+            },
+          ],
         },
       };
 
-      console.log(
-        `[Flipkart Sync] Updating price on Flipkart for SKU ${sku}...`,
-      );
-      const priceRes = await fetch(priceUrl, {
+      if (existingFsn) {
+        payload[sku].product_id = existingFsn;
+      }
+
+      const updateRes = await fetch(updateUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(pricePayload),
+        body: JSON.stringify(payload),
       });
 
-      if (!priceRes.ok) {
-        const errText = await priceRes.text();
-        console.error(
-          `[Flipkart Sync] Price update failed for SKU ${sku}:`,
-          errText,
+      const updateText = await updateRes.text();
+      if (updateRes.ok) {
+        console.log(
+          `[Flipkart Sync] Successfully updated/created listing for SKU ${sku} on Flipkart: ${updateText}`,
         );
-      } else {
-        console.log(`[Flipkart Sync] Price update succeeded for SKU ${sku}.`);
-      }
-
-      // Step 3: Push Inventory Update (for each fulfillment location)
-      if (locations.length > 0) {
-        const invUrl =
-          "https://api.flipkart.net/sellers/listings/v3/update/inventory";
-
-        for (const loc of locations) {
-          const invPayload = {
-            [sku]: {
-              product_id: fsn,
-              locations: [
-                {
-                  id: loc.id,
-                  inventory: Math.max(0, quantity),
-                },
-              ],
-            },
-          };
-
-          console.log(
-            `[Flipkart Sync] Updating stock (${quantity}) for Location ${loc.id}...`,
-          );
-          const invRes = await fetch(invUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(invPayload),
-          });
-
-          if (!invRes.ok) {
-            const errText = await invRes.text();
-            console.error(
-              `[Flipkart Sync] Inventory update failed for Location ${loc.id}:`,
-              errText,
-            );
-          } else {
-            console.log(
-              `[Flipkart Sync] Inventory update succeeded for Location ${loc.id}.`,
-            );
-          }
-        }
+        return { sku, success: true, status: "SUCCESS", fsn: existingFsn };
       } else {
         console.warn(
-          `[Flipkart Sync] Warning: No fulfillment locations returned for SKU ${sku}. Inventory update skipped.`,
+          `[Flipkart Sync] Listing update/creation for SKU ${sku} returned ${updateRes.status}: ${updateText}`,
         );
+        return {
+          sku,
+          success: false,
+          status: "FAILED",
+          reason: `Flipkart API Error: ${updateRes.status} - ${updateText.substring(0, 200)}`,
+        };
       }
-
-      return { sku, success: true, status: "SUCCESS", fsn };
     };
 
     const results = [];
