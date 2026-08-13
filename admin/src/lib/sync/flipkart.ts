@@ -233,10 +233,18 @@ export async function syncToFlipkart(product: any) {
         );
 
         let isSuccess = createRes.ok;
+        let errorDesc = createText;
+
         try {
           const resObj = JSON.parse(createText);
           if (resObj?.[sku]?.status === "FAILURE") {
             isSuccess = false;
+            const errList = resObj[sku].errors || [];
+            if (errList.length > 0) {
+              errorDesc = errList
+                .map((e: any) => e.description || e.message)
+                .join("; ");
+            }
           }
         } catch (e) {}
 
@@ -246,14 +254,15 @@ export async function syncToFlipkart(product: any) {
           );
           return { sku, success: true, status: "CREATED", details: createText };
         } else {
+          const formattedReason = `Unlisted SKU [Vertical: ${verticalName}]: ${errorDesc}. FSN mapping required on Flipkart.`;
           console.error(
-            `[Flipkart Sync] Listing creation failed for SKU ${sku} (${createRes.status}): ${createText}`,
+            `[Flipkart Sync] Listing creation failed for SKU ${sku}: ${formattedReason}`,
           );
           return {
             sku,
             success: false,
             status: "FAILED",
-            reason: `Flipkart Listing Creation Error (${createRes.status}): ${createText}`,
+            reason: formattedReason,
           };
         }
       }
