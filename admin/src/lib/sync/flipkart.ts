@@ -136,19 +136,8 @@ export async function syncToFlipkart(product: any) {
       const updateUrl = "https://api.flipkart.net/sellers/listings/v3/update";
       const payload: any = {
         [sku]: {
-          sku_id: sku,
           listing_status: "ACTIVE",
           fulfillment_profile: "NON_FBF",
-          attribute_values: {
-            title: product.name || sku,
-            brand: "JAMES&SONS",
-            description: product.description || product.name || sku,
-            hsn: product.hsnCode || "94051900",
-            tax_code: "GST_18",
-            country_of_origin: "IN",
-            manufacturer_details: ["JAMES&SONS"],
-            packer_details: ["JAMES&SONS"],
-          },
           price: {
             mrp: Math.round(mrp),
             selling_price: Math.round(price),
