@@ -49,6 +49,10 @@ export default function ProductsTableClient({
   const [chipFilter, setChipFilter] = useState<
     "ALL" | "LOW_STOCK" | "ANOMALY" | "OUT_OF_STOCK"
   >("ALL");
+  const [isFlipkartModalOpen, setIsFlipkartModalOpen] = useState(false);
+  const [flipkartExportFilter, setFlipkartExportFilter] = useState<
+    "unlisted" | "all"
+  >("unlisted");
 
   useEffect(() => {
     setProductsList(initialProducts);
@@ -188,13 +192,13 @@ export default function ProductsTableClient({
                 >
                   Amazon Feed
                 </a>
-                <a
-                  href="/api/admin/export/flipkart"
-                  download="flipkart_feed.csv"
-                  className="block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setIsFlipkartModalOpen(true)}
+                  className="w-full text-left block px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-secondary hover:bg-surface-muted hover:text-primary border-t border-border/40 transition-colors cursor-pointer"
                 >
                   Flipkart Feed
-                </a>
+                </button>
                 <a
                   href="/api/admin/export/indiamart"
                   download="indiamart_catalog.csv"
@@ -772,6 +776,106 @@ export default function ProductsTableClient({
           </div>
         </div>
       </div>
+
+      {/* Flipkart Feed Export Modal */}
+      {isFlipkartModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-surface border border-border w-full max-w-md p-6 rounded-md shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block" />
+                <h3 className="font-mono text-xs uppercase tracking-[0.14em] text-primary font-bold">
+                  Export Flipkart Bulk Feed
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFlipkartModalOpen(false)}
+                className="text-secondary hover:text-primary text-sm font-mono p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-secondary leading-relaxed">
+              Generate a formatted bulk listing template for Flipkart Seller Hub
+              upload. Choose whether you want to export only unlisted SKUs or
+              your full product catalog.
+            </p>
+
+            {/* Switch / Toggle Options */}
+            <div className="space-y-3 bg-surface-muted p-4 rounded-sm border border-border/50">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-secondary font-semibold block mb-1">
+                Products Scope:
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer group py-1">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="flipkartFilter"
+                    checked={flipkartExportFilter === "unlisted"}
+                    onChange={() => setFlipkartExportFilter("unlisted")}
+                    className="accent-primary h-4 w-4 cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-medium text-primary block">
+                      Only Unlisted Products
+                    </span>
+                    <span className="text-[10px] text-secondary">
+                      Products needing creation on Flipkart Seller Hub
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded border border-yellow-500/20 font-bold">
+                  Recommended
+                </span>
+              </label>
+
+              <div className="border-t border-border/30 my-2" />
+
+              <label className="flex items-center justify-between cursor-pointer group py-1">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="flipkartFilter"
+                    checked={flipkartExportFilter === "all"}
+                    onChange={() => setFlipkartExportFilter("all")}
+                    className="accent-primary h-4 w-4 cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-medium text-primary block">
+                      All Products
+                    </span>
+                    <span className="text-[10px] text-secondary">
+                      Export full store catalog
+                    </span>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsFlipkartModalOpen(false)}
+                className="font-mono text-[10px] uppercase tracking-wider text-secondary hover:text-primary px-4 py-2 border border-border rounded-sm transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <a
+                href={`/api/admin/export/flipkart?filter=${flipkartExportFilter}`}
+                download={`flipkart_listing_feed_${flipkartExportFilter}.xls`}
+                onClick={() => setIsFlipkartModalOpen(false)}
+                className="font-mono text-[10px] uppercase tracking-wider bg-primary text-primary-foreground font-bold px-4 py-2 rounded-sm hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                <span>Download Feed</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

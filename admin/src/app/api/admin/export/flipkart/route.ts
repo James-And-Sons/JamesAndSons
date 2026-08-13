@@ -1,10 +1,10 @@
-import { prisma } from '@/lib/prisma';
-import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
-import fs from 'fs';
-import * as XLSX from 'xlsx';
-import { BRAND_CONFIG } from '@james-andsons/config';
-import { getStyle, getMaterial, getMountingType } from '@/lib/sync/mapping';
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import fs from "fs";
+import * as XLSX from "xlsx";
+import { BRAND_CONFIG } from "@james-andsons/config";
+import { getStyle, getMaterial, getMountingType } from "@/lib/sync/mapping";
 
 function extractNumber(text: any): number | null {
   if (text === null || text === undefined) return null;
@@ -22,77 +22,88 @@ function writeCell(sheet: any, row: number, col: number, value: any) {
     delete sheet[cellRef];
     return;
   }
-  let type = 's';
-  if (typeof value === 'number') type = 'n';
-  else if (typeof value === 'boolean') type = 'b';
-  
+  let type = "s";
+  if (typeof value === "number") type = "n";
+  else if (typeof value === "boolean") type = "b";
+
   sheet[cellRef] = { t: type, v: value };
 }
 
 function getFlipkartTypeAndMount(categoryName: string, productName: string) {
-  const cat = (categoryName || '').toLowerCase();
-  const name = (productName || '').toLowerCase();
+  const cat = (categoryName || "").toLowerCase();
+  const name = (productName || "").toLowerCase();
 
-  if (cat.includes('chandelier') || name.includes('chandelier')) {
-    return { 
-      type: 'Chandelier', 
-      mountType: 'Hanging', 
-      suitableFor: 'Living Room::Dining Room',
-      usage: 'Decorative' 
+  if (cat.includes("chandelier") || name.includes("chandelier")) {
+    return {
+      type: "Chandelier",
+      mountType: "Hanging",
+      suitableFor: "Living Room::Dining Room",
+      usage: "Decorative",
     };
   }
-  if (cat.includes('hanging') || cat.includes('pendant') || name.includes('hanging') || name.includes('pendant')) {
-    return { 
-      type: 'Pendant', 
-      mountType: 'Hanging', 
-      suitableFor: 'Accent Light::Decorative Light',
-      usage: 'Decorative' 
+  if (
+    cat.includes("hanging") ||
+    cat.includes("pendant") ||
+    name.includes("hanging") ||
+    name.includes("pendant")
+  ) {
+    return {
+      type: "Pendant",
+      mountType: "Hanging",
+      suitableFor: "Accent Light::Decorative Light",
+      usage: "Decorative",
     };
   }
-  if (cat.includes('table') || name.includes('table')) {
-    return { 
-      type: 'Table', 
-      mountType: 'Table', 
-      suitableFor: 'Bedside Lamp::Study Lamp',
-      usage: 'Decorative' 
+  if (cat.includes("table") || name.includes("table")) {
+    return {
+      type: "Table",
+      mountType: "Table",
+      suitableFor: "Bedside Lamp::Study Lamp",
+      usage: "Decorative",
     };
   }
-  if (cat.includes('floor') || name.includes('floor')) {
-    return { 
-      type: 'Floor', 
-      mountType: 'Floor', 
-      suitableFor: 'Living Room::Reading Lamp',
-      usage: 'Decorative' 
+  if (cat.includes("floor") || name.includes("floor")) {
+    return {
+      type: "Floor",
+      mountType: "Floor",
+      suitableFor: "Living Room::Reading Lamp",
+      usage: "Decorative",
     };
   }
-  if (cat.includes('pole') || cat.includes('gate') || name.includes('pole') || name.includes('gate') || name.includes('post')) {
-    return { 
-      type: 'Gate Lamp', 
-      mountType: 'Post Mount', 
-      suitableFor: 'Outdoor Light::Gate Light',
-      usage: 'Functional' 
+  if (
+    cat.includes("pole") ||
+    cat.includes("gate") ||
+    name.includes("pole") ||
+    name.includes("gate") ||
+    name.includes("post")
+  ) {
+    return {
+      type: "Gate Lamp",
+      mountType: "Post Mount",
+      suitableFor: "Outdoor Light::Gate Light",
+      usage: "Functional",
     };
   }
-  return { 
-    type: 'Sconce', 
-    mountType: 'Wall Mounted', 
-    suitableFor: 'Wall Light::Accent Light',
-    usage: 'Decorative' 
+  return {
+    type: "Sconce",
+    mountType: "Wall Mounted",
+    suitableFor: "Wall Light::Accent Light",
+    usage: "Decorative",
   };
 }
 
 function writeRowAttributes(
   sheet: any,
   rowIdx: number,
-  p: any,             // parent product
+  p: any, // parent product
   sku: string,
   name: string,
   brand: string,
   color: string,
   size: string,
-  v: any = null       // variant if exists
+  v: any = null, // variant if exists
 ) {
-  const categoryName = p.category?.name || '';
+  const categoryName = p.category?.name || "";
   const mapping = getFlipkartTypeAndMount(categoryName, name);
 
   // Col 7 (G): Seller SKU ID
@@ -108,7 +119,14 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 10, mapping.mountType);
 
   // Col 11 (K): Material
-  writeCell(sheet, rowIdx, 11, getMaterial(v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p));
+  writeCell(
+    sheet,
+    rowIdx,
+    11,
+    getMaterial(
+      v ? { ...p, materialAndFinish: v.material || p.materialAndFinish } : p,
+    ),
+  );
 
   // Col 12 (L): Bulb Included
   writeCell(sheet, rowIdx, 12, "Yes");
@@ -159,11 +177,11 @@ function writeRowAttributes(
 
   // Images (Col 27-31)
   const images = (v ? v.images : p.images) || [];
-  writeCell(sheet, rowIdx, 27, images[0] || '');
-  writeCell(sheet, rowIdx, 28, images[1] || '');
-  writeCell(sheet, rowIdx, 29, images[2] || '');
-  writeCell(sheet, rowIdx, 30, images[3] || '');
-  writeCell(sheet, rowIdx, 31, images[4] || '');
+  writeCell(sheet, rowIdx, 27, images[0] || "");
+  writeCell(sheet, rowIdx, 28, images[1] || "");
+  writeCell(sheet, rowIdx, 29, images[2] || "");
+  writeCell(sheet, rowIdx, 30, images[3] || "");
+  writeCell(sheet, rowIdx, 31, images[4] || "");
 
   // Col 32 (AF): Weight
   const wtNum = extractNumber(v ? v.weight || p.weight : p.weight) || 0.5;
@@ -188,7 +206,7 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 40, "Made in India::Handcrafted");
 
   // Col 42 (AP): Finish
-  const finish = v ? v.finish || p.finish || 'Gold' : p.finish || 'Gold';
+  const finish = v ? v.finish || p.finish || "Gold" : p.finish || "Gold";
   writeCell(sheet, rowIdx, 42, finish);
 
   // Col 43 (AQ): Sensor Present
@@ -220,10 +238,20 @@ function writeRowAttributes(
   writeCell(sheet, rowIdx, 55, "[Month]");
 
   // Col 58 (BF): Warranty Summary
-  writeCell(sheet, rowIdx, 58, "12 Months Warranty against Manufacturing Defects");
+  writeCell(
+    sheet,
+    rowIdx,
+    58,
+    "12 Months Warranty against Manufacturing Defects",
+  );
 
   // Col 59 (BG): Warranty Service Type
-  writeCell(sheet, rowIdx, 59, `Please contact support email: ${BRAND_CONFIG.supportEmail}`);
+  writeCell(
+    sheet,
+    rowIdx,
+    59,
+    `Please contact support email: ${BRAND_CONFIG.supportEmail}`,
+  );
 
   // Col 60 (BH): Covered in Warranty
   writeCell(sheet, rowIdx, 60, "Manufacturing defects");
@@ -249,42 +277,73 @@ function writeRowAttributes(
 
 export async function GET(req: NextRequest) {
   try {
-    const products = await prisma.product.findMany({
-      include: { 
+    const { searchParams } = new URL(req.url);
+    const filter = searchParams.get("filter") || "all"; // 'unlisted' | 'all'
+    const listedSkus = new Set(["JW06", "JW01", "JTF02"]);
+
+    const allProducts = await prisma.product.findMany({
+      include: {
         variants: true,
-        category: true
+        category: true,
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: "asc" },
     });
 
-    let templatePath = '';
-    const localPath = path.resolve(process.cwd(), 'FLIPKART_WALL_LAMP_TEMPLATE.xls');
-    const rootPath = path.resolve(process.cwd(), 'admin', 'FLIPKART_WALL_LAMP_TEMPLATE.xls');
-    
+    const products =
+      filter === "unlisted"
+        ? allProducts.filter((p) => {
+            const skus =
+              p.variants && p.variants.length > 0
+                ? p.variants.map((v) => v.sku)
+                : [p.sku];
+            return skus.some((s) => s && !listedSkus.has(s));
+          })
+        : allProducts;
+
+    let templatePath = "";
+    const localPath = path.resolve(
+      process.cwd(),
+      "FLIPKART_WALL_LAMP_TEMPLATE.xls",
+    );
+    const rootPath = path.resolve(
+      process.cwd(),
+      "admin",
+      "FLIPKART_WALL_LAMP_TEMPLATE.xls",
+    );
+
     if (fs.existsSync(localPath)) {
       templatePath = localPath;
     } else if (fs.existsSync(rootPath)) {
       templatePath = rootPath;
     } else {
-      const parentPath = path.resolve(process.cwd(), '..', 'admin', 'FLIPKART_WALL_LAMP_TEMPLATE.xls');
+      const parentPath = path.resolve(
+        process.cwd(),
+        "..",
+        "admin",
+        "FLIPKART_WALL_LAMP_TEMPLATE.xls",
+      );
       if (fs.existsSync(parentPath)) {
         templatePath = parentPath;
       } else {
-        throw new Error('Template file FLIPKART_WALL_LAMP_TEMPLATE.xls not found on server.');
+        throw new Error(
+          "Template file FLIPKART_WALL_LAMP_TEMPLATE.xls not found on server.",
+        );
       }
     }
 
     console.log(`[Flipkart Export] Reading template from: ${templatePath}`);
     const fileBytes = fs.readFileSync(templatePath);
-    const workbook = XLSX.read(fileBytes, { type: 'buffer' });
-    const sheet = workbook.Sheets['Parent Variant Products'];
+    const workbook = XLSX.read(fileBytes, { type: "buffer" });
+    const sheet = workbook.Sheets["Parent Variant Products"];
     if (!sheet) {
-      throw new Error("Worksheet 'Parent Variant Products' not found in the workbook");
+      throw new Error(
+        "Worksheet 'Parent Variant Products' not found in the workbook",
+      );
     }
 
     // Clear old data starting from Row 5
     for (const key of Object.keys(sheet)) {
-      if (key.startsWith('!')) continue;
+      if (key.startsWith("!")) continue;
       const cell = XLSX.utils.decode_cell(key);
       if (cell.r >= 4) {
         delete sheet[key];
@@ -292,7 +351,7 @@ export async function GET(req: NextRequest) {
     }
 
     let rowIdx = 5;
-    const brandName = BRAND_CONFIG.name || 'James and Sons';
+    const brandName = BRAND_CONFIG.name || "James and Sons";
 
     for (const p of products) {
       const variants = p.variants || [];
@@ -307,9 +366,9 @@ export async function GET(req: NextRequest) {
             v.sku,
             `${p.name} - ${v.name}`,
             brandName,
-            v.color || 'Gold',
-            v.size || 'Standard',
-            v
+            v.color || "Gold",
+            v.size || "Standard",
+            v,
           );
           rowIdx++;
         }
@@ -321,9 +380,9 @@ export async function GET(req: NextRequest) {
           p.sku,
           p.name,
           brandName,
-          p.color || 'Gold',
-          p.size || 'Standard',
-          null
+          p.color || "Gold",
+          p.size || "Standard",
+          null,
         );
         rowIdx++;
       }
@@ -333,36 +392,39 @@ export async function GET(req: NextRequest) {
     let maxRow = 5;
     let maxCol = 1;
     for (const key of Object.keys(sheet)) {
-      if (key.startsWith('!')) continue;
+      if (key.startsWith("!")) continue;
       const cell = XLSX.utils.decode_cell(key);
       if (cell.r + 1 > maxRow) maxRow = cell.r + 1;
       if (cell.c + 1 > maxCol) maxCol = cell.c + 1;
     }
-    sheet['!ref'] = XLSX.utils.encode_range({
+    sheet["!ref"] = XLSX.utils.encode_range({
       s: { r: 0, c: 0 },
-      e: { r: maxRow - 1, c: Math.max(maxCol - 1, 67) }
+      e: { r: maxRow - 1, c: Math.max(maxCol - 1, 67) },
     });
 
     console.log(`[Flipkart Export] Writing populated xls workbook...`);
     const fileBuffer = XLSX.write(workbook, {
-      bookType: 'xls',
-      type: 'buffer'
+      bookType: "xls",
+      type: "buffer",
     });
 
     const uint8Array = new Uint8Array(fileBuffer);
     return new Response(uint8Array, {
       status: 200,
       headers: {
-        'Content-Type': 'application/vnd.ms-excel',
-        'Content-Disposition': 'attachment; filename="flipkart_listing_feed.xls"',
-        'Content-Length': uint8Array.byteLength.toString()
-      }
+        "Content-Type": "application/vnd.ms-excel",
+        "Content-Disposition":
+          'attachment; filename="flipkart_listing_feed.xls"',
+        "Content-Length": uint8Array.byteLength.toString(),
+      },
     });
-
   } catch (error: any) {
-    console.error('[Flipkart Export] CRITICAL FAILURE:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Export failed'
-    }, { status: 500 });
+    console.error("[Flipkart Export] CRITICAL FAILURE:", error);
+    return NextResponse.json(
+      {
+        error: error.message || "Export failed",
+      },
+      { status: 500 },
+    );
   }
 }
