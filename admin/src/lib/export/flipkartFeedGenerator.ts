@@ -171,6 +171,68 @@ export function generateFlipkartExcelFeed(
           : `${BRAND_CONFIG.storefrontUrl}${item.images[0]}`
         : `${BRAND_CONFIG.storefrontUrl}/images/placeholder.png`;
 
+      // Extract dynamic product attributes
+      const titleLower = (item.title || p.name || "").toLowerCase();
+      const catLower = (p.category?.name || "").toLowerCase();
+
+      let typeVal = "Pendant";
+      if (
+        titleLower.includes("chandelier") ||
+        catLower.includes("chandelier")
+      ) {
+        typeVal = "Chandelier";
+      } else if (
+        titleLower.includes("pendant") ||
+        titleLower.includes("hanging")
+      ) {
+        typeVal = "Pendant";
+      } else if (
+        titleLower.includes("wall") ||
+        titleLower.includes("sconce") ||
+        catLower.includes("wall")
+      ) {
+        typeVal = "Wall Lamp";
+      } else if (titleLower.includes("floor") || catLower.includes("floor")) {
+        typeVal = "Floor Lamp";
+      } else if (titleLower.includes("table") || catLower.includes("table")) {
+        typeVal = "Table Lamp";
+      } else if (
+        titleLower.includes("lantern") ||
+        catLower.includes("lantern")
+      ) {
+        typeVal = "Lantern";
+      }
+
+      let matVal = "Brass";
+      if (titleLower.includes("brass")) matVal = "Brass";
+      else if (titleLower.includes("glass")) matVal = "Glass";
+      else if (titleLower.includes("crystal")) matVal = "Crystal";
+      else if (titleLower.includes("iron") || titleLower.includes("metal"))
+        matVal = "Metal";
+      else if (titleLower.includes("wood")) matVal = "Wood";
+      else if (titleLower.includes("acrylic")) matVal = "Acrylic";
+
+      let colorVal = "Gold";
+      if (titleLower.includes("brass")) colorVal = "Brass";
+      else if (titleLower.includes("gold")) colorVal = "Gold";
+      else if (titleLower.includes("black")) colorVal = "Black";
+      else if (titleLower.includes("copper")) colorVal = "Copper";
+      else if (titleLower.includes("bronze")) colorVal = "Bronze";
+      else if (titleLower.includes("silver") || titleLower.includes("chrome"))
+        colorVal = "Silver";
+
+      let numBulbs = 1;
+      const bulbMatch = titleLower.match(/(\d+)\s*(light|bulb|way|head)/);
+      if (bulbMatch) {
+        numBulbs = parseInt(bulbMatch[1], 10);
+      }
+
+      const wVal = Number(p.actualWidth || p.breadth || 25);
+      const lVal = Number(p.actualDepth || p.actualLength || p.length || 25);
+      const hVal = Number(p.actualHeight || p.height || 50);
+      const wtVal = Number(p.weight || p.packageWeight || 1.5);
+      const powerVal = Number(p.powerConsumption || 40);
+
       // Helper to write by header title
       const setField = (headerTitle: string, value: any) => {
         const colNum = headerMap[headerTitle.toLowerCase()];
@@ -179,32 +241,89 @@ export function generateFlipkartExcelFeed(
         }
       };
 
+      // 1. Mandatory Flipkart Listing Fields
       setField("seller sku id", item.sku);
-      setField("listing status", "ACTIVE");
+      setField("listing status", "Active");
       setField("mrp (inr)", Math.round(item.mrp || 4999));
       setField("your selling price (inr)", Math.round(item.price || 1999));
-      setField("fullfilment by", "IN_HOUSE");
-      setField("procurement type", "EXPRESS");
+      setField("fullfilment by", "seller"); // MUST be lowercase 'seller'
+      setField("procurement type", "express"); // MUST be lowercase 'express'
       setField("procurement sla (day)", 1);
       setField("stock", Math.max(0, item.quantity ?? 12));
       setField("shipping provider", "FLIPKART");
+
+      // 2. Shipping Package Dimensions
       setField("length (cm)", Number(p.packageLength) || 17.78);
       setField("breadth (cm)", Number(p.packageWidth) || 10.16);
       setField("height (cm)", Number(p.packageHeight) || 50.8);
-      setField("weight (kg)", Number(p.packageWeight) || 0.7);
+      setField("weight (kg)", wtVal);
+
+      // 3. Tax & Manufacturer Compliance
       setField("hsn", p.hsnCode || "94051900");
       setField("luxury cess", 0);
-      setField("country of origin", "IN");
+      setField("country of origin", "India");
       setField("manufacturer details", manufacturerInfo);
       setField("packer details", manufacturerInfo);
       setField("tax code", "GST_18");
       setField("minimum order quantity (minoq)", 1);
+
+      // 4. Brand & Catalog Attributes Required for QC
       setField("brand", brandName);
+      setField("model number", item.sku);
+      setField("model name", item.title || item.sku);
+      setField("type", typeVal);
+      setField("material", matVal);
+      setField("shade material", matVal);
+      setField("color", colorVal);
+      setField("brand color", colorVal);
+      setField("number of bulb", numBulbs);
+      setField("width", wVal);
+      setField("width - measuring unit", "cm");
+      setField("length", lVal);
+      setField("length - measuring unit", "cm");
+      setField("height (cm)", hVal);
+      setField("weight", wtVal);
+      setField("weight - measuring unit", "kg");
+      setField("power consumption", powerVal);
+      setField("power consumption - measuring unit", "W");
+      setField("pack of", 1);
+      setField("bulb included", "No");
+      setField("assembly required", "No");
+      setField("features", "Decorative Lighting");
+      setField("light source", "LED");
+      setField("light color", "Warm White");
+      setField("cord length", 100);
+      setField("cord length - measuring unit", "cm");
+      setField("items included", "1 Lamp Fixture, Mounting Kit");
+      setField("holder type", "E27");
+      setField("control method", "Wall Switch");
+      setField("usage", "Decorative");
+      setField("gift pack", "No");
+      setField("suitable for", "Home, Living Room, Bedroom, Dining Room");
+
+      // 5. Media & Search SEO
       setField("main image url", mainImage);
       setField("description", p.description || item.title || item.sku);
       setField(
         "search keywords",
         `${item.title}, luxury lighting, handcrafted brass lamp, chandelier, James & Sons`,
+      );
+
+      // 6. Warranty
+      setField("domestic warranty", 1);
+      setField("domestic warranty - measuring unit", "Year");
+      setField(
+        "warranty summary",
+        "1 Year Warranty against Manufacturing Defects",
+      );
+      setField(
+        "warranty service type",
+        `Customer care email: ${BRAND_CONFIG.supportEmail || "support@jamesandsons.mobi"}`,
+      );
+      setField("covered in warranty", "Manufacturing defects");
+      setField(
+        "not covered in warranty",
+        "Physical damage or improper installation",
       );
 
       rowIdx++;
