@@ -117,6 +117,11 @@ export async function syncToFlipkart(product: any) {
                 title: product.name || sku,
                 brand: "JAMES&SONS",
                 description: product.description || product.name || sku,
+                hsn: product.hsnCode || "94051900",
+                tax_code: "GST_18",
+                country_of_origin: "IN",
+                manufacturer_details: ["JAMES&SONS"],
+                packer_details: ["JAMES&SONS"],
               },
               price: {
                 mrp: Math.round(mrp),
@@ -124,8 +129,15 @@ export async function syncToFlipkart(product: any) {
                 currency: "INR",
               },
               fulfillment: {
-                dispatch_in_days: 2,
+                dispatch_in_days: 1,
                 fulfillment_profile: "NON_FBF",
+                procurement_type: "EXPRESS",
+              },
+              package_details: {
+                length: Number(product.packageLength) || 17.78,
+                breadth: Number(product.packageWidth) || 10.16,
+                height: Number(product.packageHeight) || 50.8,
+                weight: Number(product.packageWeight) || 0.7,
               },
               locations: [
                 {
