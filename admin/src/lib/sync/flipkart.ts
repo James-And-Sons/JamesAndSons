@@ -115,7 +115,7 @@ export async function syncToFlipkart(product: any) {
               sku_id: sku,
               attribute_values: {
                 title: product.name || sku,
-                brand: "James & Sons",
+                brand: "JAMES&SONS",
                 description: product.description || product.name || sku,
               },
               price: {
