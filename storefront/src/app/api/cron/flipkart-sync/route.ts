@@ -3,7 +3,7 @@ import {
   processNewFlipkartOrders,
   fetchFlipkartOrders,
   getFlipkartAccessToken,
-} from "@/lib/integrations/flipkart-orders";
+} from "@james-andsons/integrations";
 
 export const maxDuration = 60; // Serverless function execution timeout
 export const dynamic = "force-dynamic";

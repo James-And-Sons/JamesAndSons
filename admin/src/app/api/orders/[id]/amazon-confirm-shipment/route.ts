@@ -45,7 +45,7 @@ export async function POST(
     }
 
     const { getLwaAccessToken, getAmazonConfig, signedSpApiFetch } =
-      await import("../../../../../../../storefront/src/lib/amazon-sp-api");
+      await import("@james-andsons/integrations");
 
     const config = getAmazonConfig();
     const accessToken = await getLwaAccessToken();

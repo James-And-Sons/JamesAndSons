@@ -20,7 +20,10 @@
  * Security: protected by the same CRON_SECRET used for flipkart-sync.
  */
 import { NextResponse } from "next/server";
-import { processNewAmazonOrders } from "@/lib/integrations/amazon-orders";
+import {
+  processNewAmazonOrders,
+  syncSingleAmazonOrder,
+} from "@james-andsons/integrations";
 
 export const maxDuration = 60; // Vercel Serverless function timeout (seconds)
 export const dynamic = "force-dynamic";
@@ -44,8 +47,6 @@ export async function GET(request: Request) {
     console.log(
       `[Amazon Cron] Targeted single order sync for: ${amazonOrderId}`,
     );
-    const { syncSingleAmazonOrder } =
-      await import("@/lib/integrations/amazon-orders");
     const result = await syncSingleAmazonOrder(amazonOrderId);
     return NextResponse.json(result);
   }

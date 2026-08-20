@@ -125,7 +125,7 @@ export async function POST(request: Request) {
             `[Amazon Webhook] Real-time ${notificationType} event received for order: ${amazonOrderId}`,
           );
           const { syncSingleAmazonOrder } =
-            await import("@/lib/integrations/amazon-orders");
+            await import("@james-andsons/integrations");
 
           syncSingleAmazonOrder(amazonOrderId).catch((err) => {
             console.error(

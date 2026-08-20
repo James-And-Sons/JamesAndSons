@@ -662,7 +662,7 @@ export async function getAmazonMfnRatesAction(
 ): Promise<AmazonMfnRateResult> {
   try {
     const { getEligibleShippingServices } =
-      await import("../../../../../storefront/src/lib/integrations/amazon-mfn");
+      await import("@james-andsons/integrations");
     const result = await getEligibleShippingServices(orderId);
     return result;
   } catch (error: any) {
@@ -680,7 +680,7 @@ export async function bookAmazonMfnShipmentAction(
 ): Promise<AmazonMfnBookResult> {
   try {
     const { createAmazonMfnShipment } =
-      await import("../../../../../storefront/src/lib/integrations/amazon-mfn");
+      await import("@james-andsons/integrations");
     const result = await createAmazonMfnShipment(orderId, shippingServiceId);
     revalidatePath(`/orders/${orderId}`);
     return result;
