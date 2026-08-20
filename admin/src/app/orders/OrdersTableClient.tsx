@@ -211,7 +211,13 @@ export default function OrdersTableClient({
     const netRev = records
       .filter(
         (r) =>
-          !["CANCELLED", "REFUNDED", "FAILED"].includes(r.status.toUpperCase()),
+          ![
+            "CANCELLED",
+            "REFUNDED",
+            "FAILED",
+            "RETURNED",
+            "REFUNDED_RTO",
+          ].includes(r.status.toUpperCase()),
       )
       .reduce((sum, r) => sum + (r.totalValue || 0), 0);
 
@@ -226,7 +232,9 @@ export default function OrdersTableClient({
     ).length;
 
     const cancelledCount = records.filter((r) =>
-      ["CANCELLED", "REFUNDED", "FAILED"].includes(r.status.toUpperCase()),
+      ["CANCELLED", "REFUNDED", "FAILED", "RETURNED", "REFUNDED_RTO"].includes(
+        r.status.toUpperCase(),
+      ),
     ).length;
 
     const amazonCount = records.filter(
@@ -280,7 +288,13 @@ export default function OrdersTableClient({
       } else if (statusFilter === "SHIPPED") {
         matchesStatus = ["SHIPPED", "DELIVERED"].includes(s);
       } else if (statusFilter === "CANCELLED") {
-        matchesStatus = ["CANCELLED", "REFUNDED", "FAILED"].includes(s);
+        matchesStatus = [
+          "CANCELLED",
+          "REFUNDED",
+          "FAILED",
+          "RETURNED",
+          "REFUNDED_RTO",
+        ].includes(s);
       }
 
       let matchesChannel = true;

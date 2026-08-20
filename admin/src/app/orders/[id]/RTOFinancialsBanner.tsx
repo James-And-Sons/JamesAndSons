@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import {
   AlertTriangle,
   RotateCcw,
-  DollarSign,
+  IndianRupee,
   Truck,
   PackageCheck,
   ShieldAlert,
@@ -140,7 +140,7 @@ export default function RTOFinancialsBanner({
         {/* Card 1: Refund Details */}
         <div className="p-3.5 rounded bg-surface/60 border border-border flex flex-col justify-between">
           <div className="flex items-center gap-2 text-rose-400 font-mono text-[11px] uppercase tracking-wider mb-2">
-            <DollarSign className="w-4 h-4" />
+            <IndianRupee className="w-4 h-4" />
             Refund Summary
           </div>
           <div>
