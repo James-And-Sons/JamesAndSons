@@ -109,6 +109,7 @@ export async function getEligibleShippingServices(
       config,
       {
         method: "POST",
+        extraHeaders: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       },
     );
@@ -230,6 +231,7 @@ export async function createAmazonMfnShipment(
       config,
       {
         method: "POST",
+        extraHeaders: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       },
     );
