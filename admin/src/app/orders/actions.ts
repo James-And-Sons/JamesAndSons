@@ -2,6 +2,15 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+
+function safeRevalidatePath(path: string) {
+  try {
+    revalidatePath(path);
+  } catch {
+    // Ignore static generation store missing error when run outside Next.js request context (e.g. background tasks / scripts)
+  }
+}
+
 import { cancelShiprocketOrder } from "@/lib/shiprocket";
 import { refundRazorpayPayment } from "@/lib/razorpay";
 import { sendNotificationToAllAdmins } from "@/lib/push";
@@ -275,8 +284,8 @@ export async function syncSingleAmazonOrderAction(
     }
 
     const data = await res.json();
-    if (resolvedDbOrderId) revalidatePath(`/orders/${resolvedDbOrderId}`);
-    revalidatePath("/orders");
+    if (resolvedDbOrderId) safeRevalidatePath(`/orders/${resolvedDbOrderId}`);
+    safeRevalidatePath("/orders");
 
     return {
       success: data.success !== false,
@@ -514,8 +523,8 @@ export async function syncShiprocketStatusesAction() {
       }
     }
 
-    revalidatePath("/orders");
-    revalidatePath("/logistics");
+    safeRevalidatePath("/orders");
+    safeRevalidatePath("/logistics");
 
     return {
       success: true,
