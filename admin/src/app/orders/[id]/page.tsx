@@ -167,7 +167,12 @@ export default async function OrderDetailPage(props: {
     (!isPlaceholderEmail(order.user?.email) ? order.user?.phone : null) ||
     null;
 
-  const hasRecipient = Boolean(order.recipientName);
+  const hasRecipient = Boolean(
+    (order.recipientName && !isPlaceholderName(order.recipientName)) ||
+    (order.shippingAddress &&
+      !order.shippingAddress.includes("Amazon Marketplace") &&
+      order.shippingAddress.trim().length > 5),
+  );
   // ──────────────────────────────────────────────────────────────────────────
 
   const channelBadge = isAmazonOrder

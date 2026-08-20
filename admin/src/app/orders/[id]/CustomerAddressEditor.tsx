@@ -217,7 +217,7 @@ export default function CustomerAddressEditor({
                 <strong>
                   {hasNoRecipient
                     ? 'No customer details saved yet. Click "Import Customer Details" to add them.'
-                    : 'Click "Import Customer Details" to update.'}
+                    : 'Customer details saved on record. Click "Import Customer Details" to update.'}
                 </strong>
               </span>
             </p>
