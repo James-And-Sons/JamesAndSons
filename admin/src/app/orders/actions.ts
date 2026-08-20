@@ -495,8 +495,6 @@ export async function syncShiprocketStatusesAction() {
         trackingNumber: true,
         channel: true,
         amazonOrderId: true,
-        rtoStatus: true,
-        ndrReason: true,
       },
       take: 50,
     });
@@ -544,7 +542,7 @@ export async function syncShiprocketStatusesAction() {
         ? shiprocketStatusStr.includes("DELIVERED")
           ? "RTO_DELIVERED"
           : "RTO_IN_TRANSIT"
-        : order.rtoStatus;
+        : null;
 
       let newStatus: "DELIVERED" | "SHIPPED" | "CANCELLED" | "RETURNED" | null =
         null;
@@ -564,17 +562,13 @@ export async function syncShiprocketStatusesAction() {
         newStatus = "RETURNED";
       }
 
-      if (
-        (newStatus && newStatus !== order.status) ||
-        ndrReason !== order.ndrReason ||
-        rtoStatusStr !== order.rtoStatus
-      ) {
+      if (newStatus && newStatus !== order.status) {
         await prisma.order.update({
           where: { id: order.id },
           data: {
-            status: (newStatus || order.status) as any,
-            ndrReason: ndrReason || order.ndrReason,
-            rtoStatus: rtoStatusStr || order.rtoStatus,
+            status: newStatus as any,
+            ndrReason: ndrReason || undefined,
+            rtoStatus: rtoStatusStr || undefined,
           },
         });
 
