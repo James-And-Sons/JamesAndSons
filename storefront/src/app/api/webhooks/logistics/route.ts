@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { sendNotificationToAllAdmins } from "@/lib/push";
 
 /**
  * Shiprocket Webhook Handler
@@ -125,6 +126,15 @@ export async function POST(req: Request) {
 
         console.log(
           `Order ${existingOrder.orderNumber} status updated to ${localStatus} via Webhook.`,
+        );
+
+        sendNotificationToAllAdmins({
+          title: `🚚 Order #${existingOrder.orderNumber} ${localStatus === "DELIVERED" ? "Delivered!" : "Status Update"}`,
+          body: `Order #${existingOrder.orderNumber} status changed to ${localStatus} via Shiprocket Webhook.`,
+          url: `/orders/${existingOrder.id}`,
+          type: "ORDER",
+        }).catch((pushErr) =>
+          console.error("[Shiprocket Webhook Push Error]", pushErr),
         );
       } else {
         console.warn(

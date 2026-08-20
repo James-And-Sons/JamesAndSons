@@ -357,7 +357,41 @@ export async function trackShipment(
   awb: string,
   config?: ConfigOrToken,
 ): Promise<any> {
-  return { status: "IN_TRANSIT", awb, tracking_data: { track_status: 1 } };
+  const cfg = typeof config === "object" ? config : {};
+  const token = await getShiprocketToken(cfg);
+  if (!token) {
+    return { success: false, message: "Logistics token unavailable" };
+  }
+
+  try {
+    const res = await fetch(
+      `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${encodeURIComponent(awb)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      return {
+        success: false,
+        error: `Shiprocket API error: ${res.status} ${text}`,
+      };
+    }
+
+    const data = await res.json();
+    return {
+      success: true,
+      status:
+        data?.tracking_data?.shipment_track?.[0]?.current_status || "UNKNOWN",
+      tracking_data: data?.tracking_data || null,
+      raw: data,
+    };
+  } catch (err: any) {
+    console.error("trackShipment Error:", err);
+    return { success: false, error: err.message || "Failed to track shipment" };
+  }
 }
 
 export async function calculateShipping(

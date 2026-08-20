@@ -399,3 +399,112 @@ export async function updateOrderFulfillmentTypeAction(
     };
   }
 }
+
+export async function syncShiprocketStatusesAction() {
+  try {
+    const { trackShipment } = await import("@james-andsons/shiprocket");
+
+    // Fetch active orders (status PROCESSING or SHIPPED) with an AWB or tracking number
+    const activeOrders = await prisma.order.findMany({
+      where: {
+        status: { in: ["PROCESSING", "SHIPPED"] },
+        NOT: { awbNumber: null },
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        awbNumber: true,
+        trackingNumber: true,
+        shippingPhone: true,
+        user: { select: { phone: true, firstName: true } },
+      },
+      take: 50, // Process up to 50 active shipments per batch to remain lightweight
+    });
+
+    if (activeOrders.length === 0) {
+      return {
+        success: true,
+        message: "No active shipments requiring status sync.",
+        updatedCount: 0,
+      };
+    }
+
+    let updatedCount = 0;
+    const updates: Array<{
+      orderNumber: string;
+      oldStatus: string;
+      newStatus: string;
+    }> = [];
+
+    for (const order of activeOrders) {
+      const awbToTrack = order.awbNumber || order.trackingNumber;
+      if (!awbToTrack) continue;
+
+      const trackRes = await trackShipment(awbToTrack);
+      if (!trackRes.success || !trackRes.status) continue;
+
+      const shiprocketStatusStr = (trackRes.status || "").toUpperCase();
+      let newStatus: "DELIVERED" | "SHIPPED" | "CANCELLED" | "RETURNED" | null =
+        null;
+
+      if (shiprocketStatusStr.includes("DELIVERED")) {
+        newStatus = "DELIVERED";
+      } else if (
+        shiprocketStatusStr.includes("TRANSIT") ||
+        shiprocketStatusStr.includes("OUT FOR DELIVERY") ||
+        shiprocketStatusStr.includes("SHIPPED") ||
+        shiprocketStatusStr.includes("DISPATCHED")
+      ) {
+        newStatus = "SHIPPED";
+      } else if (shiprocketStatusStr.includes("CANCEL")) {
+        newStatus = "CANCELLED";
+      } else if (
+        shiprocketStatusStr.includes("RETURN") ||
+        shiprocketStatusStr.includes("RTO")
+      ) {
+        newStatus = "RETURNED";
+      }
+
+      if (newStatus && newStatus !== order.status) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: newStatus as any },
+        });
+
+        updatedCount++;
+        updates.push({
+          orderNumber: order.orderNumber,
+          oldStatus: order.status,
+          newStatus,
+        });
+
+        // Dispatch Admin PWA Push Notification
+        sendNotificationToAllAdmins({
+          title: `🚚 Order #${order.orderNumber} ${newStatus === "DELIVERED" ? "Delivered!" : "Updated"}`,
+          body: `Order #${order.orderNumber} status changed to ${newStatus} (Shiprocket: ${trackRes.status}).`,
+          url: `/orders/${order.id}`,
+          type: "ORDER",
+        }).catch((err) =>
+          console.error("[Shiprocket Status Sync Push Error]", err),
+        );
+      }
+    }
+
+    revalidatePath("/orders");
+    revalidatePath("/logistics");
+
+    return {
+      success: true,
+      message: `Synced ${activeOrders.length} active order(s). ${updatedCount} status update(s) applied.`,
+      updatedCount,
+      updates,
+    };
+  } catch (error: any) {
+    console.error("[syncShiprocketStatusesAction Error]", error);
+    return {
+      success: false,
+      error: error.message || "Failed to sync Shiprocket order statuses",
+    };
+  }
+}

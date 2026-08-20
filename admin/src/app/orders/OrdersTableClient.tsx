@@ -15,7 +15,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
-import { syncAmazonOrdersAction, syncFlipkartOrdersAction } from "./actions";
+import {
+  syncAmazonOrdersAction,
+  syncFlipkartOrdersAction,
+  syncShiprocketStatusesAction,
+} from "./actions";
 
 interface OrderItem {
   id: string;
@@ -43,6 +47,7 @@ export default function OrdersTableClient({
   const [channelFilter, setChannelFilter] = useState("ALL");
   const [isSyncingAmazon, setIsSyncingAmazon] = useState(false);
   const [isSyncingFlipkart, setIsSyncingFlipkart] = useState(false);
+  const [isSyncingShiprocket, setIsSyncingShiprocket] = useState(false);
   const [lastSyncText, setLastSyncText] = useState<string | null>(null);
 
   const performAmazonSync = useCallback(
@@ -133,18 +138,62 @@ export default function OrdersTableClient({
     [router],
   );
 
+  const performShiprocketSync = useCallback(
+    async (forceManual = false) => {
+      const STORAGE_KEY = "jns_shiprocket_last_sync_timestamp";
+      const COOLDOWN_MS = 3 * 60 * 1000; // 3-minute resource optimization throttle
+
+      const lastSyncStr =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem(STORAGE_KEY)
+          : null;
+      const lastSyncTime = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+      const now = Date.now();
+
+      if (!forceManual && lastSyncTime && now - lastSyncTime < COOLDOWN_MS) {
+        return;
+      }
+
+      setIsSyncingShiprocket(true);
+      try {
+        const res = await syncShiprocketStatusesAction();
+        if (res.success) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(STORAGE_KEY, String(now));
+          }
+          setLastSyncText("Just synced");
+          router.refresh();
+          if (forceManual) {
+            alert(`✅ Shiprocket Status Sync Complete!\n\n${res.message}`);
+          }
+        } else if (forceManual) {
+          alert(`❌ Shiprocket Sync failed: ${res.error}`);
+        }
+      } catch (err: any) {
+        if (forceManual) {
+          alert(`❌ Shiprocket Sync error: ${err?.message || err}`);
+        }
+      } finally {
+        setIsSyncingShiprocket(false);
+      }
+    },
+    [router],
+  );
+
   useEffect(() => {
     performAmazonSync(false);
     performFlipkartSync(false);
+    performShiprocketSync(false);
     const interval = setInterval(
       () => {
         performAmazonSync(false);
         performFlipkartSync(false);
+        performShiprocketSync(false);
       },
       5 * 60 * 1000,
     ); // Check every 5 minutes
     return () => clearInterval(interval);
-  }, [performAmazonSync, performFlipkartSync]);
+  }, [performAmazonSync, performFlipkartSync, performShiprocketSync]);
 
   const handleSyncAmazon = () => {
     performAmazonSync(true);
@@ -152,6 +201,10 @@ export default function OrdersTableClient({
 
   const handleSyncFlipkart = () => {
     performFlipkartSync(true);
+  };
+
+  const handleSyncShiprocket = () => {
+    performShiprocketSync(true);
   };
 
   const metrics = useMemo(() => {
@@ -415,6 +468,16 @@ export default function OrdersTableClient({
             <span>
               {isSyncingFlipkart ? "Syncing..." : "Sync Flipkart Orders"}
             </span>
+          </button>
+          <button
+            onClick={handleSyncShiprocket}
+            disabled={isSyncingShiprocket}
+            className="flex-1 md:flex-initial px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all font-mono text-[10px] uppercase tracking-wider rounded-xs flex items-center justify-center gap-2"
+          >
+            <Truck
+              className={`w-3.5 h-3.5 ${isSyncingShiprocket ? "animate-spin" : ""}`}
+            />
+            <span>{isSyncingShiprocket ? "Syncing..." : "Sync Statuses"}</span>
           </button>
           <button
             onClick={handleExportCSV}

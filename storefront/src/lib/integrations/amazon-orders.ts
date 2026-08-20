@@ -438,6 +438,28 @@ export async function ingestAmazonOrder(
     console.error("[Amazon Push] New order notification error:", err),
   );
 
+  // Send operational email notification with Amazon PII / Easy Ship guidelines to operations@jamesandsons.in
+  try {
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: jnsOrder.id },
+      include: { items: { include: { product: true } }, user: true },
+    });
+    if (fullOrder) {
+      const { sendOperationsOrderNotification } = await import("../email");
+      sendOperationsOrderNotification(fullOrder).catch((err) =>
+        console.error(
+          "[Amazon Email] Operations email notification error:",
+          err,
+        ),
+      );
+    }
+  } catch (emailErr) {
+    console.error(
+      "[Amazon Email] Error triggering operations notification:",
+      emailErr,
+    );
+  }
+
   return jnsOrder.id;
 }
 

@@ -418,11 +418,33 @@ export async function ingestFlipkartOrder(
 
   // Trigger push notification to admins
   sendNotificationToAllAdmins({
-    title: `🛒 New Flipkart Order #${order_id}`,
-    body: `Received Flipkart order for ₹${totalAmount.toLocaleString("en-IN")} from ${customerName}.`,
-    url: "/orders",
+    title: `📦 New Flipkart Order #${order_id}`,
+    body: `Flipkart Order received: ₹${totalAmount.toLocaleString("en-IN")} (${order_items.length} item(s))`,
+    url: `/orders/${newOrder.id}`,
     type: "ORDER",
   }).catch((err) => console.error("[Flipkart Push] Notification error:", err));
+
+  // Send operational notification email with Flipkart guidelines to operations@jamesandsons.in
+  try {
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: newOrder.id },
+      include: { items: { include: { product: true } }, user: true },
+    });
+    if (fullOrder) {
+      const { sendOperationsOrderNotification } = await import("../email");
+      sendOperationsOrderNotification(fullOrder).catch((err) =>
+        console.error(
+          "[Flipkart Email] Operations email notification error:",
+          err,
+        ),
+      );
+    }
+  } catch (emailErr) {
+    console.error(
+      "[Flipkart Email] Error triggering operations notification:",
+      emailErr,
+    );
+  }
 
   return newOrder.id;
 }

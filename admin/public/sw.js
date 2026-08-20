@@ -8,7 +8,7 @@
  *   - Service Worker script (/sw.js): Network-Only (bypassed)
  */
 
-const CACHE_NAME = "jas-admin-1786623061168";
+const CACHE_NAME = "jas-admin-1787249975490";
 const STATIC_CACHE = "jas-admin-static-v1";
 
 const STATIC_ASSETS = [

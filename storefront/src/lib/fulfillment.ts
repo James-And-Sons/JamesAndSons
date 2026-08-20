@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { sendInvoiceEmail } from "./email";
+import { sendInvoiceEmail, sendOperationsOrderNotification } from "./email";
 import { generateSequentialInvoiceNumber } from "./invoice";
 import { sendWhatsAppMessage } from "./whatsapp";
 import { createShiprocketOrder, assignAWB } from "./shiprocket";
@@ -145,6 +145,16 @@ export async function fulfillPaidOrder({
     console.error(
       `[FulfillPaidOrder] Failed to send invoice email for order ${order.orderNumber}:`,
       emailError,
+    );
+  }
+
+  // 4a. Send operational notification email to operations@jamesandsons.in
+  try {
+    await sendOperationsOrderNotification(updatedOrder);
+  } catch (opsEmailErr) {
+    console.error(
+      `[FulfillPaidOrder] Failed to send operations email for order ${order.orderNumber}:`,
+      opsEmailErr,
     );
   }
 
