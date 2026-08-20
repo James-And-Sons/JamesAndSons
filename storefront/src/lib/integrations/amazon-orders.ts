@@ -258,7 +258,13 @@ export async function ingestAmazonOrder(
     );
   }
 
-  const finalStatus = refundData.isRefunded ? "CANCELLED" : mappedStatus;
+  const isTerminalState =
+    existing?.status === "RETURNED" || existing?.status === "CANCELLED";
+  const finalStatus = isTerminalState
+    ? existing.status
+    : refundData.isRefunded
+      ? "CANCELLED"
+      : mappedStatus;
 
   if (existing) {
     // Also update fulfillment type if it was previously null (order re-synced after initial ingestion)
@@ -282,7 +288,10 @@ export async function ingestAmazonOrder(
           amazonFulfillmentType: updatedFulfillmentType,
           easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
           refundStatus: refundData.refundStatus || existing.refundStatus,
-          refundAmount: refundData.refundAmount ?? existing.refundAmount,
+          refundAmount:
+            refundData.refundAmount && refundData.refundAmount > 0
+              ? refundData.refundAmount
+              : existing.refundAmount,
           refundedAt: refundData.refundedAt || existing.refundedAt,
           amazonFinancialEvents:
             refundData.amazonFinancialEvents ||

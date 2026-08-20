@@ -444,11 +444,20 @@ export async function restockRTOOrderAction(orderId: string) {
         .catch(() => {});
     }
 
+    const targetRefundAmount =
+      order.refundAmount && order.refundAmount > 0
+        ? order.refundAmount
+        : order.totalAmount;
+
     await prisma.order.update({
       where: { id: order.id },
       data: {
+        status: "RETURNED",
         rtoRestocked: true,
         rtoStatus: "RTO_DELIVERED",
+        refundStatus: order.refundStatus || "FULL_REFUND",
+        refundAmount: targetRefundAmount,
+        refundedAt: order.refundedAt || new Date(),
       },
     });
 
