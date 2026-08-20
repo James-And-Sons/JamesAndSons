@@ -390,6 +390,16 @@ model Order {
   amazonFulfillmentType String?  // EASY_SHIP | SELF_SHIP | null (null = not yet determined)
   easyShipStatus        String?  // SP-API EasyShipShipmentStatus: PendingPickUp | PickedUp | OutForDelivery | Delivered | RejectedByBuyer | Undeliverable | ReturningToSeller | ReturnedToSeller | Lost | LabelCanceled | ReadyForPickup
 
+  // Financial Events & RTO Tracking
+  refundStatus          String?  // FULL_REFUND | PARTIAL_REFUND | REFUND_REQUESTED
+  refundAmount          Float?   @default(0)
+  refundedAt            DateTime?
+  rtoStatus             String?  // RTO_INITIATED | RTO_IN_TRANSIT | RTO_DELIVERED
+  rtoAwbNumber          String?
+  rtoRestocked          Boolean  @default(false)
+  ndrReason             String?
+  amazonFinancialEvents Json?
+
   
   b2bFlag             Boolean   @default(false)
   zohoPricebookId     String?

@@ -22,6 +22,7 @@ import EditableShippingAddress from "./EditableShippingAddress";
 import { requireAdmin } from "@/lib/auth";
 import CustomerAddressEditor from "./CustomerAddressEditor";
 import OrderSidebarSync from "./OrderSidebarSync";
+import RTOFinancialsBanner from "./RTOFinancialsBanner";
 
 function formatPrice(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;
@@ -72,6 +73,14 @@ export default async function OrderDetailPage(props: {
       companyName: true,
       gstin: true,
       fulfillmentError: true,
+      refundStatus: true,
+      refundAmount: true,
+      refundedAt: true,
+      rtoStatus: true,
+      rtoAwbNumber: true,
+      rtoRestocked: true,
+      ndrReason: true,
+      amazonFinancialEvents: true,
       // Per-order recipient fields — never shared across orders (critical for Amazon)
       recipientName: true,
       recipientEmail: true,
@@ -208,6 +217,23 @@ export default async function OrderDetailPage(props: {
           })}
         </span>
       </div>
+
+      {/* ── Operational RTO & Refund Alert Banner ── */}
+      <RTOFinancialsBanner
+        orderId={order.id}
+        channel={order.channel}
+        status={order.status}
+        refundStatus={order.refundStatus}
+        refundAmount={order.refundAmount}
+        refundedAt={order.refundedAt ? order.refundedAt.toISOString() : null}
+        rtoStatus={order.rtoStatus}
+        rtoAwbNumber={
+          order.rtoAwbNumber || order.awbNumber || order.trackingNumber || null
+        }
+        rtoRestocked={order.rtoRestocked}
+        ndrReason={order.ndrReason}
+        amazonFinancialEvents={order.amazonFinancialEvents}
+      />
 
       {/* ── Hero Order Header ── */}
       <div className="bg-surface border border-border rounded-sm overflow-hidden">

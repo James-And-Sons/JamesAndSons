@@ -198,6 +198,68 @@ export async function ingestAmazonOrder(
     include: { items: true },
   });
 
+  // Check Amazon Financial Events for refund adjustments / RTO events
+  let refundData: {
+    refundStatus?: string;
+    refundAmount?: number;
+    refundedAt?: Date;
+    amazonFinancialEvents?: any;
+    isRefunded?: boolean;
+  } = {};
+
+  try {
+    const config = getAmazonConfig();
+    const accessToken = await getRestrictedDataToken();
+    const resFin = await signedSpApiFetch(
+      `/finances/v0/orders/${encodeURIComponent(AmazonOrderId)}/financialEvents`,
+      accessToken,
+      config,
+    );
+    if (resFin.ok) {
+      const finJson = await resFin.json();
+      const finEvents = finJson?.payload?.FinancialEvents;
+      if (finEvents) {
+        refundData.amazonFinancialEvents = finEvents;
+        const refundList = finEvents.RefundEventList || [];
+        if (refundList.length > 0) {
+          let totalRefund = 0;
+          let latestPostedDate: string | null = null;
+
+          for (const ref of refundList) {
+            if (ref.PostedDate) latestPostedDate = ref.PostedDate;
+            const adjustments = ref.ShipmentItemAdjustmentList || [];
+            for (const adj of adjustments) {
+              const charges = adj.ItemChargeAdjustmentList || [];
+              for (const chg of charges) {
+                if (chg.ChargeAmount?.CurrencyAmount) {
+                  totalRefund += Math.abs(
+                    Number(chg.ChargeAmount.CurrencyAmount),
+                  );
+                }
+              }
+            }
+          }
+
+          if (totalRefund > 0) {
+            refundData.isRefunded = true;
+            refundData.refundAmount = totalRefund;
+            refundData.refundStatus = "FULL_REFUND";
+            refundData.refundedAt = latestPostedDate
+              ? new Date(latestPostedDate)
+              : new Date();
+          }
+        }
+      }
+    }
+  } catch (finErr) {
+    console.warn(
+      `[Amazon Financial Sync Warning] Order ${AmazonOrderId}:`,
+      finErr,
+    );
+  }
+
+  const finalStatus = refundData.isRefunded ? "CANCELLED" : mappedStatus;
+
   if (existing) {
     // Also update fulfillment type if it was previously null (order re-synced after initial ingestion)
     const updatedFulfillmentType =
@@ -206,22 +268,46 @@ export async function ingestAmazonOrder(
         : existing.amazonFulfillmentType || "SELF_SHIP";
 
     if (
-      existing.status !== mappedStatus ||
+      existing.status !== finalStatus ||
       existing.amazonOrderStatus !== amzStatus ||
-      existing.easyShipStatus !== (amazonOrder.EasyShipShipmentStatus || null)
+      existing.easyShipStatus !==
+        (amazonOrder.EasyShipShipmentStatus || null) ||
+      refundData.isRefunded
     ) {
       await prisma.order.update({
         where: { id: existing.id },
         data: {
-          status: mappedStatus as any,
+          status: finalStatus as any,
           amazonOrderStatus: amzStatus,
           amazonFulfillmentType: updatedFulfillmentType,
           easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
+          refundStatus: refundData.refundStatus || existing.refundStatus,
+          refundAmount: refundData.refundAmount ?? existing.refundAmount,
+          refundedAt: refundData.refundedAt || existing.refundedAt,
+          amazonFinancialEvents:
+            refundData.amazonFinancialEvents ||
+            (existing.amazonFinancialEvents as any),
+          rtoStatus: refundData.isRefunded
+            ? existing.rtoStatus || "RTO_INITIATED"
+            : existing.rtoStatus,
         },
       });
 
-      // If status changed to CANCELLED, restore inventory and send push notification
-      if (mappedStatus === "CANCELLED" && existing.status !== "CANCELLED") {
+      // Dispatch Push Notification on Amazon Refund / Cancellation
+      if (
+        refundData.isRefunded &&
+        (existing.status as string) !== "REFUNDED_RTO"
+      ) {
+        sendNotificationToAllAdmins({
+          title: `⚠️ Amazon Refund & RTO #${AmazonOrderId}`,
+          body: `Amazon refunded ₹${refundData.refundAmount} to customer. RTO initiated.`,
+          url: `/orders/${existing.id}`,
+          type: "ORDER",
+        }).catch(() => {});
+      } else if (
+        mappedStatus === "CANCELLED" &&
+        existing.status !== "CANCELLED"
+      ) {
         sendNotificationToAllAdmins({
           title: `⚠️ Amazon Order Cancelled #${AmazonOrderId}`,
           body: `Amazon Order #${AmazonOrderId} status changed to Cancelled.`,
@@ -230,27 +316,10 @@ export async function ingestAmazonOrder(
         }).catch((err) =>
           console.error("[Amazon Push] Cancellation notification error:", err),
         );
-
-        for (const item of existing.items) {
-          if (item.variantId) {
-            await prisma.productVariant
-              .update({
-                where: { id: item.variantId },
-                data: { stockQuantity: { increment: item.quantity } },
-              })
-              .catch(() => {});
-          }
-          await prisma.product
-            .update({
-              where: { id: item.productId },
-              data: { stockQuantity: { increment: item.quantity } },
-            })
-            .catch(() => {});
-        }
       }
 
       console.log(
-        `[Amazon Orders] Updated existing Amazon order ${AmazonOrderId} status from ${existing.status} to ${mappedStatus} (Amazon Status: ${amzStatus}).`,
+        `[Amazon Orders] Updated existing Amazon order ${AmazonOrderId} status to ${finalStatus} (Amazon Status: ${amzStatus}, Refunded: ₹${refundData.refundAmount || 0}).`,
       );
     }
     return existing.id;
@@ -396,12 +465,18 @@ export async function ingestAmazonOrder(
     data: {
       orderNumber,
       userId: systemUser.id,
-      status: "PAID", // Amazon only notifies on confirmed/paid orders
+      status: finalStatus as any, // Amazon only notifies on confirmed/paid orders
       channel: "AMAZON",
       amazonOrderId: AmazonOrderId,
       amazonOrderStatus: amazonOrder.OrderStatus,
       amazonFulfillmentType: fulfillmentType,
       easyShipStatus: amazonOrder.EasyShipShipmentStatus || null,
+
+      refundStatus: refundData.refundStatus || null,
+      refundAmount: refundData.refundAmount || 0,
+      refundedAt: refundData.refundedAt || null,
+      amazonFinancialEvents: refundData.amazonFinancialEvents || null,
+      rtoStatus: refundData.isRefunded ? "RTO_INITIATED" : null,
 
       totalAmount,
       taxAmount,

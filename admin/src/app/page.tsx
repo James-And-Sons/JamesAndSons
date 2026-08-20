@@ -78,7 +78,7 @@ export default async function Dashboard() {
       _sum: { totalAmount: true },
       where: {
         status: {
-          notIn: ["PENDING", "CANCELLED"],
+          notIn: ["PENDING", "CANCELLED", "RETURNED"],
         },
       },
     }),
@@ -88,6 +88,9 @@ export default async function Dashboard() {
           notIn: ["PENDING", "CANCELLED"],
         },
       },
+    }),
+    prisma.order.aggregate({
+      _sum: { refundAmount: true },
     }),
   ]);
 
@@ -113,8 +116,14 @@ export default async function Dashboard() {
       : { _sum: { totalAmount: 0 } };
   const activeOrdersCount =
     results[9].status === "fulfilled" ? (results[9].value as number) : 0;
+  const refundAggregate =
+    results[10].status === "fulfilled"
+      ? (results[10].value as any)
+      : { _sum: { refundAmount: 0 } };
 
-  const totalRevenue = revenueAggregate._sum.totalAmount || 0;
+  const grossRevenue = revenueAggregate._sum.totalAmount || 0;
+  const totalRefunds = refundAggregate._sum.refundAmount || 0;
+  const totalRevenue = Math.max(0, grossRevenue - totalRefunds);
   const activeOrders = activeOrdersCount;
   const pendingRfqs = rfqs.filter(
     (r: any) => r.status === "SUBMITTED" || r.status === "DRAFT",

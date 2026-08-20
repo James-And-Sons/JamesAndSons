@@ -408,6 +408,66 @@ export async function updateOrderFulfillmentTypeAction(
   }
 }
 
+export async function restockRTOOrderAction(orderId: string) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order) {
+      return { success: false, error: "Order not found" };
+    }
+
+    if (order.rtoRestocked) {
+      return {
+        success: false,
+        error: "Physical inventory for this RTO order was already restocked.",
+      };
+    }
+
+    // Restock products and variants
+    for (const item of order.items) {
+      if (item.variantId) {
+        await prisma.productVariant
+          .update({
+            where: { id: item.variantId },
+            data: { stockQuantity: { increment: item.quantity } },
+          })
+          .catch(() => {});
+      }
+      await prisma.product
+        .update({
+          where: { id: item.productId },
+          data: { stockQuantity: { increment: item.quantity } },
+        })
+        .catch(() => {});
+    }
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        rtoRestocked: true,
+        rtoStatus: "RTO_DELIVERED",
+      },
+    });
+
+    safeRevalidatePath(`/orders/${orderId}`);
+    safeRevalidatePath("/orders");
+
+    return {
+      success: true,
+      message: "Physical return confirmed! Warehouse inventory restocked.",
+    };
+  } catch (err: any) {
+    console.error("restockRTOOrderAction error:", err);
+    return {
+      success: false,
+      error: err.message || "Failed to restock inventory",
+    };
+  }
+}
+
 export async function syncShiprocketStatusesAction() {
   try {
     const { trackShipment } = await import("@james-andsons/shiprocket");
@@ -426,6 +486,8 @@ export async function syncShiprocketStatusesAction() {
         trackingNumber: true,
         channel: true,
         amazonOrderId: true,
+        rtoStatus: true,
+        ndrReason: true,
       },
       take: 50,
     });
@@ -460,10 +522,25 @@ export async function syncShiprocketStatusesAction() {
       if (!trackRes.success || !trackRes.status) continue;
 
       const shiprocketStatusStr = (trackRes.status || "").toUpperCase();
+      const trackingData = trackRes.tracking_data || {};
+      const ndrData = trackingData.ndr || {};
+      const ndrReason =
+        ndrData.reason ||
+        (trackingData.error ? String(trackingData.error) : null);
+      const isRto =
+        trackingData.is_return ||
+        shiprocketStatusStr.includes("RTO") ||
+        shiprocketStatusStr.includes("RETURN");
+      const rtoStatusStr = isRto
+        ? shiprocketStatusStr.includes("DELIVERED")
+          ? "RTO_DELIVERED"
+          : "RTO_IN_TRANSIT"
+        : order.rtoStatus;
+
       let newStatus: "DELIVERED" | "SHIPPED" | "CANCELLED" | "RETURNED" | null =
         null;
 
-      if (shiprocketStatusStr.includes("DELIVERED")) {
+      if (shiprocketStatusStr.includes("DELIVERED") && !isRto) {
         newStatus = "DELIVERED";
       } else if (
         shiprocketStatusStr.includes("TRANSIT") ||
@@ -474,34 +551,41 @@ export async function syncShiprocketStatusesAction() {
         newStatus = "SHIPPED";
       } else if (shiprocketStatusStr.includes("CANCEL")) {
         newStatus = "CANCELLED";
-      } else if (
-        shiprocketStatusStr.includes("RETURN") ||
-        shiprocketStatusStr.includes("RTO")
-      ) {
+      } else if (isRto) {
         newStatus = "RETURNED";
       }
 
-      if (newStatus && newStatus !== order.status) {
+      if (
+        (newStatus && newStatus !== order.status) ||
+        ndrReason !== order.ndrReason ||
+        rtoStatusStr !== order.rtoStatus
+      ) {
         await prisma.order.update({
           where: { id: order.id },
-          data: { status: newStatus as any },
+          data: {
+            status: (newStatus || order.status) as any,
+            ndrReason: ndrReason || order.ndrReason,
+            rtoStatus: rtoStatusStr || order.rtoStatus,
+          },
         });
 
         updatedCount++;
-        updates.push({
-          orderNumber: order.orderNumber || order.id,
-          oldStatus: order.status,
-          newStatus,
-        });
+        if (newStatus && newStatus !== order.status) {
+          updates.push({
+            orderNumber: order.orderNumber || order.id,
+            oldStatus: order.status,
+            newStatus,
+          });
 
-        sendNotificationToAllAdmins({
-          title: `🚚 Order #${order.orderNumber} ${newStatus === "DELIVERED" ? "Delivered!" : "Updated"}`,
-          body: `Order #${order.orderNumber} status changed to ${newStatus} (Shiprocket: ${trackRes.status}).`,
-          url: `/orders/${order.id}`,
-          type: "ORDER",
-        }).catch((err) =>
-          console.error("[Shiprocket Status Sync Push Error]", err),
-        );
+          sendNotificationToAllAdmins({
+            title: `🚚 Order #${order.orderNumber} ${newStatus === "DELIVERED" ? "Delivered!" : "Updated"}`,
+            body: `Order #${order.orderNumber} status changed to ${newStatus} (Shiprocket: ${trackRes.status}).`,
+            url: `/orders/${order.id}`,
+            type: "ORDER",
+          }).catch((err) =>
+            console.error("[Shiprocket Status Sync Push Error]", err),
+          );
+        }
       }
     }
 
