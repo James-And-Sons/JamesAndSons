@@ -563,32 +563,39 @@ export async function syncShiprocketStatusesAction() {
       }
 
       if (newStatus && newStatus !== order.status) {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: {
-            status: newStatus as any,
-            ndrReason: ndrReason || undefined,
-            rtoStatus: rtoStatusStr || undefined,
-          },
-        });
+        const updatePayload: any = { status: newStatus as any };
+        if (ndrReason) updatePayload.ndrReason = ndrReason;
+        if (rtoStatusStr) updatePayload.rtoStatus = rtoStatusStr;
+
+        try {
+          await prisma.order.update({
+            where: { id: order.id },
+            data: updatePayload,
+          });
+        } catch {
+          await prisma.order
+            .update({
+              where: { id: order.id },
+              data: { status: newStatus as any },
+            })
+            .catch(() => {});
+        }
 
         updatedCount++;
-        if (newStatus && newStatus !== order.status) {
-          updates.push({
-            orderNumber: order.orderNumber || order.id,
-            oldStatus: order.status,
-            newStatus,
-          });
+        updates.push({
+          orderNumber: order.orderNumber || order.id,
+          oldStatus: order.status,
+          newStatus,
+        });
 
-          sendNotificationToAllAdmins({
-            title: `🚚 Order #${order.orderNumber} ${newStatus === "DELIVERED" ? "Delivered!" : "Updated"}`,
-            body: `Order #${order.orderNumber} status changed to ${newStatus} (Shiprocket: ${trackRes.status}).`,
-            url: `/orders/${order.id}`,
-            type: "ORDER",
-          }).catch((err) =>
-            console.error("[Shiprocket Status Sync Push Error]", err),
-          );
-        }
+        sendNotificationToAllAdmins({
+          title: `🚚 Order #${order.orderNumber} ${newStatus === "DELIVERED" ? "Delivered!" : "Updated"}`,
+          body: `Order #${order.orderNumber} status changed to ${newStatus} (Shiprocket: ${trackRes.status}).`,
+          url: `/orders/${order.id}`,
+          type: "ORDER",
+        }).catch((err) =>
+          console.error("[Shiprocket Status Sync Push Error]", err),
+        );
       }
     }
 
