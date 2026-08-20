@@ -1,98 +1,445 @@
-'use client';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { logoutAction } from '@/app/actions';
-import { useEffect, useState } from 'react';
+"use client";
 
-export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+import React, { useEffect, useState, useRef, memo } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useSidebar } from "@/lib/context/SidebarContext";
+import SidebarHeader from "./sidebar/SidebarHeader";
+import SidebarUserFooter from "./sidebar/SidebarUserFooter";
+import SidebarProductFormOutline from "./sidebar/SidebarProductFormOutline";
+import SidebarOrderFormOutline from "./sidebar/SidebarOrderFormOutline";
+import SidebarPromotionOutline from "./sidebar/SidebarPromotionOutline";
+import SidebarNavItem from "./sidebar/SidebarNavItem";
+import SidebarDropdownGroup from "./sidebar/SidebarDropdownGroup";
+import {
+  LayoutDashboard,
+  Package,
+  Grid3x3,
+  BookMarked,
+  Building2,
+  FileText,
+  BookOpen,
+  Megaphone,
+  Tag,
+  Users,
+  TicketCheck,
+  Truck,
+  Mail,
+  Bell,
+  FileSpreadsheet,
+  Settings,
+  Sliders,
+  Gauge,
+} from "lucide-react";
+
+let cachedTickets: number | null = null;
+let cachedRfqs: number | null = null;
+let cachedInquiries: number | null = null;
+let cachedCategories: {
+  id: string;
+  name: string;
+  _count?: { products: number };
+}[] = [];
+let cachedSpaces: {
+  id: string;
+  name: string;
+  _count?: { products: number };
+}[] = [];
+let cachedNavScrollTop = 0;
+
+function Sidebar({
+  isOpen,
+  onClose,
+}: {
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
-  const [openTickets, setOpenTickets] = useState<number | null>(null);
+  const router = useRouter();
+  const {
+    productFormState,
+    orderDetailState,
+    promotionFormState,
+    isPageDirty,
+  } = useSidebar();
+  const [openTickets, setOpenTickets] = useState<number | null>(cachedTickets);
+  const [openRfqs, setOpenRfqs] = useState<number | null>(cachedRfqs);
+  const [openInquiries, setOpenInquiries] = useState<number | null>(
+    cachedInquiries,
+  );
+  const [categories, setCategories] = useState(cachedCategories);
+  const [spaces, setSpaces] = useState(cachedSpaces);
+  const [searchVal, setSearchVal] = useState("");
+  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
+    null,
+  );
+  const [currentEditCategoryId, setCurrentEditCategoryId] = useState<
+    string | null
+  >(null);
+  const [currentManageId, setCurrentManageId] = useState<string | null>(null);
 
-  if (pathname === '/login') return null;
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
+    collections: false,
+    spaces: false,
+    catalog: false,
+  });
+
+  const navRef = useRef<HTMLElement | null>(null);
+
+  if (pathname === "/login") return null;
 
   useEffect(() => {
-    fetch('/api/tickets/count')
-      .then(r => r.json())
-      .then(d => setOpenTickets(d.count))
+    fetch("/api/tickets/count")
+      .then((r) => r.json())
+      .then((d) => {
+        cachedTickets = d.count;
+        setOpenTickets(d.count);
+      })
+      .catch(() => {});
+
+    fetch("/api/rfqs/count")
+      .then((r) => r.json())
+      .then((d) => {
+        cachedRfqs = d.count;
+        setOpenRfqs(d.count);
+      })
+      .catch(() => {});
+
+    fetch("/api/inquiries/count")
+      .then((r) => r.json())
+      .then((d) => {
+        cachedInquiries = d.count;
+        setOpenInquiries(d.count);
+      })
+      .catch(() => {});
+
+    fetch("/api/collections")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+          cachedCategories = sorted;
+          setCategories(sorted);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/spaces")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+          cachedSpaces = sorted;
+          setSpaces(sorted);
+        }
+      })
       .catch(() => {});
   }, []);
 
-  const links = [
-    { name: 'Dashboard', href: '/' },
-    { name: 'Orders', href: '/orders' },
-    { name: 'RFQ Inbox', href: '/rfqs' },
-    { name: 'Catalog & Pricing', href: '/products' },
-    { name: 'Collections', href: '/collections' },
-    { name: 'Spaces', href: '/spaces' },
-    { name: 'B2B Workspace', href: '/b2b' },
-    { name: 'Pages / CMS', href: '/pages' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Tickets', href: '/tickets', badge: openTickets },
-    { name: 'Customers', href: '/customers' },
-    { name: 'Admin Settings', href: '/account' },
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q") || "";
+      const catId = params.get("categoryId");
+      const editId = params.get("edit");
+      const manageId = params.get("manage");
+
+      setSearchVal(q);
+      setCurrentCategoryId(catId);
+      setCurrentEditCategoryId(editId);
+      setCurrentManageId(manageId);
+
+      if (catId || editId) {
+        setOpenDropdowns((prev) => ({ ...prev, collections: true }));
+      }
+      const isSpaceEditPage =
+        pathname.startsWith("/spaces/") && pathname.endsWith("/edit");
+      if (manageId || isSpaceEditPage) {
+        setOpenDropdowns((prev) => ({ ...prev, spaces: true }));
+      }
+      if (pathname === "/products/add" || q) {
+        setOpenDropdowns((prev) => ({ ...prev, catalog: true }));
+      }
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (navRef.current && cachedNavScrollTop > 0) {
+      navRef.current.scrollTop = cachedNavScrollTop;
+    }
+  }, []);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isPageDirty) {
+      if (
+        !confirm("You have unsaved changes. Are you sure you want to leave?")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+    }
+    if (onClose) onClose();
+  };
+
+  const catalogSubItems = [
+    {
+      name: "All Products",
+      href: "/products",
+      active: pathname === "/products",
+    },
+    {
+      name: "Add New Product",
+      href: "/products/add",
+      active: pathname === "/products/add",
+    },
   ];
 
-  const handleLogout = async () => {
-    await logoutAction();
-  };
+  const categorySubItems = categories.map((c) => ({
+    name: `${c.name} (${c._count?.products || 0})`,
+    href: `/collections?edit=${c.id}`,
+    active: currentEditCategoryId === c.id,
+  }));
+
+  const spaceSubItems = spaces.map((s) => ({
+    name: `${s.name} (${s._count?.products || 0})`,
+    href: `/spaces/${s.id}/edit`,
+    active: pathname === `/spaces/${s.id}/edit`,
+  }));
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
 
-      <aside className={`
-        w-[260px] fixed inset-y-0 left-0 z-50 h-screen bg-surface flex flex-col border-r border-border shrink-0 transition-transform duration-300 lg:translate-x-0
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div className="h-[64px] flex flex-col justify-center px-8 border-b border-border relative overflow-hidden bg-background">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-serif text-[18px] font-light tracking-[0.25em] text-accent-hover uppercase z-10">
-                James <span className="text-[#f5e9c8] italic font-light">&</span> Sons
-              </h1>
-              <p className="font-mono text-[8px] text-muted mt-1 uppercase tracking-[0.2em] z-10">Admin Portal</p>
-            </div>
-            {onClose && (
-              <button onClick={onClose} className="lg:hidden p-2 text-muted hover:text-accent">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            )}
-          </div>
-        </div>
+      <aside
+        suppressHydrationWarning
+        className={`
+          w-[260px] fixed inset-y-0 left-0 z-50 h-screen bg-surface flex flex-col border-r border-border shrink-0 transition-transform duration-300 lg:translate-x-0
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <SidebarHeader onClose={onClose} />
 
-        <nav className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
-          {links.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={onClose}
-              className="flex items-center justify-between px-4 py-3 text-muted hover:text-accent border border-transparent hover:border-border hover:bg-surface-muted transition-all duration-200 font-mono text-[10px] tracking-[0.12em] uppercase"
-            >
-              <span>{link.name}</span>
-              {link.badge !== null && link.badge !== undefined && link.badge > 0 && (
-                <span className="bg-[#f59e0b] text-black font-mono text-[9px] font-medium px-1.5 py-0.5 min-w-[20px] text-center">
-                  {link.badge}
-                </span>
+        <nav
+          ref={navRef}
+          onScroll={(e) => {
+            cachedNavScrollTop = e.currentTarget.scrollTop;
+          }}
+          className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto"
+        >
+          {productFormState ? (
+            <SidebarProductFormOutline
+              productFormState={productFormState}
+              onClose={onClose}
+            />
+          ) : orderDetailState ? (
+            <SidebarOrderFormOutline
+              orderDetailState={orderDetailState}
+              onClose={onClose}
+            />
+          ) : promotionFormState ? (
+            <SidebarPromotionOutline
+              promotionState={promotionFormState}
+              onClose={onClose}
+            />
+          ) : (
+            <>
+              <SidebarNavItem
+                name="Dashboard"
+                href="/"
+                icon={LayoutDashboard}
+                isActive={pathname === "/"}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Orders"
+                href="/orders"
+                icon={Package}
+                isActive={pathname.startsWith("/orders")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Contact Inquiries"
+                href="/inquiries"
+                icon={Mail}
+                badge={openInquiries}
+                isActive={pathname.startsWith("/inquiries")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Trade RFQs"
+                href="/rfqs"
+                icon={FileText}
+                badge={openRfqs}
+                isActive={pathname.startsWith("/rfqs")}
+                onClick={handleNavClick}
+              />
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">
+                Catalog
+              </p>
+              <SidebarDropdownGroup
+                name="Products"
+                icon={Package}
+                manageHref="/products"
+                isGroupActive={
+                  pathname.startsWith("/products") ||
+                  pathname === "/products/add"
+                }
+                isOpenDefault={openDropdowns.catalog}
+                subItems={catalogSubItems}
+                onNavClick={handleNavClick}
+                showSearch
+                searchVal={searchVal}
+                onSearchChange={setSearchVal}
+                onSearchSubmit={() => {
+                  router.push(`/products?q=${encodeURIComponent(searchVal)}`);
+                  if (onClose) onClose();
+                }}
+                onSearchClear={() => {
+                  setSearchVal("");
+                  router.push("/products");
+                }}
+              />
+
+              {categories.length > 0 && (
+                <SidebarDropdownGroup
+                  name="Categories"
+                  icon={Grid3x3}
+                  manageHref="/collections"
+                  isGroupActive={
+                    pathname === "/collections" ||
+                    categorySubItems.some((i) => i.active)
+                  }
+                  isOpenDefault={openDropdowns.collections}
+                  subItems={categorySubItems}
+                  onNavClick={handleNavClick}
+                />
               )}
-            </Link>
-          ))}
+
+              {spaces.length > 0 && (
+                <SidebarDropdownGroup
+                  name="Spaces"
+                  icon={BookMarked}
+                  manageHref="/spaces"
+                  isGroupActive={
+                    pathname === "/spaces" ||
+                    spaceSubItems.some((i) => i.active)
+                  }
+                  isOpenDefault={openDropdowns.spaces}
+                  subItems={spaceSubItems}
+                  onNavClick={handleNavClick}
+                />
+              )}
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">
+                Business
+              </p>
+              <SidebarNavItem
+                name="B2B Workspace"
+                href="/b2b"
+                icon={Building2}
+                isActive={pathname.startsWith("/b2b")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Accounting & GST"
+                href="/accounting"
+                icon={FileSpreadsheet}
+                isActive={pathname.startsWith("/accounting")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Blog"
+                href="/blog"
+                icon={BookOpen}
+                isActive={pathname.startsWith("/blog")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="SEO & Performance"
+                href="/seo"
+                icon={Gauge}
+                isActive={pathname.startsWith("/seo")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Marketing"
+                href="/campaigns"
+                icon={Megaphone}
+                isActive={pathname.startsWith("/campaigns")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Push Campaigns"
+                href="/promotions/push"
+                icon={Bell}
+                isActive={pathname.startsWith("/promotions/push")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Promotions & Coupons"
+                href="/promotions"
+                icon={Tag}
+                isActive={
+                  pathname === "/promotions" ||
+                  (pathname.startsWith("/promotions/") &&
+                    !pathname.startsWith("/promotions/push"))
+                }
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Affiliates"
+                href="/affiliates"
+                icon={Users}
+                isActive={pathname.startsWith("/affiliates")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Tickets"
+                href="/tickets"
+                icon={TicketCheck}
+                badge={openTickets}
+                isActive={pathname.startsWith("/tickets")}
+                onClick={handleNavClick}
+              />
+
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted pt-4 pb-1 px-3">
+                System
+              </p>
+              <SidebarNavItem
+                name="Customers"
+                href="/customers"
+                icon={Users}
+                isActive={pathname.startsWith("/customers")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Logistics"
+                href="/logistics"
+                icon={Truck}
+                isActive={pathname.startsWith("/logistics")}
+                onClick={handleNavClick}
+              />
+              <SidebarNavItem
+                name="Settings"
+                href="/account"
+                icon={Settings}
+                isActive={pathname.startsWith("/account")}
+                onClick={handleNavClick}
+              />
+            </>
+          )}
         </nav>
 
-        <div className="p-6 border-t border-border bg-background">
-          <button
-            onClick={handleLogout}
-            className="w-full text-left px-4 py-3 text-[10px] font-mono tracking-[0.12em] uppercase text-muted hover:text-red-500 transition-colors border border-transparent hover:border-border"
-          >
-            Sign Out
-          </button>
-        </div>
+        <SidebarUserFooter />
       </aside>
     </>
   );
 }
+
+export default memo(Sidebar);

@@ -4,14 +4,37 @@
   "workspaces": [
     "admin",
     "storefront",
-    "backend"
+    "packages/*"
   ],
   "scripts": {
     "dev:admin": "npm run dev --workspace=@james-andsons/admin",
     "dev:storefront": "npm run dev --workspace=@james-andsons/storefront",
-    "dev:backend": "npm run start:dev --workspace=@james-andsons/backend",
-    "build": "npm run build --workspaces",
-    "lint": "npm run lint --workspaces"
+    "build": "npm run build --workspace=@james-andsons/assets && npm run build --workspaces",
+    "lint": "npm run lint --workspace=@james-andsons/admin && npm run lint --workspace=@james-andsons/storefront",
+    "type-check": "npm run type-check --workspace=@james-andsons/admin && npm run type-check --workspace=@james-andsons/storefront",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "format": "prettier --check .",
+    "prepare": "command -v husky >/dev/null 2>&1 && husky || true",
+    "postinstall": "npm run db:generate --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/assets && npm run build --workspace=@james-andsons/config && npm run build --workspace=@james-andsons/db && npm run build --workspace=@james-andsons/interfaces && npm run build --workspace=@james-andsons/auth && npm run build --workspace=@james-andsons/pdf-generator && npm run build --workspace=@james-andsons/integrations && npm run build --workspace=@james-andsons/media && npm run build --workspace=@james-andsons/razorpay && npm run build --workspace=@james-andsons/shiprocket && npm run build --workspace=@james-andsons/ui && npm run build --workspace=@james-andsons/blog-editor && npm run build --workspace=@james-andsons/utils && npm run build --workspace=@james-andsons/zoho"
+  },
+  "dependencies": {
+    "react-markdown": "^9.0.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "@types/turndown": "5.0.6",
+    "docx": "9.7.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "mammoth": "1.12.0",
+    "prettier": "^3.5.1",
+    "turndown": "7.2.4",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.5"
   },
   "packageManager": "yarn@4.14.1"
 }

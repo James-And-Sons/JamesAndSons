@@ -2,10 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
+import PageForm from '../PageForm';
 
 export const dynamic = 'force-dynamic';
 
-async function savePage(formData: FormData) {
+async function savePage(prevState: any, formData: FormData) {
   'use server';
   
   const id = formData.get('id') as string | null;
@@ -25,10 +26,27 @@ async function savePage(formData: FormData) {
     isPublished,
   };
 
-  if (id && id !== 'new') {
-    await prisma.page.update({ where: { id }, data });
-  } else {
-    await prisma.page.create({ data });
+  try {
+    // Check for slug uniqueness before update/create to provide a better error message
+    const existingPage = await prisma.page.findUnique({
+      where: { slug }
+    });
+
+    if (existingPage && (!id || (id !== 'new' && existingPage.id !== id) || id === 'new')) {
+      return { error: `The slug "${slug}" is already in use by another page. Please choose a unique slug.` };
+    }
+
+    if (id && id !== 'new') {
+      await prisma.page.update({ where: { id }, data });
+    } else {
+      await prisma.page.create({ data });
+    }
+  } catch (error: any) {
+    console.error('Error saving page:', error);
+    if (error.code === 'P2002') {
+      return { error: 'A unique constraint violation occurred. This slug might already be in use.' };
+    }
+    return { error: 'An unexpected error occurred. Please try again.' };
   }
 
   revalidatePath('/pages');
@@ -48,87 +66,18 @@ export default async function PageEditor(props: { params: Promise<{ id: string }
   return (
     <div className="max-w-[800px] w-full mx-auto space-y-6">
       <div className="flex justify-between items-center bg-surface p-6 border border-border">
-        <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">
-          {isNew ? 'Create New Page' : 'Edit Page'}
-        </h1>
+        <div className="flex items-center gap-4">
+          <Link href="/pages" className="p-2 text-muted hover:text-accent border border-border bg-background transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 12H5M5 12L12 19M5 12L12 5" /></svg>
+          </Link>
+          <h1 className="font-serif text-[28px] font-light text-primary tracking-wide m-0">
+            {isNew ? 'Create New Page' : 'Edit Page'}
+          </h1>
+        </div>
       </div>
 
-      <form action={savePage} className="bg-surface border border-border p-6 space-y-6">
-        <input type="hidden" name="id" value={params.id} />
-        
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Page Title</label>
-            <input 
-              name="title" 
-              defaultValue={page?.title} 
-              required 
-              type="text" 
-              className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-body text-[14px]"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">URL Slug</label>
-            <input 
-              name="slug" 
-              defaultValue={page?.slug} 
-              required 
-              type="text" 
-              placeholder="e.g. about-us"
-              className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px]"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Page Content (HTML/Markdown)</label>
-          <textarea 
-            name="content" 
-            defaultValue={page?.content} 
-            required 
-            rows={15}
-            className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[13px] leading-relaxed"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-6 pt-6 border-t border-border">
-          <div className="space-y-2">
-            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">SEO Meta Title (Optional)</label>
-            <input 
-              name="metaTitle" 
-              defaultValue={page?.metaTitle || ''} 
-              type="text" 
-              className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-body text-[14px]"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">SEO Meta Description (Optional)</label>
-            <textarea 
-              name="metaDescription" 
-              defaultValue={page?.metaDescription || ''} 
-              rows={3}
-              className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-body text-[13px]"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2 pt-4">
-          <label className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">Visibility</label>
-          <select name="isPublished" defaultValue={page ? String(page.isPublished) : 'true'} className="w-full bg-background border border-border px-4 py-3 text-primary focus:outline-none focus:border-accent transition-colors font-mono text-[12px] uppercase">
-            <option value="true">Published (Public)</option>
-            <option value="false">Draft (Hidden)</option>
-          </select>
-        </div>
-
-        <div className="pt-8 flex justify-end gap-4">
-          <Link href="/pages" className="font-mono text-[9px] uppercase tracking-[0.15em] text-muted border border-border px-6 py-3 hover:bg-surface-muted transition-colors">
-            Cancel
-          </Link>
-          <button type="submit" className="btn-primary">
-            {isNew ? 'Create Page' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
+      <PageForm page={page} isNew={isNew} action={savePage} />
     </div>
   );
 }
+

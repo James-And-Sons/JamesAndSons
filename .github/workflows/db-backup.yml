@@ -1,0 +1,34 @@
+name: Automated Secondary Database Backup
+
+on:
+  schedule:
+    # Runs every day at 19:00 UTC (00:30 IST)
+    - cron: "0 19 * * *"
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  backup:
+    name: Backup PostgreSQL Database to AWS S3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Database Backup & AWS S3 Upload
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
+          AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET }}
+        run: npm run db:backup --workspace=@james-andsons/db

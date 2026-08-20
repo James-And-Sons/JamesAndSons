@@ -1,0 +1,31 @@
+name: Automated Monthly GST Filing Email Dispatch
+
+on:
+  schedule:
+    # Runs on the 1st of every month at 00:00 UTC
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+jobs:
+  dispatch-gst-filing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Automated GST Filing Email Dispatch
+        run: |
+          echo "⚡ Triggering Monthly Automated GST Filing Dispatch..."
+          ADMIN_URL="${{ secrets.ADMIN_URL || 'https://admin.jamesandsons.com' }}"
+          CRON_SECRET="${{ secrets.CRON_SECRET }}"
+
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${ADMIN_URL}/api/accounting/auto-gst-filing")
+
+          echo "Response from Admin API:"
+          echo "$RESPONSE"
+
+          if echo "$RESPONSE" | grep -q "HTTP_STATUS:200"; then
+            echo "✅ Automated GST Filing package successfully generated and emailed to accounts@jamesandsons.in!"
+          else
+            echo "⚠️ Dispatch returned non-200 status code."
+          fi

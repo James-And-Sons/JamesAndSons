@@ -1,14 +1,69 @@
 import type { NextConfig } from "next";
+import fs from "fs";
+import path from "path";
+import { withSentryConfig } from "@sentry/nextjs";
+
+// Generate public/sw.js from template on load (dev and build)
+try {
+  const templatePath = path.join(process.cwd(), "public", "sw.template.js");
+  const swPath = path.join(process.cwd(), "public", "sw.js");
+  if (fs.existsSync(templatePath)) {
+    let content = fs.readFileSync(templatePath, "utf8");
+    const buildTs = Date.now().toString();
+    content = content.replace("__BUILD_TS__", buildTs);
+    fs.writeFileSync(swPath, content, "utf8");
+    console.log(`Generated public/sw.js with build timestamp: ${buildTs}`);
+  }
+} catch (err) {
+  console.error("Failed to generate service worker with versioning:", err);
+}
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@james-andsons/blog-editor"],
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
+        protocol: "https",
+        hostname: "res.cloudinary.com",
       },
     ],
   },
+  headers: async () => [
+    {
+      source: "/sw.js",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "no-cache, no-store, must-revalidate, max-age=0",
+        },
+        {
+          key: "Content-Type",
+          value: "application/javascript; charset=utf-8",
+        },
+        {
+          key: "Service-Worker-Allowed",
+          value: "/",
+        },
+      ],
+    },
+  ],
 };
 
-export default nextConfig;
+const hasValidSentryConfig = Boolean(
+  process.env.SENTRY_AUTH_TOKEN &&
+  process.env.SENTRY_ORG &&
+  process.env.SENTRY_PROJECT &&
+  process.env.SENTRY_ORG !== "your-sentry-org-slug" &&
+  process.env.SENTRY_PROJECT !== "your-sentry-project-slug",
+);
+
+export default hasValidSentryConfig
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
+      sourcemaps: {
+        deleteSourcemapsAfterUpload: true,
+      },
+    })
+  : nextConfig;

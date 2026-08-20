@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# debug diagnostic logs
+amazon-debug-log.txt
+inventory-sync-history.json
