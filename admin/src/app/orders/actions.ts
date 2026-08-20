@@ -386,7 +386,6 @@ export async function updateOrderFulfillmentTypeAction(
       where: { id: orderId },
       data: { amazonFulfillmentType: fulfillmentType },
     });
-    revalidatePath(`/orders/${orderId}`);
     return {
       success: true,
       message: `Updated fulfillment mode to ${fulfillmentType === "EASY_SHIP" ? "Easy Ship" : "Self-Ship"}.`,
@@ -404,7 +403,7 @@ export async function syncShiprocketStatusesAction() {
   try {
     const { trackShipment } = await import("@james-andsons/shiprocket");
 
-    // Fetch active orders (status PROCESSING or SHIPPED) with an AWB or tracking number
+    // 1. Fetch active Shiprocket / Storefront orders (PROCESSING or SHIPPED)
     const activeOrders = await prisma.order.findMany({
       where: {
         status: { in: ["PROCESSING", "SHIPPED"] },
@@ -416,19 +415,25 @@ export async function syncShiprocketStatusesAction() {
         status: true,
         awbNumber: true,
         trackingNumber: true,
-        shippingPhone: true,
-        user: { select: { phone: true, firstName: true } },
+        channel: true,
+        amazonOrderId: true,
       },
-      take: 50, // Process up to 50 active shipments per batch to remain lightweight
+      take: 50,
     });
 
-    if (activeOrders.length === 0) {
-      return {
-        success: true,
-        message: "No active shipments requiring status sync.",
-        updatedCount: 0,
-      };
-    }
+    // 2. Fetch active Amazon orders needing SP-API status check
+    const activeAmazonOrders = await prisma.order.findMany({
+      where: {
+        channel: "AMAZON",
+        status: { in: ["PAID", "PROCESSING"] },
+        NOT: { amazonOrderId: null },
+      },
+      select: {
+        id: true,
+        amazonOrderId: true,
+      },
+      take: 20,
+    });
 
     let updatedCount = 0;
     const updates: Array<{
@@ -437,6 +442,7 @@ export async function syncShiprocketStatusesAction() {
       newStatus: string;
     }> = [];
 
+    // Process Shiprocket orders
     for (const order of activeOrders) {
       const awbToTrack = order.awbNumber || order.trackingNumber;
       if (!awbToTrack) continue;
@@ -474,12 +480,11 @@ export async function syncShiprocketStatusesAction() {
 
         updatedCount++;
         updates.push({
-          orderNumber: order.orderNumber,
+          orderNumber: order.orderNumber || order.id,
           oldStatus: order.status,
           newStatus,
         });
 
-        // Dispatch Admin PWA Push Notification
         sendNotificationToAllAdmins({
           title: `🚚 Order #${order.orderNumber} ${newStatus === "DELIVERED" ? "Delivered!" : "Updated"}`,
           body: `Order #${order.orderNumber} status changed to ${newStatus} (Shiprocket: ${trackRes.status}).`,
@@ -491,12 +496,30 @@ export async function syncShiprocketStatusesAction() {
       }
     }
 
+    // Process Amazon active orders (sync single Amazon order status from SP-API)
+    for (const amzOrder of activeAmazonOrders) {
+      if (amzOrder.amazonOrderId) {
+        try {
+          const res = await syncSingleAmazonOrderAction(
+            amzOrder.amazonOrderId,
+            amzOrder.id,
+          );
+          if (res.success) updatedCount++;
+        } catch (err) {
+          console.warn(
+            `[Sync Amazon Order Warning] Order ${amzOrder.amazonOrderId}:`,
+            err,
+          );
+        }
+      }
+    }
+
     revalidatePath("/orders");
     revalidatePath("/logistics");
 
     return {
       success: true,
-      message: `Synced ${activeOrders.length} active order(s). ${updatedCount} status update(s) applied.`,
+      message: `Synced ${activeOrders.length + activeAmazonOrders.length} active order(s). ${updatedCount} status update(s) applied.`,
       updatedCount,
       updates,
     };
@@ -504,7 +527,7 @@ export async function syncShiprocketStatusesAction() {
     console.error("[syncShiprocketStatusesAction Error]", error);
     return {
       success: false,
-      error: error.message || "Failed to sync Shiprocket order statuses",
+      error: error.message || "Failed to sync order statuses",
     };
   }
 }

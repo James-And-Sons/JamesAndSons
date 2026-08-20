@@ -323,20 +323,101 @@ export async function assignAWB(
   courierId?: any,
   config?: ConfigOrToken,
 ): Promise<any> {
-  const idStr = Array.isArray(shipmentId) ? shipmentId[0] : shipmentId;
-  return {
-    success: true,
-    awb_code: `SR${idStr}`,
-    courier_name: "Shiprocket Express",
-    message: "AWB assigned successfully",
-  };
+  const cfg = typeof config === "object" ? config : {};
+  const token = await getShiprocketToken(cfg);
+  const idNum = Number(Array.isArray(shipmentId) ? shipmentId[0] : shipmentId);
+
+  if (!token) {
+    return {
+      success: false,
+      awb_code: `SR${idNum}`,
+      courier_name: "Shiprocket Express",
+      message: "Logistics service unavailable",
+    };
+  }
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/courier/assign/awb",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          shipment_id: idNum,
+          courier_id: courierId ? Number(courierId) : undefined,
+        }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await res.json();
+    if (
+      res.ok &&
+      (data.awb_assign_status === 1 || data.response?.data?.awb_code)
+    ) {
+      const awbCode =
+        data.response?.data?.awb_code || data.awb_code || `SR${idNum}`;
+      const courierName =
+        data.response?.data?.courier_name || "Shiprocket Express";
+      return {
+        success: true,
+        awb_code: awbCode,
+        courier_name: courierName,
+        message: "AWB assigned successfully",
+        data,
+      };
+    }
+
+    return {
+      success: false,
+      awb_code: `SR${idNum}`,
+      message: data.message || "Failed to assign AWB via Shiprocket API",
+      data,
+    };
+  } catch (err: any) {
+    console.error("assignAWB Error:", err);
+    return {
+      success: false,
+      awb_code: `SR${idNum}`,
+      message: err.message || "Failed to assign AWB",
+    };
+  }
 }
 
 export async function cancelShiprocketOrder(
   orderId: any,
   config?: ConfigOrToken,
 ): Promise<any> {
-  return { success: true, message: "Order cancelled" };
+  const cfg = typeof config === "object" ? config : {};
+  const token = await getShiprocketToken(cfg);
+  if (!token) return { success: false, message: "Logistics token unavailable" };
+
+  try {
+    const res = await fetch(
+      "https://apiv2.shiprocket.in/v1/external/orders/cancel",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: [Number(orderId)] }),
+        cache: "no-store",
+      },
+    );
+    const data = await res.json();
+    return {
+      success: res.ok,
+      message: data.message || "Order cancel requested",
+      data,
+    };
+  } catch (err: any) {
+    console.error("cancelShiprocketOrder Error:", err);
+    return { success: false, message: err.message || "Failed to cancel order" };
+  }
 }
 
 export async function cancelShiprocketShipment(
@@ -364,7 +445,8 @@ export async function trackShipment(
   }
 
   try {
-    const res = await fetch(
+    // 1. Try tracking by AWB code
+    let res = await fetch(
       `https://apiv2.shiprocket.in/v1/external/courier/track/awb/${encodeURIComponent(awb)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -372,20 +454,38 @@ export async function trackShipment(
       },
     );
 
-    if (!res.ok) {
-      const text = await res.text();
-      return {
-        success: false,
-        error: `Shiprocket API error: ${res.status} ${text}`,
-      };
+    let data = await res.json();
+    let currentStatus =
+      data?.tracking_data?.shipment_track?.[0]?.current_status;
+
+    // 2. If AWB tracking didn't return a status or returned error, try tracking by shipment ID
+    if (!currentStatus || data?.tracking_data?.track_status === 0) {
+      const shipmentIdClean = awb.replace(/\D/g, "");
+      if (shipmentIdClean) {
+        const resShipment = await fetch(
+          `https://apiv2.shiprocket.in/v1/external/courier/track/shipment/${encodeURIComponent(shipmentIdClean)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          },
+        );
+        if (resShipment.ok) {
+          const dataShipment = await resShipment.json();
+          const shipmentData =
+            dataShipment?.[shipmentIdClean]?.tracking_data ||
+            (Object.values(dataShipment || {})[0] as any)?.tracking_data;
+          if (shipmentData?.shipment_track?.[0]?.current_status) {
+            currentStatus = shipmentData.shipment_track[0].current_status;
+            data = shipmentData;
+          }
+        }
+      }
     }
 
-    const data = await res.json();
     return {
       success: true,
-      status:
-        data?.tracking_data?.shipment_track?.[0]?.current_status || "UNKNOWN",
-      tracking_data: data?.tracking_data || null,
+      status: currentStatus || "UNKNOWN",
+      tracking_data: data?.tracking_data || data || null,
       raw: data,
     };
   } catch (err: any) {
