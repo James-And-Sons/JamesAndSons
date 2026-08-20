@@ -184,10 +184,11 @@ export async function ingestAmazonOrder(
     "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" =
     "PAID";
   const amzStatus = amazonOrder.OrderStatus;
-  if (amzStatus === "Shipped" || amzStatus === "PartiallyShipped") {
-    mappedStatus = "SHIPPED";
-  } else if (amzStatus === "Delivered") {
+  const easyStatus = amazonOrder.EasyShipShipmentStatus;
+  if (amzStatus === "Delivered" || easyStatus === "Delivered") {
     mappedStatus = "DELIVERED";
+  } else if (amzStatus === "Shipped" || amzStatus === "PartiallyShipped") {
+    mappedStatus = "SHIPPED";
   } else if (amzStatus === "Canceled") {
     mappedStatus = "CANCELLED";
   }
@@ -296,9 +297,13 @@ export async function ingestAmazonOrder(
           amazonFinancialEvents:
             refundData.amazonFinancialEvents ||
             (existing.amazonFinancialEvents as any),
-          rtoStatus: refundData.isRefunded
-            ? existing.rtoStatus || "RTO_INITIATED"
-            : existing.rtoStatus,
+          rtoStatus:
+            finalStatus === "DELIVERED"
+              ? null
+              : refundData.isRefunded
+                ? existing.rtoStatus || "RTO_INITIATED"
+                : existing.rtoStatus,
+          ndrReason: finalStatus === "DELIVERED" ? null : existing.ndrReason,
         },
       });
 

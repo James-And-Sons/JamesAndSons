@@ -48,10 +48,13 @@ export default function RTOFinancialsBanner({
   const hasRefund = (refundAmount && refundAmount > 0) || refundStatus != null;
   const isRto =
     rtoStatus != null || status === "REFUNDED_RTO" || status === "RETURNED";
-  const hasNdr = ndrReason != null;
+  const isInvalidTrackingError = ndrReason
+    ? ndrReason.includes("no shipment present") || ndrReason.includes("Aahh!")
+    : false;
+  const hasNdr = ndrReason != null && !isInvalidTrackingError;
 
   if (!hasRefund && !isRto && !hasNdr) {
-    return null; // Don't render banner for normal active orders
+    return null; // Don't render banner for normal active or delivered orders
   }
 
   const handleRestock = () => {

@@ -485,7 +485,7 @@ export async function syncShiprocketStatusesAction() {
     const activeOrders = await prisma.order.findMany({
       where: {
         status: { in: ["PROCESSING", "SHIPPED"] },
-        NOT: { awbNumber: null },
+        NOT: [{ awbNumber: null }, { amazonFulfillmentType: "EASY_SHIP" }],
       },
       select: {
         id: true,
