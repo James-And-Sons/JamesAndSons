@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma";
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { Package, IndianRupee } from "lucide-react";
 import ClickableRow from "@/components/ClickableRow";
 
 export const dynamic = "force-dynamic";
@@ -85,12 +85,17 @@ export default async function Dashboard() {
     prisma.order.count({
       where: {
         status: {
-          notIn: ["PENDING", "CANCELLED"],
+          notIn: ["PENDING", "CANCELLED", "RETURNED"],
         },
       },
     }),
     prisma.order.aggregate({
       _sum: { refundAmount: true },
+      where: {
+        status: {
+          notIn: ["PENDING", "CANCELLED", "RETURNED"],
+        },
+      },
     }),
   ]);
 
@@ -159,12 +164,10 @@ export default async function Dashboard() {
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-muted">
                 TOTAL REVENUE
               </span>
-              <span
-                className="font-mono text-[14px] text-muted group-hover:text-accent transition-colors"
+              <IndianRupee
+                className="w-4 h-4 text-muted group-hover:text-accent transition-colors"
                 aria-hidden="true"
-              >
-                ₹
-              </span>
+              />
             </div>
             <p className="font-serif text-[28px] md:text-[32px] font-normal text-primary m-0 leading-tight">
               ₹{Math.round(totalRevenue).toLocaleString("en-IN")}
