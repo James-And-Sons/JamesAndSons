@@ -118,15 +118,25 @@ async function exportDatabaseData(pool: Pool): Promise<string> {
 
 async function uploadToS3(filePath: string, s3Key: string): Promise<boolean> {
   const bucketName =
-    process.env.AWS_S3_BACKUP_BUCKET || process.env.AWS_S3_BUCKET_NAME;
+    process.env.AWS_S3_BACKUP_BUCKET ||
+    process.env.AWS_S3_BUCKET_NAME ||
+    "james-and-sons-db-backups";
+
+  // Note: AWS_REGION is often set to 'eu-west-1' for Amazon SP-API.
+  // The backup bucket is located in 'ap-south-1' (Mumbai).
+  // Prioritize AWS_S3_REGION over AWS_REGION to prevent HTTP 301 PermanentRedirect error.
   const region =
-    process.env.AWS_S3_REGION || process.env.AWS_REGION || "ap-south-1";
+    process.env.AWS_S3_REGION ||
+    (process.env.AWS_REGION && process.env.AWS_REGION !== "eu-west-1"
+      ? process.env.AWS_REGION
+      : "ap-south-1");
+
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
   if (!bucketName || !accessKeyId || !secretAccessKey) {
     console.warn(
-      "⚠️ AWS S3 credentials or bucket name (AWS_S3_BACKUP_BUCKET) not set. Skipping S3 upload.",
+      `⚠️ AWS S3 credentials or bucket name not set (Bucket: ${bucketName ? "configured" : "MISSING"}, KeyId: ${accessKeyId ? "configured" : "MISSING"}, Secret: ${secretAccessKey ? "configured" : "MISSING"}). Skipping S3 upload.`,
     );
     return false;
   }
@@ -158,7 +168,10 @@ async function uploadToS3(filePath: string, s3Key: string): Promise<boolean> {
     console.log(`✅ AWS S3 Upload Successful: s3://${bucketName}/${s3Key}`);
     return true;
   } catch (err: any) {
-    console.error("❌ AWS S3 Upload Failed:", err?.message || err);
+    console.error(
+      `❌ AWS S3 Upload Failed (Bucket: ${bucketName}, Region: ${region}):`,
+      err?.message || err,
+    );
     throw err;
   }
 }
@@ -176,11 +189,18 @@ async function main() {
 
   let success = false;
 
+  // Direct connection URL for native pg_dump (port 6543 / pgbouncer does not support pg_dump session options)
+  const directDbUrl =
+    process.env.DIRECT_URL ||
+    (dbUrl.includes(":6543")
+      ? dbUrl.replace(":6543", ":5432").replace(/[?&]pgbouncer=true/, "")
+      : dbUrl);
+
   // Option 1: Native pg_dump if available
   try {
-    console.log("Trying native pg_dump export...");
+    console.log("Trying native pg_dump export via direct connection...");
     execSync(
-      `pg_dump "${dbUrl}" --no-owner --no-privileges -f "${backupFilePath}"`,
+      `pg_dump "${directDbUrl}" --no-owner --no-privileges -f "${backupFilePath}"`,
       { stdio: "pipe", timeout: 30000 },
     );
     const rawSql = fs.readFileSync(backupFilePath);

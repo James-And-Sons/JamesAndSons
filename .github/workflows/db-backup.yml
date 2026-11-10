@@ -27,8 +27,10 @@ jobs:
       - name: Run Database Backup & AWS S3 Upload
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
-          AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET }}
+          AWS_S3_REGION: ${{ secrets.AWS_S3_REGION || 'ap-south-1' }}
+          AWS_S3_BACKUP_BUCKET: ${{ secrets.AWS_S3_BACKUP_BUCKET || 'james-and-sons-db-backups' }}
         run: npm run db:backup --workspace=@james-andsons/db
