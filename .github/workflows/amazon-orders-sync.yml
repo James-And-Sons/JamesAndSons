@@ -1,9 +1,11 @@
 name: Automated Amazon Orders Ingestion Sync
 
 on:
-  schedule:
-    # Runs every 15 minutes
-    - cron: "*/15 * * * *"
+  # Scheduled cron disabled: running every 15 minutes exhausts the 2,000 free monthly GitHub Actions minutes,
+  # causing account-level locks and ": No jobs were run" failure notification spam.
+  # Order sync is handled natively in the Admin Orders dashboard and can be triggered manually below or via Vercel Crons.
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
