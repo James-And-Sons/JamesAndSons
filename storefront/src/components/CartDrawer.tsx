@@ -1,152 +1,228 @@
-'use client';
-import { useCartStore } from '@/store/cart';
-import Link from 'next/link';
-import { formatPrice } from '@/lib/utils';
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+"use client";
+
+import { useCartStore } from "@/store/cart";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
+import CartDrawerItem from "./cart/CartDrawerItem";
+import CartDrawerFooter from "./cart/CartDrawerFooter";
+import { X, ShoppingBag, Sparkles, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { renderPrice } from "@/lib/utils";
+
+const FREE_SHIPPING_THRESHOLD = 5000;
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, total, itemCount } = useCartStore();
+  const {
+    items,
+    isOpen,
+    closeCart,
+    removeItem,
+    updateQty,
+    itemCount,
+    discountedTotal,
+  } = useCartStore();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Close cart on pathname change
+  useEffect(() => {
+    closeCart();
+  }, [pathname, closeCart]);
+
   // Keyboard close
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeCart(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeCart();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [closeCart]);
 
-  // Prevent body scroll when open; CRITICAL: also prevent horizontal overflow
+  // Close cart on mobile back navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    const handlePopState = () => {
+      closeCart();
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [isOpen, closeCart]);
+
+  // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
-
-  const currentItems = mounted ? items : [];
-  const currentCount = mounted ? itemCount() : 0;
-  const cartTotal = mounted ? total() : 0;
 
   if (!mounted) return null;
 
+  const currentCount =
+    typeof itemCount === "function" ? itemCount() : items.length;
+  const grandTotal =
+    typeof discountedTotal === "function"
+      ? discountedTotal()
+      : discountedTotal || 0;
+  const amountNeededForFreeShipping = Math.max(
+    0,
+    FREE_SHIPPING_THRESHOLD - grandTotal,
+  );
+  const freeShippingProgress = Math.min(
+    100,
+    (grandTotal / FREE_SHIPPING_THRESHOLD) * 100,
+  );
+
   return createPortal(
     <>
-      {/* Backdrop - only rendered when open */}
+      {/* Backdrop */}
       {isOpen && (
         <div
           onClick={closeCart}
           style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.6)',
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.8)",
             zIndex: 9998,
-            backdropFilter: 'blur(4px)',
+            backdropFilter: "blur(4px)",
+            transition: "opacity 0.3s ease",
           }}
         />
       )}
 
-      {/* Drawer panel - visibility-toggled instead of translateX to avoid overflow issues */}
+      {/* Drawer panel */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Shopping cart"
+        aria-label="Shopping bag"
         style={{
-          position: 'fixed',
-          top: 0, right: 0, bottom: 0,
-          width: '400px',
-          maxWidth: '92vw',
-          background: 'var(--obsidian)',
-          borderLeft: '1px solid var(--border)',
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "420px",
+          maxWidth: "100vw",
+          background: "var(--obsidian)",
+          borderLeft: "1px solid var(--border)",
           zIndex: 10000,
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '-10px 0 40px rgba(0,0,0,0.6)',
-          // Using visibility + opacity instead of translateX to avoid horizontal scrollbar
-          visibility: isOpen ? 'visible' : 'hidden',
+          display: "flex",
+          flexDirection: "column",
+          visibility: isOpen ? "visible" : "hidden",
           opacity: isOpen ? 1 : 0,
-          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, visibility 0.3s ease',
-          pointerEvents: isOpen ? 'auto' : 'none',
+          transform: isOpen ? "translateX(0)" : "translateX(100%)",
+          transition:
+            "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
+          pointerEvents: isOpen ? "auto" : "none",
+          overscrollBehavior: "contain",
         }}
       >
         {/* Header */}
-        <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', fontWeight: 300, color: 'var(--cream)', margin: 0 }}>
-            Mini Bag {currentCount > 0 && <span style={{ color: 'var(--gold)' }}>({currentCount})</span>}
-          </h2>
+        <div className="p-6 pb-4 flex justify-between items-center shrink-0 border-b border-border/80 bg-surface/40">
+          <div className="flex items-center gap-2.5">
+            <ShoppingBag size={20} className="text-gold" />
+            <h2 className="font-serif text-2xl font-light text-cream m-0 flex items-center gap-2">
+              <span>Shopping Bag</span>
+              <span className="text-xs font-mono text-gold bg-gold/15 px-2 py-0.5 rounded border border-gold/30">
+                {currentCount}
+              </span>
+            </h2>
+          </div>
           <button
             onClick={closeCart}
             aria-label="Close cart"
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px', transition: 'color 0.2s', padding: '8px', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            className="p-1.5 text-gold/80 hover:text-gold hover:scale-110 transition-all cursor-pointer rounded-full hover:bg-gold/10"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <X size={20} />
           </button>
         </div>
 
-        {/* Items */}
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '24px 28px', background: 'var(--void)' }}>
-          {currentItems.length === 0 ? (
-            <div style={{ textAlign: 'center', paddingTop: '60px' }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: 'var(--text-muted)', marginBottom: '8px' }}>Your bag is empty</div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-dim)', marginBottom: '24px', lineHeight: 1.6 }}>Start exploring our curated collection.</p>
-              <Link href="/collections" onClick={closeCart} className="btn-outline" style={{ display: 'inline-block', padding: '10px 28px', textDecoration: 'none' }}>Explore</Link>
+        {/* Free Shipping Progress Bar */}
+        {items.length > 0 && (
+          <div className="px-6 py-3 bg-surface/70 border-b border-border/40 space-y-1.5 shrink-0">
+            <div className="flex justify-between items-center text-[11px] font-mono">
+              {amountNeededForFreeShipping > 0 ? (
+                <span className="text-textMuted">
+                  Add{" "}
+                  <span className="text-gold font-bold">
+                    {renderPrice(amountNeededForFreeShipping)}
+                  </span>{" "}
+                  more for a <span className="text-gold">Special discount</span>
+                </span>
+              ) : (
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <Sparkles size={12} />
+                  <span>Unlocked Special discount!</span>
+                </span>
+              )}
+              <span className="text-textMuted text-[10px]">
+                {Math.round(freeShippingProgress)}%
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-background rounded-full overflow-hidden border border-border/50">
+              <div
+                className="h-full bg-gradient-to-r from-gold/70 via-gold to-amber-300 transition-all duration-500 rounded-full"
+                style={{ width: `${freeShippingProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable Items Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-obsidian custom-scrollbar">
+          {items.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center py-16 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-surface border border-border/80 flex items-center justify-center text-gold shadow-lg shadow-gold/5">
+                <ShoppingBag size={32} className="stroke-1" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-cream font-medium font-serif text-lg">
+                  Your shopping bag is empty
+                </h3>
+                <p className="text-xs text-textMuted max-w-[260px] mx-auto">
+                  Discover our heritage illumination craftsmanship &
+                  architectural collections.
+                </p>
+              </div>
+              <Link
+                href="/collections"
+                onClick={closeCart}
+                className="mt-2 px-6 py-2.5 bg-gold text-obsidian font-mono text-xs uppercase tracking-widest font-bold rounded hover:brightness-110 transition-all flex items-center gap-2 cursor-pointer shadow-md shadow-gold/15"
+              >
+                <span>Explore Catalog</span>
+                <ArrowRight size={14} />
+              </Link>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {currentItems.map((item, i) => (
-                <div key={`${item.product.id}-${i}`} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
-                  <Link href={`/products/${item.product.slug}`} onClick={closeCart} style={{ width: '64px', height: '80px', background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, textDecoration: 'none' }}>
-                    <svg width="32" height="40" viewBox="0 0 100 120" stroke="var(--gold)" fill="none" style={{ opacity: 0.6 }}>
-                      <path d="M50 10 L50 40" strokeWidth="1" strokeDasharray="3 3" />
-                      <path d="M20 70 Q50 30 80 70" strokeWidth="2" opacity="0.7" />
-                      <circle cx="50" cy="95" r="4" fill="var(--gold-light)" stroke="none" />
-                    </svg>
-                  </Link>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <Link href={`/products/${item.product.slug}`} onClick={closeCart} style={{ textDecoration: 'none', color: 'var(--cream)', flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', fontWeight: 300, lineHeight: 1.3, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.name}</div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Qty: {item.quantity}</div>
-                      </Link>
-                      <button onClick={() => removeItem(item.product.id)} aria-label="Remove item" style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '16px', padding: '4px', transition: 'color 0.2s', flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}>✕</button>
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: '14px', color: 'var(--gold-light)', marginTop: '10px' }}>
-                      {formatPrice(item.product.d2cPrice * item.quantity)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            items.map((item: any, idx: number) => (
+              <CartDrawerItem
+                key={item.product?.id || idx}
+                item={item}
+                onUpdateQty={updateQty}
+                onRemove={removeItem}
+                onCloseCart={closeCart}
+              />
+            ))
           )}
         </div>
 
-        {/* Footer CTA */}
-        {currentItems.length > 0 && (
-          <div style={{ borderTop: '1px solid var(--border)', padding: '20px 28px', background: 'var(--obsidian)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Subtotal</span>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 300, color: 'var(--cream)' }}>{formatPrice(cartTotal)}</span>
-            </div>
-            <Link href="/cart" onClick={closeCart} className="btn-primary" style={{ display: 'block', textAlign: 'center', padding: '14px', textDecoration: 'none', letterSpacing: '0.15em', width: '100%', marginBottom: '10px' }}>
-              View Shopping Bag
-            </Link>
-            <Link href="/checkout" onClick={closeCart} style={{ display: 'block', textAlign: 'center', padding: '14px', textDecoration: 'none', letterSpacing: '0.15em', width: '100%', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border)', transition: 'color 0.2s' }}>
-              Checkout Directly
-            </Link>
-          </div>
-        )}
+        {/* Footer */}
+        {items.length > 0 && <CartDrawerFooter onCloseCart={closeCart} />}
       </div>
     </>,
-    document.body
+    document.body,
   );
 }

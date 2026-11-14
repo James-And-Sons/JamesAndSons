@@ -1,6 +1,5 @@
 import ClientLoginPage from './ClientLoginPage'
 import { headers } from 'next/headers'
-import Navigation from '@/components/Navigation'
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ message?: string, next?: string }>
@@ -11,8 +10,7 @@ export default async function LoginPage(props: {
 
   return (
     <>
-      <Navigation />
-      <ClientLoginPage searchParams={searchParams} referer={referer} />
+            <ClientLoginPage searchParams={searchParams} referer={referer} />
     </>
   )
 }

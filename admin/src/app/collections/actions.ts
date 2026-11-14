@@ -1,36 +1,52 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
-export async function addProductToCollection(categoryId: string, productId: string) {
+export async function addProductToCollection(
+  categoryId: string,
+  productId: string,
+) {
   try {
-    await prisma.category.update({
-      where: { id: categoryId },
-      data: {
-        products: {
-          connect: { id: productId }
-        }
-      }
+    await prisma.product.update({
+      where: { id: productId },
+      data: { categoryId },
     });
-    revalidatePath('/collections');
+    revalidatePath("/collections");
+    revalidatePath("/products");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
 
-export async function removeProductFromCollection(categoryId: string, productId: string) {
+export async function removeProductFromCollection(
+  categoryId: string,
+  productId: string,
+) {
   try {
-    await prisma.category.update({
-      where: { id: categoryId },
-      data: {
-        products: {
-          disconnect: { id: productId }
-        }
-      }
+    // Find or create default Uncategorized category as fallback for mandatory categoryId relation
+    let uncategorized = await prisma.category.findFirst({
+      where: { OR: [{ slug: "uncategorized" }, { name: "Uncategorized" }] },
     });
-    revalidatePath('/collections');
+
+    if (!uncategorized) {
+      uncategorized = await prisma.category.create({
+        data: {
+          name: "Uncategorized",
+          slug: "uncategorized",
+          description: "Default category for unassigned products",
+        },
+      });
+    }
+
+    await prisma.product.update({
+      where: { id: productId },
+      data: { categoryId: uncategorized.id },
+    });
+
+    revalidatePath("/collections");
+    revalidatePath("/products");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

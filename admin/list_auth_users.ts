@@ -12,7 +12,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 async function main() {
   console.log('Fetching all users from Supabase Auth...');
   const { data: { users }, error } = await supabase.auth.admin.listUsers();
-  
+
   if (error) {
     console.error('Error fetching users:', error.message);
     return;

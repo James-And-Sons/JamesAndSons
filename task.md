@@ -41,6 +41,8 @@
 - [x] **Bug Fixes**: All critical and medium bugs found during audit resolved.
 
 ## 5. Next Steps
+- [x] **High Priority**: Align Amazon Export Feed with guidelines template (`LAMP_LIGHT_FIXTURE.xlsm`)
 - [ ] Third-Party APIs: Shiprocket (Logistics) & Razorpay (Production keys)
 - [ ] Final Mobile Responsiveness pass
 - [ ] Production Deployment
+

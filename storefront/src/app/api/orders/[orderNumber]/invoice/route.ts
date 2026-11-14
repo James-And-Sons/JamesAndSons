@@ -1,0 +1,71 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@james-andsons/db";
+import { generateInvoicePdfBuffer } from "@james-andsons/pdf-generator";
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ orderNumber: string }> },
+) {
+  try {
+    const { orderNumber } = await params;
+    const id = orderNumber;
+
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [{ id }, { orderNumber: id }],
+      },
+      include: {
+        user: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Ensure invoiceNumber is ALWAYS assigned and persisted in DB (NEVER PENDING)
+    if (!order.invoiceNumber) {
+      try {
+        const { generateSequentialInvoiceNumber } =
+          await import("@/lib/invoice");
+        const newInvNum = await generateSequentialInvoiceNumber();
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { invoiceNumber: newInvNum },
+        });
+        order.invoiceNumber = newInvNum;
+      } catch (err) {
+        console.error("Auto invoice number generation fallback:", err);
+        const fallbackInv = `JS${order.orderNumber.replace(/[^0-9]/g, "").slice(-5) || "07429"}`;
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { invoiceNumber: fallbackInv },
+        });
+        order.invoiceNumber = fallbackInv;
+      }
+    }
+
+    const pdfBuffer = generateInvoicePdfBuffer(order);
+    const filename = `Invoice_${order.invoiceNumber || order.orderNumber}.pdf`;
+
+    return new NextResponse(new Uint8Array(pdfBuffer), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
+  } catch (error: any) {
+    console.error("Error generating PDF invoice download:", error);
+    return NextResponse.json(
+      { error: "Failed to generate PDF invoice" },
+      { status: 500 },
+    );
+  }
+}

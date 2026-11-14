@@ -35,3 +35,19 @@ yarn-error.log*
 
 # prisma
 /generated/prisma
+
+# db backups
+packages/db/backups/
+*.sql.gz
+
+# Amazon debug logs
+amazon-debug-log.txt
+# Service account keys
+jamesandsons-*.json
+admin/jamesandsons-*.json
+google-service-account.json
+
+# Scratch & test binary outputs
+scratch/
+*.xlsx
+*.docx

@@ -1,57 +1,272 @@
-import Link from 'next/link';
+"use client";
+
+import Link from "next/link";
+import { useTenantConfig, useDictionary } from "@james-andsons/ui";
 
 export default function Footer() {
+  const config = useTenantConfig();
+  const { t } = useDictionary();
+
+  const currentYear = new Date().getFullYear();
+  const brandName = config.brand.name;
+  const tagline = t("common.tagline", "Let your light shine before others");
+  const citation = t("common.tagline_citation", "Matthew 5:16");
+  const companyDesc = t(
+    "footer.company_desc",
+    "Curators of luxury illumination. Elevating spaces with heritage craftsmanship.",
+  );
+
   return (
-    <footer style={{ backgroundColor: 'var(--obsidian)', borderTop: '1px solid var(--border)', padding: '60px 40px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em', marginTop: 'auto' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
-          
+    <footer
+      style={{
+        backgroundColor: "var(--obsidian)",
+        borderTop: "1px solid var(--border)",
+        padding: "60px 40px",
+        color: "var(--text-muted)",
+        fontFamily: "var(--font-mono)",
+        fontSize: "12px",
+        letterSpacing: "0.1em",
+        marginTop: "auto",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "40px",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "40px",
+          }}
+        >
           <div>
-            <h3 style={{ color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '20px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '8px' }}>
-              James <span style={{ color: 'var(--gold)', fontStyle: 'italic' }}>&amp;</span> Sons
+            <h3
+              style={{
+                color: "var(--gold-pale)",
+                fontFamily: "var(--font-serif)",
+                fontSize: "20px",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                marginBottom: "8px",
+              }}
+            >
+              {brandName}
             </h3>
-            <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '13px', color: 'var(--gold)', opacity: 0.8, marginBottom: '20px', letterSpacing: '0.05em' }}>
-              &ldquo;Let your light shine before others&rdquo; &mdash;Matthew 5:16
+            <p
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontStyle: "italic",
+                fontSize: "15px",
+                color: "var(--gold-pale)",
+                marginBottom: "20px",
+                letterSpacing: "0.05em",
+              }}
+            >
+              &ldquo;{tagline}&rdquo; &mdash;{citation}
             </p>
-            <p style={{ lineHeight: 1.8 }}>Curators of luxury illumination.<br/>Elevating spaces with heritage craftsmanship.</p>
+            <p style={{ lineHeight: 1.8 }}>{companyDesc}</p>
           </div>
-          
+
           <div>
-            <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Shop</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li><Link href="/collections" className="footer-link">Collections</Link></li>
-              <li><Link href="/#spaces" className="footer-link">Spaces</Link></li>
-              <li><Link href="/b2b" className="footer-link">B2B Portal</Link></li>
+            <h4
+              style={{
+                color: "var(--text)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Shop
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <li>
+                <Link href="/collections" className="footer-link">
+                  Collections
+                </Link>
+              </li>
+              <li>
+                <Link href="/spaces" className="footer-link">
+                  Spaces
+                </Link>
+              </li>
+              <li>
+                <Link href="/catalogues" className="footer-link">
+                  Download Catalogues
+                </Link>
+              </li>
+              {config.featureFlags.enableB2bPortal && (
+                <li>
+                  <a
+                    href="https://indiamart.jamesandsons.in"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-link"
+                  >
+                    B2B Portal
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
-          
+
           <div>
-            <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Company</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li><Link href="/about" className="footer-link">About Us</Link></li>
-              <li><Link href="/contact" className="footer-link">Contact</Link></li>
-              <li><Link href="/careers" className="footer-link">Careers</Link></li>
+            <h4
+              style={{
+                color: "var(--text)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Company
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <li>
+                <Link href="/about" className="footer-link">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="footer-link">
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/careers" className="footer-link">
+                  Careers
+                </Link>
+              </li>
             </ul>
           </div>
-          
+
           <div>
-            <h4 style={{ color: 'var(--text)', marginBottom: '8px', textTransform: 'uppercase' }}>Legal</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li><Link href="/terms-and-conditions" className="footer-link">Terms &amp; Conditions</Link></li>
-              <li><Link href="/privacy-policy" className="footer-link">Privacy Policy</Link></li>
-              <li><Link href="/shipping-policy" className="footer-link">Shipping Policy</Link></li>
-              <li><Link href="/returns" className="footer-link">Returns</Link></li>
+            <h4
+              style={{
+                color: "var(--text)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+              }}
+            >
+              Legal
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <li>
+                <Link href="/terms" className="footer-link">
+                  Terms &amp; Conditions
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="footer-link">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/shipping-policy" className="footer-link">
+                  Shipping Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/returns-policy" className="footer-link">
+                  Returns Policy
+                </Link>
+              </li>
             </ul>
           </div>
-          
+
+          <div>
+            <h4
+              style={{
+                color: "var(--text)",
+                marginBottom: "12px",
+                textTransform: "uppercase",
+              }}
+            >
+              Support
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                alignItems: "flex-start",
+              }}
+            >
+              <Link href="/account/tickets" className="btn-support-ticket">
+                {t("common.cta.raise_ticket", "Raise a Ticket")}
+              </Link>
+              {config.featureFlags.enableNdrPortal && (
+                <Link
+                  href="/returns"
+                  className="footer-link"
+                  style={{
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    textDecoration: "none",
+                  }}
+                >
+                  Returns Portal
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
-        
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} James & Sons. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <span className="footer-link" style={{ cursor: 'pointer' }}>Instagram</span>
-            <span className="footer-link" style={{ cursor: 'pointer' }}>Pinterest</span>
-            <span className="footer-link" style={{ cursor: 'pointer' }}>LinkedIn</span>
+
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            paddingTop: "24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px",
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            {t(
+              "footer.copyright",
+              `© ${currentYear} ${brandName}. All rights reserved.`,
+              { year: currentYear, brandName },
+            )}
+          </p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {config.brand.social?.instagram && (
+              <a
+                href={config.brand.social.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-link"
+                style={{ textDecoration: "none" }}
+              >
+                Instagram
+              </a>
+            )}
+            {config.brand.social?.pinterest && (
+              <a
+                href={config.brand.social.pinterest}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-link"
+                style={{ textDecoration: "none" }}
+              >
+                Pinterest
+              </a>
+            )}
+            {config.brand.social?.linkedin && (
+              <a
+                href={config.brand.social.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-link"
+                style={{ textDecoration: "none" }}
+              >
+                LinkedIn
+              </a>
+            )}
           </div>
         </div>
       </div>

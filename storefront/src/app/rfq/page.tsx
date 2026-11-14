@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation';
 import RFQForm from './RFQForm';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
@@ -24,8 +23,7 @@ export default async function RFQPage(props: {
 
   return (
     <>
-      <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '48px 40px 40px', position: 'relative', overflow: 'hidden' }}>
           <svg viewBox="0 0 200 260" style={{ position: 'absolute', right: '-40px', top: '-20px', width: '280px', opacity: 0.04, pointerEvents: 'none' }} stroke="var(--gold)" fill="none" strokeWidth="0.8">
             <line x1="100" y1="0" x2="100" y2="260" />

@@ -3,10 +3,12 @@
 import { createClient } from '@/utils/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 
 export async function loginAction(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const redirectTo = formData.get('redirectTo') as string | null
 
   if (!email || !password) {
     return { error: 'Email and password are required' }
@@ -57,9 +59,13 @@ export async function loginAction(formData: FormData) {
     return { error: 'Database connection failed. Please check if your database is active.' }
   }
 
-  // Success!
-  redirect('/')
+  // Success! Redirect to intended destination or dashboard root
+  const destination = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('/login')
+    ? redirectTo
+    : '/'
+  redirect(destination)
 }
+
 
 export async function resetPasswordAction(email: string) {
   const supabase = await createClient()

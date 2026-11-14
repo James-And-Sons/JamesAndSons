@@ -1,4 +1,3 @@
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import ApplyB2BForm from './ApplyB2BForm'
@@ -23,8 +22,7 @@ export default async function B2BPage() {
 
   return (
     <>
-      <Navigation />
-
+      
       <style>{`
         .b2b-feature:hover { border-color: var(--border-gold) !important; background: rgba(196,160,90,0.04) !important; }
         .b2b-step-num { font-family: var(--font-serif); font-size: 72px; font-weight: 300; color: var(--border-gold); line-height: 1; }

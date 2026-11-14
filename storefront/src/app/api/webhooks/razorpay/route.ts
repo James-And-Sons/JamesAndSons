@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { createShiprocketOrder } from '@/lib/shiprocket';
+import { fulfillPaidOrder } from '@/lib/fulfillment';
+import { refundRazorpayPayment } from '@/lib/razorpay';
 
 export async function POST(req: Request) {
   try {
@@ -28,69 +29,60 @@ export async function POST(req: Request) {
     
     if (event === 'order.paid') {
       const rpOrderId = payload.payload.order.entity.id;
+      const razorpayPaymentId = payload.payload.payment?.entity?.id || undefined;
+      const razorpaySignature = payload.payload.payment?.entity?.signature || undefined;
       
       const order = await prisma.order.findUnique({
         where: { razorpayOrderId: rpOrderId },
-        include: { user: true, items: { include: { product: true } } }
       });
 
-      if (order && order.status !== 'PAID') {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: 'PAID' },
-        });
-
-        // Push to Shiprocket automatically
+      if (order) {
+        console.log(`[Webhook] Processing fulfillment for Razorpay Order: ${rpOrderId} (JNS Order: ${order.orderNumber})`);
         try {
-          // Parse address (assumes format: "Address, City, State - Pincode")
-          const parts = order.shippingAddress.split(', ');
-          const pincodeStr = parts.pop()?.split(' - ')[1] || '110030';
-          const stateStr = parts.pop() || '';
-          const cityStr = parts.pop() || '';
-          const addrStr = parts.join(', ');
+          const result = await fulfillPaidOrder({
+            orderId: order.id,
+            razorpayPaymentId,
+            razorpaySignature,
+          });
 
-          const srParams = {
-            order_id: order.orderNumber,
-            order_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-            pickup_location: "Primary Warehouse", // Ensure this exists in Shiprocket dashboard
-            billing_customer_name: order.user.firstName,
-            billing_last_name: order.user.lastName,
-            billing_address: addrStr,
-            billing_city: cityStr,
-            billing_pincode: pincodeStr,
-            billing_state: stateStr,
-            billing_country: "India",
-            billing_email: order.user.email,
-            billing_phone: order.user.phone || '9999999999',
-            shipping_is_billing: true,
-            order_items: order.items.map(item => ({
-              name: item.product.name,
-              sku: item.product.sku,
-              units: item.quantity,
-              selling_price: item.unitPrice,
-            })),
-            payment_method: "Prepaid",
-            sub_total: order.totalAmount,
-            length: 10,
-            breadth: 10,
-            height: 10,
-            weight: 5.0
-          };
-
-          const srRes = await createShiprocketOrder(srParams);
-          if (srRes.success) {
+          if (!result.success) {
+            console.error(`[Webhook] Fulfillment failed for order ${order.orderNumber}:`, result.error);
+            if (razorpayPaymentId) {
+              console.log(`[Webhook] Initiating automated refund for JNS Order ${order.orderNumber} due to fulfillment failure.`);
+              await refundRazorpayPayment(razorpayPaymentId, undefined, `Fulfillment failed: ${result.error || 'Unknown Error'}`);
+              
+              // Mark order as cancelled/refunded in DB
+              await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                  status: 'CANCELLED',
+                  fulfillmentError: `Fulfillment failed: ${result.error || 'Unknown Error'}. Automated instant refund initiated.`,
+                }
+              });
+            }
+            return NextResponse.json({ error: result.error || 'Fulfillment failed, automated refund initiated' }, { status: 500 });
+          }
+        } catch (fulfillmentErr: any) {
+          console.error(`[Webhook] Exception during fulfillment for order ${order.orderNumber}:`, fulfillmentErr);
+          if (razorpayPaymentId) {
+            await refundRazorpayPayment(razorpayPaymentId, undefined, `Fulfillment exception: ${fulfillmentErr.message || 'Unknown Error'}`);
             await prisma.order.update({
               where: { id: order.id },
               data: {
-                trackingNumber: String(srRes.shipment_id || ''),
-                status: 'PROCESSING'
+                status: 'CANCELLED',
+                fulfillmentError: `Fulfillment exception: ${fulfillmentErr.message || 'Unknown Error'}. Automated instant refund initiated.`,
               }
             });
-            console.log(`Order ${order.orderNumber} successfully pushed to Shiprocket.`);
           }
-        } catch (srErr) {
-          console.error(`Shiprocket push failed for ${order.orderNumber}`, srErr);
+          return NextResponse.json({ error: fulfillmentErr.message || 'Fulfillment exception, automated refund initiated' }, { status: 500 });
         }
+      } else {
+        console.error(`[Webhook] CRITICAL: No order found in database matching Razorpay Order ID: ${rpOrderId}`);
+        if (razorpayPaymentId) {
+          console.log(`[Webhook] Initiating automated refund for unmatched Razorpay Order ID ${rpOrderId}`);
+          await refundRazorpayPayment(razorpayPaymentId, undefined, `No matching order found for Razorpay Order ID: ${rpOrderId}`);
+        }
+        return NextResponse.json({ error: 'Order not found, automated refund initiated' }, { status: 400 });
       }
     }
 

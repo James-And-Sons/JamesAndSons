@@ -1,0 +1,201 @@
+{
+  "name": "James & Sons: Flipkart Orders to Zoho Inventory",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": "interval",
+        "interval": 15,
+        "unit": "minutes"
+      },
+      "id": "cron-trigger",
+      "name": "Interval 15m",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.flipkart.net/oauth-service/oauth/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "name": "scope",
+              "value": "Seller_api"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "flipkart-oauth",
+      "name": "Flipkart OAuth Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        260,
+        300
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "flipkart-basic-credentials",
+          "name": "Flipkart API App Keys"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.flipkart.net/sellers/v2/orders/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={\n  \"filter\": {\n    \"states\": [\"APPROVED\"],\n    \"modifiedAfter\": \"{{ new Date(Date.now() - 15 * 60 * 1000).toISOString() }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "search-flipkart-orders",
+      "name": "Search Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitBy": "orders",
+        "options": {}
+      },
+      "id": "split-orders",
+      "name": "Loop Orders",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [
+        580,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Map Flipkart order structure to Zoho Sales Order payload\nconst fkOrder = $input.first().json;\n\nconst zohoSalesOrder = {\n  customer_id: \"FLIPKART_MARKETPLACE_CONTACT_ID\",\n  salesorder_number: `FK-${fkOrder.orderId}`,\n  date: fkOrder.orderDate ? fkOrder.orderDate.split('T')[0] : new Date().toISOString().split('T')[0],\n  shipment_date: fkOrder.deliverByDate ? fkOrder.deliverByDate.split('T')[0] : new Date().toISOString().split('T')[0],\n  \n  custom_fields: [\n    { label: \"Channel Origin\", value: \"Flipkart Marketplace\" }\n  ],\n  \n  line_items: fkOrder.orderItems.map(item => ({\n    sku: item.fsn, // Mapping Flipkart Serial Number / Listing SKU\n    name: item.title || \"Flipkart Chandelier Product\",\n    rate: Number(item.sellingPrice),\n    quantity: Number(item.quantity),\n    tax_percentage: Number(item.gstRate || 18.0)\n  })),\n  \n  shipping_charge: Number(fkOrder.shippingCharges || 0),\n  discount: 0,\n  \n  billing_address: {\n    address: fkOrder.billingAddress?.addressLine1 || \"\",\n    street2: fkOrder.billingAddress?.addressLine2 || \"\",\n    city: fkOrder.billingAddress?.city || \"\",\n    state: fkOrder.billingAddress?.state || \"\",\n    zip: fkOrder.billingAddress?.pinCode || \"\",\n    country: \"India\"\n  },\n  \n  shipping_address: {\n    address: fkOrder.shippingAddress?.addressLine1 || \"\",\n    street2: fkOrder.shippingAddress?.addressLine2 || \"\",\n    city: fkOrder.shippingAddress?.city || \"\",\n    state: fkOrder.shippingAddress?.state || \"\",\n    zip: fkOrder.shippingAddress?.pinCode || \"\",\n    country: \"India\"\n  }\n};\n\nreturn [{ json: zohoSalesOrder }];"
+      },
+      "id": "fk-to-zoho-mapper",
+      "name": "Map Flipkart to Zoho",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        740,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://inventory.zoho.com/api/v1/salesorders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-com-zoho-organizationid",
+              "value": "YOUR_ZOHO_ORG_ID"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": []
+        },
+        "options": {}
+      },
+      "id": "zoho-create-order",
+      "name": "Create Zoho Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "oAuth2": {
+          "id": "zoho-oauth-credentials",
+          "name": "Zoho Inventory OAuth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Interval 15m": {
+      "main": [
+        [
+          {
+            "node": "Flipkart OAuth Token",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flipkart OAuth Token": {
+      "main": [
+        [
+          {
+            "node": "Search Orders",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Orders": {
+      "main": [
+        [
+          {
+            "node": "split-orders",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split-orders": {
+      "main": [
+        [
+          {
+            "node": "fk-to-zoho-mapper",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fk-to-zoho-mapper": {
+      "main": [
+        [
+          {
+            "node": "Create Zoho Order",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "active": true
+}

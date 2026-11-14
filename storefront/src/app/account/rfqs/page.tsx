@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 
 export default async function RFQsPage() {
@@ -11,8 +10,7 @@ export default async function RFQsPage() {
 
   return (
     <>
-      <Navigation />
-      <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
+            <main style={{ paddingTop: '64px', minHeight: '100vh', background: 'var(--obsidian)' }}>
         <div style={{ background: 'var(--void)', borderBottom: '1px solid var(--border)', padding: '48px 40px' }}>
           <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
             <div className="section-label">Account</div>

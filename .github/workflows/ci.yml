@@ -1,0 +1,53 @@
+name: Monorepo CI Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    name: Build, Lint & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run db:generate --workspace=@james-andsons/db
+
+      - name: Validate Prisma Schema
+        run: npx prisma validate --schema=packages/db/prisma/schema.prisma
+
+      - name: Build Shared Packages
+        run: |
+          npm run build --workspace=@james-andsons/assets
+          npm run build --workspace=@james-andsons/config
+          npm run build --workspace=@james-andsons/db
+          npm run build --workspace=@james-andsons/interfaces
+          npm run build --workspace=@james-andsons/media
+          npm run build --workspace=@james-andsons/razorpay
+          npm run build --workspace=@james-andsons/shiprocket
+          npm run build --workspace=@james-andsons/ui
+          npm run build --workspace=@james-andsons/utils
+          npm run build --workspace=@james-andsons/zoho
+
+      - name: TypeScript Type Check
+        run: npm run type-check
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Unit & Integration Tests (Vitest)
+        run: npx vitest run
