@@ -212,6 +212,11 @@ async function main() {
     success = true;
     console.log(`✅ Native pg_dump export complete: ${compressedFilePath}`);
   } catch (err: any) {
+    if (fs.existsSync(backupFilePath)) {
+      try {
+        fs.unlinkSync(backupFilePath);
+      } catch {}
+    }
     console.log(
       `ℹ️ Native pg_dump not installed, restricted, or timed out (${err?.message || err}). Falling back to Node.js JS SQL Exporter...`,
     );

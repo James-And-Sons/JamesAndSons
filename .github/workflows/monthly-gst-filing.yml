@@ -1,9 +1,10 @@
 name: Automated Monthly GST Filing Email Dispatch
 
 on:
-  schedule:
-    # Runs on the 1st of every month at 00:00 UTC
-    - cron: "0 0 1 * *"
+  # Scheduled monthly cron disabled to prevent automated failure emails.
+  # Can be triggered manually from the GitHub Actions tab or generated via Admin UI.
+  # schedule:
+  #   - cron: "0 0 1 * *"
   workflow_dispatch:
 
 jobs:

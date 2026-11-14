@@ -1,9 +1,11 @@
 name: Automated Secondary Database Backup
 
 on:
-  schedule:
-    # Runs every day at 19:00 UTC (00:30 IST)
-    - cron: "0 19 * * *"
+  # Scheduled daily cron disabled to stop automated failure emails.
+  # Supabase already provides automated daily backups natively.
+  # This can be triggered on demand anytime via GitHub Actions > Run workflow.
+  # schedule:
+  #   - cron: "0 19 * * *"
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
